@@ -6,7 +6,7 @@
     
     Authors: Luna Nielsen
 */
-module inochi2d.fmt;
+module inochi2d.math;
 public import gl3n.linalg;
 public import gl3n.math;
 public import std.math;
