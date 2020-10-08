@@ -1,7 +1,7 @@
 name "basicrender"
 description "Basic Inochi2D puppet render example"
 authors "Luna Nielsen"
-copyright "Copyright © 2020, Inochi2D"
+copyright "Copyright © 2020, Inochi2D Project"
 license "BSL 2-clause"
 dependency "imagefmt" version="~>2.1.0"
 dependency "bindbc-glfw" version="~>0.10.1"
