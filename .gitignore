@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/libpuppet
+libpuppet.so
+libpuppet.dylib
+libpuppet.dll
+libpuppet.a
+libpuppet.lib
+libpuppet-test-*
+*.exe
+*.o
+*.obj
+*.lst
