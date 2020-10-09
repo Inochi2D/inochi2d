@@ -23,26 +23,6 @@ package(inochi2d) {
 }
 
 /**
-    Mesh data
-*/
-struct MeshData {
-    /**
-        Points in the mesh
-    */
-    vec2[] points;
-
-    /**
-        UVs in the mesh
-    */
-    vec2[] uvs;
-
-    /**
-        Indices in the mesh
-    */
-    ushort[] indices;
-}
-
-/**
     A dynamic deformable textured mesh
 */
 class DynMesh {
@@ -191,12 +171,13 @@ public:
     }
 
     /**
-        Draw debug lines
+        Draw debug points
     */
-    void drawDebug(mat4 vp, int lineWidth = 2) {
+    void drawDebug(bool line = false)(mat4 vp, int size = 8) {
 
-        // Set debug line width
-        glLineWidth(lineWidth);
+        // Set debug point size
+        static if (line) glLineWidth(size);
+        else glPointSize(size);
 
         // Bind our vertex array
         glBindVertexArray(vao);
@@ -222,7 +203,8 @@ public:
 
         // Bind element array and draw our mesh
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-        glDrawElements(GL_LINE_STRIP, cast(int)data.indices.length, GL_UNSIGNED_SHORT, null);
+        static if (line) glDrawElements(GL_LINE_STRIP, cast(int)data.indices.length, GL_UNSIGNED_SHORT, null);
+        else glDrawElements(GL_POINTS, cast(int)data.indices.length, GL_UNSIGNED_SHORT, null);
 
         // Disable the vertex attribs after use
         glDisableVertexAttribArray(0);
