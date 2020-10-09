@@ -108,6 +108,30 @@ public:
     }
 
     /**
+        Pulls a vertex and surrounding verticies in a specified direction
+    */
+    void pull(size_t ix, vec2 direction, float smoothArea = 128f) {
+        vec2 pointPos = points[ix];
+				
+        points[ix] -= vec2(direction.x, direction.y);
+
+        foreach(i, point; points) {
+            
+            // We don't want to double pull on our vertex
+            if (i == ix) continue;
+
+            // We want to subtly pull other surrounding points
+            if (point.distance(pointPos) < smoothArea) {
+
+                // Pulling power decreases linearly the further out we go
+                immutable(float) pullPower = (smoothArea-point.distance(pointPos))/smoothArea;
+
+                points[i] -= vec2(direction.x*pullPower, direction.y*pullPower);
+            }
+        }
+    }
+
+    /**
         Returns a copy of the origin points
     */
     final vec2[] originPoints() {
@@ -203,7 +227,7 @@ public:
 
         // Bind element array and draw our mesh
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-        static if (line) glDrawElements(GL_LINE_STRIP, cast(int)data.indices.length, GL_UNSIGNED_SHORT, null);
+        static if (line) glDrawElements(GL_LINES, cast(int)data.indices.length, GL_UNSIGNED_SHORT, null);
         else glDrawElements(GL_POINTS, cast(int)data.indices.length, GL_UNSIGNED_SHORT, null);
 
         // Disable the vertex attribs after use
