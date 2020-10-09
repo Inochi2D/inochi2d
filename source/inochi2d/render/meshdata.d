@@ -29,34 +29,41 @@ struct MeshData {
 
     /**
         Generates a quad based mesh which is subdivided `subdiv` amount of times
+
+        vec2i size - size of the mesh
+        uvBounds - x, y UV coordinates + width/height in UV coordinate space
+        subdiv - how many time to subdivide the mesh on the X and Y axis
+
+        Example:
+                                Size of Texture                       Uses all of UV    width > height
+        MeshData.createQuadMesh(vec2i(texture.width, texture.height), vec4(0, 0, 1, 1), vec2i(32, 16))
     */
-    static MeshData createQuadMesh(int width, int height, int subdiv = 6) {
+    static MeshData createQuadMesh(vec2i size, vec4 uvBounds, vec2i subdiv = vec2i(6, 6)) {
         
         // Splits may not be below 2.
-        if (subdiv < 2) subdiv = 2;
+        if (subdiv.x < 2) subdiv.x = 2;
+        if (subdiv.y < 2) subdiv.y = 2;
 
         MeshData data;
         ushort[int[2]] m;
-        int sw = width/subdiv;
-        int sh = height/subdiv;
-        float uvi = 1f/cast(float)subdiv;
+        int sw = size.x/subdiv.x;
+        int sh = size.y/subdiv.y;
+        float uvx = uvBounds.w/cast(float)subdiv.x;
+        float uvy = uvBounds.z/cast(float)subdiv.y;
 
         // Generate points and UVs
-        foreach(y; 0..subdiv+1) {
-            foreach(x; 0..subdiv+1) {
+        foreach(y; 0..subdiv.y+1) {
+            foreach(x; 0..subdiv.x+1) {
                 data.points ~= vec2(x*sw, y*sh);
-                data.uvs ~= vec2(cast(float)x*uvi, cast(float)y*uvi);
+                data.uvs ~= vec2(uvBounds.x+cast(float)x*uvx, uvBounds.y+cast(float)y*uvy);
                 m[[x, y]] = cast(ushort)(data.points.length-1); 
             }	
         }
 
         // Generate indices
-        int center = subdiv/2;
-        foreach(y; 0..subdiv) {
-            foreach(x; 0..subdiv) {
-
-                // Skip corners, they are special edge cases
-                //if ((x == 0 && y == 0) || (x == subdiv-1 && y == subdiv-1)) continue;
+        vec2i center = vec2i(subdiv.x/2, subdiv.y/2);
+        foreach(y; 0..subdiv.y) {
+            foreach(x; 0..subdiv.x) {
 
                 // Indices
                 int[2] indice0 = [x, y];
@@ -65,7 +72,7 @@ struct MeshData {
                 int[2] indice3 = [x+1, y+1];
 
                 // We want the verticies to generate in an X pattern so that we won't have too many distortion problems
-                if ((x < center && y < center) || (x >= center && y >= center)) {
+                if ((x < center.x && y < center.y) || (x >= center.x && y >= center.y)) {
                     data.indices ~= [
                         m[indice0],
                         m[indice2],
