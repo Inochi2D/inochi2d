@@ -13,6 +13,7 @@ libinochi2d-test-*
 *.o
 *.obj
 *.lst
+*.png
 
 # Ignore selections to avoid useless stuff in repo
 dub.selections.json
