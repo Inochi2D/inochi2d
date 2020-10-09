@@ -50,60 +50,43 @@ struct MeshData {
             }	
         }
 
-        // Top left corner
-        {
-            int[2] indice0 = [0, 0];
-            int[2] indice1 = [0, 1];
-            int[2] indice2 = [1, 0];
-            int[2] indice3 = [1, 1];
-            data.indices ~= [
-                m[indice0],
-                m[indice2],
-                m[indice3],
-                m[indice0],
-                m[indice3],
-                m[indice1],
-            ];
-        }
-
         // Generate indices
+        int center = subdiv/2;
         foreach(y; 0..subdiv) {
             foreach(x; 0..subdiv) {
 
                 // Skip corners, they are special edge cases
-                if ((x == 0 && y == 0) || (x == subdiv-1 && y == subdiv-1)) continue;
+                //if ((x == 0 && y == 0) || (x == subdiv-1 && y == subdiv-1)) continue;
 
                 // Indices
                 int[2] indice0 = [x, y];
                 int[2] indice1 = [x, y+1];
                 int[2] indice2 = [x+1, y];
                 int[2] indice3 = [x+1, y+1];
-                data.indices ~= [
-                    m[indice0],
-                    m[indice1],
-                    m[indice2],
-                    m[indice1],
-                    m[indice2],
-                    m[indice3],
-                ];
+
+                // We want the verticies to generate in an X pattern so that we won't have too many distortion problems
+                if ((x < center && y < center) || (x >= center && y >= center)) {
+                    data.indices ~= [
+                        m[indice0],
+                        m[indice2],
+                        m[indice3],
+                        m[indice0],
+                        m[indice3],
+                        m[indice1],
+                    ];
+                } else {
+                    data.indices ~= [
+                        m[indice0],
+                        m[indice1],
+                        m[indice2],
+                        m[indice1],
+                        m[indice2],
+                        m[indice3],
+                    ];
+                }
             }
         }
 
-        // Bottom right corner
-        {
-            int[2] indice0 = [subdiv-1, subdiv-1];
-            int[2] indice1 = [subdiv-1, subdiv];
-            int[2] indice2 = [subdiv, subdiv-1];
-            int[2] indice3 = [subdiv, subdiv];
-            data.indices ~= [
-                m[indice0],
-                m[indice2],
-                m[indice3],
-                m[indice0],
-                m[indice3],
-                m[indice1],
-            ];
-        }
 
         return data;
     }
