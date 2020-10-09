@@ -108,6 +108,36 @@ public:
     }
 
     /**
+        Gets all points in a radius around the specified point
+    */
+    int[] pointsAround(size_t i, float radius = 128f) {
+        int[] p;
+        vec2 pointPos = points[ix];
+        foreach(j, point; points) {
+            
+            // We don't want to add the point itself
+            if (j == i) continue;
+
+            // Add any points inside the search area to the list
+            if (point.distance(pointPos) < radius) p ~= j;
+        }
+        return p;
+    }
+
+    /**
+        Gets all points in a radius around the specified vector
+    */
+    int[] pointsAround(vec2 pos, float radius = 128f) {
+        int[] p;
+        foreach(j, point; points) {
+
+            // Add any points inside the search area to the list
+            if (point.distance(pos) < radius) p ~= j;
+        }
+        return p;
+    }
+
+    /**
         Pulls a vertex and surrounding verticies in a specified direction
     */
     void pull(size_t ix, vec2 direction, float smoothArea = 128f) {
