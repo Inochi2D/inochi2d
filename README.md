@@ -1,5 +1,5 @@
 # Inochi2D
-Inochi2D is a bring-your-own-renderer library for realtime 2D puppet animation and the reference implementation of the Inochi2D Puppet standard.
+Inochi2D is a library for realtime 2D puppet animation and the reference implementation of the Inochi2D Puppet standard.
 
 Currently this library and the standard is in the prototype stage and is not recommended for production use.
 
@@ -15,7 +15,7 @@ Inochi2D will expose an API for loading/saving and manipulating 2D puppets mainl
 
 The Inochi2D Puppet standard exposes all the neccesary mesh, deformation information as well as physics handling information for stuff like hair, joints and the like which Inochi2D uses to generate a realtime puppet which can be manipulated via eg. facial/body tracking and predefined animations.
 
-Inochi2D provides all the mesh and UV information that you can then send to eg. OpenGL, Vulkan or DirectX for rendering by setting the rendering hooks present in `inochi2d`.
+Inochi2D provides the means to render your puppet to an OpenGL context. Do note that the library does change OpenGL state.
 
 More details will be available as the library develops.
 
