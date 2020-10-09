@@ -17,10 +17,9 @@ private:
     // Matrix transform code
     mat3 g_matrix() {
         return 
+            mat3.scaling(scale.x, scale.y, 1) * 
             mat3.zrotation(rotation) * 
-            mat3.scaling(scale.x, scale.y) * 
-            mat3.translation(position.x, position.y) * 
-            mat3.translation(origin.x, origin.y);
+            mat3.translation(position.x-origin.x, position.y-origin.y, 1);
     }
 
 public:
@@ -32,23 +31,23 @@ public:
     /**
         Position of the transform
     */
-    vec2 position;
+    vec2 position = vec2(0, 0);
 
     /**
         The transform's origin
     */
-    vec2 origin;
+    vec2 origin = vec2(0, 0);
 
     /**
         The scale of the transform
     */
-    vec2 scale;
+    vec2 scale = vec2(1, 1);
 
     /**
         The rotation of the transform
     */
-    float rotation;
-    
+    float rotation = 0f;
+
     /**
         Gets the matrix associated with this transform
     */
