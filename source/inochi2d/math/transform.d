@@ -15,11 +15,11 @@ import inochi2d.math;
 class Transform {
 private:
     // Matrix transform code
-    mat3 g_matrix() {
+    mat4 g_matrix() {
         return 
-            mat3.scaling(scale.x, scale.y, 1) * 
-            mat3.zrotation(rotation) * 
-            mat3.translation(position.x-origin.x, position.y-origin.y, 1);
+            mat4.scaling(scale.x, scale.y, 1) * 
+            mat4.zrotation(rotation) * 
+            mat4.translation(position.x-origin.x, position.y-origin.y, 1);
     }
 
 public:
@@ -51,7 +51,7 @@ public:
     /**
         Gets the matrix associated with this transform
     */
-    mat3 matrix() {
+    mat4 matrix() {
         return parent is null ? g_matrix : g_matrix * parent.matrix;
     }
 }

@@ -10,3 +10,4 @@ module inochi2d.render;
 
 public import inochi2d.render.shader;
 public import inochi2d.render.texture;
+public import inochi2d.render.dynmesh;

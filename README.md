@@ -5,6 +5,15 @@ Currently this library and the standard is in the prototype stage and is not rec
 
 &nbsp;
 
+# Supported platforms
+Inochi2D is being developed on Linux but is being made with cross-platform use in mind and thus should work on Windows and macOS as well.
+
+Android and iOS are currently not supported due to the lack of an OpenGL ES backend.
+
+The Inochi2D Puppet standard's only requirement is the hardware and software supporting some form of modern programmable hardware accellerated 3D rendering. (Eg OpenGL, Vulkan, Metal or DirectX)
+
+&nbsp;
+
 # Testing
 Currently the testbed used to test and develop Inochi2D in its prototype stage is in `examples/basicrender`.
 
