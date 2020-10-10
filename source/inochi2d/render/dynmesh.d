@@ -110,9 +110,9 @@ public:
     /**
         Gets all points in a radius around the specified point
     */
-    int[] pointsAround(size_t i, float radius = 128f) {
-        int[] p;
-        vec2 pointPos = points[ix];
+    size_t[] pointsAround(size_t i, float radius = 128f) {
+        size_t[] p;
+        vec2 pointPos = points[i];
         foreach(j, point; points) {
             
             // We don't want to add the point itself
@@ -127,8 +127,8 @@ public:
     /**
         Gets all points in a radius around the specified vector
     */
-    int[] pointsAround(vec2 pos, float radius = 128f) {
-        int[] p;
+    size_t[] pointsAround(vec2 pos, float radius = 128f) {
+        size_t[] p;
         foreach(j, point; points) {
 
             // Add any points inside the search area to the list
@@ -181,7 +181,7 @@ public:
     final void mark() {
         this.marked = true;
     }
-
+    
     /**
         Draw the mesh using the camera matrix
     */
