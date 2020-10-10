@@ -25,32 +25,32 @@ void main()
 	GLFWwindow* window = glfwCreateWindow(640, 480, "Inochi Test Window", null, null);
 	glfwMakeContextCurrent(window);	
 	loadOpenGL();
-	initInochi2D();
 
-	glLineWidth(4);
-
+	// Initialize Inochi2D
+	initInochi2D(cast(double function())glfwGetTime);
 	
-
+	// Create a DynMesh
 	Camera camera = new Camera();
-
 	Texture tex = new Texture("test.png");
-
 	DynMesh mesh = new DynMesh(tex, MeshData.createQuadMesh(vec2i(tex.width, tex.height), vec4(0, 0, 1, 1), vec2i(31, 15)));
 	mesh.transform.position = vec2(32, 32);
 
+	// Might as well set the clear color to black
+	// Change values here (range 0-1) to change RGB background color
 	glClearColor(0, 0, 0, 1);
+
+
+	size_t* selected;
+	vec2 selectedStartPos;
 	int width, height;
 	double mx, my;
 	double lmx, lmy;
 
-	vec2[] opts = mesh.originPoints();
-	size_t center = mesh.points.length/2;
-
-	size_t* selected;
-	vec2 selectedStartPos;
-
-	// Render loop
 	while(!glfwWindowShouldClose(window)) {
+
+		// Update Inochi2D
+		updateInochi2D();
+
 		glfwGetWindowSize(window, &width, &height);
 		glfwGetCursorPos(window, &mx, &my);
 		
@@ -60,10 +60,12 @@ void main()
 		float mxdiff = lmx-mx;
 		float mydiff = lmy-my;
 
+		// Reset deform code
 		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
 			mesh.resetDeform();
 		}
 
+		// Mouse drag code
 		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
 			if (selected is null) {
 				foreach(i, point; mesh.points) {
@@ -83,21 +85,15 @@ void main()
 			selected = null;
 		}
 
-		//mesh.points[center] = dampen(mesh.points[center], vec2(mx-mesh.transform.position.x, my-mesh.transform.position.y), 0.05);
-
-		// foreach(i; 0..mesh.points.length) {
-		// 	float shakeX = (uniform01()*2)-1;
-		// 	float shakeY = (uniform01()*2)-1;
-		// 	mesh.points[i] = opts[i] + vec2(shakeX*8, shakeY*8);
-		// }
+		// IMPORTANT: When a dynamic mesh gets deformed it needs to be marked for updating
+		// Use the DynMesh.mark function to do this.
 		mesh.mark();
 
 		// Clear color and depth buffer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glViewport(0, 0, width, height);
 
-		// Where we render our puppet
-		// TODO: render our puppet
+		// Draw our DynMesh
 		mesh.draw(camera.matrix(width, height));
 		mesh.drawDebug(camera.matrix(width, height));
 		mesh.drawDebug!(true)(camera.matrix(width, height), 2);
@@ -113,8 +109,4 @@ void main()
 	// Post cleanup
 	glfwDestroyWindow(window);
 	glfwTerminate();
-}
-
-Puppet createPuppet() {
-	return new Puppet();
 }
