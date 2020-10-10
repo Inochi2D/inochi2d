@@ -6,7 +6,7 @@ Currently this library and the standard is in the prototype stage and is not rec
 &nbsp;
 
 # Supported platforms
-Inochi2D is being developed on Linux but is being made with cross-platform use in mind and thus should work on Windows and macOS as well.
+Inochi2D is being developed on Linux but is being made with cross-platform use in mind and thus should work on Windows.
 
 Android and iOS are currently not supported due to the lack of an OpenGL ES backend.
 
