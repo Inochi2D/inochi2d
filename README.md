@@ -36,5 +36,26 @@ Add the library to your project from the dub database.
 dub add inochi2d
 ```
 
+Inochi2D can be boostrapped in GLFW with the following code
+```d
+// After creating your OpenGL context and making it current...
+// A timing function that returns the current applications runtime in seconds and milliseconds is needed
+initInochi2D(cast(double function())glfwGetTime);
+
+while(!glfwWindowShouldClose(window)) {
+
+    // Run updateInochi2D first
+    // This updates various submodules and time managment for animation
+    updateInochi2D();
+
+    // Imagine there's a lot of rendering code here
+    // Maybe even some game logic or something
+
+    // Do the buffer swapping and event polling last
+    glfwSwapBuffers(window);
+    glfwPollEvents();
+}
+```
+
 ### NOTE
 Currently not in the dub database use `dub add-local (inochi2d folder) "1.0.0"` to add inochi2d as a local package. You can then add `inochi2d` as a dependency as can be seen in `examples/basicrender`
