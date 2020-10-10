@@ -20,6 +20,20 @@ private:
     Part parent;
     Part[] children;
 
+public:
+
+    /**
+        Creates a new puppet part
+    */
+    this(Puppet puppet, Texture texture, MeshData data, Part parent = null) {
+        super(texture, data);
+        this.puppet = puppet;
+        this.setParent(parent);
+    }
+
+    /**
+        Set this part's parent
+    */
     void setParent(Part parent) {
         if (this.parent !is null) {
 
@@ -43,19 +57,8 @@ private:
         this.transform.parent = this.parent.transform;
     }
 
-public:
-
     /**
-        Creates a new puppet part
-    */
-    this(Puppet puppet, Texture texture, MeshData data, Part parent = null) {
-        super(texture, data);
-        this.puppet = puppet;
-        this.setParent(parent);
-    }
-
-    /**
-        Draw's the part
+        Draws the part
     */
     void draw() {
         super.draw(puppet.scene.camera.matrix(puppet.scene.viewport.x, puppet.scene.viewport.y));
