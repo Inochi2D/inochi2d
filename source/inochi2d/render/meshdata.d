@@ -6,6 +6,19 @@
 */
 module inochi2d.render.meshdata;
 import inochi2d.math;
+import inochi2d.render.texture;
+
+struct MeshTexture {
+    /**
+        The texture
+    */
+    Texture texture;
+
+    /**
+        The origin of the UV data
+    */ 
+    vec2 uvOrigin;
+}
 
 /**
     Mesh data
@@ -17,7 +30,12 @@ struct MeshData {
     vec2[] points;
 
     /**
-        UVs in the mesh
+        Texture UVs in the mesh
+    */
+    MeshTexture[] textures;
+
+    /**
+        Base uvs
     */
     vec2[] uvs;
 
@@ -25,6 +43,17 @@ struct MeshData {
         Indices in the mesh
     */
     ushort[] indices;
+
+    /**
+        Generates UVs for the specificed texture
+    */
+    vec2[] genUVsFor(int texture) {
+        vec2[] data = new vec2[uvs.length];
+        foreach(i, vert; uvs) {
+            data[i] = vert+textures[texture].uvOrigin;
+        }
+        return data;
+    }
 
 
     /**

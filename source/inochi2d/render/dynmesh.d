@@ -28,8 +28,8 @@ package(inochi2d) {
 class DynMesh {
 private:
     Shader shader;
-    Texture texture;
     MeshData data;
+    int activeTexture;
     GLuint ibo;
     GLuint vbo;
     GLuint uvbo;
@@ -45,9 +45,12 @@ private:
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, data.indices.length*ushort.sizeof, data.indices.ptr, GL_STATIC_DRAW);
     }
 
-    void setUVs() {
+    void genUVs() {
+        // Generate the appropriate UVs
+        vec2[] uvs = data.genUVsFor(activeTexture);
+
         glBindBuffer(GL_ARRAY_BUFFER, uvbo);
-        glBufferData(GL_ARRAY_BUFFER, data.uvs.length*vec2.sizeof, data.uvs.ptr, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, uvs.length*vec2.sizeof, uvs.ptr, GL_STATIC_DRAW);
     }
 
     void setPoints() {
@@ -62,6 +65,7 @@ private:
     }
 
 public:
+
     /**
         The mesh's transform
     */
@@ -75,9 +79,8 @@ public:
     /**
         Constructs a dynamic mesh
     */
-    this(Texture texture, MeshData data, Shader shader = null) {
+    this(MeshData data, Shader shader = null) {
         this.shader = shader is null ? dynMeshShader : shader;
-        this.texture = texture;
         this.data = data;
         this.transform = new Transform();
 
@@ -93,7 +96,7 @@ public:
 
         // Update the indices and UVs
         this.setIndices();
-        this.setUVs();
+        this.genUVs();
         this.setPoints();
     }
 
@@ -104,7 +107,7 @@ public:
         this.data = data;
         this.resetDeform();
         this.setIndices();
-        this.setUVs();
+        this.genUVs();
     }
 
     /**
@@ -203,7 +206,7 @@ public:
         shader.use();
 
         // Bind the texture
-        texture.bind();
+        data.textures[activeTexture].texture.bind();
 
         // Enable points array
         glEnableVertexAttribArray(0);
@@ -243,7 +246,7 @@ public:
         dynMeshDbg.use();
 
         // Bind the texture
-        texture.bind();
+        data.textures[activeTexture].texture.bind();
 
         // Enable points array
         glEnableVertexAttribArray(0);
