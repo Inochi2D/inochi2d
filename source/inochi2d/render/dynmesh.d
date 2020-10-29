@@ -226,45 +226,4 @@ public:
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
     }
-
-    /**
-        Draw debug points
-    */
-    void drawDebug(bool line = false)(mat4 vp, int size = 8) {
-
-        // Set debug point size
-        static if (line) glLineWidth(size);
-        else glPointSize(size);
-
-        // Bind our vertex array
-        glBindVertexArray(vao);
-
-        // Apply camera
-        shader.setUniform(mvp, vp * transform.matrix());
-        
-        // Use the shader
-        dynMeshDbg.use();
-
-        // Bind the texture
-        data.textures[activeTexture].texture.bind();
-
-        // Enable points array
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, null);
-
-        // Enable UVs array
-        glEnableVertexAttribArray(1); // uvs
-        glBindBuffer(GL_ARRAY_BUFFER, uvbo);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, null);
-
-        // Bind element array and draw our mesh
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-        static if (line) glDrawElements(GL_LINES, cast(int)data.indices.length, GL_UNSIGNED_SHORT, null);
-        else glDrawElements(GL_POINTS, cast(int)data.indices.length, GL_UNSIGNED_SHORT, null);
-
-        // Disable the vertex attribs after use
-        glDisableVertexAttribArray(0);
-        glDisableVertexAttribArray(1);
-    }
 }
