@@ -1,4 +1,10 @@
-# Inochi2D
+<p align="center">
+  <img width="256" height="256" src="logo.png">
+  <center>
+    <h1>Inochi2D</h1>
+  </center>
+</p>
+
 Inochi2D is a library for realtime 2D puppet animation and the reference implementation of the Inochi2D Puppet standard.
 
 Currently this library and the standard is in the prototype stage and is not recommended for production use.
