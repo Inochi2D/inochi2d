@@ -1,10 +1,8 @@
 <p align="center">
   <img width="256" height="256" src="logo.png">
-  <center>
-    <h1>Inochi2D</h1>
-  </center>
 </p>
 
+# Inochi2D
 Inochi2D is a library for realtime 2D puppet animation and the reference implementation of the Inochi2D Puppet standard.
 
 Currently this library and the standard is in the prototype stage and is not recommended for production use.
@@ -65,3 +63,9 @@ while(!glfwWindowShouldClose(window)) {
 
 ### NOTE
 Currently not in the dub database use `dub add-local (inochi2d folder) "1.0.0"` to add inochi2d as a local package. You can then add `inochi2d` as a dependency as can be seen in `examples/basicrender`
+
+&nbsp;
+
+---
+
+The Inochi2D logo was designed by [James Daniel](https://twitter.com/rakujira)
