@@ -4,7 +4,7 @@
     
     Authors: Luna Nielsen
 */
-module inochi2d.render.meshdata;
+module inochi2d.render.mesh.meshdata;
 import inochi2d.math;
 import inochi2d.render.texture;
 

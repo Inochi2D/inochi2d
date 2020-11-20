@@ -4,7 +4,7 @@
     
     Authors: Luna Nielsen
 */
-module inochi2d.render.dynmesh;
+module inochi2d.render.mesh.dynmesh;
 import inochi2d.math;
 import inochi2d.render;
 import bindbc.opengl;
