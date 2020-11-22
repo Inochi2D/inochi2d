@@ -19,7 +19,7 @@ private:
         return 
             mat4.scaling(scale.x, scale.y, 1) * 
             mat4.zrotation(rotation) * 
-            mat4.translation(position.x-origin.x, position.y-origin.y, 1);
+            mat4.translation(position.x-origin.x, position.y-origin.y, position.z-origin.z);
     }
 
 public:
@@ -31,12 +31,12 @@ public:
     /**
         Position of the transform
     */
-    vec2 position = vec2(0, 0);
+    vec3 position = vec3(0, 0, 0);
 
     /**
         The transform's origin
     */
-    vec2 origin = vec2(0, 0);
+    vec3 origin = vec3(0, 0, 0);
 
     /**
         The scale of the transform
