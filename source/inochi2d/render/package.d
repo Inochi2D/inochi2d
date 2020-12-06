@@ -16,11 +16,20 @@ import bindbc.opengl;
 import inochi2d.math;
 
 // Internal rendering constants
-package(render) {
+private {
+    // Viewport
     int inViewportWidth;
     int inViewportHeight;
 
+    // Camera
     Camera inCamera;
+}
+
+/**
+    Gets the global camera
+*/
+Camera inGetCamera() {
+    return inCamera;
 }
 
 /**
@@ -45,4 +54,11 @@ void inSetViewport(int width, int height) {
 void inGetViewport(out int width, out int height) {
     width = inViewportWidth;
     height = inViewportHeight;
+}
+
+static this() {
+
+    // Some defaults that should be changed by app writer
+    inCamera = new Camera;
+    inSetViewport(640, 480);
 }
