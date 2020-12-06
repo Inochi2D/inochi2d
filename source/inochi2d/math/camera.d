@@ -1,5 +1,5 @@
 /*
-    Inochi2D Real-time puppet
+    Inochi2D Camera
 
     Copyright © 2020, Inochi2D Project
     Distributed under the 2-Clause BSD License, see LICENSE file.
