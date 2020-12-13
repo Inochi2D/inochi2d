@@ -314,8 +314,6 @@ public:
     /**
         Draw the mesh using the camera matrix
 
-        Do not pass in a DynMesh parent your self, that's for internal use.
-
         Returns:
             true if a masking operation was done
             false if there was no masking done
