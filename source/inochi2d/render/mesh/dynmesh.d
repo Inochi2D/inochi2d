@@ -22,6 +22,23 @@ package(inochi2d) {
     }
 }
 
+enum MaskingMode {
+    /**
+        The mesh should not act as a mask
+    */
+    NoMask,
+
+    /**
+        The mesh draws itself and then masks children
+    */
+    ContentMask,
+
+    /**
+        The mesh is a standalone mask, its texture should not be drawn
+    */
+    StandaloneMask
+}
+
 /**
     A dynamic deformable textured mesh
 */
@@ -36,6 +53,7 @@ private:
 
     // View-projection matrix uniform location
     GLint mvp;
+    GLint threshold;
 
     // Whether this mesh is marked for an update
     bool marked;
@@ -64,6 +82,71 @@ private:
         glBufferData(GL_ARRAY_BUFFER, points.length*vec2.sizeof, points.ptr, GL_DYNAMIC_DRAW);
     }
 
+    void drawSelf(mat4 vp) {
+
+        // Bind our vertex array
+        glBindVertexArray(vao);
+
+        // Apply camera
+        shader.setUniform(mvp, vp * transform.matrix());
+        
+        // Use the shader
+        shader.use();
+
+        // Bind the texture
+        data.textures[activeTexture].texture.bind();
+
+        // Enable points array
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, null);
+
+        // Enable UVs array
+        glEnableVertexAttribArray(1); // uvs
+        glBindBuffer(GL_ARRAY_BUFFER, uvbo);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, null);
+
+        // Bind element array and draw our mesh
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+        glDrawElements(GL_TRIANGLES, cast(int)data.indices.length, GL_UNSIGNED_SHORT, null);
+
+        // Disable the vertex attribs after use
+        glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(1);
+    }
+
+    void beginMask() {
+
+        // Enable and clear the stencil buffer so we can write our mask to it
+        glEnable(GL_STENCIL_TEST);
+        glClear(GL_STENCIL_BUFFER_BIT);
+    }
+
+    void endMask() {
+
+        // We're done stencil testing, disable it again so that we don't accidentally mask more stuff out
+        glDisable(GL_STENCIL_TEST);
+    }
+
+    void beginMaskContent() {
+        glStencilFunc(GL_EQUAL, 1, 0xFF);
+    }
+
+    void renderMask(bool colorAllowed)(mat4 vp) {
+        // Enable writing to stencil buffer and disable writing to color buffer
+        static if (!colorAllowed) glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        glStencilOp(GL_KEEP, GL_REPLACE, GL_REPLACE);
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        glStencilMask(0xFF);
+
+        // Draw ourselves to the stencil buffer
+        drawSelf(vp);
+
+        // Disable writing to stencil buffer and enable writing to color buffer
+        glStencilMask(0x00);
+        static if (!colorAllowed) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    }
+
 public:
 
     /**
@@ -75,6 +158,21 @@ public:
         Points in the dynamic mesh
     */
     vec2[] points;
+
+    /**
+        Whether the mesh masks sub-meshes
+    */
+    MaskingMode maskingMode;
+    
+    /**
+        Alpha Threshold for the masking system, the higher the more opaque pixels will be discarded in the masking process
+    */
+    float maskAlphaThreshold = 0.01;
+
+    /**
+        Children meshes
+    */
+    DynMesh[] children;    
 
     /**
         Constructs a dynamic mesh
@@ -93,6 +191,7 @@ public:
         glGenBuffers(1, &ibo);
 
         mvp = this.shader.getUniformLocation("mvp");
+        threshold = this.shader.getUniformLocation("threshold");
 
         // Update the indices and UVs
         this.setIndices();
@@ -187,8 +286,12 @@ public:
     
     /**
         Draw the mesh using the camera matrix
+
+        Returns:
+            true if a masking operation was done
+            false if there was no masking done
     */
-    void draw(mat4 vp) {
+    bool draw(mat4 vp) {
 
         // Update the points in the mesh if it's marked for an update.
         if (marked) {
@@ -196,34 +299,66 @@ public:
             marked = false;
         }
 
-        // Bind our vertex array
-        glBindVertexArray(vao);
+        // Set the masking threshold
+        glUniform1f(threshold, maskAlphaThreshold);
 
-        // Apply camera
-        shader.setUniform(mvp, vp * transform.matrix());
-        
-        // Use the shader
-        shader.use();
+        switch(maskingMode) {
+            case MaskingMode.ContentMask:
 
-        // Bind the texture
-        data.textures[activeTexture].texture.bind();
+                beginMask();
 
-        // Enable points array
-        glEnableVertexAttribArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, null);
+                renderMask!true(vp);
 
-        // Enable UVs array
-        glEnableVertexAttribArray(1); // uvs
-        glBindBuffer(GL_ARRAY_BUFFER, uvbo);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, null);
+                beginMaskContent();
 
-        // Bind element array and draw our mesh
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-        glDrawElements(GL_TRIANGLES, cast(int)data.indices.length, GL_UNSIGNED_SHORT, null);
+                foreach(child; children) {
+                    if (child.draw(vp)) {
 
-        // Disable the vertex attribs after use
-        glDisableVertexAttribArray(0);
-        glDisableVertexAttribArray(1);
+                        // Reset the masking threshold
+                        // Note the threshold changes for every child drawn
+                        // We want to make sure it stays up to date
+                        glUniform1f(threshold, maskAlphaThreshold);
+
+                        // We need to redo our mask because a child replaced it
+                        beginMask();
+                        renderMask!true(vp);
+
+                        // We can then begin rendering content again
+                        beginMaskContent();
+                    }
+                }
+
+                endMask();
+                return true;
+
+            case MaskingMode.StandaloneMask:
+
+                beginMask();
+
+                renderMask!false(vp);
+
+                beginMaskContent();
+
+                foreach(child; children) {
+                    if (child.draw(vp)) {
+
+                        // Reset the masking threshold
+                        // Note the threshold changes for every child drawn
+                        // We want to make sure it stays up to date
+                        glUniform1f(threshold, maskAlphaThreshold);
+
+                        // We need to redo our mask because a child replaced it
+                        beginMask();
+                        renderMask!false(vp);
+
+                        // We can then begin rendering content again
+                        beginMaskContent();
+                    }
+                }
+
+                endMask();
+                return true;
+            default: return false;
+        }
     }
 }
