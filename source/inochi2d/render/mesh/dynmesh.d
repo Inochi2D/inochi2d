@@ -147,6 +147,22 @@ private:
         static if (!colorAllowed) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     }
 
+    // reset mask
+    void resetMask(mat4 vp) {
+
+        // Check if we want to go a level up
+        if (maskingMode == MaskingMode.NoMask) {
+
+            // If we have a parent try to reset to their mask.
+            if (parent !is null) parent.resetMask(vp);
+        }
+
+        // We have a mask, reset the stencil buffer to use it.
+        beginMask();
+        renderMask!false(vp);
+        beginMaskContent();
+    }
+
 public:
 
     /**
@@ -170,17 +186,28 @@ public:
     float maskAlphaThreshold = 0.01;
 
     /**
+        Parent mesh
+    */
+    DynMesh parent;
+
+    /**
         Children meshes
     */
-    DynMesh[] children;    
+    DynMesh[] children;
 
     /**
         Constructs a dynamic mesh
     */
-    this(MeshData data, Shader shader = null) {
+    this(MeshData data, DynMesh parent = null, Shader shader = null) {
         this.shader = shader is null ? dynMeshShader : shader;
         this.data = data;
         this.transform = new Transform();
+
+        // Add this to the parents children and reference our parent
+        if (parent !is null) {
+            this.parent = parent;
+            parent.children ~= this;
+        }
 
         // Set the deformable points to their initial position
         this.points = data.points.dup;
@@ -287,6 +314,8 @@ public:
     /**
         Draw the mesh using the camera matrix
 
+        Do not pass in a DynMesh parent your self, that's for internal use.
+
         Returns:
             true if a masking operation was done
             false if there was no masking done
@@ -310,6 +339,7 @@ public:
                 renderMask!true(vp);
                 beginMaskContent();
 
+                // Render the children to mask
                 foreach(child; children) {
                     if (child.draw(vp)) {
 
@@ -318,12 +348,8 @@ public:
                         // We want to make sure it stays up to date
                         glUniform1f(threshold, maskAlphaThreshold);
 
-                        // Render the mask to the stencil buffer only
-                        // NOTE: since we've already drawn ourselves if we
-                        // draw ourselves again we'd overwrite masked items
-                        beginMask();
-                        renderMask!false(vp);
-                        beginMaskContent();
+                        // Reset mask
+                        this.resetMask(vp);
                     }
                 }
 
@@ -346,16 +372,31 @@ public:
                         // We want to make sure it stays up to date
                         glUniform1f(threshold, maskAlphaThreshold);
 
-                        // Render the mask to the stencil buffer only
-                        beginMask();
-                        renderMask!false(vp);
-                        beginMaskContent();
+                        // Reset mask
+                        this.resetMask(vp);
                     }
                 }
 
                 endMask();
                 return true;
-            default: return false;
+            default: 
+
+                // We're not doing any masking operations here, so just draw ourselves.
+                drawSelf(vp);
+
+                // Draw children
+                foreach(child; children) {
+                    
+                    // Draw children
+                    child.draw(vp);
+
+                    // If need be reset to the parent's mask
+                    // NOTE: This is to ensure parent masks are retained
+                    // NOTE: This is backtracking, it will backtrack until we've reached a mask
+                    // Or we've run out of parents to check
+                    if (parent !is null) parent.resetMask(vp);
+                }
+                return false;
         }
     }
 }
