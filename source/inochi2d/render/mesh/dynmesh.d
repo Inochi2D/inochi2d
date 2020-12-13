@@ -305,10 +305,9 @@ public:
         switch(maskingMode) {
             case MaskingMode.ContentMask:
 
+                // Render the mask and self
                 beginMask();
-
                 renderMask!true(vp);
-
                 beginMaskContent();
 
                 foreach(child; children) {
@@ -319,11 +318,11 @@ public:
                         // We want to make sure it stays up to date
                         glUniform1f(threshold, maskAlphaThreshold);
 
-                        // We need to redo our mask because a child replaced it
+                        // Render the mask to the stencil buffer only
+                        // NOTE: since we've already drawn ourselves if we
+                        // draw ourselves again we'd overwrite masked items
                         beginMask();
-                        renderMask!true(vp);
-
-                        // We can then begin rendering content again
+                        renderMask!false(vp);
                         beginMaskContent();
                     }
                 }
@@ -333,12 +332,12 @@ public:
 
             case MaskingMode.StandaloneMask:
 
+                // Render the mask to the stencil buffer only
                 beginMask();
-
                 renderMask!false(vp);
-
                 beginMaskContent();
 
+                // Render the children to mask
                 foreach(child; children) {
                     if (child.draw(vp)) {
 
@@ -347,11 +346,9 @@ public:
                         // We want to make sure it stays up to date
                         glUniform1f(threshold, maskAlphaThreshold);
 
-                        // We need to redo our mask because a child replaced it
+                        // Render the mask to the stencil buffer only
                         beginMask();
                         renderMask!false(vp);
-
-                        // We can then begin rendering content again
                         beginMaskContent();
                     }
                 }
