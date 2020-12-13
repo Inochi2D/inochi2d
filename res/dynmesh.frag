@@ -9,7 +9,16 @@ in vec2 texUVs;
 out vec4 outColor;
 
 uniform sampler2D tex;
+uniform float threshold = 0.01;
 
 void main() {
-    outColor = texture(tex, texUVs);
+
+    // Get color from texture
+    vec4 color = texture(tex, texUVs);
+
+    // Discard any pixels that less opaque than our threshold
+    if (color.a < threshold) discard;
+
+    // Set the color if it passes our threshold test
+    outColor = color;
 }
