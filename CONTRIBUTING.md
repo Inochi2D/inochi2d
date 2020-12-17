@@ -17,7 +17,7 @@ Before getting in contact, please familiarize yourself with our [code of conduct
 There are a number of ways to request support:
 
 * Raise an issue on our [Github project](https://github.com/Inochi2D/inochi2d) using the "question" template
-* Reach out to us on Luna's [Discord server](https://discord.gg/AMpbKAB)
+* Reach out to us on Luna's [Discord server](https://discord.gg/tNfMGgJ9Fn)
 * Send me a message on social media ([Twitter](https://twitter.com/Clipsey5))
 
 [Return to top](#top)
@@ -26,7 +26,7 @@ There are a number of ways to request support:
 There are a number of ways to report a bug:
 
 * Raise an issue on our [Github project](https://github.com/Inochi2D/inochi2d) using the "bug report" template
-* Reach out to us on Luna's [Discord server](https://discord.gg/AMpbKAB)
+* Reach out to us on Luna's [Discord server](https://discord.gg/tNfMGgJ9Fn)
 * Send me a message on social media ([Twitter](https://twitter.com/Clipsey5))
 
 [Return to top](#top)
@@ -35,7 +35,7 @@ There are a number of ways to report a bug:
 There are a number of ways to request a new feature:
 
 * Raise an issue on our [Github project](https://github.com/Inochi2D/inochi2d) using the "feature request" template
-* Reach out to us on Luna's [Discord server](https://discord.gg/AMpbKAB)
+* Reach out to us on Luna's [Discord server](https://discord.gg/tNfMGgJ9Fn)
 * Send me a message on social media ([Twitter](https://twitter.com/Clipsey5))
 
 [Return to top](#top)
@@ -63,7 +63,7 @@ To change the code-level documentation, raise a pull request on our [Github proj
 ## Join the community
 We recommend you familiarize yourself with our [code of conduct](https://github.com/Inochi2D/inochi2d/blob/main/CODE_OF_CONDUCT.md).
 
-Once you have done so, you are welcome to join us on [Luna's Discord Server](https://discord.gg/AMpbKAB). That communication channel is where our internal discussions happen and project decisions are made.
+Once you have done so, you are welcome to join us on [Luna's Discord Server](https://discord.gg/tNfMGgJ9Fn). That communication channel is where our internal discussions happen and project decisions are made.
 
 [Return to top](#top)
 
