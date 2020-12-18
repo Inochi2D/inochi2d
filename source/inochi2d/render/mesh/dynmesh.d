@@ -12,13 +12,9 @@ import std.exception;
 import std.algorithm.mutation : copy;
 
 private GLuint vao;
-private Shader dynMeshShader;
-private Shader dynMeshDbg;
 package(inochi2d) {
     void initDynMesh() {
         glGenVertexArrays(1, &vao);
-        dynMeshShader = new Shader(import("dynmesh.vert"), import("dynmesh.frag"));
-        dynMeshDbg = new Shader(import("dynmesh.vert"), import("dynmesh_dbg.frag"));
     }
 }
 
@@ -44,7 +40,6 @@ enum MaskingMode {
 */
 class DynMesh {
 private:
-    Shader shader;
     MeshData data;
     int activeTexture;
     GLuint ibo;
@@ -54,9 +49,17 @@ private:
     // View-projection matrix uniform location
     GLint mvp;
     GLint threshold;
+    GLint opacity;
 
     // Whether this mesh is marked for an update
     bool marked;
+
+
+
+
+    /*
+        VERTEX DATA
+    */
 
     void setIndices() {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
@@ -82,16 +85,22 @@ private:
         glBufferData(GL_ARRAY_BUFFER, points.length*vec2.sizeof, points.ptr, GL_DYNAMIC_DRAW);
     }
 
+
+
+    /*
+        RENDERING
+    */
+
     void drawSelf(mat4 vp) {
 
         // Bind our vertex array
         glBindVertexArray(vao);
 
         // Apply camera
-        shader.setUniform(mvp, vp * transform.matrix());
+        inGetBlend(blending).setUniform(mvp, vp * transform.matrix());
         
         // Use the shader
-        shader.use();
+        inBlend(blending);
 
         // Bind the texture
         data.textures[activeTexture].texture.bind();
@@ -186,6 +195,11 @@ public:
     float maskAlphaThreshold = 0.01;
 
     /**
+        Opacity of the mesh
+    */
+    float opacity = 1;
+
+    /**
         Parent mesh
     */
     DynMesh parent;
@@ -196,10 +210,14 @@ public:
     DynMesh[] children;
 
     /**
+        The blending mode of the mesh
+    */
+    BlendingMode blending;
+
+    /**
         Constructs a dynamic mesh
     */
-    this(MeshData data, DynMesh parent = null, Shader shader = null) {
-        this.shader = shader is null ? dynMeshShader : shader;
+    this(MeshData data, DynMesh parent = null) {
         this.data = data;
         this.transform = new Transform();
 
@@ -217,8 +235,8 @@ public:
         glGenBuffers(1, &uvbo);
         glGenBuffers(1, &ibo);
 
-        mvp = this.shader.getUniformLocation("mvp");
-        threshold = this.shader.getUniformLocation("threshold");
+        mvp = inGetBlend(blending).getUniformLocation("mvp");
+        threshold = inGetBlend(blending).getUniformLocation("threshold");
 
         // Update the indices and UVs
         this.setIndices();
