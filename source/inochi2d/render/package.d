@@ -16,12 +16,44 @@ import bindbc.opengl;
 import inochi2d.math;
 
 enum BlendingMode : size_t {
+    /**
+        Normal blending
+    */
     Normal      = 0,
+
+    /**
+        Multiply blending
+    */
     Multiply    = 1,
+
+    /**
+        Screen blending
+    */
     Screen      = 2,
+
+    /**
+        Reflection blending
+    */
     Reflect     = 3,
+
+    /**
+        Glow blending
+    */
     Glow        = 4,
+
+    /**
+        Overlay blending
+    */
     Overlay     = 5,
+
+    /**
+        Darken blending
+    */
+    Darken      = 6,
+
+    /**
+        Amount of blending modes available
+    */
     ModeCount
 }
 
@@ -128,6 +160,11 @@ package(inochi2d) {
         blendingShaders[5].use();
         glUniform1i(blendingShaders[5].getUniformLocation("tex"), 0);
         glUniform1i(blendingShaders[5].getUniformLocation("screen"), 1);
+        
+        blendingShaders[6] = new Shader(puppetVert, import("blending/darken.frag")); // Darken blending
+        blendingShaders[6].use();
+        glUniform1i(blendingShaders[6].getUniformLocation("tex"), 0);
+        glUniform1i(blendingShaders[6].getUniformLocation("screen"), 1);
     }
 
     Shader inGetBlend(BlendingMode mode) {
