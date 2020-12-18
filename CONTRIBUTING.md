@@ -63,8 +63,7 @@ To change the code-level documentation, raise a pull request on our [Github proj
 
 ## Contribute test material
 We'll be happy if any artists for vtuber models donate any old model textures for testing, doing so can be done via [DMing Luna on Twitter](https://twitter.com/Clipsey5).  
-Note you still retain all rights to your art/models and they will only be used for internal testing, if you at one point want to revoke your art as test material  
-Just tell Luna and she'll delete the textures.
+Note you still retain all rights to your art/models and they will only be used for internal testing, if you at one point want to revoke your art as test material just tell Luna and she'll delete the textures.
 
 ## Join the community
 We recommend you familiarize yourself with our [code of conduct](https://github.com/Inochi2D/inochi2d/blob/main/CODE_OF_CONDUCT.md).
