@@ -21,7 +21,8 @@ enum BlendingMode : size_t {
     Screen      = 2,
     Reflect     = 3,
     Glow        = 4,
-    Overlay     = 5
+    Overlay     = 5,
+    ModeCount
 }
 
 // Internal rendering constants
@@ -38,7 +39,7 @@ private {
     GLuint fStencil;
     GLuint framebuffer;
 
-    Shader[3] blendingShaders;
+    Shader[] blendingShaders;
 
     // Camera
     Camera inCamera;
@@ -93,6 +94,9 @@ package(inochi2d) {
 
         // TODO: load the shader code for puppet vertex only once?
         string puppetVert = import("puppet.vert");
+
+        // Set length to count of blending modes
+        blendingShaders.length = cast(size_t)BlendingMode.ModeCount;
 
         // Init all the blending modes
         blendingShaders[0] = new Shader(puppetVert, import("blending/normal.frag")); // Normal blending
