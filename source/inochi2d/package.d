@@ -5,7 +5,7 @@
     Authors: Luna Nielsen
 */
 module inochi2d;
-public import inochi2d.inochi2d;
+//public import inochi2d.inochi2d;
 public import inochi2d.math;
 public import inochi2d.phys;
 public import inochi2d.fmt;
@@ -20,15 +20,15 @@ private double function() tfunc_;
     Initializes Inochi2D
     Run this after OpenGL context has been set current
 */
-void initInochi2D(double function() timeFunc) {
-    initDynMesh();
+void inInit(double function() timeFunc) {
+    initRenderer();
     tfunc_ = timeFunc;
 }
 
 /**
     Run this at the start of your render/game loop
 */
-void updateInochi2D() {
+void inUpdate() {
     currentTime_ = tfunc_();
     deltaTime_ = currentTime_-lastTime_;
     lastTime_ = currentTime_;
