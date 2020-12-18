@@ -44,16 +44,35 @@ Inochi2D can be boostrapped in GLFW with the following code
 ```d
 // After creating your OpenGL context and making it current...
 // A timing function that returns the current applications runtime in seconds and milliseconds is needed
-initInochi2D(cast(double function())glfwGetTime);
+inInit(cast(double function())glfwGetTime);
+
+// Get the viewport size, which is the size of the scene
+int sceneWidth, sceneHeight;
+inGetViewport(sceneWidth, sceneHeight);
+
+// NOTE: It is highly recommended to change the viewport with
+// inSetViewport to match the viewport you want, otherwise it'll be 640x480
+
+// NOTE: If you want to implement camera switching (for eg camera presets) use
+// inSetCamera
+
+// NOTE: Loading API WIP, subject to change
+Puppet myPuppet = loadPuppet("myPuppet.inp");
 
 while(!glfwWindowShouldClose(window)) {
 
     // Run updateInochi2D first
     // This updates various submodules and time managment for animation
-    updateInochi2D();
+    inUpdate();
 
     // Imagine there's a lot of rendering code here
     // Maybe even some game logic or something
+
+    // Draw myPuppet, this will change the framebuffer to an internal framebuffer
+    myPuppet.draw();
+
+    // Draw the scene, background is transparent
+    inSceneDraw(vec4i(0, 0, sceneWidth, sceneHeight));
 
     // Do the buffer swapping and event polling last
     glfwSwapBuffers(window);
