@@ -22,7 +22,7 @@ enum BlendingMode : size_t {
     Normal      = 0,
 
     /**
-        Multiply blending
+        Multiply/Shadow blending
     */
     Multiply    = 1,
 
@@ -186,7 +186,7 @@ package(inochi2d) {
 
         // Set color to texture 1
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, &fColor);
+        glBindTexture(GL_TEXTURE_2D, fColor);
 
         // Everything else is the actual texture used by the meshes at id 0
         glActiveTexture(GL_TEXTURE0);
