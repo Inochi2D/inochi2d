@@ -49,7 +49,7 @@ private:
     // View-projection matrix uniform location
     GLint mvp;
     GLint threshold;
-    GLint opacity;
+    GLint gopacity;
 
     // Whether this mesh is marked for an update
     bool marked;
@@ -237,6 +237,7 @@ public:
 
         mvp = inGetBlend(blending).getUniformLocation("mvp");
         threshold = inGetBlend(blending).getUniformLocation("threshold");
+        gopacity = inGetBlend(blending).getUniformLocation("opacity");
 
         // Update the indices and UVs
         this.setIndices();
@@ -346,6 +347,7 @@ public:
 
         // Set the masking threshold
         glUniform1f(threshold, maskAlphaThreshold);
+        glUniform1f(gopacity, opacity);
 
         switch(maskingMode) {
             case MaskingMode.ContentMask:
@@ -363,6 +365,7 @@ public:
                         // Note the threshold changes for every child drawn
                         // We want to make sure it stays up to date
                         glUniform1f(threshold, maskAlphaThreshold);
+                        glUniform1f(gopacity, opacity);
 
                         // Reset mask
                         this.resetMask(vp);
@@ -387,6 +390,7 @@ public:
                         // Note the threshold changes for every child drawn
                         // We want to make sure it stays up to date
                         glUniform1f(threshold, maskAlphaThreshold);
+                        glUniform1f(gopacity, opacity);
 
                         // Reset mask
                         this.resetMask(vp);
