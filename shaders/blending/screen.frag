@@ -37,5 +37,5 @@ void main() {
     if (fg.a < threshold) discard;
 
     // Set the color if it passes our threshold test
-    outColor = vec4(blend(bg.rgb, fg.rgb), clamp(bg.a+fg.a, 0, 1));
+    outColor = vec4(blend(bg.rgb, fg), clamp(bg.a+fg.a, 0, 1));
 }
