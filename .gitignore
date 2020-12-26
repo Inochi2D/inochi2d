@@ -5,9 +5,9 @@ docs/
 /libinochi2d
 libinochi2d.so
 libinochi2d.dylib
-libinochi2d.dll
+inochi2d.dll
 libinochi2d.a
-libinochi2d.lib
+inochi2d.lib
 libinochi2d-test-*
 *.exe
 *.o
