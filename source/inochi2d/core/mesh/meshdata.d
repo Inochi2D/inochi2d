@@ -4,9 +4,9 @@
     
     Authors: Luna Nielsen
 */
-module inochi2d.render.mesh.meshdata;
+module inochi2d.core.mesh.meshdata;
 import inochi2d.math;
-import inochi2d.render.texture;
+import inochi2d.core.texture;
 
 struct MeshTexture {
     /**

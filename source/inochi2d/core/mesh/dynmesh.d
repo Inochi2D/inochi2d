@@ -4,9 +4,9 @@
     
     Authors: Luna Nielsen
 */
-module inochi2d.render.mesh.dynmesh;
+module inochi2d.core.mesh.dynmesh;
 import inochi2d.math;
-import inochi2d.render;
+import inochi2d.core;
 import bindbc.opengl;
 import std.exception;
 import std.algorithm.mutation : copy;
@@ -175,6 +175,11 @@ private:
 public:
 
     /**
+        Name of the mesh
+    */
+    string name;
+
+    /**
         The mesh's transform
     */
     Transform transform;
@@ -197,7 +202,8 @@ public:
     /**
         Opacity of the mesh
     */
-    float opacity = 1;
+    @Named("Opacity")
+    Parameter opacity = 1;
 
     /**
         Parent mesh
@@ -347,7 +353,7 @@ public:
 
         // Set the masking threshold
         glUniform1f(threshold, maskAlphaThreshold);
-        glUniform1f(gopacity, opacity);
+        glUniform1f(gopacity, opacity.value);
 
         switch(maskingMode) {
             case MaskingMode.ContentMask:
@@ -365,7 +371,7 @@ public:
                         // Note the threshold changes for every child drawn
                         // We want to make sure it stays up to date
                         glUniform1f(threshold, maskAlphaThreshold);
-                        glUniform1f(gopacity, opacity);
+                        glUniform1f(gopacity, opacity.value);
 
                         // Reset mask
                         this.resetMask(vp);
@@ -390,7 +396,7 @@ public:
                         // Note the threshold changes for every child drawn
                         // We want to make sure it stays up to date
                         glUniform1f(threshold, maskAlphaThreshold);
-                        glUniform1f(gopacity, opacity);
+                        glUniform1f(gopacity, opacity.value);
 
                         // Reset mask
                         this.resetMask(vp);

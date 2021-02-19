@@ -4,7 +4,7 @@
     
     Authors: Luna Nielsen
 */
-module inochi2d.render.texture;
+module inochi2d.core.texture;
 import std.exception;
 import std.format;
 import bindbc.opengl;

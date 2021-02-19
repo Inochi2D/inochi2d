@@ -9,7 +9,7 @@ module inochi2d;
 public import inochi2d.math;
 public import inochi2d.phys;
 public import inochi2d.fmt;
-public import inochi2d.render;
+public import inochi2d.core;
 
 private double currentTime_;
 private double lastTime_;

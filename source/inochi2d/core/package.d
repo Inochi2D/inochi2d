@@ -6,11 +6,11 @@
     
     Authors: Luna Nielsen
 */
-module inochi2d.render;
+module inochi2d.core;
 
-public import inochi2d.render.shader;
-public import inochi2d.render.texture;
-public import inochi2d.render.mesh;
+public import inochi2d.core.shader;
+public import inochi2d.core.texture;
+public import inochi2d.core.mesh;
 
 import bindbc.opengl;
 import inochi2d.math;

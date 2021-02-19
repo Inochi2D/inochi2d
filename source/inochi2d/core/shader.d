@@ -4,7 +4,7 @@
     
     Authors: Luna Nielsen
 */
-module inochi2d.render.shader;
+module inochi2d.core.shader;
 import inochi2d.math;
 import std.string;
 import bindbc.opengl;

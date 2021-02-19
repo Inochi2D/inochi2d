@@ -4,8 +4,8 @@
     
     Authors: Luna Nielsen
 */
-module inochi2d.render.puppet;
-import inochi2d.render.mesh;
+module inochi2d.core.puppet;
+import inochi2d.core.mesh;
 
 /**
     TopLevel Mesh
