@@ -105,6 +105,5 @@ public:
     */
     void update(float value) {
         param.value = value;
-        param.update();
     }
 }
