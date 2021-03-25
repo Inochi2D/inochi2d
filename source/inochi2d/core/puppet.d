@@ -6,6 +6,7 @@
 */
 module inochi2d.core.puppet;
 import inochi2d.core.mesh;
+import inochi2d.core.deformer;
 
 /**
     TopLevel Mesh
@@ -18,6 +19,8 @@ struct TLMesh {
         Sorting is done from back to front, -1 is in back, 1 is in front
     */
     float z;
+
+    Deformer parent;
 
     /**
         Reference to the mesh itself
