@@ -16,26 +16,24 @@ uniform sampler2D screen;
 uniform float threshold;
 uniform float opacity;
 
-float _screen(float bg, float fg) {
-    return 1.0-((1.0-bg)*(1.0-fg));
+float _screen(float dst, float src) {
+    return 1.0-((1.0-dst)*(1.0-src));
 }
 
-vec3 blend(vec3 bg, vec4 fg) {
-    float _opacity = (fg.a*opacity);
-    return vec3(_screen(bg.r, fg.r), _screen(bg.g, fg.g), _screen(bg.b, fg.b)) * _opacity + bg * (1.0-_opacity);
+vec3 blend(vec3 dst, vec4 src) {
+    float _opacity = (src.a*opacity);
+    return vec3(_screen(dst.r, src.r), _screen(dst.g, src.g), _screen(dst.b, src.b)) * _opacity + dst * (1.0-_opacity);
 }
 
 void main() {
 
-    // Background = the thing we're blending to (framebuffer)
-    // Foreground = the thing we're blending with (DynMesh texture)
-
-    vec4 bg = texture(screen, screenCoords.xy); // Background
-    vec4 fg = texture(tex, texUVs); // Foreground
+    vec4 dst = texture(screen, screenCoords.xy); // Background
+    vec4 src = texture(tex, texUVs); // Foreground
 
     // Discard any pixels that less opaque than our threshold
-    if (fg.a < threshold) discard;
+    if (src.a < threshold) discard;
 
     // Set the color if it passes our threshold test
-    outColor = vec4(blend(bg.rgb, fg), clamp(bg.a+fg.a, 0, 1));
+    float falpha = src.a + dst.a * (1.0 - src.a);
+    outColor = vec4(blend(dst.rgb, src), falpha);
 }
