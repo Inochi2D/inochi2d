@@ -142,6 +142,7 @@ private:
     }
 
     void renderMask(bool colorAllowed)(mat4 vp) {
+        
         // Enable writing to stencil buffer and disable writing to color buffer
         static if (!colorAllowed) glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
         glStencilOp(GL_KEEP, GL_REPLACE, GL_REPLACE);
