@@ -4,35 +4,22 @@
     
     Authors: Luna Nielsen
 */
-module inochi2d.core.mesh.meshdata;
+module inochi2d.core.nodes.part.meshdata;
 import inochi2d.math;
 import inochi2d.core.texture;
-
-struct MeshTexture {
-    /**
-        The texture
-    */
-    Texture texture;
-
-    /**
-        The origin of the UV data
-    */ 
-    vec2 uvOrigin;
-}
-
 /**
     Mesh data
 */
 struct MeshData {
     /**
-        Points in the mesh
+        Vertices in the mesh
     */
-    vec2[] points;
+    vec2[] vertices;
 
     /**
         Texture UVs in the mesh
     */
-    MeshTexture[] textures;
+    Texture[] textures;
 
     /**
         Base uvs
@@ -43,17 +30,6 @@ struct MeshData {
         Indices in the mesh
     */
     ushort[] indices;
-
-    /**
-        Generates UVs for the specificed texture
-    */
-    vec2[] genUVsFor(int texture) {
-        vec2[] data = new vec2[uvs.length];
-        foreach(i, vert; uvs) {
-            data[i] = vert+textures[texture].uvOrigin;
-        }
-        return data;
-    }
 
 
     /**
@@ -80,12 +56,12 @@ struct MeshData {
         float uvx = uvBounds.w/cast(float)cuts.x;
         float uvy = uvBounds.z/cast(float)cuts.y;
 
-        // Generate points and UVs
+        // Generate vertices and UVs
         foreach(y; 0..cuts.y+1) {
             foreach(x; 0..cuts.x+1) {
-                data.points ~= vec2(x*sw, y*sh);
+                data.vertices ~= vec2(x*sw, y*sh);
                 data.uvs ~= vec2(uvBounds.x+cast(float)x*uvx, uvBounds.y+cast(float)y*uvy);
-                m[[x, y]] = cast(ushort)(data.points.length-1); 
+                m[[x, y]] = cast(ushort)(data.vertices.length-1); 
             }	
         }
 

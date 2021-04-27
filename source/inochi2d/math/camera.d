@@ -8,6 +8,7 @@
 */
 module inochi2d.math.camera;
 import inochi2d.math;
+import inochi2d;
 
 /**
     An orthographic camera
@@ -28,14 +29,19 @@ public:
     vec2 position;
 
     /**
+        Size of the camera
+    */
+    vec2 size = vec2(640, 480);
+
+    /**
         Matrix for this camera
 
         width = width of camera area
         height = height of camera area
     */
-    mat4 matrix(int width, int height) {
+    mat4 matrix() {
         return 
-            mat4.orthographic(0f, cast(float)width, cast(float)height, 0, 0, max(width, height)) * 
-            mat4.translation(position.x, position.y, -2);
+            mat4.orthographic(0f, cast(float)size.x, cast(float)size.y, 0, 0, ushort.max) * 
+            mat4.translation(position.x+(size.x/2), position.y+(size.y/2), -(ushort.max/2));
     }
 }

@@ -10,7 +10,7 @@ module inochi2d.core;
 
 public import inochi2d.core.shader;
 public import inochi2d.core.texture;
-public import inochi2d.core.mesh;
+public import inochi2d.core.node;
 
 import bindbc.opengl;
 import inochi2d.math;
@@ -64,8 +64,9 @@ private {
     int inViewportHeight;
 
     Shader sceneShader;
-    GLuint sceneFBO;
     GLuint sceneVAO;
+    GLuint sceneVBO;
+    GLint sceneMVP;
 
     GLuint fColor;
     GLuint fStencil;
@@ -99,15 +100,16 @@ package(inochi2d) {
     void initRenderer() {
         
         // Initialize dynamic meshes
-        initDynMesh();
+        inInitPart();
 
         // Some defaults that should be changed by app writer
         inCamera = new Camera;
 
         // Shader for scene
         sceneShader = new Shader(import("scene.vert"), import("scene.frag"));
+        sceneMVP = sceneShader.getUniformLocation("mvp");
         glGenVertexArrays(1, &sceneVAO);
-        glGenBuffers(1, &sceneFBO);
+        glGenBuffers(1, &sceneVBO);
 
         // Generate the framebuffer we'll be using to render the model
         glGenFramebuffers(1, &framebuffer);
@@ -125,7 +127,7 @@ package(inochi2d) {
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, fStencil, 0);
 
         // TODO: load the shader code for puppet vertex only once?
-        string puppetVert = import("puppet.vert");
+        string puppetVert = import("blending/puppet.vert");
 
         // Set length to count of blending modes
         blendingShaders.length = cast(size_t)BlendingMode.ModeCount;
@@ -177,27 +179,27 @@ package(inochi2d) {
     void inBlend(BlendingMode mode) {
         blendingShaders[mode].use();
     }
+}
 
-    /**
-        Begins rendering to the framebuffer
-    */
-    void inBeginScene() {
-        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+/**
+    Begins rendering to the framebuffer
+*/
+void inBeginScene() {
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
-        // Set color to texture 1
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, fColor);
+    // Set color to texture 1
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, fColor);
 
-        // Everything else is the actual texture used by the meshes at id 0
-        glActiveTexture(GL_TEXTURE0);
-    }
+    // Everything else is the actual texture used by the meshes at id 0
+    glActiveTexture(GL_TEXTURE0);
+}
 
-    /**
-        Ends rendering to the framebuffer
-    */
-    void inEndScene() {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
+/**
+    Ends rendering to the framebuffer
+*/
+void inEndScene() {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 /**
@@ -218,7 +220,46 @@ void inSetCamera(Camera camera) {
     Draw scene to area
 */
 void inDrawScene(vec4 area) {
+    glBindVertexArray(sceneVAO);
+    
+    glDisable(GL_CULL_FACE);
 
+    sceneShader.use();
+    sceneShader.setUniform(sceneMVP, mat4.orthographic(-2f, area.z, area.w, 0, 0, max(area.z, area.w)) * mat4.translation(area.x, area.y, 0));
+
+    // Bind our vertex array
+    glBindVertexArray(sceneVAO);
+
+    // Bind the texture
+    glBindTexture(GL_TEXTURE_2D, fColor);
+
+    // Enable points array
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, sceneVBO);
+    float[] data = [
+        area.x,         area.y,         0, 0,
+        area.x,         area.y+area.w,  0, 1,
+        area.x+area.z,  area.y,         1, 0,
+        
+        area.x+area.z,  area.y,         1, 0,
+        area.x,         area.y+area.w,  0, 1,
+        area.x+area.z,  area.y+area.w,  1, 1,
+    ];
+    glBufferData(GL_ARRAY_BUFFER, 24*float.sizeof, data.ptr, GL_DYNAMIC_DRAW);
+
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4*float.sizeof, null);
+
+    // Enable UVs array
+    glEnableVertexAttribArray(1); // uvs
+    glBindBuffer(GL_ARRAY_BUFFER, sceneVBO);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4*float.sizeof, cast(float*)(2*float.sizeof));
+
+    // Draw
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    // Disable the vertex attribs after use
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
 }
 
 /**

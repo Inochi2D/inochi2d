@@ -11,9 +11,9 @@ public import inochi2d.phys;
 public import inochi2d.fmt;
 public import inochi2d.core;
 
-private double currentTime_;
-private double lastTime_;
-private double deltaTime_;
+private double currentTime_ = 0;
+private double lastTime_ = 0;
+private double deltaTime_ = 0;
 private double function() tfunc_;
 
 /**

@@ -8,7 +8,7 @@
 */
 #version 330
 in vec2 texUVs;
-in vec4 screenCoords;
+in vec2 screenCoords;
 out vec4 outColor;
 
 uniform sampler2D tex;
@@ -27,7 +27,7 @@ vec3 blend(vec3 dst, vec4 src) {
 
 void main() {
 
-    vec4 dst = texture(screen, screenCoords.xy); // Background
+    vec4 dst = texture(screen, screenCoords); // Background
     vec4 src = texture(tex, texUVs); // Foreground
 
     // Discard any pixels that less opaque than our threshold

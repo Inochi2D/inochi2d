@@ -8,7 +8,7 @@
 */
 #version 330
 in vec2 texUVs;
-in vec4 screenCoords;
+in vec2 screenCoords;
 out vec4 outColor;
 
 uniform sampler2D tex;

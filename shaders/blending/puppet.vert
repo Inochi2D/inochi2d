@@ -10,10 +10,13 @@ layout(location = 0) in vec2 verts;
 layout(location = 1) in vec2 uvs;
 
 out vec2 texUVs;
-out vec4 screenCoords;
+out vec2 screenCoords;
 
 void main() {
-    screenCoords = mvp * vec4(verts.x, verts.y, 0, 1);
-    gl_Position = screenCoords;
+    vec4 sverts = mvp * vec4(verts.x, verts.y, 0, 1);
+
+    gl_Position = sverts;
+    screenCoords = vec2((sverts.x+1)/2, (sverts.y+1)/2);
+    
     texUVs = uvs;
 }
