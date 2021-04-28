@@ -58,6 +58,16 @@ public:
     }
 
     /**
+        Removes all children from this node
+    */
+    final void clearChildren() {
+        foreach(child; children_) {
+            child.parent_ = null;
+        }
+        this.children_ = [];
+    }
+
+    /**
         Sets the parent of this node
     */
     final void parent(Node node) {

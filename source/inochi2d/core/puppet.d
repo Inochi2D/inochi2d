@@ -22,6 +22,8 @@ private:
     Part[] rootParts;
 
     void scanParts(Node node) {
+        puppetRootNode.clearChildren();
+        rootParts = [];
         
         // If we have a part do the main check
         if (Part part = cast(Part)node) {
