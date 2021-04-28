@@ -12,5 +12,6 @@ uniform sampler2D fbo;
 
 void main() {
     // Set color to the corrosponding pixel in the FBO
-    outColor = texture(fbo, texUVs);
+    vec4 color = texture(fbo, texUVs);
+    outColor = vec4(color.r * color.a, color.g * color.a, color.b * color.a, color.a);
 }
