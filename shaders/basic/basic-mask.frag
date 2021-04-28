@@ -9,9 +9,11 @@ in vec2 texUVs;
 out vec4 outColor;
 
 uniform sampler2D fbo;
+uniform float threshold;
+uniform float opacity;
 
 void main() {
-    // Set color to the corrosponding pixel in the FBO
-    vec4 color = texture(fbo, texUVs);
-    outColor = vec4(color.r * color.a, color.g * color.a, color.b * color.a, color.a);
+    vec4 color = texture(fbo, texUVs) * vec4(1, 1, 1, opacity);
+    if (color.a <= threshold) discard;
+    outColor = vec4(1, 1, 1, 1);
 }
