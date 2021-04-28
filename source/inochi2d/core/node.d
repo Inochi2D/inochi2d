@@ -88,4 +88,6 @@ public:
         }
         return true;
     }
+
+    void drawOne() { }
 }

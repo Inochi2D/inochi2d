@@ -15,15 +15,15 @@ public import inochi2d.core.nodes.part.meshdata;
 
 private {
     GLuint partVAO;
-    Shader partBasicShader;
-    Shader partBasicMaskShader;
+    Shader partShader;
+    Shader partMaskShader;
 }
 
 package(inochi2d) {
     void inInitPart() {
         glGenVertexArrays(1, &partVAO);
-        partBasicShader = new Shader(import("basic/basic.vert"), import("basic/basic.frag"));
-        partBasicMaskShader = new Shader(import("basic/basic.vert"), import("basic/basic-mask.frag"));
+        partShader = new Shader(import("basic/basic.vert"), import("basic/basic.frag"));
+        partMaskShader = new Shader(import("basic/basic.vert"), import("basic/basic-mask.frag"));
     }
 }
 
@@ -103,17 +103,16 @@ private:
         // // Apply camera
         
         // // Use the shader
-        // inBlend(blending);
 
         static if (isMask) {
-            partBasicMaskShader.use();
-            partBasicMaskShader.setUniform(mmvp, inGetCamera().matrix * transform.matrix());
-            partBasicMaskShader.setUniform(mthreshold, maskAlphaThreshold);
-            partBasicMaskShader.setUniform(mgopacity, opacity);
+            partMaskShader.use();
+            partMaskShader.setUniform(mmvp, inGetCamera().matrix * transform.matrix());
+            partMaskShader.setUniform(mthreshold, maskAlphaThreshold);
+            partMaskShader.setUniform(mgopacity, opacity);
         } else {
-            partBasicShader.use();
-            partBasicShader.setUniform(mvp, inGetCamera().matrix * transform.matrix());
-            partBasicShader.setUniform(gopacity, opacity);
+            partShader.use();
+            partShader.setUniform(mvp, inGetCamera().matrix * transform.matrix());
+            partShader.setUniform(gopacity, opacity);
         }
 
         // Bind the texture
@@ -227,12 +226,12 @@ public:
         glGenBuffers(1, &uvbo);
         glGenBuffers(1, &ibo);
 
-        mvp = partBasicShader.getUniformLocation("mvp");
-        gopacity = partBasicShader.getUniformLocation("opacity");
+        mvp = partShader.getUniformLocation("mvp");
+        gopacity = partShader.getUniformLocation("opacity");
         
-        mmvp = partBasicShader.getUniformLocation("mvp");
-        mthreshold = partBasicMaskShader.getUniformLocation("threshold");
-        mgopacity = partBasicMaskShader.getUniformLocation("opacity");
+        mmvp = partMaskShader.getUniformLocation("mvp");
+        mthreshold = partMaskShader.getUniformLocation("threshold");
+        mgopacity = partMaskShader.getUniformLocation("opacity");
         this.updateIndices();
         this.updateUVs();
         this.updateVertices();
@@ -253,6 +252,13 @@ public:
     */
     void resetVerts() {
         this.vertices = data.vertices.dup;
+    }
+
+    override
+    void drawOne() {
+        glUniform1f(mthreshold, maskAlphaThreshold);
+        glUniform1f(mgopacity, opacity);
+        drawSelf();
     }
 
     override

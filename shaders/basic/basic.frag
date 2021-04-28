@@ -13,4 +13,5 @@ uniform float opacity;
 
 void main() {
     outColor = texture(fbo, texUVs) * vec4(1, 1, 1, opacity);
+    if (outColor.a < 0.01) discard;
 }
