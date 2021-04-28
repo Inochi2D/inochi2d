@@ -101,5 +101,24 @@ public:
         return true;
     }
 
+    /**
+        Draws this node.
+    */
     void drawOne() { }
+
+    /**
+        Forces this node to be drawn.
+    */
+    final void forceDrawOne() {
+        
+        // If we're already enabled no need to force anything
+        if (enabled) {
+            drawOne();
+            return;
+        }
+
+        enabled = !enabled;
+        drawOne();
+        enabled = !enabled;
+    }
 }
