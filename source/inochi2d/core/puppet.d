@@ -21,9 +21,7 @@ private:
     */
     Part[] rootParts;
 
-    void scanParts(Node node) {
-        puppetRootNode.clearChildren();
-        rootParts = [];
+    void scanPartsRecurse(Node node) {
         
         // If we have a part do the main check
         if (Part part = cast(Part)node) {
@@ -36,14 +34,32 @@ private:
                 // We've found a root no-masking part
                 rootParts ~= part;
                 foreach(child; part.children) {
-                    scanParts(child);
+                    scanPartsRecurse(child);
                 }
             }
         } else {
             foreach(child; node.children) {
-                scanParts(child);
+                scanPartsRecurse(child);
             }
         }
+    }
+
+    void scanParts(Node node) {
+
+        // We want rootParts to be cleared so that we
+        // don't draw the same part multiple times
+        // and if the node tree changed we want to reflect those changes
+        // not the old node tree.
+        rootParts = [];
+
+        this.scanPartsRecurse(node);
+
+        // To make sure the GC can collect any nodes that aren't referenced
+        // anymore, we clear its children first, then assign its new child
+        // to our "new" root node. In some cases the root node will be
+        // quite different.
+        if (puppetRootNode !is null) puppetRootNode.clearChildren();
+        node.parent = puppetRootNode;
     }
 
     void selfSort() {
@@ -63,8 +79,8 @@ public:
         Creates a new puppet from a node tree
     */
     this(Node root) {
+        this.puppetRootNode = new Node();
         this.root = root;
-        this.root.parent = puppetRootNode;
         this.scanParts(this.root);
         this.selfSort();
     }
