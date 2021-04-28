@@ -51,10 +51,21 @@ enum MaskingMode {
     Dynamic Mesh Part
 */
 class Part : Node {
-private:
+protected:
+    /**
+        The mesh data of this part
+
+        NOTE: DO NOT MODIFY!
+        The data in here is only to be used for reference.
+    */
     MeshData data;
 
-    
+    /**
+        The mesh's vertices
+    */
+    vec2[] vertices;
+
+private:
     GLuint ibo;
     GLuint vbo;
     GLuint uvbo;
@@ -196,18 +207,12 @@ private:
         beginMaskContent();
     }
 
-
 public:
 
     /**
         A part this part should "dodge"
     */
     Part dodge;
-
-    /**
-        The mesh's vertices
-    */
-    vec2[] vertices;
 
     /**
         Masking mode
