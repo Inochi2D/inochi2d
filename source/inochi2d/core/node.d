@@ -13,6 +13,16 @@ private:
 
 public:
 
+    /**
+        Whether the node is enabled
+
+        Disabled nodes will not be drawn.
+    */
+    bool enabled = true;
+
+    /**
+        Constructs a new node
+    */
     this(Node parent = null) {
         this.parent = parent;
     }
@@ -83,6 +93,8 @@ public:
         Draws this node and it's subnodes
     */
     bool draw() {
+        if (!enabled) return true;
+
         foreach(child; children) {
             child.draw();
         }

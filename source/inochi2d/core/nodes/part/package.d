@@ -266,6 +266,8 @@ public:
 
     override
     void drawOne() {
+        if (!enabled) return;
+        
         glUniform1f(mthreshold, maskAlphaThreshold);
         glUniform1f(mgopacity, opacity);
         if (dodge !is null) {
@@ -281,6 +283,8 @@ public:
 
     override
     bool draw() {
+        if (!enabled) return true;
+
         switch(maskingMode) {
             case MaskingMode.ContentMask:
 
