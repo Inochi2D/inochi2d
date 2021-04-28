@@ -70,7 +70,7 @@ public:
     /**
         Draws the puppet
     */
-    void draw() {
+    final void draw() {
         this.selfSort();
 
         foreach(rootPart; rootParts) {
@@ -85,7 +85,16 @@ public:
     /**
         Gets this puppet's root transform
     */
-    Transform transform() {
+    final Transform transform() {
         return puppetRootNode.transform;
+    }
+
+    /**
+        Rescans the puppet's nodes
+
+        Run this every time you change the layout of the puppet's node tree
+    */
+    final void rescanNodes() {
+        this.scanParts(root);
     }
 }
