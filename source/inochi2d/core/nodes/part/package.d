@@ -160,6 +160,11 @@ private:
         glStencilMask(0x00);
     }
 
+    void beginDodgeContent() {
+        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+        glStencilMask(0x00);
+    }
+
     void renderMask() {
         
         // Enable writing to stencil buffer and disable writing to color buffer
@@ -193,6 +198,11 @@ private:
 
 
 public:
+
+    /**
+        A part this part should "dodge"
+    */
+    Part dodge;
 
     /**
         The mesh's vertices
@@ -258,7 +268,15 @@ public:
     void drawOne() {
         glUniform1f(mthreshold, maskAlphaThreshold);
         glUniform1f(mgopacity, opacity);
+        if (dodge !is null) {
+            beginMask();
+            dodge.renderMask();
+            beginDodgeContent();
+        }
+
         drawSelf();
+
+        if (dodge !is null) endMask();
     }
 
     override
@@ -267,7 +285,18 @@ public:
             case MaskingMode.ContentMask:
 
                 // Render the mask and self
+                if (dodge !is null) {
+                    dodge.beginMask();
+                    dodge.renderMask();
+                    beginDodgeContent();
+                }
+                
+                // We're not doing any masking operations here, so just draw ourselves.
                 drawSelf();
+
+                if (dodge !is null) endMask();
+                
+
                 beginMask();
                 renderMask();
                 beginMaskContent();
@@ -294,38 +323,18 @@ public:
                 endMask();
                 return true;
 
-            case MaskingMode.StandaloneMask:
-
-                // Render the mask to the stencil buffer only
-                beginMask();
-                renderMask();
-                beginMaskContent();
-
-                // Render the children to mask
-                foreach(gchild; children) {
-                    if (auto child = cast(Part)gchild) {
-                        if (child.draw()) {
-
-                            // Reset the masking threshold
-                            // Note the threshold changes for every child drawn
-                            // We want to make sure it stays up to date
-                            glUniform1f(mthreshold, maskAlphaThreshold);
-                            glUniform1f(mgopacity, opacity);
-
-                            // Reset mask
-                            this.resetMask();
-                        }
-                    } else {
-                        gchild.draw();
-                    }
-                }
-
-                endMask();
-                return true;
             default: 
+                if (dodge !is null) {
+                    beginMask();
+                    dodge.renderMask();
+                    beginDodgeContent();
+                }
 
                 // We're not doing any masking operations here, so just draw ourselves.
                 drawSelf();
+
+                if (dodge !is null) endMask();
+                
 
                 // Draw children
                 foreach(gchild; children) {
