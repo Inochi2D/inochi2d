@@ -12,7 +12,10 @@ public import inochi2d.math;
 */
 struct Transform {
 private:
-    mat4 trs;
+    mat4 trs = mat4.identity;
+    mat4 translation_ = mat4.identity;
+    mat4 rotation_ = mat4.identity;
+    mat4 scale_ = mat4.identity;
 
 public:
 
@@ -24,7 +27,7 @@ public:
     /**
         The rotation of the transform
     */
-    quat rotation = quat.identity;
+    vec3 rotation = vec3(0, 0, 0);//; = quat.identity;
 
     /**
         The scale of the transform
@@ -32,14 +35,49 @@ public:
     vec2 scale = vec2(1, 1);
 
     /**
-        Whether rotation should be locked
+        Locks rotation on the X axis
     */
-    bool lockRotation = false;
+    bool lockRotationX = false;
+
+    /**
+        Locks rotation on the Y axis
+    */
+    bool lockRotationY = false;
+    
+    /**
+        Locks rotation on the Z axis
+    */
+    bool lockRotationZ = false;
+
+    /**
+        Locks translation on the X axis
+    */
+    bool lockTranslationX = false;
+
+    /**
+        Locks translation on the Y axis
+    */
+    bool lockTranslationY = false;
+    
+    /**
+        Locks translation on the Z axis
+    */
+    bool lockTranslationZ = false;
+
+    /**
+        Locks scale on the X axis
+    */
+    bool lockScaleX = false;
+
+    /**
+        Locks scale on the Y axis
+    */
+    bool lockScaleY = false;
 
     /**
         Initialize a transform
     */
-    this(vec3 translation, quat rotation = quat.identity, vec2 scale = vec2(1, 1)) {
+    this(vec3 translation, vec3 rotation = vec3(0), vec2 scale = vec2(1, 1)) {
         this.translation = translation;
         this.rotation = rotation;
         this.scale = scale;
@@ -50,14 +88,52 @@ public:
     */
     Transform opBinary(string op : "*")(Transform other) {
         Transform tnew;
-        
-        if (lockRotation) {
-            tnew.trs = mat4.translation(vec3(other.trs * vec4(this.translation, 1)));
-            tnew.translation = vec3(other.trs * vec4(this.translation, 1));
-        } else {
-            tnew.trs = other.trs * this.trs;
-            tnew.translation = vec3(other.trs * vec4(this.translation, 1));
-        }
+
+        //
+        //  ROTATION
+        //
+
+        quat rot = quat.from_matrix(mat3(this.rotation_ * other.rotation_));
+
+        // Handle rotation locks
+        if (!lockRotationX) tnew.rotation.x = rot.roll;
+        if (!lockRotationY) tnew.rotation.y = rot.pitch;
+        if (!lockRotationZ) tnew.rotation.z = rot.yaw;
+        tnew.rotation_ = quat.euler_rotation(tnew.rotation.x, tnew.rotation.y, tnew.rotation.z).to_matrix!(4, 4);
+
+        //
+        //  TRANSLATION
+        //
+
+        // Calculate new TRS
+        vec3 trans = vec3(
+            // We want to support parts being placed correctly even if they're rotation locked
+            // therefore we need to apply the worldspace rotation here
+            // That has been pre-calculated above.
+            // Do note we also multiply by its inverse, this is so that the rotations don't
+            // start stacking up weirdly causing cascadingly more extreme rotation.
+            tnew.rotation_ * this.translation_ * tnew.rotation_.inverse() * 
+
+            // Also our local translation
+            vec4(other.translation, 1)
+        );
+
+        // Handle translation locks
+        if (!lockTranslationX) tnew.translation.x = trans.x;
+        if (!lockTranslationY) tnew.translation.y = trans.y;
+        if (!lockTranslationZ) tnew.translation.z = trans.z;
+
+        //
+        //  SCALE
+        //
+
+        // Handle scale locks
+        vec2 scale = vec2(this.scale_ * vec4(other.scale, 1, 1));
+        if (!lockScaleX) tnew.scale.x = scale.x;
+        if (!lockScaleY) tnew.scale.y = scale.y;
+
+        tnew.update();
+
         return tnew;
     }
 
@@ -74,7 +150,10 @@ public:
         Updates the internal matrix of this transform
     */
     void update() {
-        trs = mat4.scaling(scale.x, scale.y, 1) * rotation.to_matrix!(4, 4) * mat4.translation(translation);
+        translation_ = mat4.translation(translation);
+        rotation_ = quat.euler_rotation(this.rotation.x, this.rotation.y, this.rotation.z).to_matrix!(4, 4);
+        scale_ = mat4.scaling(scale.x, scale.y, 1);
+        trs =  translation_ * rotation_ * scale_;
     }
 
     string toString() {
