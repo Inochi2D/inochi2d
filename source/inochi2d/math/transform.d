@@ -50,6 +50,11 @@ public:
     bool lockRotationZ = false;
 
     /**
+        Sets the locking value for all rotation axies
+    */
+    void lockRotation(bool value) { lockRotationX = lockRotationY = lockRotationZ = value; }
+
+    /**
         Locks translation on the X axis
     */
     bool lockTranslationX = false;
@@ -65,6 +70,11 @@ public:
     bool lockTranslationZ = false;
 
     /**
+        Sets the locking value for all translation axies
+    */
+    void lockTranslation(bool value) { lockTranslationX = lockTranslationY = lockTranslationZ = value; }
+
+    /**
         Locks scale on the X axis
     */
     bool lockScaleX = false;
@@ -73,6 +83,11 @@ public:
         Locks scale on the Y axis
     */
     bool lockScaleY = false;
+
+    /**
+        Locks all scale axies
+    */
+    void lockScale(bool value) { lockScaleX = lockScaleY = value; }
 
     /**
         Initialize a transform
