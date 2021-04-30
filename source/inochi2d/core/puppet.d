@@ -28,16 +28,24 @@ private:
             if (part.maskingMode != MaskingMode.NoMask) {
 
                 // We've found a root masked part
+                // These will recursively draw their children!
+                // so no need to iterate down their branches.
                 rootParts ~= part;
             } else {
 
                 // We've found a root no-masking part
+                // These will NOT be drawn recursively
+                // So we have to recurse down here to sort them
+                // by depth as well.
                 rootParts ~= part;
                 foreach(child; part.children) {
                     scanPartsRecurse(child);
                 }
             }
         } else {
+
+            // Non-part nodes just need to be recursed through,
+            // they don't draw anything.
             foreach(child; node.children) {
                 scanPartsRecurse(child);
             }
@@ -93,8 +101,18 @@ public:
 
         foreach(rootPart; rootParts) {
             if (rootPart.maskingMode != MaskingMode.NoMask) {
+                
+                // Parts that are masked will need to recursively draw their children
+                // otherwise the masking would not work and alternatives are not that
+                // great in terms of performance when having larger trees of masked
+                // items.
                 rootPart.draw();
             } else {
+
+                // All non-masked parts that are not children of masked parts
+                // are just drawn standalone, they're already sorted by depth
+                // so they should be drawn correctly as long as their depth
+                // are specified correctly.
                 rootPart.drawOne();
             }
         }
