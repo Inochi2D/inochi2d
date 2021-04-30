@@ -11,7 +11,19 @@ private:
     Node parent_;
     Node[] children_;
 
+protected:
+
+    // Send mask reset request one node up
+    void resetMask() {
+        if (parent !is null) parent.resetMask();
+    }
+
 public:
+
+    /**
+        Visual name of the node
+    */
+    string name = "Unnamed Node";
 
     /**
         Whether the node is enabled
@@ -102,13 +114,12 @@ public:
     /**
         Draws this node and it's subnodes
     */
-    bool draw() {
-        if (!enabled) return true;
+    void draw() {
+        if (!enabled) return;
 
         foreach(child; children) {
             child.draw();
         }
-        return true;
     }
 
     /**
@@ -130,5 +141,10 @@ public:
         enabled = !enabled;
         drawOne();
         enabled = !enabled;
+    }
+
+    override
+    string toString() {
+        return name;
     }
 }
