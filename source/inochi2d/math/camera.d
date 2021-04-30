@@ -31,7 +31,7 @@ public:
     /**
         Size of the camera
     */
-    vec2 size = vec2(640, 480);
+    vec2 scale = vec2(1, 1);
 
     /**
         Matrix for this camera
@@ -40,8 +40,13 @@ public:
         height = height of camera area
     */
     mat4 matrix() {
+        int width, height;
+        inGetViewport(width, height);
+
+        vec2 realSize = vec2(width/scale.x, height/scale.y);
+
         return 
-            mat4.orthographic(0f, cast(float)size.x, cast(float)size.y, 0, 0, ushort.max) * 
-            mat4.translation(position.x+(size.x/2), position.y+(size.y/2), -(ushort.max/2));
+            mat4.orthographic(0f, realSize.x, realSize.y, 0, 0, ushort.max) * 
+            mat4.translation(position.x+(realSize.x/2), position.y+(realSize.y/2), -(ushort.max/2));
     }
 }
