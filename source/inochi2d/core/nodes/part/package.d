@@ -65,6 +65,20 @@ protected:
     */
     vec2[] vertices;
 
+
+    // reset mask
+    override
+    void resetMask() {
+
+        // No need to restore masks for something that have no mask
+        if (MaskingMode.NoMask) return;
+
+        // We have a mask, reset the stencil buffer to use it.
+        beginMask();
+        renderMask();
+        beginMaskContent();
+    }
+
 private:
     GLuint ibo;
     GLuint vbo;
@@ -105,15 +119,9 @@ private:
     */
 
     void drawSelf(bool isMask = false)() {
-        
-        // glDisable(GL_CULL_FACE);
 
         // Bind our vertex array
         glBindVertexArray(partVAO);
-
-        // // Apply camera
-        
-        // // Use the shader
 
         static if (isMask) {
             partMaskShader.use();
@@ -160,7 +168,6 @@ private:
     void endMask() {
 
         // We're done stencil testing, disable it again so that we don't accidentally mask more stuff out
-        
         glStencilMask(0xFF);
         glStencilFunc(GL_ALWAYS, 1, 0xFF);   
         glDisable(GL_STENCIL_TEST);
@@ -172,6 +179,13 @@ private:
     }
 
     void beginDodgeContent() {
+
+        // This tells OpenGL that as long as the stencil buffer is 0
+        // in other words that the dodge texture was not drawn there
+        // that it's okay to draw there.
+        //
+        // This effectively makes so that the dodge reference cuts out
+        // a part of this part's texture where they overlap.
         glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
         glStencilMask(0x00);
     }
@@ -189,22 +203,6 @@ private:
 
         // Disable writing to stencil buffer and enable writing to color buffer
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    }
-
-    // reset mask
-    void resetMask() {
-
-        // Check if we want to go a level up
-        if (maskingMode == MaskingMode.NoMask) {
-
-            // If we have a parent try to reset to their mask.
-            //if (parent !is null) parent.resetMask(vp);
-        }
-
-        // We have a mask, reset the stencil buffer to use it.
-        beginMask();
-        renderMask();
-        beginMaskContent();
     }
 
 public:
@@ -287,63 +285,69 @@ public:
     }
 
     override
-    bool draw() {
-        if (!enabled) return true;
+    void draw() {
+        if (!enabled) return;
+
+        // Dodging is handled through the stencil buffer so we need to 
+        // fill it with our "dodge" reference's texture first.
+        // Additionally dodge masks can not co-exist with normal masks,
+        // so they are a special case.
+        if (dodge !is null) {
+            dodge.beginMask();
+            dodge.renderMask();
+            beginDodgeContent();
+                
+            // We're not doing any masking operations here, so just draw ourselves.
+            drawSelf();
+
+            endMask();
+
+            if (parent !is null) parent.resetMask();
+
+            return;
+        }
 
         switch(maskingMode) {
             case MaskingMode.ContentMask:
 
-                // Render the mask and self
-                if (dodge !is null) {
-                    dodge.beginMask();
-                    dodge.renderMask();
-                    beginDodgeContent();
-                }
+                // I have no idea why this works
+                // someone please explain
+                endMask();
                 
-                // We're not doing any masking operations here, so just draw ourselves.
+                // Draw ourselves first
                 drawSelf();
 
-                if (dodge !is null) endMask();
-                
-
-                beginMask();
-                renderMask();
-                beginMaskContent();
+                // Then reset our mask
+                this.resetMask();
 
                 // Render the children to mask
                 foreach(gchild; children) {
                     if (auto child = cast(Part)gchild) {
-                        if (child.draw()) {
+                        child.draw();
 
-                            // Reset the masking threshold
-                            // Note the threshold changes for every child drawn
-                            // We want to make sure it stays up to date
-                            glUniform1f(mthreshold, maskAlphaThreshold);
-                            glUniform1f(mgopacity, opacity);
+                        // Reset the masking threshold
+                        // Note the threshold changes for every child drawn
+                        // We want to make sure it stays up to date
+                        glUniform1f(mthreshold, maskAlphaThreshold);
+                        glUniform1f(mgopacity, opacity);
 
-                            // Reset mask
-                            this.resetMask();
-                        }
+                        this.resetMask();
+
                     } else {
                         gchild.draw();
+                        this.resetMask();
                     }
                 }
 
                 endMask();
-                return true;
+
+                if (parent !is null) parent.resetMask();
+                return;
 
             default: 
-                if (dodge !is null) {
-                    beginMask();
-                    dodge.renderMask();
-                    beginDodgeContent();
-                }
 
                 // We're not doing any masking operations here, so just draw ourselves.
                 drawSelf();
-
-                if (dodge !is null) endMask();
-                
 
                 // Draw children
                 foreach(gchild; children) {
@@ -352,18 +356,11 @@ public:
                         // Draw children
                         child.draw();
 
-                        // If need be reset to the parent's mask
-                        // NOTE: This is to ensure parent masks are retained
-                        // NOTE: This is backtracking, it will backtrack until we've reached a mask
-                        // Or we've run out of parents to check
-                        if (auto parentMesh = cast(Part)parent) {
-                            parentMesh.resetMask();
-                        }
                     } else {
                         gchild.draw();
                     }
                 }
-                return false;
+                return;
         }
     }
 
