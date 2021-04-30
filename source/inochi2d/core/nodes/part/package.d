@@ -71,7 +71,10 @@ protected:
     void resetMask() {
 
         // No need to restore masks for something that have no mask
-        if (MaskingMode.NoMask) return;
+        if (MaskingMode.NoMask) {
+            if (parent !is null) parent.resetMask();
+            return;
+        }
 
         // We have a mask, reset the stencil buffer to use it.
         beginMask();
@@ -352,10 +355,7 @@ public:
                 // Draw children
                 foreach(gchild; children) {
                     if (auto child = cast(Part)gchild) {
-                        
-                        // Draw children
                         child.draw();
-
                     } else {
                         gchild.draw();
                     }
