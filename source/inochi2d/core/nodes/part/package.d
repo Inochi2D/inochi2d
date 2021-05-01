@@ -1,4 +1,6 @@
 /*
+    Inochi2D Part
+
     Copyright © 2020, Inochi2D Project
     Distributed under the 2-Clause BSD License, see LICENSE file.
     
@@ -251,6 +253,13 @@ public:
         this.updateIndices();
         this.updateUVs();
         this.updateVertices();
+    }
+
+    /**
+        Returns the mesh data for this Part.
+    */
+    final MeshData getMesh() {
+        return this.data;
     }
 
     /**
