@@ -10,7 +10,7 @@ module inochi2d.core.nodes;
 import inochi2d.math;
 
 public import inochi2d.core.nodes.part;
-public import inochi2d.core.nodes.splinegroup;
+public import inochi2d.core.nodes.bonegroup;
 
 
 /**
