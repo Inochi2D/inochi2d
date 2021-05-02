@@ -16,14 +16,8 @@ private:
     mat4 translation_ = mat4.identity;
     mat4 rotation_ = mat4.identity;
     mat4 scale_ = mat4.identity;
-    mat4 offset_ = mat4.identity;
 
 public:
-
-    /**
-        The origin of the transform
-    */
-    vec2 origin = vec2(0, 0);
 
     /**
         The translation of the transform
@@ -109,7 +103,6 @@ public:
     */
     Transform opBinary(string op : "*")(Transform other) {
         Transform tnew;
-        tnew.origin = other.origin;
 
         //
         //  ROTATION
@@ -172,11 +165,10 @@ public:
         Updates the internal matrix of this transform
     */
     void update() {
-        offset_ = mat4.translation(vec3(origin, 0));
         translation_ = mat4.translation(translation);
         rotation_ = quat.euler_rotation(this.rotation.x, this.rotation.y, this.rotation.z).to_matrix!(4, 4);
         scale_ = mat4.scaling(scale.x, scale.y, 1);
-        trs =  translation_ * rotation_ * scale_ * offset_;
+        trs =  translation_ * rotation_ * scale_;
     }
 
     string toString() {
