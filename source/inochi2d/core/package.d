@@ -10,7 +10,7 @@ module inochi2d.core;
 
 public import inochi2d.core.shader;
 public import inochi2d.core.texture;
-public import inochi2d.core.node;
+public import inochi2d.core.nodes;
 public import inochi2d.core.puppet;
 
 import bindbc.opengl;

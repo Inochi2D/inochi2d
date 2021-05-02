@@ -1,5 +1,4 @@
 module inochi2d.core.puppet;
-import inochi2d.core.node;
 import inochi2d.core.nodes;
 import inochi2d.math;
 import std.algorithm.sorting;
