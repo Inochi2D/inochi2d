@@ -27,7 +27,7 @@ private:
             // There's nothing to "orient" ourselves against, so
             // We'll just have a rotational value of 0
             if (next >= joints.length) {
-                computedJoints[i] = mat3.translation(joints[i]);
+                computedJoints[i] = mat3.translation(vec3(joints[i], 0));
                 break; // We're already at the end, no need to check condition again
             }
 
@@ -46,7 +46,7 @@ private:
             );
 
             // Apply our wonky math to our computed joint
-            computedJoints[i] = mat3.translation(joints[i]) * mat3.zrotation(startAngle-endAngle);
+            computedJoints[i] = mat3.translation(vec3(joints[i], 0)) * mat3.zrotation(startAngle-endAngle);
         }
     }
 
