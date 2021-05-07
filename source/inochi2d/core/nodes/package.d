@@ -10,7 +10,8 @@ module inochi2d.core.nodes;
 import inochi2d.math;
 
 public import inochi2d.core.nodes.part;
-public import inochi2d.core.nodes.bonegroup;
+public import inochi2d.core.nodes.pathdeform;
+public import inochi2d.core.nodes.drawable;
 
 
 /**
@@ -136,22 +137,6 @@ public:
         Draws this node.
     */
     void drawOne() { }
-
-    /**
-        Forces this node to be drawn.
-    */
-    final void forceDrawOne() {
-        
-        // If we're already enabled no need to force anything
-        if (enabled) {
-            drawOne();
-            return;
-        }
-
-        enabled = !enabled;
-        drawOne();
-        enabled = !enabled;
-    }
 
     /**
         Updates the node

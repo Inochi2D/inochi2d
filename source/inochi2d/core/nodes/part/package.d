@@ -7,23 +7,23 @@
     Authors: Luna Nielsen
 */
 module inochi2d.core.nodes.part;
-import inochi2d.math;
+import inochi2d.core.nodes.drawable;
 import inochi2d.core;
+import inochi2d.math;
 import bindbc.opengl;
 import std.exception;
 import std.algorithm.mutation : copy;
 
 public import inochi2d.core.nodes.part.meshdata;
 
-private {
-    GLuint partVAO;
-    Shader partShader;
-    Shader partMaskShader;
-}
 
 package(inochi2d) {
+    private {
+        Shader partShader;
+        Shader partMaskShader;
+    }
+
     void inInitPart() {
-        glGenVertexArrays(1, &partVAO);
         partShader = new Shader(import("basic/basic.vert"), import("basic/basic.frag"));
         partMaskShader = new Shader(import("basic/basic.vert"), import("basic/basic-mask.frag"));
     }
@@ -33,91 +33,38 @@ package(inochi2d) {
     Masking mode
 */
 enum MaskingMode {
-    /**
-        The mesh should not act as a mask
-    */
-    NoMask,
 
     /**
-        The mesh draws itself and then masks children
+        The part should be masked by the drawables specified
     */
-    ContentMask,
+    Mask,
 
     /**
-        The mesh is a standalone mask, its texture should not be drawn
+        The path should be dodge masked by the drawables specified
     */
-    StandaloneMask
+    DodgeMask
 }
 
 /**
     Dynamic Mesh Part
 */
-class Part : Node {
-protected:
-    /**
-        The mesh data of this part
-
-        NOTE: DO NOT MODIFY!
-        The data in here is only to be used for reference.
-    */
-    MeshData data;
-
-    /**
-        The mesh's vertices
-    */
-    vec2[] vertices;
-
-
-    // reset mask
-    override
-    void resetMask() {
-
-        // No need to restore masks for something that have no mask
-        if (MaskingMode.NoMask) {
-            if (parent !is null) parent.resetMask();
-            return;
-        }
-
-        // We have a mask, reset the stencil buffer to use it.
-        beginMask();
-        renderMask();
-        beginMaskContent();
-    }
-
+class Part : Drawable {
 private:
-    GLuint ibo;
-    GLuint vbo;
     GLuint uvbo;
+
+    /* GLSL Uniforms (Normal) */
     GLint mvp;
     GLint gopacity;
 
+    /* GLSL Uniforms (Masks) */
     GLint mmvp;
     GLint mthreshold;
     GLint mgopacity;
-
-    void updateIndices() {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, data.indices.length*ushort.sizeof, data.indices.ptr, GL_STATIC_DRAW);
-    }
 
     void updateUVs() {
         glBindBuffer(GL_ARRAY_BUFFER, uvbo);
         glBufferData(GL_ARRAY_BUFFER, data.uvs.length*vec2.sizeof, data.uvs.ptr, GL_STATIC_DRAW);
     }
-
-    void updateVertices() {
-
-        // Important check since the user can change this every frame
-        enforce(
-            vertices.length == data.vertices.length, 
-            "Data length mismatch, if you want to change the mesh you need to change its data with Part.rebuffer."
-        );
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, vertices.length*vec2.sizeof, vertices.ptr, GL_DYNAMIC_DRAW);
-    }
-
-
-
 
     /*
         RENDERING
@@ -125,8 +72,8 @@ private:
 
     void drawSelf(bool isMask = false)() {
 
-        // Bind our vertex array
-        glBindVertexArray(partVAO);
+        // Bind the vertex array
+        this.bindVertexArray();
 
         static if (isMask) {
             partMaskShader.use();
@@ -152,16 +99,13 @@ private:
         glBindBuffer(GL_ARRAY_BUFFER, uvbo);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, null);
 
-        // Bind element array and draw our mesh
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-        glDrawElements(GL_TRIANGLES, cast(int)data.indices.length, GL_UNSIGNED_SHORT, null);
+        // Bind index buffer
+        this.bindIndex();
 
         // Disable the vertex attribs after use
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
     }
-
-    
 
     void beginMask() {
 
@@ -195,6 +139,8 @@ private:
         glStencilMask(0x00);
     }
 
+protected:
+    override
     void renderMask() {
         
         // Enable writing to stencil buffer and disable writing to color buffer
@@ -215,12 +161,12 @@ public:
     /**
         A part this part should "dodge"
     */
-    Part dodge;
+    Drawable[] mask;
 
     /**
         Masking mode
     */
-    MaskingMode maskingMode;
+    MaskingMode maskingMode = MaskingMode.Mask;
     
     /**
         Alpha Threshold for the masking system, the higher the more opaque pixels will be discarded in the masking process
@@ -233,16 +179,8 @@ public:
     float opacity = 1;
 
     this(MeshData data, Node parent = null) {
-        super(parent);
-        this.data = data;
-
-        // Set the deformable points to their initial position
-        this.vertices = data.vertices.dup;
-
-        // Generate the buffers
-        glGenBuffers(1, &vbo);
+        super(data, parent);
         glGenBuffers(1, &uvbo);
-        glGenBuffers(1, &ibo);
 
         mvp = partShader.getUniformLocation("mvp");
         gopacity = partShader.getUniformLocation("opacity");
@@ -250,33 +188,13 @@ public:
         mmvp = partMaskShader.getUniformLocation("mvp");
         mthreshold = partMaskShader.getUniformLocation("threshold");
         mgopacity = partMaskShader.getUniformLocation("opacity");
-        this.updateIndices();
         this.updateUVs();
-        this.updateVertices();
     }
 
-    /**
-        Returns the mesh data for this Part.
-    */
-    final MeshData getMesh() {
-        return this.data;
-    }
-
-    /**
-        Changes this mesh's data
-    */
-    final void rebuffer(MeshData data) {
-        this.data = data;
-        this.updateIndices();
+    override
+    void rebuffer(MeshData data) {
+        super.rebuffer(data);
         this.updateUVs();
-        this.updateVertices();
-    }
-
-    /**
-        Resets the vertices
-    */
-    void resetVerts() {
-        this.vertices = data.vertices.dup;
     }
 
     override
@@ -285,91 +203,35 @@ public:
         
         glUniform1f(mthreshold, maskAlphaThreshold);
         glUniform1f(mgopacity, opacity);
-        if (dodge !is null) {
+        
+        if (mask.length > 0) {
             beginMask();
-            dodge.renderMask();
-            beginDodgeContent();
+
+            foreach(drawable; mask) {
+                drawable.renderMask();
+            }
+
+            // Begin drawing content
+            if (maskingMode == MaskingMode.Mask) beginMaskContent();
+            else beginDodgeContent();
+            
+            // We are the content
+            this.drawSelf();
+
+            endMask();
+            return;
         }
 
-        drawSelf();
-
-        if (dodge !is null) endMask();
+        this.drawSelf();
     }
 
     override
     void draw() {
         if (!enabled) return;
+        this.drawOne();
 
-        // Dodging is handled through the stencil buffer so we need to 
-        // fill it with our "dodge" reference's texture first.
-        // Additionally dodge masks can not co-exist with normal masks,
-        // so they are a special case.
-        if (dodge !is null) {
-            dodge.beginMask();
-            dodge.renderMask();
-            beginDodgeContent();
-                
-            // We're not doing any masking operations here, so just draw ourselves.
-            drawSelf();
-
-            endMask();
-
-            if (parent !is null) parent.resetMask();
-
-            return;
-        }
-
-        switch(maskingMode) {
-            case MaskingMode.ContentMask:
-
-                // I have no idea why this works
-                // someone please explain
-                endMask();
-                
-                // Draw ourselves first
-                drawSelf();
-
-                // Then reset our mask
-                this.resetMask();
-
-                // Render the children to mask
-                foreach(gchild; children) {
-                    if (auto child = cast(Part)gchild) {
-                        child.draw();
-
-                        // Reset the masking threshold
-                        // Note the threshold changes for every child drawn
-                        // We want to make sure it stays up to date
-                        glUniform1f(mthreshold, maskAlphaThreshold);
-                        glUniform1f(mgopacity, opacity);
-
-                        this.resetMask();
-
-                    } else {
-                        gchild.draw();
-                        this.resetMask();
-                    }
-                }
-
-                endMask();
-
-                if (parent !is null) parent.resetMask();
-                return;
-
-            default: 
-
-                // We're not doing any masking operations here, so just draw ourselves.
-                drawSelf();
-
-                // Draw children
-                foreach(gchild; children) {
-                    if (auto child = cast(Part)gchild) {
-                        child.draw();
-                    } else {
-                        gchild.draw();
-                    }
-                }
-                return;
+        foreach(child; children) {
+            child.draw();
         }
     }
 

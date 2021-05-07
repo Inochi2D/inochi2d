@@ -24,7 +24,7 @@ private:
         
         // If we have a part do the main check
         if (Part part = cast(Part)node) {
-            if (part.maskingMode != MaskingMode.NoMask) {
+            if (part.mask.length > 0) {
 
                 // We've found a root masked part
                 // These will recursively draw their children!
@@ -99,7 +99,7 @@ public:
         this.selfSort();
 
         foreach(rootPart; rootParts) {
-            if (rootPart.maskingMode != MaskingMode.NoMask) {
+            if (rootPart.mask.length > 0) {
                 
                 // Parts that are masked will need to recursively draw their children
                 // otherwise the masking would not work and alternatives are not that

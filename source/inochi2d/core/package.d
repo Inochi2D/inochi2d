@@ -51,6 +51,7 @@ package(inochi2d) {
         inSetViewport(640, 480);
         
         // Initialize dynamic meshes
+        inInitDrawable();
         inInitPart();
 
         // Some defaults that should be changed by app writer
