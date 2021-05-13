@@ -9,6 +9,11 @@ Currently this library and the standard is in the prototype stage and is not rec
 
 &nbsp;
 
+
+https://user-images.githubusercontent.com/7032834/118180826-4c39f600-b437-11eb-99a0-73e325408895.mp4
+
+*Early prototype video*
+
 # Supported platforms
 Inochi2D is being developed on Linux but is being made with cross-platform use in mind and thus should work on Windows.
 
