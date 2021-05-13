@@ -132,11 +132,11 @@ public:
 
         // Calculate new TRS
         vec3 trans = vec3(
-            // We want to support parts being placed correctly even if they're rotation locked
-            // therefore we need to apply the worldspace rotation here
+            // We want to support parts being placed correctly even if they're rotation or scale locked
+            // therefore we need to apply the worldspace rotation and scale here
             // That has been pre-calculated above.
-            // Do note we also multiply by its inverse, this is so that the rotations don't
-            // start stacking up weirdly causing cascadingly more extreme rotation.
+            // Do note we also multiply by its inverse, this is so that the rotations and scaling doesn't
+            // start stacking up weirdly causing cascadingly more extreme transformation.
             tnew.scale_ * tnew.rotation_ * this.translation_ * tnew.scale_.inverse() * tnew.rotation_.inverse() * 
 
             // Also our local translation

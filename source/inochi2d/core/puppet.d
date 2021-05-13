@@ -21,26 +21,17 @@ private:
     Part[] rootParts;
 
     void scanPartsRecurse(Node node) {
-        
+
+        // Don't count disabled parts
+        if (!node.enabled) return;
+
         // If we have a part do the main check
         if (Part part = cast(Part)node) {
-            if (part.mask.length > 0) {
-
-                // We've found a root masked part
-                // These will recursively draw their children!
-                // so no need to iterate down their branches.
-                rootParts ~= part;
-            } else {
-
-                // We've found a root no-masking part
-                // These will NOT be drawn recursively
-                // So we have to recurse down here to sort them
-                // by depth as well.
-                rootParts ~= part;
-                foreach(child; part.children) {
-                    scanPartsRecurse(child);
-                }
+            rootParts ~= part;
+            foreach(child; part.children) {
+                scanPartsRecurse(child);
             }
+            
         } else {
 
             // Non-part nodes just need to be recursed through,
