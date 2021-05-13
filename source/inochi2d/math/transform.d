@@ -117,6 +117,16 @@ public:
         tnew.rotation_ = quat.euler_rotation(tnew.rotation.x, tnew.rotation.y, tnew.rotation.z).to_matrix!(4, 4);
 
         //
+        //  SCALE
+        //
+
+        // Handle scale locks
+        vec2 scale = vec2(this.scale_ * vec4(other.scale, 1, 1));
+        if (!lockScaleX) tnew.scale.x = scale.x;
+        if (!lockScaleY) tnew.scale.y = scale.y;
+        tnew.scale_ = mat4.scaling(scale.x, scale.y, 1);
+
+        //
         //  TRANSLATION
         //
 
@@ -127,7 +137,7 @@ public:
             // That has been pre-calculated above.
             // Do note we also multiply by its inverse, this is so that the rotations don't
             // start stacking up weirdly causing cascadingly more extreme rotation.
-            tnew.rotation_ * this.translation_ * tnew.rotation_.inverse() * 
+            tnew.scale_ * tnew.rotation_ * this.translation_ * tnew.scale_.inverse() * tnew.rotation_.inverse() * 
 
             // Also our local translation
             vec4(other.translation, 1)
@@ -138,15 +148,6 @@ public:
         if (!lockTranslationY) tnew.translation.y = trans.y;
         if (!lockTranslationZ) tnew.translation.z = trans.z;
 
-        //
-        //  SCALE
-        //
-
-        // Handle scale locks
-        vec2 scale = vec2(this.scale_ * vec4(other.scale, 1, 1));
-        if (!lockScaleX) tnew.scale.x = scale.x;
-        if (!lockScaleY) tnew.scale.y = scale.y;
-
         tnew.update();
 
         return tnew;
@@ -154,8 +155,6 @@ public:
 
     /**
         Gets the matrix for this transform
-
-        TODO: make this cached and lazy updated?
     */
     mat4 matrix() {
         return trs;
@@ -175,4 +174,44 @@ public:
         import std.format : format;
         return "%s,\n%s,\n%s\n%s".format(trs.toPrettyString, translation.toString, rotation.toString, scale.toString);
     }
+}
+
+/**
+    A 2D transform;
+*/
+struct Transform2D {
+private:
+    mat3 trs;
+public:
+    /**
+        Translate
+    */
+    vec2 translation;
+    /**
+        Scale
+    */
+    vec2 scale;
+    
+    /**
+        Rotation
+    */
+    float rotation;
+
+    /**
+        Gets the matrix for this transform
+    */
+    mat3 matrix() {
+        return trs;
+    }
+
+    /**
+        Updates the internal matrix of this transform
+    */
+    void update() {
+        mat3 translation_ = mat3.translation(vec3(translation, 0));
+        mat3 rotation_ = mat3.zrotation(rotation);
+        mat3 scale_ = mat3.scaling(scale.x, scale.y, 1);
+        trs =  translation_ * rotation_ * scale_;
+    }
+
 }
