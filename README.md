@@ -5,7 +5,8 @@
 # Inochi2D
 Inochi2D is a library for realtime 2D puppet animation and the reference implementation of the Inochi2D Puppet standard.
 
-Currently this library and the standard is in the prototype stage and is not recommended for production use.
+**Currently this library and the standard is in the prototype stage and is not recommended for production use.**  
+If you want to try it out anyways you can clone this repo and run `dub add-local (inochi2d folder) "1.0.0"` then manually add it as a dependency in to dub.sdl/json.
 
 &nbsp;
 
@@ -14,49 +15,77 @@ https://user-images.githubusercontent.com/7032834/118180826-4c39f600-b437-11eb-9
 
 *Early prototype video*
 
+&nbsp;
+
 # Supported platforms
-Inochi2D is being developed on Linux but is being made with cross-platform use in mind and thus should work on Windows.
+The reference library requires at least OpenGL 4.2 or above, as well support for the SPIR-V ARB extension for per-part shaders.  
+*Inochi2D will disable custom shaders if SPIR-V is not found.* 
 
-Android and iOS are currently not supported due to the lack of an OpenGL ES backend.
+Implementors are free to implement Inochi2D over other graphics APIs and abstractions and should work on most modern graphics APIs (newer than OpenGL 2)
 
-The Inochi2D Puppet standard's only requirement is the hardware and software supporting some form of modern programmable hardware accellerated 3D rendering. (Eg OpenGL, Vulkan, Metal or DirectX)
-
-&nbsp;
-
-# Testing
-Currently the testbed used to test and develop Inochi2D in its prototype stage is in `examples/basicrender`.
+An official Unity implementation will be provided once 1.0 is complete.
 
 &nbsp;
 
-# How will Inochi2D work?
-Inochi2D will expose an API for loading/saving and manipulating 2D puppets mainly for use in realtime applications.
+# How does Inochi2D work?
 
-The Inochi2D Puppet standard exposes all the neccesary mesh, deformation information as well as physics handling information for stuff like hair, joints and the like which Inochi2D uses to generate a realtime puppet which can be manipulated via eg. facial/body tracking and predefined animations.
+Inochi2D contains all your parts (textures) in a tree of Node objects.  
+Nodes have their own individual purpose.
 
-Inochi2D provides the means to render your puppet to an OpenGL context. Do note that the library does change OpenGL state.
+### Parts
+Parts contain the actual textures and vertex information of your model.  
+Each part is an individual texture and set of vertices.
 
-More details will be available as the library develops.
+### PathDeforms
+PathDeforms deform its child Drawables based on its handles.  
+PathDeforms can deform multiple Drawables at once.
+
+### Masks
+Masks are a Drawable which allow you to specify a shape.  
+That shape is used to mask Parts without being a texture itself.
+
+&nbsp;  
+*More Node types to come...*
+
+### Do Note
+_The spec is still work in progress and is subject to change.  
+More details will be revealed once 1.0 of the spec is released._
 
 &nbsp;
 
-# How to use
-Add the library to your project from the dub database.
-```
-dub add inochi2d
-```
+# Bootstrapping Inochi2D
 
-Inochi2D can be boostrapped in GLFW with the following code
+Bootstrapping Inochi2D depends on the backing window managment library you are using.
+
+Inochi2D can be boostrapped in GLFW (bindbc) with the following code
 ```d
-// After creating your OpenGL context and making it current...
+// Loads GLFW
+loadGLFW();
+glfwInit();
+
+// Create Window and initialize OpenGL 4.2 with compat profile
+glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
+glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+window = glfwCreateWindow(1024, 1024, "Inochi2D App".toStringz, null, null);
+
+// Make OpenGL current and load its functions.
+glfwMakeContextCurrent(window);
+loadOpenGL();
+
 // A timing function that returns the current applications runtime in seconds and milliseconds is needed
 inInit(cast(double function())glfwGetTime);
 
 // Get the viewport size, which is the size of the scene
 int sceneWidth, sceneHeight;
+
+// It is highly recommended to change the viewport with
+// inSetViewport to match the viewport you want, otherwise it'll be 640x480
+inSetViewport(1024, 1024);
 inGetViewport(sceneWidth, sceneHeight);
 
-// NOTE: It is highly recommended to change the viewport with
-// inSetViewport to match the viewport you want, otherwise it'll be 640x480
+// Also many vtuber textures are pretty big so let's zoom out a bit.
+inGetCamera().scale = vec2(0.5);
 
 // NOTE: If you want to implement camera switching (for eg camera presets) use
 // inSetCamera
@@ -65,6 +94,9 @@ inGetViewport(sceneWidth, sceneHeight);
 Puppet myPuppet = loadPuppet("myPuppet.inp");
 
 while(!glfwWindowShouldClose(window)) {
+    // NOTE: Inochi2D does not itself clear the main framebuffer
+    // you have to do that your self.
+    glClear(GL_COLOR_BUFFER_BIT);
 
     // Run updateInochi2D first
     // This updates various submodules and time managment for animation
@@ -73,8 +105,15 @@ while(!glfwWindowShouldClose(window)) {
     // Imagine there's a lot of rendering code here
     // Maybe even some game logic or something
 
-    // Draw myPuppet, this will change the framebuffer to an internal framebuffer
+    // Begins drawing in to the Inochi2D scene
+    // NOTE: You *need* to do this otherwise rendering may break
+    inBeginScene();
+
+    // Draw myPuppet.
     myPuppet.draw();
+
+    // Ends drawing in to the Inochi2D scene.
+    inEndScene();
 
     // Draw the scene, background is transparent
     inSceneDraw(vec4i(0, 0, sceneWidth, sceneHeight));
@@ -86,7 +125,7 @@ while(!glfwWindowShouldClose(window)) {
 ```
 
 ### NOTE
-Currently not in the dub database use `dub add-local (inochi2d folder) "1.0.0"` to add inochi2d as a local package. You can then add `inochi2d` as a dependency as can be seen in `examples/basicrender`
+Currently not in the dub database use `dub add-local (inochi2d folder) "1.0.0"` to add inochi2d as a local package. You can then add `inochi2d` as a dependency.
 
 &nbsp;
 
