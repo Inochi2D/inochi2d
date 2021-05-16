@@ -6,7 +6,7 @@
     
     Authors: Luna Nielsen
 */
-module inochi2d.core.nodes.part.meshdata;
+module inochi2d.core.meshdata;
 import inochi2d.math;
 import inochi2d.core.texture;
 
@@ -18,11 +18,6 @@ struct MeshData {
         Vertices in the mesh
     */
     vec2[] vertices;
-
-    /**
-        Texture UVs in the mesh
-    */
-    Texture[] textures;
 
     /**
         Base uvs
