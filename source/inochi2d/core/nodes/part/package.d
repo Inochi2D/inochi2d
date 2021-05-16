@@ -14,7 +14,7 @@ import bindbc.opengl;
 import std.exception;
 import std.algorithm.mutation : copy;
 
-public import inochi2d.core.nodes.part.meshdata;
+public import inochi2d.core.meshdata;
 
 
 package(inochi2d) {
@@ -50,6 +50,10 @@ enum MaskingMode {
 */
 class Part : Drawable {
 private:
+    
+    /* current texture */
+    size_t currentTexture = 0;
+    
     GLuint uvbo;
 
     /* GLSL Uniforms (Normal) */
@@ -87,7 +91,7 @@ private:
         }
 
         // Bind the texture
-        data.textures[0].bind();
+        textures[currentTexture].bind();
 
         // Enable points array
         glEnableVertexAttribArray(0);
@@ -125,6 +129,10 @@ protected:
     }
 
 public:
+    /**
+        List of textures this part can use
+    */
+    Texture[] textures;
 
     /**
         A part this part should "dodge"
@@ -146,8 +154,9 @@ public:
     */
     float opacity = 1;
 
-    this(MeshData data, Node parent = null) {
+    this(MeshData data, Texture[] textures, Node parent = null) {
         super(data, parent);
+        this.textures = textures;
         glGenBuffers(1, &uvbo);
 
         mvp = partShader.getUniformLocation("mvp");

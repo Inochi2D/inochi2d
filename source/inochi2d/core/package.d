@@ -12,6 +12,7 @@ public import inochi2d.core.shader;
 public import inochi2d.core.texture;
 public import inochi2d.core.nodes;
 public import inochi2d.core.puppet;
+public import inochi2d.core.meshdata;
 
 import bindbc.opengl;
 import inochi2d.math;
@@ -53,6 +54,7 @@ package(inochi2d) {
         // Initialize dynamic meshes
         inInitDrawable();
         inInitPart();
+        inInitMask();
 
         // Some defaults that should be changed by app writer
         inCamera = new Camera;

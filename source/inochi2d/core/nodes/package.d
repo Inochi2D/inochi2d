@@ -10,6 +10,7 @@ module inochi2d.core.nodes;
 import inochi2d.math;
 
 public import inochi2d.core.nodes.part;
+public import inochi2d.core.nodes.mask;
 public import inochi2d.core.nodes.pathdeform;
 public import inochi2d.core.nodes.drawable;
 
