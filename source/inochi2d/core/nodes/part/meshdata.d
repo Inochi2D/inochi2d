@@ -9,6 +9,7 @@
 module inochi2d.core.nodes.part.meshdata;
 import inochi2d.math;
 import inochi2d.core.texture;
+
 /**
     Mesh data
 */

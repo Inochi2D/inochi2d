@@ -107,38 +107,6 @@ private:
         glDisableVertexAttribArray(1);
     }
 
-    void beginMask() {
-
-        // Enable and clear the stencil buffer so we can write our mask to it
-        glEnable(GL_STENCIL_TEST);
-        glClear(GL_STENCIL_BUFFER_BIT);
-    }
-
-    void endMask() {
-
-        // We're done stencil testing, disable it again so that we don't accidentally mask more stuff out
-        glStencilMask(0xFF);
-        glStencilFunc(GL_ALWAYS, 1, 0xFF);   
-        glDisable(GL_STENCIL_TEST);
-    }
-
-    void beginMaskContent() {
-        glStencilFunc(GL_EQUAL, 1, 0xFF);
-        glStencilMask(0x00);
-    }
-
-    void beginDodgeContent() {
-
-        // This tells OpenGL that as long as the stencil buffer is 0
-        // in other words that the dodge texture was not drawn there
-        // that it's okay to draw there.
-        //
-        // This effectively makes so that the dodge reference cuts out
-        // a part of this part's texture where they overlap.
-        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-        glStencilMask(0x00);
-    }
-
 protected:
     override
     void renderMask() {
@@ -205,20 +173,20 @@ public:
         glUniform1f(mgopacity, opacity);
         
         if (mask.length > 0) {
-            beginMask();
+            inBeginMask();
 
             foreach(drawable; mask) {
                 drawable.renderMask();
             }
 
             // Begin drawing content
-            if (maskingMode == MaskingMode.Mask) beginMaskContent();
-            else beginDodgeContent();
+            if (maskingMode == MaskingMode.Mask) inBeginMaskContent();
+            else inBeginDodgeContent();
             
             // We are the content
             this.drawSelf();
 
-            endMask();
+            inEndMask();
             return;
         }
 

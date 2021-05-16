@@ -13,7 +13,11 @@ package(inochi2d) {
 }
 
 /**
-    A drawable
+    Nodes that are meant to render something in to the Inochi2D scene
+    Other nodes don't have to render anything and serve mostly other 
+    purposes.
+
+    The main types of Drawables are Parts and Masks
 */
 abstract class Drawable : Node {
 private:
@@ -129,4 +133,59 @@ public:
         vertices[] = data.vertices;
     }
 
+}
+
+/**
+    Begins a mask
+
+    This causes the next draw calls until inBeginMaskContent/inBeginDodgeContent or inEndMask 
+    to be written to the current mask.
+
+    This also clears whatever old mask there was.
+*/
+void inBeginMask() {
+
+    // Enable and clear the stencil buffer so we can write our mask to it
+    glEnable(GL_STENCIL_TEST);
+    glClear(GL_STENCIL_BUFFER_BIT);
+}
+
+/**
+    End masking
+
+    Once masking is ended content will no longer be masked by the defined mask.
+*/
+void inEndMask() {
+
+    // We're done stencil testing, disable it again so that we don't accidentally mask more stuff out
+    glStencilMask(0xFF);
+    glStencilFunc(GL_ALWAYS, 1, 0xFF);   
+    glDisable(GL_STENCIL_TEST);
+}
+
+/**
+    Stars masking content
+
+    NOTE: This have to be run within a inBeginMask and inEndMask block!
+*/
+void inBeginMaskContent() {
+    glStencilFunc(GL_EQUAL, 1, 0xFF);
+    glStencilMask(0x00);
+}
+
+/**
+    Stars dodging content
+
+    NOTE: This have to be run within a inBeginMask and inEndMask block!
+*/
+void inBeginDodgeContent() {
+
+    // This tells OpenGL that as long as the stencil buffer is 0
+    // in other words that the dodge texture was not drawn there
+    // that it's okay to draw there.
+    //
+    // This effectively makes so that the dodge reference cuts out
+    // a part of this part's texture where they overlap.
+    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+    glStencilMask(0x00);
 }
