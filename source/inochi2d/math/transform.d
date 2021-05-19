@@ -90,6 +90,11 @@ public:
     void lockScale(bool value) { lockScaleX = lockScaleY = value; }
 
     /**
+        Whether the transform should snap to pixels
+    */
+    bool pixelSnap = false;
+
+    /**
         Initialize a transform
     */
     this(vec3 translation, vec3 rotation = vec3(0), vec2 scale = vec2(1, 1)) {
@@ -144,9 +149,9 @@ public:
         );
 
         // Handle translation locks
-        if (!lockTranslationX) tnew.translation.x = trans.x;
-        if (!lockTranslationY) tnew.translation.y = trans.y;
-        if (!lockTranslationZ) tnew.translation.z = trans.z;
+        if (!lockTranslationX) tnew.translation.x = pixelSnap ? round(trans.x) : trans.x;
+        if (!lockTranslationY) tnew.translation.y = pixelSnap ? round(trans.y) : trans.y;
+        if (!lockTranslationZ) tnew.translation.z = pixelSnap ? round(trans.z) : trans.z;
 
         tnew.update();
 
