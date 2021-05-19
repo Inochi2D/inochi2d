@@ -135,7 +135,7 @@ public:
     /**
         Creates a new empty texture
     */
-    this(int width, int height, GLuint mode = GL_RGBA, int alignment = 4) {
+    this(int width, int height, GLuint mode = GL_SRGB_ALPHA, int alignment = 4) {
 
         // Create an empty texture array with no data
         ubyte[] empty = new ubyte[width_*height_*alignment];
@@ -147,7 +147,7 @@ public:
     /**
         Creates a new texture from specified data
     */
-    this(ubyte[] data, int width, int height, GLuint mode = GL_RGBA, int alignment = 4) {
+    this(ubyte[] data, int width, int height, GLuint mode = GL_SRGB_ALPHA, int alignment = 4) {
         this.colorMode = mode;
         this.alignment = alignment;
         this.width_ = width;
@@ -159,7 +159,7 @@ public:
 
         // Set default filtering and wrapping
         this.setFiltering(Filtering.Linear);
-        this.setWrapping(Wrapping.Clamp);
+        this.setWrapping(Wrapping.Repeat);
     }
 
     /**
@@ -200,7 +200,7 @@ public:
     void setData(ubyte[] data) {
         this.bind();
         glPixelStorei(GL_UNPACK_ALIGNMENT, alignment);
-        glTexImage2D(GL_TEXTURE_2D, 0, colorMode, width_, height_, 0, colorMode, GL_UNSIGNED_BYTE, data.ptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, colorMode, width_, height_, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.ptr);
         glGenerateMipmap(GL_TEXTURE_2D);
     }
 

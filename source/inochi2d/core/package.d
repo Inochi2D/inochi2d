@@ -82,7 +82,11 @@ package(inochi2d) {
 /**
     Begins rendering to the framebuffer
 */
-void inBeginScene() {
+void inBeginScene() { 
+    glEnable(GL_FRAMEBUFFER_SRGB); 
+
+    // Make sure to reset our viewport if someone has messed with it
+    glViewport(0, 0, inViewportWidth, inViewportHeight);
 
     // Bind our framebuffer
     glBindFramebuffer(GL_READ_FRAMEBUFFER, fBuffer);
@@ -101,6 +105,8 @@ void inBeginScene() {
 void inEndScene() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDisable(GL_BLEND);
+    
+    glDisable(GL_FRAMEBUFFER_SRGB); 
 }
 
 /**
@@ -121,6 +127,8 @@ void inSetCamera(Camera camera) {
     Draw scene to area
 */
 void inDrawScene(vec4 area) {
+    glEnable(GL_FRAMEBUFFER_SRGB); 
+
     // Bind our vertex array
     glBindVertexArray(sceneVAO);
     
@@ -164,6 +172,7 @@ void inDrawScene(vec4 area) {
     glDisableVertexAttribArray(1);
 
     glDisable(GL_BLEND);
+    glDisable(GL_FRAMEBUFFER_SRGB); 
 }
 
 /**
@@ -173,9 +182,6 @@ void inSetViewport(int width, int height) {
 
     inViewportWidth = width;
     inViewportHeight = height;
-
-    // Then update the viewport
-    glViewport(0, 0, width, height);
 
     glBindTexture(GL_TEXTURE_2D, fColor);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
