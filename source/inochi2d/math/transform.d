@@ -142,7 +142,7 @@ public:
             // That has been pre-calculated above.
             // Do note we also multiply by its inverse, this is so that the rotations and scaling doesn't
             // start stacking up weirdly causing cascadingly more extreme transformation.
-            tnew.scale_ * tnew.rotation_ * this.translation_ * tnew.scale_.inverse() * tnew.rotation_.inverse() * 
+            tnew.rotation_ * tnew.scale_ * this.translation_ * tnew.scale_.inverse() * tnew.rotation_.inverse() * 
 
             // Also our local translation
             vec4(other.translation, 1)
