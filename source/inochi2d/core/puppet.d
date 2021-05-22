@@ -65,8 +65,8 @@ private:
     void selfSort() {
         import std.math : cmp;
         sort!((a, b) => cmp(
-            a.parent.localTransform.translation.z, 
-            b.parent.localTransform.translation.z) > 0)(rootParts);
+            a.zSort, 
+            b.zSort) > 0)(rootParts);
     }
 
 public:

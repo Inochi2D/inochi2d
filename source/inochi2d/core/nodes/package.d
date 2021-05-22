@@ -58,6 +58,7 @@ private:
     Node parent_;
     Node[] children_;
     uint uuid_;
+    float zsort_ = 0;
 
 protected:
 
@@ -85,6 +86,27 @@ public:
     */
     uint uuid() {
         return uuid_;
+    }
+
+    /**
+        Gets the relative Z sorting
+    */
+    float relZSort() {
+        return zsort_;
+    }
+
+    /**
+        Gets the Z sorting
+    */
+    float zSort() {
+        return parent !is null ? parent.zSort() + zsort_ : zsort_;
+    }
+
+    /**
+        Sets the (relative) Z sorting
+    */
+    void zSort(float value) {
+        zsort_ = value;
     }
 
     /**
