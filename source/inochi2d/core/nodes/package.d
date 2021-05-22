@@ -14,6 +14,39 @@ public import inochi2d.core.nodes.mask;
 public import inochi2d.core.nodes.pathdeform;
 public import inochi2d.core.nodes.drawable;
 
+private {
+    uint[] takenUUIDs;
+}
+
+/**
+    Creates a new UUID for a node
+*/
+uint inCreateUUID() {
+    import std.algorithm.searching : canFind;
+    import std.random : uniform;
+
+    uint id = uniform!uint();
+    while (takenUUIDs.canFind(id)) { uniform!uint(); } // Make sure the ID is actually unique in the current context
+
+    return id;
+}
+
+/**
+    Unloads a single UUID from the internal listing, freeing it up for reuse
+*/
+void inUnloadUUID(uint id) {
+    import std.algorithm.searching : countUntil;
+    import std.algorithm.mutation : remove;
+    ptrdiff_t idx = takenUUIDs.countUntil(id);
+    if (idx != -1) takenUUIDs.remove(idx);
+}
+
+/**
+    Clears all UUIDs from the internal listing
+*/
+void inClearUUIDs() {
+    takenUUIDs.length = 0;
+}
 
 /**
     A node in the Inochi2D rendering tree
@@ -22,6 +55,7 @@ class Node {
 private:
     Node parent_;
     Node[] children_;
+    uint uuid_;
 
 protected:
 
@@ -45,10 +79,25 @@ public:
     bool enabled = true;
 
     /**
+        Returns the unique identifier for this node
+    */
+    uint uuid() {
+        return uuid_;
+    }
+
+    /**
         Constructs a new node
     */
     this(Node parent = null) {
+        this(inCreateUUID(), parent);
+    }
+
+    /**
+        Constructs a new node with an UUID
+    */
+    this(uint uuid, Node parent = null) {
         this.parent = parent;
+        this.uuid_ = uuid;
     }
 
     /**

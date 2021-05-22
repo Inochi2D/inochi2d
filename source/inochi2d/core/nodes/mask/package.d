@@ -82,7 +82,14 @@ public:
         Constructs a new mask
     */
     this(MeshData data, Node parent = null) {
-        super(data, parent);
+        this(data, inCreateUUID(), parent);
+    }
+
+    /**
+        Constructs a new mask
+    */
+    this(MeshData data, uint uuid, Node parent = null) {
+        super(data, uuid, parent);
         mvp = maskShader.getUniformLocation("mvp");
     }
 

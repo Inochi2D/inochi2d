@@ -161,8 +161,18 @@ public:
         return textures[currentTexture];
     }
 
+    /**
+        Constructs a new part
+    */
     this(MeshData data, Texture[] textures, Node parent = null) {
-        super(data, parent);
+        this(data, textures, inCreateUUID(), parent);
+    }
+
+    /**
+        Constructs a new part
+    */
+    this(MeshData data, Texture[] textures, uint uuid, Node parent = null) {
+        super(data, uuid, parent);
         this.textures = textures;
         glGenBuffers(1, &uvbo);
 

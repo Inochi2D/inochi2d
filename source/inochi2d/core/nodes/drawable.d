@@ -82,7 +82,14 @@ public:
         Constructs a new drawable surface
     */
     this(MeshData data, Node parent = null) {
-        super(parent);
+        this(data, inCreateUUID(), parent);
+    }
+
+    /**
+        Constructs a new drawable surface
+    */
+    this(MeshData data, uint uuid, Node parent = null) {
+        super(uuid, parent);
         this.data = data;
 
         // Set the deformable points to their initial position
