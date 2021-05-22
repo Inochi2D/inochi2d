@@ -57,7 +57,7 @@ Part inCreateSimplePart(ShallowTexture texture, Node parent = null, string name 
 	p.name = name;
 
     if (parent !is null) p.puppet.rescanNodes();
-	return p;
+    return p;
 }
 
 /**
