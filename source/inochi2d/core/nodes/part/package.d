@@ -29,6 +29,19 @@ package(inochi2d) {
     }
 }
 
+
+/**
+    Creates a simple part that is sized after the texture given
+    part is created based on file path given.
+    Supported file types are: png, tga and jpeg
+
+    This is unoptimal for normal use and should only be used
+    for real-time use when you want to add/remove parts on the fly
+*/
+Part inCreateSimplePart(string file, Node parent = null) {
+    return inCreateSimplePart(ShallowTexture(file), parent, file);
+}
+
 /**
     Creates a simple part that is sized after the texture given
 
