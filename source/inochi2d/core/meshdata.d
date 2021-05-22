@@ -41,7 +41,7 @@ struct MeshData {
                                 Size of Texture                       Uses all of UV    width > height
         MeshData.createQuadMesh(vec2i(texture.width, texture.height), vec4(0, 0, 1, 1), vec2i(32, 16))
     */
-    static MeshData createQuadMesh(vec2i size, vec4 uvBounds, vec2i cuts = vec2i(6, 6)) {
+    static MeshData createQuadMesh(vec2i size, vec4 uvBounds, vec2i cuts = vec2i(6, 6), vec2i origin = vec2i(0)) {
         
         // Splits may not be below 2.
         if (cuts.x < 2) cuts.x = 2;
@@ -57,8 +57,14 @@ struct MeshData {
         // Generate vertices and UVs
         foreach(y; 0..cuts.y+1) {
             foreach(x; 0..cuts.x+1) {
-                data.vertices ~= vec2(x*sw, y*sh);
-                data.uvs ~= vec2(uvBounds.x+cast(float)x*uvx, uvBounds.y+cast(float)y*uvy);
+                data.vertices ~= vec2(
+                    (x*sw)-origin.x, 
+                    (y*sh)-origin.y
+                );
+                data.uvs ~= vec2(
+                    uvBounds.x+cast(float)x*uvx, 
+                    uvBounds.y+cast(float)y*uvy
+                );
                 m[[x, y]] = cast(ushort)(data.vertices.length-1); 
             }	
         }
