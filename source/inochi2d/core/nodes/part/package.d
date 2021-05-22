@@ -30,6 +30,37 @@ package(inochi2d) {
 }
 
 /**
+    Creates a simple part that is sized after the texture given
+
+    This is unoptimal for normal use and should only be used
+    for real-time use when you want to add/remove parts on the fly
+*/
+Part inCreateSimplePart(ShallowTexture texture, Node parent = null, string name = "New Part") {
+	Texture tex = new Texture(texture);
+	MeshData data = MeshData([
+		vec2(-(tex.width/2), -(tex.height/2)),
+		vec2(-(tex.width/2), tex.height/2),
+		vec2(tex.width/2, -(tex.height/2)),
+		vec2(tex.width/2, tex.height/2),
+	], 
+	[
+		vec2(0, 0),
+		vec2(0, 1),
+		vec2(1, 0),
+		vec2(1, 1),
+	], 
+	[
+		0, 1, 2,
+		2, 1, 3
+	]);
+	Part p = new Part(data, [tex], parent);
+	p.name = name;
+
+    if (parent !is null) p.puppet.rescanNodes();
+	return p;
+}
+
+/**
     Masking mode
 */
 enum MaskingMode {

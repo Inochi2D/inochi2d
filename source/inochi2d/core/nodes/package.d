@@ -8,6 +8,7 @@
 */
 module inochi2d.core.nodes;
 import inochi2d.math;
+import inochi2d.core.puppet;
 
 public import inochi2d.core.nodes.part;
 public import inochi2d.core.nodes.mask;
@@ -53,6 +54,7 @@ void inClearUUIDs() {
 */
 class Node {
 private:
+    Puppet puppet_;
     Node parent_;
     Node[] children_;
     uint uuid_;
@@ -83,6 +85,13 @@ public:
     */
     uint uuid() {
         return uuid_;
+    }
+
+    /**
+        Constructs a new puppet root node
+    */
+    this(Puppet puppet) {
+        puppet_ = puppet;
     }
 
     /**
@@ -131,6 +140,13 @@ public:
     }
 
     /**
+        The puppet this node is attached to
+    */
+    final Puppet puppet() {
+        return parent_ !is null ? parent_.puppet : puppet_;
+    }
+
+    /**
         Removes all children from this node
     */
     final void clearChildren() {
@@ -138,6 +154,13 @@ public:
             child.parent_ = null;
         }
         this.children_ = [];
+    }
+
+    /**
+        Adds a node as a child of this node.
+    */
+    final void addChild(Node child) {
+        child.parent = this;
     }
 
     /**
@@ -170,6 +193,7 @@ public:
         // Update our relationship with our new parent
         this.parent_ = node;
         this.parent_.children_ ~= this;
+        if (this.puppet !is null) this.puppet.rescanNodes();
     }
 
     /**

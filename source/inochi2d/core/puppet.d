@@ -42,7 +42,7 @@ private:
         }
     }
 
-    void scanParts(Node node) {
+    final void scanParts(bool reparent = false)(Node node) {
 
         // We want rootParts to be cleared so that we
         // don't draw the same part multiple times
@@ -56,8 +56,10 @@ private:
         // anymore, we clear its children first, then assign its new child
         // to our "new" root node. In some cases the root node will be
         // quite different.
-        if (puppetRootNode !is null) puppetRootNode.clearChildren();
-        node.parent = puppetRootNode;
+        if (reparent) { 
+            if (puppetRootNode !is null) puppetRootNode.clearChildren();
+            node.parent = puppetRootNode;
+        }
     }
 
     void selfSort() {
@@ -77,10 +79,10 @@ public:
         Creates a new puppet from a node tree
     */
     this(Node root) {
-        this.puppetRootNode = new Node();
+        this.puppetRootNode = new Node(this);
         this.root = root;
         this.root.name = "Root";
-        this.scanParts(this.root);
+        this.scanParts!true(this.root);
         this.selfSort();
     }
 
@@ -122,12 +124,12 @@ public:
         Run this every time you change the layout of the puppet's node tree
     */
     final void rescanNodes() {
-        this.scanParts(root);
+        this.scanParts!false(root);
     }
 
     /**
-        This cursed toString implementation outputs the nodetree as
-        a pretty printed tree.
+        This cursed toString implementation outputs the puppet's
+        nodetree as a pretty printed tree.
 
         Please use a graphical viewer instead of this if you can,
         eg. Inochi Creator.
@@ -155,9 +157,9 @@ public:
 
             string s = "%s%s <%s>\n".format(n.children.length > 0 ? "╭─" : "", n.name, n.uuid);
             foreach(i, child; n.children) {
-                string term = "├>";
+                string term = "├→";
                 if (i == n.children.length-1) {
-                    term = "╰>";
+                    term = "╰→";
                     lineSet[indent] = false;
                 }
                 s ~= "%s%s%s".format(iden, term, toStringBranch(child, indent+1));
