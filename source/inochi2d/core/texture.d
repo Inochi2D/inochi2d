@@ -5,6 +5,7 @@
     Authors: Luna Nielsen
 */
 module inochi2d.core.texture;
+import inochi2d.math;
 import std.exception;
 import std.format;
 import bindbc.opengl;
@@ -181,6 +182,13 @@ public:
     */
     int height() {
         return height_;
+    }
+
+    /**
+        Center of texture
+    */
+    vec2i center() {
+        return vec2i(width_/2, height_/2);
     }
 
     /**
