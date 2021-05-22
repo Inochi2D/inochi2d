@@ -79,6 +79,7 @@ public:
     this(Node root) {
         this.puppetRootNode = new Node();
         this.root = root;
+        this.root.name = "Root";
         this.scanParts(this.root);
         this.selfSort();
     }
@@ -122,5 +123,51 @@ public:
     */
     final void rescanNodes() {
         this.scanParts(root);
+    }
+
+    /**
+        This cursed toString implementation outputs the nodetree as
+        a pretty printed tree.
+
+        Please use a graphical viewer instead of this if you can,
+        eg. Inochi Creator.
+    */
+    override
+    string toString() {
+        import std.format : format;
+        import std.range : repeat, takeExactly;
+        import std.array : array;
+        bool[] lineSet;
+
+        string toStringBranch(Node n, int indent, bool showLines = true) {
+
+            lineSet ~= n.children.length > 0;
+            string getLineSet() {
+                if (indent == 0) return "";
+                string s = "";
+                foreach(i; 1..lineSet.length) {
+                    s ~= lineSet[i-1] ? "│ " : "  ";
+                }
+                return s;
+            }
+
+            string iden = getLineSet();
+
+            string s = "%s%s <%s>\n".format(n.children.length > 0 ? "╭─" : "", n.name, n.uuid);
+            foreach(i, child; n.children) {
+                string term = "├>";
+                if (i == n.children.length-1) {
+                    term = "╰>";
+                    lineSet[indent] = false;
+                }
+                s ~= "%s%s%s".format(iden, term, toStringBranch(child, indent+1));
+            }
+
+            lineSet.length--;
+
+            return s;
+        }
+
+        return toStringBranch(root, 0);
     }
 }
