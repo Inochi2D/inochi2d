@@ -90,6 +90,13 @@ public:
         this.width = image.w;
         this.height = image.h;
     }
+
+    /**
+        Saves image
+    */
+    void save(string file) {
+        write_image(file, this.width, this.height, this.data, 4);
+    }
 }
 
 /**
@@ -231,5 +238,15 @@ public:
         assert(unit <= 31u, "Outside maximum OpenGL texture unit value");
         glActiveTexture(GL_TEXTURE0+(unit <= 31u ? unit : 31u));
         glBindTexture(GL_TEXTURE_2D, id);
+    }
+
+    /**
+        Saves the texture to file
+    */
+    void save(string file) {
+        ubyte[] buf = new ubyte[width*height*4];
+        bind();
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf.ptr);
+        write_image(file, width, height, buf, 4);
     }
 }

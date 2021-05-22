@@ -154,6 +154,13 @@ public:
     */
     float opacity = 1;
 
+    /**
+        Gets the active texture
+    */
+    Texture activeTexture() {
+        return textures[currentTexture];
+    }
+
     this(MeshData data, Texture[] textures, Node parent = null) {
         super(data, parent);
         this.textures = textures;
