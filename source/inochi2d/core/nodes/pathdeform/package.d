@@ -7,6 +7,7 @@
     Authors: Luna Nielsen
 */
 module inochi2d.core.nodes.pathdeform;
+import inochi2d.core.nodes.part;
 import inochi2d.core.nodes;
 import inochi2d.math;
 
@@ -15,10 +16,17 @@ import inochi2d.math;
 */
 class PathDeform : Node {
 private:
+    
+    // Joint Origins
     vec2[] jointOrigins;
 
+    // Computed joint matrices
     mat3[] computedJoints;
+
+
     void recomputeJoints() {
+        float startAngle;
+        float endAngle;
         foreach(i; 0..joints.length) {
             size_t next = i+1;
             
@@ -27,23 +35,32 @@ private:
             // There's nothing to "orient" ourselves against, so
             // We'll just have a rotational value of 0
             if (next >= joints.length) {
-                computedJoints[i] = mat3.translation(vec3(joints[i], 0));
-                break; // We're already at the end, no need to check condition again
+                startAngle = atan2(
+                    jointOrigins[i-1].y - jointOrigins[i].y, 
+                    jointOrigins[i-1].x - jointOrigins[i].x
+                );
+                
+                endAngle = atan2(
+                    joints[i-1].y - joints[i].y, 
+                    joints[i-1].x - joints[i].x
+                );
+            } else {
+
+                // Get the angles between our origin positions and our
+                // Current joint positions to get the difference.
+                // The difference between the root angle and the current
+                // angle determines how much the point and path is rotated.
+                startAngle = atan2(
+                    jointOrigins[i].y - jointOrigins[next].y, 
+                    jointOrigins[i].x - jointOrigins[next].x
+                );
+
+                endAngle = atan2(
+                    joints[i].y - joints[next].y, 
+                    joints[i].x - joints[next].x
+                );
             }
 
-            // Get the angles between our origin positions and our
-            // Current joint positions to get the difference.
-            // The difference between the root angle and the current
-            // angle determines how much the point and path is rotated.
-            immutable(float) startAngle = atan2(
-                jointOrigins[i].y - jointOrigins[next].y, 
-                jointOrigins[i].x - jointOrigins[next].x
-            );
-
-            immutable(float) endAngle = atan2(
-                joints[i].y - joints[next].y, 
-                joints[i].x - joints[next].x
-            );
 
             // Apply our wonky math to our computed joint
             computedJoints[i] = mat3.translation(vec3(joints[i], 0)) * mat3.zrotation(startAngle-endAngle);
@@ -51,8 +68,9 @@ private:
     }
 
 public:
+
     /**
-        The joints of the deformation
+        The current joint locations of the deformation
     */
     vec2[] joints;
 
@@ -66,13 +84,68 @@ public:
     size_t[][][Part] bindings;
 
     /**
+        Gets joint origins
+    */
+    vec2[] origins() {
+        return jointOrigins;
+    }
+
+    /**
+        Constructs a new path deform
+    */
+    this(vec2[] joints, Node parent = null) {
+        this.setJoints(joints);
+        super(parent);
+    }
+
+    /**
+        Sets the joints for this path deform
+    */
+    void setJoints(vec2[] joints) {
+        this.jointOrigins = joints.dup;
+        this.joints = joints.dup;
+        this.computedJoints = new mat3[joints.length];
+    }
+
+    /**
+        Adds a joint with the specified offset to the end of the joints list
+    */
+    void addJoint(vec2 joint) {
+        jointOrigins ~= jointOrigins[$-1] + joint;
+        joints ~= jointOrigins[$-1];
+        computedJoints.length++;
+    }
+
+    /**
+        Sets the position of joint as its new origin
+    */
+    void setJointOriginFor(size_t index) {
+        if (index >= joints.length) return;
+        jointOrigins[index] = joints[index];
+    }
+
+    /**
         Updates the spline group.
     */
     override
     void update() {
         this.recomputeJoints();
-        
 
+        // Iterates over every part attached to this deform
+        // Then iterates over every joint that should affect that part
+        // Then appplies the deformation across that part's joints
+        foreach(Part part, size_t[][] entry; bindings) {
+            MeshData mesh = part.getMesh();
+            
+            foreach(jointEntry, vertList; entry) {
+                mat3 joint = computedJoints[jointEntry];
+
+                // Deform vertices
+                foreach(i; vertList) {
+                    part.vertices[i] = (joint * vec3(mesh.vertices[i], 0)).xy;
+                }
+            }
+        }
 
         super.update();
     }

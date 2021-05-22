@@ -87,6 +87,13 @@ public:
     }
 
     /**
+        Updates the nodes
+    */
+    final void update() {
+        root.update();
+    }
+
+    /**
         Draws the puppet
     */
     final void draw() {
