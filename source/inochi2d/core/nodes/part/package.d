@@ -226,7 +226,7 @@ public:
         mgopacity = partMaskShader.getUniformLocation("opacity");
         this.updateUVs();
     }
-
+    
     override
     void rebuffer(MeshData data) {
         super.rebuffer(data);
@@ -259,6 +259,7 @@ public:
         }
 
         this.drawSelf();
+        super.drawOne();
     }
 
     override

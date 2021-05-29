@@ -1,5 +1,5 @@
 /*
-    Inochi2D Spline Group
+    Inochi2D Bone Group
 
     Copyright © 2020, Inochi2D Project
     Distributed under the 2-Clause BSD License, see LICENSE file.
@@ -9,6 +9,7 @@
 module inochi2d.core.nodes.pathdeform;
 import inochi2d.core.nodes.part;
 import inochi2d.core.nodes;
+import inochi2d.core.dbg;
 import inochi2d.math;
 
 /**
@@ -25,9 +26,9 @@ private:
 
 
     void recomputeJoints() {
-        float startAngle;
-        float endAngle;
         foreach(i; 0..joints.length) {
+            float startAngle;
+            float endAngle;
             size_t next = i+1;
             
             // Special Case:
@@ -77,11 +78,11 @@ public:
     /**
         The bindings from joints to verticies in multiple parts
 
-        [Part] = Every part that is affected
+        [Drawable] = Every drawable that is affected
         [] = the entry of the joint
         size_t[] = the entry of verticies in that part that should be affected.
     */
-    size_t[][][Part] bindings;
+    size_t[][][Drawable] bindings;
 
     /**
         Gets joint origins
@@ -134,7 +135,7 @@ public:
         // Iterates over every part attached to this deform
         // Then iterates over every joint that should affect that part
         // Then appplies the deformation across that part's joints
-        foreach(Part part, size_t[][] entry; bindings) {
+        foreach(Drawable part, size_t[][] entry; bindings) {
             MeshData mesh = part.getMesh();
             
             foreach(jointEntry, vertList; entry) {
@@ -145,9 +146,35 @@ public:
                     part.vertices[i] = (joint * vec3(mesh.vertices[i], 0)).xy;
                 }
             }
+
+            part.refresh();
         }
 
         super.update();
+    }
+
+    
+    override
+    void drawOutlineOne() {
+        auto trans = transform.matrix();
+
+        if (inDbgDrawMeshOrientation) {
+            inDbgLineWidth(4);
+            inDbgSetBuffer([vec2(0, 0), vec2(32, 0)], [0, 1]);
+            inDbgDrawLines(vec4(1, 0, 0, 0.3), trans);
+            inDbgSetBuffer([vec2(0, 0), vec2(0, -32)], [0, 1]);
+            inDbgDrawLines(vec4(0, 1, 0, 0.3), trans);
+
+            foreach(i, joint; computedJoints) {
+                inDbgSetBuffer(
+                    [vec2(joints[i].x, joints[i].y), vec2(joints[i].x+32, joints[i].y)], [0, 1]);
+                inDbgDrawLines(vec4(1, 0, 0, 0.3), trans*mat4(joint));
+                inDbgSetBuffer(
+                    [vec2(joints[i].x, joints[i].y), vec2(joints[i].x, joints[i].y-32)], [0, 1]);
+                inDbgDrawLines(vec4(0, 1, 0, 0.3), trans*mat4(joint));
+            }
+            inDbgLineWidth(1);
+        }
     }
 
     /**

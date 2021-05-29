@@ -100,7 +100,7 @@ public:
 
     override
     void drawOne() {
-
+        super.drawOne();
     }
 
     override

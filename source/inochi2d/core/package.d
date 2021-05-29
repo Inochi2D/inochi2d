@@ -13,6 +13,7 @@ public import inochi2d.core.texture;
 public import inochi2d.core.nodes;
 public import inochi2d.core.puppet;
 public import inochi2d.core.meshdata;
+import inochi2d.core.dbg;
 
 import bindbc.opengl;
 import inochi2d.math;
@@ -55,6 +56,7 @@ package(inochi2d) {
         inInitDrawable();
         inInitPart();
         inInitMask();
+        inInitDebug();
 
         // Some defaults that should be changed by app writer
         inCamera = new Camera;
@@ -178,15 +180,15 @@ void inDrawScene(vec4 area) {
 /**
     Sets the viewport area to render to
 */
-void inSetViewport(int width, int height) {
+void inSetViewport(int width, int height) nothrow {
 
     inViewportWidth = width;
     inViewportHeight = height;
 
     glBindTexture(GL_TEXTURE_2D, fColor);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     
     glBindTexture(GL_TEXTURE_2D, fStencil);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, null);
@@ -201,7 +203,7 @@ void inSetViewport(int width, int height) {
 /**
     Gets the viewport
 */
-void inGetViewport(out int width, out int height) {
+void inGetViewport(out int width, out int height) nothrow {
     width = inViewportWidth;
     height = inViewportHeight;
 }

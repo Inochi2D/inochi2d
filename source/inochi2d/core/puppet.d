@@ -100,22 +100,15 @@ public:
         this.selfSort();
 
         foreach(rootPart; rootParts) {
-            if (rootPart.mask.length > 0) {
-                
-                // Parts that are masked will need to recursively draw their children
-                // otherwise the masking would not work and alternatives are not that
-                // great in terms of performance when having larger trees of masked
-                // items.
-                rootPart.draw();
-            } else {
-
-                // All non-masked parts that are not children of masked parts
-                // are just drawn standalone, they're already sorted by depth
-                // so they should be drawn correctly as long as their depth
-                // are specified correctly.
-                rootPart.drawOne();
-            }
+            rootPart.drawOne();
         }
+    }
+
+    /**
+        Draws the puppet's outlines for every drawable
+    */
+    final void drawOutlines() {
+        root.drawOutline();
     }
 
     /**

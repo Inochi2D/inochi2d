@@ -1,8 +1,17 @@
+/*
+    Inochi2D Drawable base class
+
+    Copyright © 2020, Inochi2D Project
+    Distributed under the 2-Clause BSD License, see LICENSE file.
+    
+    Authors: Luna Nielsen
+*/
 module inochi2d.core.nodes.drawable;
 import inochi2d.math;
 import inochi2d.core.nodes;
 import bindbc.opengl;
 import std.exception;
+import inochi2d.core.dbg;
 
 private GLuint drawableVAO;
 
@@ -110,17 +119,61 @@ public:
     vec2[] vertices;
 
     /**
+        Refreshes the drawable, updating its vertices
+    */
+    final void refresh() {
+        this.updateVertices();
+    }
+
+    /**
         Updates the drawable
     */
     override
     void update() {
-        this.updateVertices();
+        super.update();
+    }
+
+    /**
+        Updates the drawable
+    */
+    override
+    void drawOne() {
+        super.drawOne();
+    }
+
+    /**
+        Draws the drawable's outline
+    */
+    override
+    void drawOutlineOne() {
+        auto trans = transform.matrix();
+        if (inDbgDrawMeshOutlines) {
+            inDbgSetBuffer(vbo, ibo, cast(int)data.indices.length);
+            inDbgDrawLines(vec4(0.5, 0.5, 0.5, 0.4), trans);
+        }
+
+        if (inDbgDrawMeshVertexPoints) {
+            inDbgSetBuffer(vbo, ibo, cast(int)data.indices.length);
+            inDbgPointsSize(8);
+            inDbgDrawPoints(vec4(0, 0, 0, 1), trans);
+            inDbgPointsSize(4);
+            inDbgDrawPoints(vec4(1, 1, 1, 1), trans);
+        }
+
+        if (inDbgDrawMeshOrientation) {
+            inDbgLineWidth(4);
+            inDbgSetBuffer([vec2(0, 0), vec2(32, 0)], [0, 1]);
+            inDbgDrawLines(vec4(1, 0, 0, 0.3), trans);
+            inDbgSetBuffer([vec2(0, 0), vec2(0, -32)], [0, 1]);
+            inDbgDrawLines(vec4(0, 1, 0, 0.3), trans);
+            inDbgLineWidth(1);
+        }
     }
 
     /**
         Returns the mesh data for this Part.
     */
-    final MeshData getMesh() {
+    final ref MeshData getMesh() {
         return this.data;
     }
 
