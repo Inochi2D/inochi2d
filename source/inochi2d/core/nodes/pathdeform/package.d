@@ -75,6 +75,11 @@ private:
             computedJoints[i] = mat3.translation(vec3(joints[i], 0)) * mat3.zrotation(startAngle-endAngle);
         }
     }
+
+    /**
+        Bindings queued for finalization
+    */
+    size_t[][][uint] queuedBindings;
     
 protected:
 
@@ -94,6 +99,19 @@ protected:
                 joint.serialize(serializer);
             }
         serializer.arrayEnd(state);
+
+        serializer.putKey("bindings");
+        state = serializer.arrayBegin();
+            serializer.elemBegin;
+            foreach(item, data; bindings) {
+                auto obj = serializer.objectBegin();
+                    serializer.putKey("bound_to");
+                    serializer.putValue(item.uuid);
+                    serializer.putKey("bind_data");
+                    serializer.serializeValue(data);
+                serializer.objectEnd(obj);
+            }
+        serializer.arrayEnd(state);
     }
 
     /**
@@ -109,6 +127,23 @@ protected:
                 joint.serialize(serializer);
             }
         serializer.arrayEnd(state);
+
+        if (bindings.length > 0) {
+            serializer.putKey("bindings");
+            state = serializer.arrayBegin();
+                serializer.elemBegin;
+                foreach(item, data; bindings) {
+                    auto obj = serializer.objectBegin();
+                        serializer.putKey("bound_to");
+                        serializer.putValue(item.uuid);
+                        serializer.putKey("bind_data");
+                        serializer.serializeValue(data);
+                    serializer.objectEnd(obj);
+                }
+            serializer.arrayEnd(state);
+        }
+
+        // TODO: serialize bindings
     }
 
     override
@@ -123,6 +158,18 @@ protected:
         }
         joints = jointOrigins.dup;
         this.computedJoints = new mat3[joints.length];
+
+        if (!data["bindings"].isEmpty) {
+            foreach(bindingData; data["bindings"].byElement) {
+                uint uuid;
+                size_t[][] qdata;
+                bindingData["bound_to"].deserializeValue(uuid);
+                bindingData["bind_data"].deserializeValue(qdata);
+                queuedBindings[uuid] = qdata;
+            }
+        }
+
+        // TODO: deserialize bindings
         return null;
     }
 
@@ -248,5 +295,18 @@ public:
     void resetJoints() {
         joints = jointOrigins;
         computedJoints.length = joints.length;
+    }
+
+    override
+    void finalize() {
+        super.finalize();
+        
+        // Finalize by moving the data over to the actual bindings
+        foreach(uuid, data; queuedBindings) {
+            bindings[puppet.find!Drawable(uuid)] = data.dup;
+        }
+
+        // Clear this memory
+        destroy(queuedBindings);
     }
 }
