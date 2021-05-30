@@ -1,6 +1,6 @@
 module inochi2d.core.puppet;
 import inochi2d.fmt.serialize;
-import inochi2d.core.nodes;
+import inochi2d.core;
 import inochi2d.math;
 import std.algorithm.sorting;
 import std.exception;
@@ -9,26 +9,9 @@ import std.file;
 import std.path : extension;
 
 /**
-    Loads a puppet from a file
+    Magic value meaning that the model has no thumbnail
 */
-Puppet inLoadPuppet(string file) {
-    enforce(extension(file) == ".json" || extension(file) == ".inp", "Invalid file format of %s at path %s".format(extension(file), file));
-    return inLoadPuppetFromMemory(cast(ubyte[])readText(file));
-}
-
-/**
-    Loads a puppet from memory
-*/
-Puppet inLoadPuppetFromMemory(ubyte[] data) {
-    return deserialize!Puppet(cast(string)data);
-}
-
-/**
-    Writes a puppet to file
-*/
-void inWritePuppet(Puppet p, string file) {
-    write(file, inToJson(p));
-}
+enum NO_THUMBNAIL = uint.max;
 
 /**
     Puppet meta information
@@ -73,7 +56,7 @@ struct PuppetMeta {
     */
     @Optional
     @Name("thumbnail_id")
-    uint thumbnailId;
+    uint thumbnailId = NO_THUMBNAIL;
 }
 
 /**
@@ -194,6 +177,12 @@ public:
     Node root;
 
     /**
+        INP Texture slots for this puppet
+    */
+    @Ignore
+    Texture[] textureSlots;
+
+    /**
         Creates a new puppet from a node tree
     */
     this(Node root) {
@@ -257,6 +246,60 @@ public:
     */
     T find(T = Node)(uint uuid) if (is(T : Node)) {
         return cast(T)findNode(root, uuid);
+    }
+
+    /**
+        Adds a texture to a new slot if it doesn't already exist within this puppet
+    */
+    final uint addTextureToSlot(Texture texture) {
+        import std.algorithm.searching : canFind;
+
+        // Add texture if we can't find it.
+        if (!textureSlots.canFind(texture)) textureSlots ~= texture;
+        return cast(uint)textureSlots.length-1;
+    }
+
+    /**
+        Populate texture slots with all visible textures in the model
+    */
+    final void populateTextureSlots() {
+        foreach(part; rootParts) {
+            foreach(texture; part.textures) {
+                this.addTextureToSlot(texture);
+            }
+        }
+    }
+
+    /**
+        Sets thumbnail of this puppet
+    */
+    final void setThumbnail(Texture texture) {
+        if (this.meta.thumbnailId == NO_THUMBNAIL) {
+            this.meta.thumbnailId = this.addTextureToSlot(texture);
+        } else {
+            textureSlots[this.meta.thumbnailId] = texture;
+        }
+    }
+
+    /**
+        Gets the texture slot index for a texture
+
+        returns -1 if none was found
+    */
+    final ptrdiff_t getTextureSlotIndexFor(Texture texture) {
+        import std.algorithm.searching : countUntil;
+        return textureSlots.countUntil(texture);
+    }
+
+    /**
+        Clears this puppet's thumbnail
+
+        By default it does not delete the texture assigned, pass in true to delete texture
+    */
+    final void clearThumbnail(bool deleteTexture = false) {
+        import std.algorithm.mutation : remove;
+        if (deleteTexture) textureSlots = remove(textureSlots, this.meta.thumbnailId);
+        this.meta.thumbnailId = NO_THUMBNAIL;
     }
 
     /**

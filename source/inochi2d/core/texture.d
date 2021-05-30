@@ -93,6 +93,30 @@ public:
     }
 
     /**
+        Loads a shallow texture from image buffer
+        Supported file types:
+        * PNG 8-bit
+        * BMP 8-bit
+        * TGA 8-bit non-palleted
+        * JPEG baseline
+    */
+    this(ubyte[] buffer) {
+
+        // Load image from disk, as RGBA 8-bit
+        IFImage image = read_image(buffer, 4, 8);
+        enforce( image.e == 0, "%s".format(IF_ERROR[image.e]));
+        scope(exit) image.free();
+
+        // Copy data from IFImage to this ShallowTexture
+        this.data = new ubyte[image.buf8.length];
+        this.data[] = image.buf8;
+
+        // Set the width/height data
+        this.width = image.w;
+        this.height = image.h;
+    }
+
+    /**
         Saves image
     */
     void save(string file) {
@@ -252,9 +276,57 @@ public:
         Saves the texture to file
     */
     void save(string file) {
+        write_image(file, width, height, getTextureData(), 4);
+    }
+
+    ubyte[] getTextureData() {
         ubyte[] buf = new ubyte[width*height*4];
         bind();
         glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf.ptr);
-        write_image(file, width, height, buf, 4);
+        return buf;
     }
+}
+
+private {
+    Texture[] textureBindings;
+    bool started = false;
+}
+
+/**
+    Begins a texture loading pass
+*/
+void inBeginTextureLoading() {
+    enforce(!started, "Texture loading pass already started!");
+    started = true;
+}
+
+/**
+    Returns a texture from the internal texture list
+*/
+Texture inGetTextureFromId(uint id) {
+    enforce(started, "Texture loading pass not started!");
+    return textureBindings[cast(size_t)id];
+}
+
+/**
+    Gets the latest texture from the internal texture list
+*/
+Texture inGetLatestTexture() {
+    return textureBindings[$-1];
+}
+
+/**
+    Adds binary texture
+*/
+void inAddTextureBinary(ShallowTexture data) {
+    textureBindings ~= new Texture(data);
+}
+
+/**
+    Ends a texture loading pass
+*/
+void inEndTextureLoading() {
+    enforce(started, "Texture loading pass not started!");
+    started = false;
+    textureBindings.length = 0;
 }

@@ -7,7 +7,7 @@
     Authors: Luna Nielsen
 */
 module inochi2d.core.nodes.part;
-import inochi2d.fmt.serialize;
+import inochi2d.fmt;
 import inochi2d.core.nodes.drawable;
 import inochi2d.core;
 import inochi2d.math;
@@ -123,6 +123,9 @@ private:
 
     void drawSelf(bool isMask = false)() {
 
+        // In some cases this may happen
+        if (textures.length == 0) return;
+
         // Bind the vertex array
         this.bindVertexArray();
 
@@ -185,11 +188,24 @@ protected:
     void serializeSelf(ref InochiSerializer serializer) {
         super.serializeSelf(serializer);
         
-        serializer.putKey("textures");
-        auto state = serializer.arrayBegin();
-            serializer.elemBegin;
-            serializer.putValue(name);
-        serializer.arrayEnd(state);
+        if (inIsINPMode()) {
+            serializer.putKey("textures");
+            auto state = serializer.arrayBegin();
+                foreach(texture; textures) {
+                    ptrdiff_t index = puppet.getTextureSlotIndexFor(texture);
+                    if (index >= 0) {
+                        serializer.elemBegin;
+                        serializer.putValue(cast(size_t)index);
+                    }
+                }
+            serializer.arrayEnd(state);
+        } else {
+            serializer.putKey("textures");
+            auto state = serializer.arrayBegin();
+                serializer.elemBegin;
+                serializer.putValue(name);
+            serializer.arrayEnd(state);
+        }
 
         if (mask.length > 0) {
 
@@ -200,7 +216,7 @@ protected:
             serializer.putValue(maskAlphaThreshold);
 
             serializer.putKey("masked_by");
-            state = serializer.arrayBegin();
+            auto state = serializer.arrayBegin();
                 foreach(m; mask) {
                     serializer.elemBegin;
                     serializer.putValue(m.uuid);
@@ -219,11 +235,24 @@ protected:
     void serializeSelf(ref InochiSerializerCompact serializer) {
         super.serializeSelf(serializer);
         
-        serializer.putKey("textures");
-        auto state = serializer.arrayBegin();
-            serializer.elemBegin;
-            serializer.putValue(name);
-        serializer.arrayEnd(state);
+        if (inIsINPMode()) {
+            serializer.putKey("textures");
+            auto state = serializer.arrayBegin();
+                foreach(texture; textures) {
+                    ptrdiff_t index = puppet.getTextureSlotIndexFor(texture);
+                    if (index >= 0) {
+                        serializer.elemBegin;
+                        serializer.putValue(cast(size_t)index);
+                    }
+                }
+            serializer.arrayEnd(state);
+        } else {
+            serializer.putKey("textures");
+            auto state = serializer.arrayBegin();
+                serializer.elemBegin;
+                serializer.putValue(name);
+            serializer.arrayEnd(state);
+        }
 
         serializer.putKey("mask_mode");
         serializer.serializeValue(maskingMode);
@@ -234,7 +263,7 @@ protected:
         if (mask.length > 0) {
 
             serializer.putKey("masked_by");
-            state = serializer.arrayBegin();
+            auto state = serializer.arrayBegin();
                 foreach(m; mask) {
                     serializer.elemBegin;
                     serializer.putValue(m.uuid);
@@ -251,12 +280,24 @@ protected:
     SerdeException deserializeFromAsdf(Asdf data) {
         super.deserializeFromAsdf(data);
 
-        // TODO: Index textures by ID
-        string texName;
-        auto elements = data["textures"].byElement;
-        if (!elements.empty) {
-            if (auto exc = elements.front.deserializeValue(texName)) return exc;
-            this.textures = [new Texture(texName)];
+    
+        
+        if (inIsINPMode()) {
+
+            foreach(texElement; data["textures"].byElement) {
+                uint textureId;
+                texElement.deserializeValue(textureId);
+                this.textures ~= inGetTextureFromId(textureId);
+            }
+        } else {
+
+            // TODO: Index textures by ID
+            string texName;
+            auto elements = data["textures"].byElement;
+            if (!elements.empty) {
+                if (auto exc = elements.front.deserializeValue(texName)) return exc;
+                this.textures = [new Texture(texName)];
+            }
         }
 
         data["opacity"].deserializeValue(this.opacity);

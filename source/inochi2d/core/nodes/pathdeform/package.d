@@ -102,8 +102,8 @@ protected:
 
         serializer.putKey("bindings");
         state = serializer.arrayBegin();
-            serializer.elemBegin;
             foreach(item, data; bindings) {
+                serializer.elemBegin;
                 auto obj = serializer.objectBegin();
                     serializer.putKey("bound_to");
                     serializer.putValue(item.uuid);
@@ -131,8 +131,8 @@ protected:
         if (bindings.length > 0) {
             serializer.putKey("bindings");
             state = serializer.arrayBegin();
-                serializer.elemBegin;
                 foreach(item, data; bindings) {
+                    serializer.elemBegin;
                     auto obj = serializer.objectBegin();
                         serializer.putKey("bound_to");
                         serializer.putValue(item.uuid);

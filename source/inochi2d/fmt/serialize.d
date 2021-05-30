@@ -4,6 +4,10 @@ import std.json;
 public import asdf;
 public import inochi2d.math.serialization;
 
+import std.array : appender, Appender;
+import std.functional : forward;
+import std.range.primitives : put;
+
 /**
     Interface for classes that can be serialized to JSON with custom code
 */
@@ -58,33 +62,38 @@ T inLoadJsonDataFromMemory(T)(string data) {
 }
 
 /**
-    Test
+    Serialize item with compact Inochi2D JSON serializer
 */
 string inToJson(T)(T item) {
-    return serializeToJsonPretty(item);
+    auto app = appender!(char[]);
+    auto serializer = inCreateCompactSerializer(app);
+    serializer.serializeValue(item);
+    serializer.flush();
+    return cast(string)app.data;
+}
+
+/**
+    Serialize item with pretty Inochi2D JSON serializer
+*/
+string inToJsonPretty(T)(T item) {
+    auto app = appender!(char[]);
+    auto serializer = inCreatePrettySerializer(app);
+    serializer.serializeValue(item);
+    serializer.flush();
+    return cast(string)app.data;
 }
 
 /**
     Creates a pretty-serializer
 */
-InochiSerializer inCreatePrettySerializer() {
-    import std.array: appender;
-    import std.functional: forward;
-    import std.range.primitives: put;
-
-    auto app = appender!(char[]);
+InochiSerializer inCreatePrettySerializer(Appender!(char[]) app) {
     return InochiSerializer((const(char)[] chars) => put(app, chars));
 }
 
 /**
     Creates a pretty-serializer
 */
-InochiSerializerCompact inCreateCompactSerializer() {
-    import std.array: appender;
-    import std.functional: forward;
-    import std.range.primitives: put;
-
-    auto app = appender!(char[]);
+InochiSerializerCompact inCreateCompactSerializer(Appender!(char[]) app) {
     return InochiSerializerCompact((const(char)[] chars) => put(app, chars));
 }
 
@@ -92,9 +101,6 @@ alias InochiSerializer = JsonSerializer!("\t", void delegate(const(char)[]) pure
 alias InochiSerializerCompact = JsonSerializer!("", void delegate(const(char)[]) pure nothrow @safe);
 
 string getString(Asdf data) {
-    import std.array: appender;
-    import std.functional: forward;
-    import std.range.primitives: put;
 
     auto app = appender!(char[]);
     data.toString((const(char)[] chars) => put(app, chars));
