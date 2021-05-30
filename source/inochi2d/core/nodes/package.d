@@ -402,6 +402,10 @@ public:
             // Fetch type from json
             string type;
             if (auto exc = child["type"].deserializeValue(type)) return exc;
+            
+            // Skips unknown node types
+            // TODO: A logging system that shows a warning for this?
+            if (!inHasNodeType(type)) continue;
 
             // instantiate it
             Node n = inInstantiateNode(type, this);
@@ -432,6 +436,13 @@ void inRegisterNodeType(T)() if (is(T : Node)) {
     typeFactories[getUDAs!(T, TypeId)[0].id] = (Node parent) {
         return new T(parent);
     };
+}
+
+/**
+    Gets whether a node type is present in the factories
+*/
+bool inHasNodeType(string id) {
+    return (id in typeFactories) !is null;
 }
 
 mixin template InNode(T) {
