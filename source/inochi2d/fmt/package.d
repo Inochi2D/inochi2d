@@ -16,7 +16,6 @@ import std.path;
 import std.file;
 import std.format;
 import imagefmt;
-import std.stdio : writeln;
 
 private bool isLoadingINP_ = false;
 
@@ -83,7 +82,6 @@ Puppet inLoadINPPuppet(ubyte[] buffer) {
     inInterpretDataFromBuffer(buffer[bufferOffset..bufferOffset+=4], puppetDataLength);
 
     string puppetData = cast(string)buffer[bufferOffset..bufferOffset+=puppetDataLength];
-    writeln(puppetData);
 
     // Load textures in to memory
     inBeginTextureLoading();
