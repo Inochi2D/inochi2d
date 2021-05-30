@@ -9,6 +9,7 @@
 module inochi2d.core.meshdata;
 import inochi2d.math;
 import inochi2d.core.texture;
+import inochi2d.fmt.serialize;
 
 /**
     Mesh data
@@ -22,12 +23,80 @@ struct MeshData {
     /**
         Base uvs
     */
+    @Optional
     vec2[] uvs;
 
     /**
         Indices in the mesh
     */
     ushort[] indices;
+
+    void serialize(S)(ref S serializer) {
+        auto state = serializer.objectBegin();
+            serializer.putKey("verts");
+            auto arr = serializer.arrayBegin();
+                foreach(vertex; vertices) {
+                    serializer.elemBegin;
+                    serializer.serializeValue(vertex.x);
+                    serializer.elemBegin;
+                    serializer.serializeValue(vertex.y);
+                }
+            serializer.arrayEnd(arr);
+
+            if (uvs.length > 0) {
+                serializer.putKey("uvs");
+                arr = serializer.arrayBegin();
+                    foreach(uv; uvs) {
+                        serializer.elemBegin;
+                        serializer.serializeValue(uv.x);
+                        serializer.elemBegin;
+                        serializer.serializeValue(uv.y);
+                    }
+                serializer.arrayEnd(arr);
+            }
+
+            serializer.putKey("indices");
+            serializer.serializeValue(indices);
+        serializer.objectEnd(state);
+    }
+
+    SerdeException deserializeFromAsdf(Asdf data) {
+        import std.stdio : writeln;
+        import std.algorithm.searching: count;
+        if (data.isEmpty) return null;
+
+        auto elements = data["verts"].byElement;
+        while(!elements.empty) {
+            float x;
+            float y;
+            elements.front.deserializeValue(x);
+            elements.popFront;
+            elements.front.deserializeValue(y);
+            elements.popFront;
+            vertices ~= vec2(x, y);
+        }
+
+        if (!data["uvs"].isEmpty) {
+            elements = data["uvs"].byElement;
+            while(!elements.empty) {
+                float x;
+                float y;
+                elements.front.deserializeValue(x);
+                elements.popFront;
+                elements.front.deserializeValue(y);
+                elements.popFront;
+                uvs ~= vec2(x, y);
+            }
+        }
+
+        foreach(indiceData; data["indices"].byElement) {
+            ushort indice;
+            indiceData.deserializeValue(indice);
+            
+            indices ~= indice;
+        }
+        return null;
+    }
 
 
     /**

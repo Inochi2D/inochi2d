@@ -9,14 +9,25 @@
 module inochi2d.core.nodes;
 import inochi2d.math;
 import inochi2d.core.puppet;
+import inochi2d.fmt.serialize;
+import inochi2d.math.serialization;
 
 public import inochi2d.core.nodes.part;
 public import inochi2d.core.nodes.mask;
 public import inochi2d.core.nodes.pathdeform;
 public import inochi2d.core.nodes.drawable;
+public import inochi2d.core.nodes.shapes;
+
+import std.exception;
 
 private {
     uint[] takenUUIDs;
+}
+
+package(inochi2d) {
+    void inInitNodes() {
+        inRegisterNodeType!Node;
+    }
 }
 
 /**
@@ -52,12 +63,24 @@ void inClearUUIDs() {
 /**
     A node in the Inochi2D rendering tree
 */
-class Node {
+@TypeId("Node")
+class Node : ISerializable {
 private:
+    this() { }
+
+    @Ignore
     Puppet puppet_;
+
+    @Ignore
     Node parent_;
+    
+    @Ignore
     Node[] children_;
+    
+    @Ignore
     uint uuid_;
+    
+    @Name("zsort")
     float zsort_ = 0;
 
 protected:
@@ -65,6 +88,81 @@ protected:
     // Send mask reset request one node up
     void resetMask() {
         if (parent !is null) parent.resetMask();
+    }
+
+    /**
+        This node's type ID
+    */
+    string typeId() { return "Node"; }
+
+    void serializeSelf(ref InochiSerializer serializer) {
+        
+        serializer.putKey("uuid");
+        serializer.putValue(uuid);
+        
+        serializer.putKey("name");
+        serializer.putValue(name);
+        
+        serializer.putKey("type");
+        serializer.putValue(typeId);
+        
+        serializer.putKey("enabled");
+        serializer.putValue(enabled);
+        
+        serializer.putKey("zsort");
+        serializer.putValue(zsort_);
+        
+        serializer.putKey("transform");
+        serializer.serializeValue(this.localTransform);
+        
+        if (children.length > 0) {
+            serializer.putKey("children");
+            auto childArray = serializer.arrayBegin();
+            foreach(child; children) {
+                serializer.elemBegin;
+                serializer.serializeValue(child);
+            }
+            serializer.arrayEnd(childArray);
+        }
+    }
+
+    void serializeSelf(ref InochiSerializerCompact serializer) {
+        serializer.putKey("uuid");
+        serializer.putValue(uuid);
+        
+        serializer.putKey("name");
+        serializer.putValue(name);
+        
+        serializer.putKey("type");
+        serializer.putValue(typeId);
+        
+        serializer.putKey("enabled");
+        serializer.putValue(enabled);
+        
+        serializer.putKey("zsort");
+        serializer.putValue(zsort_);
+        
+        serializer.putKey("transform");
+        serializer.serializeValue(this.localTransform);
+        
+        if (children.length > 0) {
+            serializer.putKey("children");
+            auto childArray = serializer.arrayBegin();
+            foreach(child; children) {
+                serializer.elemBegin;
+                serializer.serializeValue(child);
+            }
+            serializer.arrayEnd(childArray);
+        }
+    }
+
+package(inochi2d):
+
+    /**
+        Needed for deserialization
+    */
+    void setPuppet(Puppet puppet) {
+        this.puppet_ = puppet;
     }
 
 public:
@@ -139,6 +237,7 @@ public:
     /**
         The transform in world space
     */
+    @Ignore
     Transform transform() {
         localTransform.update();
         
@@ -235,6 +334,30 @@ public:
     void drawOne() { }
 
     /**
+        Draws this node outline and its subnodes' outlines
+    */
+    void drawOutline() {
+        this.drawOutlineOne();
+        foreach(child; children) {
+            child.drawOutline();
+        }
+    }
+    
+    /**
+        Draws this node outline
+    */
+    void drawOutlineOne() { }
+
+    /**
+        Finalizes this node and any children
+    */
+    void finalize() {
+        foreach(child; children) {
+            child.finalize();
+        }
+    }
+
+    /**
         Updates the node
     */
     void update() {
@@ -248,5 +371,71 @@ public:
     override
     string toString() {
         return name;
+    }
+
+    /**
+        Allows serializing a node (with pretty serializer)
+    */
+    void serialize(S)(ref S serializer) {
+        auto state = serializer.objectBegin();
+            this.serializeSelf(serializer);
+        serializer.objectEnd(state);
+    }
+    
+    SerdeException deserializeFromAsdf(Asdf data) {
+
+        if (auto exc = data["uuid"].deserializeValue(this.uuid_)) return exc;
+
+        if (!data["name"].isEmpty) {
+            if (auto exc = data["name"].deserializeValue(this.name)) return exc;
+        }
+
+        if (auto exc = data["enabled"].deserializeValue(this.enabled)) return exc;
+
+        if (auto exc = data["zsort"].deserializeValue(this.zsort_)) return exc;
+        
+        if (auto exc = data["transform"].deserializeValue(this.localTransform)) return exc;
+
+        // Pre-populate our children with the correct types
+        foreach(child; data["children"].byElement) {
+            
+            // Fetch type from json
+            string type;
+            if (auto exc = child["type"].deserializeValue(type)) return exc;
+
+            // instantiate it
+            Node n = inInstantiateNode(type, this);
+            if (auto exc = child.deserializeValue(n)) return exc;
+        }
+
+
+        return null;
+    }
+}
+
+//
+//  SERIALIZATION SHENNANIGANS
+//
+
+struct TypeId { string id; }
+
+private {
+    Node delegate(Node parent)[string] typeFactories;
+
+    Node inInstantiateNode(string id, Node parent = null) {
+        return typeFactories[id](parent);
+    }
+}
+
+void inRegisterNodeType(T)() if (is(T : Node)) {
+    import std.traits : getUDAs;
+    typeFactories[getUDAs!(T, TypeId)[0].id] = (Node parent) {
+        return new T(parent);
+    };
+}
+
+mixin template InNode(T) {
+    static this() {
+        inRegisterNodeType!(T);
     }
 }

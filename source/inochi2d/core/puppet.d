@@ -1,7 +1,80 @@
 module inochi2d.core.puppet;
+import inochi2d.fmt.serialize;
 import inochi2d.core.nodes;
 import inochi2d.math;
 import std.algorithm.sorting;
+import std.exception;
+import std.format;
+import std.file;
+import std.path : extension;
+
+/**
+    Loads a puppet from a file
+*/
+Puppet inLoadPuppet(string file) {
+    enforce(extension(file) == ".json" || extension(file) == ".inp", "Invalid file format of %s at path %s".format(extension(file), file));
+    return inLoadPuppetFromMemory(cast(ubyte[])readText(file));
+}
+
+/**
+    Loads a puppet from memory
+*/
+Puppet inLoadPuppetFromMemory(ubyte[] data) {
+    return deserialize!Puppet(cast(string)data);
+}
+
+/**
+    Writes a puppet to file
+*/
+void inWritePuppet(Puppet p, string file) {
+    write(file, inToJson(p));
+}
+
+/**
+    Puppet meta information
+*/
+struct PuppetMeta {
+
+    /**
+        Name of the puppet
+    */
+    string name;
+    /**
+        Version of the Inochi2D spec that was used for creating this model
+    */
+    @Name("version")
+    string version_ = "1.0-alpha";
+
+    /**
+        Authors of the puppet
+    */
+    string[] authors;
+
+    /**
+        Copyright string
+    */
+    @Optional
+    string copyright;
+
+    /**
+        Contact information of the first author
+    */
+    @Optional
+    string contact;
+
+    /**
+        Link to the origin of this puppet
+    */
+    @Optional
+    string reference;
+
+    /**
+        Texture ID of this puppet's thumbnail
+    */
+    @Optional
+    @Name("thumbnail_id")
+    uint thumbnailId;
+}
 
 /**
     A puppet
@@ -11,6 +84,7 @@ private:
     /**
         An internal puppet root node
     */
+    @Ignore
     Node puppetRootNode;
 
     /**
@@ -18,9 +92,13 @@ private:
 
         for Z sorting
     */
+    @Ignore
     Part[] rootParts;
 
     void scanPartsRecurse(Node node) {
+
+        // Don't need to scan null nodes
+        if (node is null) return;
 
         // Don't count disabled parts
         if (!node.enabled) return;
@@ -69,18 +147,58 @@ private:
             b.zSort) > 0)(rootParts);
     }
 
+    Node findNode(Node n, string name) {
+
+        // Name matches!
+        if (n.name == name) return n;
+
+        // Recurse through children
+        foreach(child; n.children) {
+            if (Node c = findNode(child, name)) return c;
+        }
+
+        // Not found
+        return null;
+    }
+
+    Node findNode(Node n, uint uuid) {
+
+        // Name matches!
+        if (n.uuid == uuid) return n;
+
+        // Recurse through children
+        foreach(child; n.children) {
+            if (Node c = findNode(child, uuid)) return c;
+        }
+
+        // Not found
+        return null;
+    }
+
+    /**
+        Creates a new puppet from nothing ()
+    */
+    this() { this.puppetRootNode = new Node(this); root = new Node(this.puppetRootNode); }
+
 public:
+    /**
+        Meta information about this puppet
+    */
+    @Name("meta")
+    PuppetMeta meta;
+
     /**
         The root node of the puppet
     */
+    @Name("nodes", "Root Node")
     Node root;
 
     /**
         Creates a new puppet from a node tree
     */
     this(Node root) {
-        this.puppetRootNode = new Node(this);
         this.root = root;
+        this.puppetRootNode = new Node(this);
         this.root.name = "Root";
         this.scanParts!true(this.root);
         this.selfSort();
@@ -128,6 +246,20 @@ public:
     }
 
     /**
+        Finds Node by its name
+    */
+    T find(T = Node)(string name) if (is(T : Node)) {
+        return cast(T)findNode(root, name);
+    }
+
+    /**
+        Finds Node by its unique id
+    */
+    T find(T = Node)(uint uuid) if (is(T : Node)) {
+        return cast(T)findNode(root, uuid);
+    }
+
+    /**
         This cursed toString implementation outputs the puppet's
         nodetree as a pretty printed tree.
 
@@ -171,5 +303,17 @@ public:
         }
 
         return toStringBranch(root, 0);
+    }
+
+    /**
+        Finalizer
+    */
+    void finalizeDeserialization(Asdf data) {
+        this.root.setPuppet(this);
+        this.root.name = "Root";
+        this.puppetRootNode = new Node(this);
+        this.scanParts!true(this.root);
+        this.selfSort();
+        this.root.finalize();
     }
 }

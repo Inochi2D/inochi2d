@@ -23,6 +23,7 @@ package(inochi2d) {
     }
 
     void inInitMask() {
+        inRegisterNodeType!Part;
         maskShader = new Shader(import("mask.vert"), import("mask.frag"));
     }
 }
@@ -30,8 +31,10 @@ package(inochi2d) {
 /**
     Dynamic Mask Part
 */
+@TypeId("Mask")
 class Mask : Drawable {
 private:
+    this() { }
 
     /* GLSL Uniforms (Normal) */
     GLint mvp;
@@ -75,6 +78,9 @@ protected:
         // Disable writing to stencil buffer and enable writing to color buffer
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     }
+
+    override
+    string typeId() { return "Mask"; }
 
 public:
 

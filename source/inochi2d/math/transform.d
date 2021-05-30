@@ -6,15 +6,23 @@
 */
 module inochi2d.math.transform;
 public import inochi2d.math;
+import inochi2d.fmt.serialize;
 
 /**
     A transform
 */
 struct Transform {
 private:
+    @Ignore
     mat4 trs = mat4.identity;
+
+    @Ignore
     mat4 translation_ = mat4.identity;
+
+    @Ignore
     mat4 rotation_ = mat4.identity;
+
+    @Ignore
     mat4 scale_ = mat4.identity;
 
 public:
@@ -161,6 +169,7 @@ public:
     /**
         Gets the matrix for this transform
     */
+    @Ignore
     mat4 matrix() {
         return trs;
     }
@@ -175,18 +184,82 @@ public:
         trs =  translation_ * rotation_ * scale_;
     }
 
+    @Ignore
     string toString() {
         import std.format : format;
         return "%s,\n%s,\n%s\n%s".format(trs.toPrettyString, translation.toString, rotation.toString, scale.toString);
     }
-}
 
+    void serialize(S)(ref S serializer) {
+        auto state = serializer.objectBegin();
+            serializer.putKey("trans");
+            translation.serialize(serializer);
+        
+            if (lockTranslationX || lockTranslationY || lockTranslationZ) {
+                serializer.putKey("trans_lock");
+                serializer.serializeValue([lockTranslationX, lockTranslationY, lockTranslationZ]);
+            }
+
+            serializer.putKey("rot");
+            rotation.serialize(serializer);
+
+            if (lockRotationX || lockRotationY || lockRotationZ) {
+                serializer.putKey("rot_lock");
+                serializer.serializeValue([lockRotationX, lockRotationY, lockRotationZ]);
+            }
+
+            serializer.putKey("scale");
+            scale.serialize(serializer);
+
+            if (lockScaleX || lockScaleY) {
+                serializer.putKey("scale_lock");
+                serializer.serializeValue([lockScaleX, lockScaleY]);
+            }
+
+        serializer.objectEnd(state);
+    }
+
+    SerdeException deserializeFromAsdf(Asdf data) {
+        translation.deserialize(data["trans"]);
+        rotation.deserialize(data["rot"]);
+        scale.deserialize(data["scale"]);
+
+        // Deserialize locks
+        if (data["trans_lock"] != Asdf.init) {
+            bool[] states;
+            data["trans_lock"].deserializeValue(states);
+
+            this.lockTranslationX = states[0];
+            this.lockTranslationY = states[1];
+            this.lockTranslationZ = states[2];
+        }
+        
+        if (data["rot_lock"] != Asdf.init) {
+            bool[] states;
+            data["rot_lock"].deserializeValue(states);
+
+            this.lockRotationX = states[0];
+            this.lockRotationY = states[1];
+            this.lockRotationZ = states[2];
+        }
+        
+        if (data["scale_lock"] != Asdf.init) {
+            bool[] states;
+            data["scale_lock"].deserializeValue(states);
+            this.lockScaleX = states[0];
+            this.lockScaleY = states[1];
+        }
+        return null;
+    }
+}
 /**
     A 2D transform;
 */
 struct Transform2D {
 private:
+    @Ignore
     mat3 trs;
+
 public:
     /**
         Translate

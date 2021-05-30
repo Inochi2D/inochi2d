@@ -7,6 +7,7 @@
     Authors: Luna Nielsen
 */
 module inochi2d.core.nodes.drawable;
+import inochi2d.fmt.serialize;
 import inochi2d.math;
 import inochi2d.core.nodes;
 import bindbc.opengl;
@@ -28,6 +29,8 @@ package(inochi2d) {
 
     The main types of Drawables are Parts and Masks
 */
+
+@TypeId("Drawable")
 abstract class Drawable : Node {
 private:
     void updateIndices() {
@@ -85,7 +88,52 @@ protected:
 
     abstract void renderMask();
 
+    /**
+        Allows serializing self data (with pretty serializer)
+    */
+    override
+    void serializeSelf(ref InochiSerializer serializer) {
+        super.serializeSelf(serializer);
+        serializer.putKey("mesh");
+        serializer.serializeValue(data);
+    }
+
+    /**
+        Allows serializing self data (with compact serializer)
+    */
+    override
+    void serializeSelf(ref InochiSerializerCompact serializer) {
+        super.serializeSelf(serializer);
+        serializer.putKey("mesh");
+        serializer.serializeValue(data);
+    }
+
+    override
+    SerdeException deserializeFromAsdf(Asdf data) {
+        import std.stdio : writeln;
+        super.deserializeFromAsdf(data);
+        if (auto exc = data["mesh"].deserializeValue(this.data)) return exc;
+
+        this.vertices = this.data.vertices.dup;
+
+        // Update indices and vertices
+        this.updateIndices();
+        this.updateVertices();
+        return null;
+    }
+
 public:
+
+    /**
+        Constructs a new drawable surface
+    */
+    this(Node parent = null) {
+        super(parent);
+
+        // Generate the buffers
+        glGenBuffers(1, &vbo);
+        glGenBuffers(1, &ibo);
+    }
 
     /**
         Constructs a new drawable surface
@@ -141,6 +189,9 @@ public:
         super.drawOne();
     }
 
+    override
+    string typeId() { return "Drawable"; }
+
     /**
         Draws the drawable's outline
     */
@@ -192,7 +243,6 @@ public:
     final void reset() {
         vertices[] = data.vertices;
     }
-
 }
 
 /**

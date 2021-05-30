@@ -7,14 +7,22 @@
     Authors: Luna Nielsen
 */
 module inochi2d.core.nodes.pathdeform;
+import inochi2d.fmt.serialize;
 import inochi2d.core.nodes.part;
 import inochi2d.core.nodes;
 import inochi2d.core.dbg;
 import inochi2d.math;
 
+package(inochi2d) {
+    void inInitPathDeform() {
+        inRegisterNodeType!PathDeform;
+    }
+}
+
 /**
     A node that deforms multiple nodes against a path.
 */
+@TypeId("PathDeform")
 class PathDeform : Node {
 private:
     
@@ -67,6 +75,56 @@ private:
             computedJoints[i] = mat3.translation(vec3(joints[i], 0)) * mat3.zrotation(startAngle-endAngle);
         }
     }
+    
+protected:
+
+    override
+    string typeId() { return "PathDeform"; }
+
+    /**
+        Allows serializing self data (with pretty serializer)
+    */
+    override
+    void serializeSelf(ref InochiSerializer serializer) {
+        super.serializeSelf(serializer);
+        serializer.putKey("joints");
+        auto state = serializer.arrayBegin();
+            foreach(joint; jointOrigins) {
+                serializer.elemBegin;
+                joint.serialize(serializer);
+            }
+        serializer.arrayEnd(state);
+    }
+
+    /**
+        Allows serializing self data (with compact serializer)
+    */
+    override
+    void serializeSelf(ref InochiSerializerCompact serializer) {
+        super.serializeSelf(serializer);
+        serializer.putKey("joints");
+        auto state = serializer.arrayBegin();
+            foreach(joint; jointOrigins) {
+                serializer.elemBegin;
+                joint.serialize(serializer);
+            }
+        serializer.arrayEnd(state);
+    }
+
+    override
+    SerdeException deserializeFromAsdf(Asdf data) {
+        super.deserializeFromAsdf(data);
+        
+        foreach(jointData; data["joints"].byElement) {
+            vec2 val;
+            val.deserialize(jointData);
+            
+            jointOrigins ~= val;
+        }
+        joints = jointOrigins.dup;
+        this.computedJoints = new mat3[joints.length];
+        return null;
+    }
 
 public:
 
@@ -89,6 +147,13 @@ public:
     */
     vec2[] origins() {
         return jointOrigins;
+    }
+
+    /**
+        Constructs a new path deform
+    */
+    this(Node parent = null) {
+        super(parent);
     }
 
     /**

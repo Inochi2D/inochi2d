@@ -7,6 +7,7 @@
     Authors: Luna Nielsen
 */
 module inochi2d.core.nodes.part;
+import inochi2d.fmt.serialize;
 import inochi2d.core.nodes.drawable;
 import inochi2d.core;
 import inochi2d.math;
@@ -24,6 +25,7 @@ package(inochi2d) {
     }
 
     void inInitPart() {
+        inRegisterNodeType!Part;
         partShader = new Shader(import("basic/basic.vert"), import("basic/basic.frag"));
         partMaskShader = new Shader(import("basic/basic.vert"), import("basic/basic-mask.frag"));
     }
@@ -90,9 +92,10 @@ enum MaskingMode {
 /**
     Dynamic Mesh Part
 */
+@TypeId("Part")
 class Part : Drawable {
 private:
-    
+
     /* current texture */
     size_t currentTexture = 0;
     
@@ -106,6 +109,8 @@ private:
     GLint mmvp;
     GLint mthreshold;
     GLint mgopacity;
+
+    uint[] pendingMasks;
 
     void updateUVs() {
         glBindBuffer(GL_ARRAY_BUFFER, uvbo);
@@ -170,6 +175,110 @@ protected:
         glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
     }
 
+    override
+    string typeId() { return "Part"; }
+
+    /**
+        Allows serializing self data (with pretty serializer)
+    */
+    override
+    void serializeSelf(ref InochiSerializer serializer) {
+        super.serializeSelf(serializer);
+        
+        serializer.putKey("textures");
+        auto state = serializer.arrayBegin();
+            serializer.elemBegin;
+            serializer.putValue(name);
+        serializer.arrayEnd(state);
+
+        if (mask.length > 0) {
+
+            serializer.putKey("mask_mode");
+            serializer.serializeValue(maskingMode);
+
+            serializer.putKey("mask_threshold");
+            serializer.putValue(maskAlphaThreshold);
+
+            serializer.putKey("masked_by");
+            state = serializer.arrayBegin();
+                foreach(m; mask) {
+                    serializer.elemBegin;
+                    serializer.putValue(m.uuid);
+                }
+            serializer.arrayEnd(state);
+        }
+
+        serializer.putKey("opacity");
+        serializer.putValue(opacity);
+    }
+
+    /**
+        Allows serializing self data (with compact serializer)
+    */
+    override
+    void serializeSelf(ref InochiSerializerCompact serializer) {
+        super.serializeSelf(serializer);
+        
+        serializer.putKey("textures");
+        auto state = serializer.arrayBegin();
+            serializer.elemBegin;
+            serializer.putValue(name);
+        serializer.arrayEnd(state);
+
+        serializer.putKey("mask_mode");
+        serializer.serializeValue(maskingMode);
+
+        serializer.putKey("mask_threshold");
+        serializer.putValue(maskAlphaThreshold);
+
+        if (mask.length > 0) {
+
+            serializer.putKey("masked_by");
+            state = serializer.arrayBegin();
+                foreach(m; mask) {
+                    serializer.elemBegin;
+                    serializer.putValue(m.uuid);
+                }
+            serializer.arrayEnd(state);
+        }
+
+        serializer.putKey("opacity");
+        serializer.putValue(opacity);
+
+    }
+
+    override
+    SerdeException deserializeFromAsdf(Asdf data) {
+        super.deserializeFromAsdf(data);
+
+        // TODO: Index textures by ID
+        string texName;
+        auto elements = data["textures"].byElement;
+        if (!elements.empty) {
+            if (auto exc = elements.front.deserializeValue(texName)) return exc;
+            this.textures = [new Texture(texName)];
+        }
+
+        data["opacity"].deserializeValue(this.opacity);
+
+        if (!data["masked_by"].isEmpty) {
+            data["mask_mode"].deserializeValue(this.maskingMode);
+            data["mask_threshold"].deserializeValue(this.maskAlphaThreshold);
+            foreach(imask; data["masked_by"].byElement) {
+                uint uuid;
+                if (auto exc = imask.deserializeValue(uuid)) return exc;
+
+                import std.stdio : writefln;
+                writefln("Added %s mask to %s", uuid, name);
+                this.pendingMasks ~= uuid;
+            }
+        }
+
+        // Update indices and vertices
+        this.updateUVs();
+        return null;
+    }
+
 public:
     /**
         List of textures this part can use
@@ -208,6 +317,21 @@ public:
     */
     this(MeshData data, Texture[] textures, Node parent = null) {
         this(data, textures, inCreateUUID(), parent);
+    }
+
+    /**
+        Constructs a new part
+    */
+    this(Node parent = null) {
+        super(parent);
+        glGenBuffers(1, &uvbo);
+
+        mvp = partShader.getUniformLocation("mvp");
+        gopacity = partShader.getUniformLocation("opacity");
+        
+        mmvp = partMaskShader.getUniformLocation("mvp");
+        mthreshold = partMaskShader.getUniformLocation("threshold");
+        mgopacity = partMaskShader.getUniformLocation("opacity");
     }
 
     /**
@@ -272,4 +396,14 @@ public:
         }
     }
 
+    override
+    void finalize() {
+        super.finalize();
+        foreach(pmask; pendingMasks) {
+            if (Node nMask = puppet.find!Drawable(pmask)) {
+                mask ~= cast(Drawable)nMask;
+            }
+        }
+        pendingMasks.length = 0;
+    }
 }

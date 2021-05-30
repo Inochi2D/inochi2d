@@ -53,6 +53,8 @@ package(inochi2d) {
         inSetViewport(640, 480);
         
         // Initialize dynamic meshes
+        inInitNodes();
+        inInitPathDeform();
         inInitDrawable();
         inInitPart();
         inInitMask();
