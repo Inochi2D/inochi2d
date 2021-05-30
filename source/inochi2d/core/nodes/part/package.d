@@ -359,6 +359,7 @@ public:
     override
     void drawOne() {
         if (!enabled) return;
+        if (opacity == 0) return; // Might as well save the trouble
         
         glUniform1f(mthreshold, maskAlphaThreshold);
         glUniform1f(mgopacity, opacity);
