@@ -19,14 +19,10 @@ private:
 
 public:
 
-    this() {
-        position = vec2(0, 0);
-    }
-
     /**
         Position of camera
     */
-    vec2 position;
+    vec2 position = vec2(0, 0);
 
     /**
         Size of the camera
