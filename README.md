@@ -91,7 +91,7 @@ inGetCamera().scale = vec2(0.5);
 // inSetCamera
 
 // NOTE: Loading API WIP, subject to change
-Puppet myPuppet = loadPuppet("myPuppet.inp");
+Puppet myPuppet = inLoadPuppet("myPuppet.inp");
 
 while(!glfwWindowShouldClose(window)) {
     // NOTE: Inochi2D does not itself clear the main framebuffer
