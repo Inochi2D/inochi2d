@@ -264,12 +264,11 @@ protected:
         if (!data["masked_by"].isEmpty) {
             data["mask_mode"].deserializeValue(this.maskingMode);
             data["mask_threshold"].deserializeValue(this.maskAlphaThreshold);
+
+            // Go every masked part
             foreach(imask; data["masked_by"].byElement) {
                 uint uuid;
                 if (auto exc = imask.deserializeValue(uuid)) return exc;
-
-                import std.stdio : writefln;
-                writefln("Added %s mask to %s", uuid, name);
                 this.pendingMasks ~= uuid;
             }
         }
