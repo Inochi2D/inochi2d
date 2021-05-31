@@ -7,7 +7,7 @@
     Authors: Luna Nielsen
 */
 module inochi2d.fmt;
-public import inochi2d.fmt.binfmt;
+import inochi2d.fmt.binfmt;
 public import inochi2d.fmt.serialize;
 import inochi2d.core;
 import std.bitmanip;
@@ -33,12 +33,15 @@ Puppet inLoadPuppet(string file) {
     ubyte[] buffer = cast(ubyte[])read(file);
 
     switch(extension(file)) {
+
         case ".json":
             enforce(!inVerifyMagicBytes(buffer), "Tried loading INP format as JSON format, rename file to .inp extension");
             return inLoadJSONPuppet(cast(string)buffer);
+
         case ".inp":
             enforce(inVerifyMagicBytes(buffer), "Invalid data format for INP puppet");
             return inLoadINPPuppet(buffer);
+
         default:
             throw new Exception("Invalid file format of %s at path %s".format(extension(file), file));
     }
@@ -57,14 +60,6 @@ Puppet inLoadPuppetFromMemory(ubyte[] data) {
 Puppet inLoadJSONPuppet(string data) {
     isLoadingINP_ = false;
     return inLoadJsonDataFromMemory!Puppet(data);
-}
-
-private size_t inInterpretDataFromBuffer(T)(ubyte[] buffer, ref T data) {
-    ubyte[T.sizeof] toInterp;
-    toInterp[0..T.sizeof] = buffer[0..T.sizeof];
-
-    data = bigEndianToNative!T(toInterp);
-    return T.sizeof;
 }
 
 /**
@@ -87,7 +82,6 @@ Puppet inLoadINPPuppet(ubyte[] buffer) {
     inBeginTextureLoading();
 
     Texture[] slots;
-    int i;
     while(bufferOffset < buffer.length) {
         
         uint textureLength;
