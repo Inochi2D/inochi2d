@@ -212,9 +212,6 @@ protected:
             serializer.putKey("mask_mode");
             serializer.serializeValue(maskingMode);
 
-            serializer.putKey("mask_threshold");
-            serializer.putValue(maskAlphaThreshold);
-
             serializer.putKey("masked_by");
             auto state = serializer.arrayBegin();
                 foreach(m; mask) {
@@ -223,6 +220,9 @@ protected:
                 }
             serializer.arrayEnd(state);
         }
+
+        serializer.putKey("mask_threshold");
+        serializer.putValue(maskAlphaThreshold);
 
         serializer.putKey("opacity");
         serializer.putValue(opacity);
@@ -257,9 +257,6 @@ protected:
         serializer.putKey("mask_mode");
         serializer.serializeValue(maskingMode);
 
-        serializer.putKey("mask_threshold");
-        serializer.putValue(maskAlphaThreshold);
-
         if (mask.length > 0) {
 
             serializer.putKey("masked_by");
@@ -270,6 +267,9 @@ protected:
                 }
             serializer.arrayEnd(state);
         }
+
+        serializer.putKey("mask_threshold");
+        serializer.putValue(maskAlphaThreshold);
 
         serializer.putKey("opacity");
         serializer.putValue(opacity);
@@ -301,10 +301,10 @@ protected:
         }
 
         data["opacity"].deserializeValue(this.opacity);
+        data["mask_threshold"].deserializeValue(this.maskAlphaThreshold);
 
         if (!data["masked_by"].isEmpty) {
             data["mask_mode"].deserializeValue(this.maskingMode);
-            data["mask_threshold"].deserializeValue(this.maskAlphaThreshold);
 
             // Go every masked part
             foreach(imask; data["masked_by"].byElement) {
