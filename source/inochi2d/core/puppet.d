@@ -7,6 +7,7 @@ import std.exception;
 import std.format;
 import std.file;
 import std.path : extension;
+import std.json;
 
 /**
     Magic value meaning that the model has no thumbnail
@@ -181,6 +182,12 @@ public:
     */
     @Ignore
     Texture[] textureSlots;
+
+    /**
+        Extended vendor data
+    */
+    @Ignore
+    JSONValue[string] extData;
 
     /**
         Creates a new puppet from a node tree

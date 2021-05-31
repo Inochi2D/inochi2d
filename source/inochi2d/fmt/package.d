@@ -78,11 +78,17 @@ Puppet inLoadINPPuppet(ubyte[] buffer) {
 
     string puppetData = cast(string)buffer[bufferOffset..bufferOffset+=puppetDataLength];
 
+    enforce(inVerifySection(buffer[bufferOffset..bufferOffset+=8], TEX_SECTION), "Expected Texture Blob section, got nothing!");
+
     // Load textures in to memory
     inBeginTextureLoading();
 
+    // Get amount of slots
+    uint slotCount;
+    inInterpretDataFromBuffer(buffer[bufferOffset..bufferOffset+=4], slotCount);
+
     Texture[] slots;
-    while(bufferOffset < buffer.length) {
+    foreach(i; 0..slotCount) {
         
         uint textureLength;
         inInterpretDataFromBuffer(buffer[bufferOffset..bufferOffset+=4], textureLength);
@@ -98,6 +104,28 @@ Puppet inLoadINPPuppet(ubyte[] buffer) {
     puppet.textureSlots = slots;
 
     inEndTextureLoading();
+
+    if (inVerifySection(buffer[bufferOffset..bufferOffset+=8], EXT_SECTION)) {
+        uint sectionCount;
+        inInterpretDataFromBuffer(buffer[bufferOffset..bufferOffset+=4], sectionCount);
+
+        foreach(section; 0..sectionCount) {
+            import std.json : parseJSON;
+
+            // Get name of payload/vendor extended data
+            uint sectionNameLength;
+            inInterpretDataFromBuffer(buffer[bufferOffset..bufferOffset+=4], sectionNameLength);            
+            string sectionName = cast(string)buffer[bufferOffset..bufferOffset+=sectionNameLength];
+
+            // Get length of data
+            uint payloadLength;
+            inInterpretDataFromBuffer(buffer[bufferOffset..bufferOffset+=4], payloadLength);
+
+            // Load the vendor JSON data in to the extData section of the puppet
+            string payload = cast(string)buffer[bufferOffset..bufferOffset+=payloadLength];
+            puppet.extData[sectionName] = parseJSON(payload);
+        }
+    }
     
     // We're done!
     return puppet;
@@ -116,7 +144,10 @@ void inWriteINPPuppet(Puppet p, string file) {
     app ~= MAGIC_BYTES;
     app ~= nativeToBigEndian(cast(uint)puppetJson.length)[0..4];
     app ~= cast(ubyte[])puppetJson;
-
+    
+    // Begin text section
+    app ~= TEX_SECTION;
+    app ~= nativeToBigEndian(cast(uint)p.textureSlots.length)[0..4];
     foreach(texture; p.textureSlots) {
         int e;
         ubyte[] tex = write_image_mem(IF_TGA, texture.width, texture.height, texture.getTextureData(), 4, e);
@@ -124,6 +155,25 @@ void inWriteINPPuppet(Puppet p, string file) {
         app ~= (cast(ubyte)IN_TEX_TGA);
         app ~= (tex);
     }
+
+    // Begin extended section
+    app ~= EXT_SECTION;
+    app ~= nativeToBigEndian(cast(uint)p.extData.length)[0..4];
+
+    foreach(name, payload; p.extData) {
+        import std.json : JSONValue;
+        
+        // Write payload name and its length
+        app ~= nativeToBigEndian(cast(uint)name.length)[0..4];
+        app ~= cast(ubyte[])name;
+
+        // Write payload length and payload
+        string payloadText = payload.toString;
+        app ~= nativeToBigEndian(cast(uint)payloadText.length)[0..4];
+        app ~= cast(ubyte[])payloadText;
+
+    }
+    
 
     // Write it out to file
     write(file, app.data);
