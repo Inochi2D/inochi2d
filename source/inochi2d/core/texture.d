@@ -167,7 +167,7 @@ public:
     /**
         Creates a new empty texture
     */
-    this(int width, int height, GLuint mode = GL_SRGB_ALPHA, int alignment = 4) {
+    this(int width, int height, GLuint mode = GL_RGBA, int alignment = 4) {
 
         // Create an empty texture array with no data
         ubyte[] empty = new ubyte[width_*height_*alignment];
@@ -179,7 +179,7 @@ public:
     /**
         Creates a new texture from specified data
     */
-    this(ubyte[] data, int width, int height, GLuint mode = GL_SRGB_ALPHA, int alignment = 4) {
+    this(ubyte[] data, int width, int height, GLuint mode = GL_RGBA, int alignment = 4) {
         this.colorMode = mode;
         this.alignment = alignment;
         this.width_ = width;

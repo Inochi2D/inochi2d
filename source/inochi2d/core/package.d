@@ -87,7 +87,8 @@ package(inochi2d) {
     Begins rendering to the framebuffer
 */
 void inBeginScene() { 
-    glEnable(GL_FRAMEBUFFER_SRGB); 
+    glEnable(GL_BLEND);
+    glDisable(GL_DEPTH_TEST);
 
     // Make sure to reset our viewport if someone has messed with it
     glViewport(0, 0, inViewportWidth, inViewportHeight);
@@ -99,7 +100,6 @@ void inBeginScene() {
     // Everything else is the actual texture used by the meshes at id 0
     glActiveTexture(GL_TEXTURE0);
 
-    glEnable(GL_BLEND);
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 }
 
@@ -108,9 +108,9 @@ void inBeginScene() {
 */
 void inEndScene() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
     glDisable(GL_BLEND);
-    
-    glDisable(GL_FRAMEBUFFER_SRGB); 
+    glEnable(GL_DEPTH_TEST);
 }
 
 /**
