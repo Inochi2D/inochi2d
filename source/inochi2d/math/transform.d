@@ -166,10 +166,10 @@ public:
         else tnew.translation.x = pixelSnap ? round(standAloneTrans.x) : standAloneTrans.x;
 
         if (!lockTranslationY) tnew.translation.y = pixelSnap ? round(trans.y) : trans.y;
-        else tnew.translation.x = pixelSnap ? round(standAloneTrans.y) : standAloneTrans.y;
+        else tnew.translation.y = pixelSnap ? round(standAloneTrans.y) : standAloneTrans.y;
 
         if (!lockTranslationZ) tnew.translation.z = pixelSnap ? round(trans.z) : trans.z;
-        else tnew.translation.x = pixelSnap ? round(standAloneTrans.z) : standAloneTrans.z;
+        else tnew.translation.z = pixelSnap ? round(standAloneTrans.z) : standAloneTrans.z;
 
         tnew.update();
 
