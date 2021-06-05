@@ -158,12 +158,6 @@ private:
         // Not found
         return null;
     }
-
-    /**
-        Creates a new puppet from nothing ()
-    */
-    this() { this.puppetRootNode = new Node(this); root = new Node(this.puppetRootNode); }
-
 public:
     /**
         Meta information about this puppet
@@ -188,6 +182,15 @@ public:
     */
     @Ignore
     JSONValue[string] extData;
+
+    /**
+        Creates a new puppet from nothing ()
+    */
+    this() { 
+        this.puppetRootNode = new Node(this); 
+        root = new Node(this.puppetRootNode); 
+        root.name = "Root";
+    }
 
     /**
         Creates a new puppet from a node tree
@@ -337,7 +340,7 @@ public:
 
             string iden = getLineSet();
 
-            string s = "%s%s <%s>\n".format(n.children.length > 0 ? "╭─" : "", n.name, n.uuid);
+            string s = "%s[%s] %s <%s>\n".format(n.children.length > 0 ? "╭─" : "", n.typeId, n.name, n.uuid);
             foreach(i, child; n.children) {
                 string term = "├→";
                 if (i == n.children.length-1) {
