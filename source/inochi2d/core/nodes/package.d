@@ -11,6 +11,7 @@ import inochi2d.math;
 import inochi2d.core.puppet;
 import inochi2d.fmt.serialize;
 import inochi2d.math.serialization;
+import inochi2d.core.dbg;
 
 public import inochi2d.core.nodes.part;
 public import inochi2d.core.nodes.mask;
@@ -89,11 +90,6 @@ protected:
     void resetMask() {
         if (parent !is null) parent.resetMask();
     }
-
-    /**
-        This node's type ID
-    */
-    string typeId() { return "Node"; }
 
     void serializeSelf(ref InochiSerializer serializer) {
         
@@ -185,6 +181,11 @@ public:
     uint uuid() {
         return uuid_;
     }
+
+    /**
+        This node's type ID
+    */
+    string typeId() { return "Node"; }
 
     /**
         Gets the relative Z sorting
@@ -301,7 +302,7 @@ public:
             assert(idx >= 0, "Invalid parent-child relationship!");
 
             // Remove ourselves
-            parent_.children_.remove(idx);
+            parent_.children_ = parent_.children_.remove(idx);
         }
 
         // If we want to become parentless we need to handle that
@@ -346,7 +347,18 @@ public:
     /**
         Draws this node outline
     */
-    void drawOutlineOne() { }
+    void drawOutlineOne() {
+        auto trans = transform.matrix();
+
+        if (inDbgDrawMeshOrientation) {
+            inDbgLineWidth(4);
+            inDbgSetBuffer([vec2(0, 0), vec2(32, 0)], [0, 1]);
+            inDbgDrawLines(vec4(1, 0, 0, 0.7), trans);
+            inDbgSetBuffer([vec2(0, 0), vec2(0, -32)], [0, 1]);
+            inDbgDrawLines(vec4(0, 1, 0, 0.7), trans);
+            inDbgLineWidth(1);
+        }
+    }
 
     /**
         Finalizes this node and any children

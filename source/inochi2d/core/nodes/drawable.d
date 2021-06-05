@@ -197,6 +197,7 @@ public:
     */
     override
     void drawOutlineOne() {
+        super.drawOutlineOne();
         auto trans = transform.matrix();
         if (inDbgDrawMeshOutlines) {
             inDbgSetBuffer(vbo, ibo, cast(int)data.indices.length);
@@ -209,15 +210,6 @@ public:
             inDbgDrawPoints(vec4(0, 0, 0, 1), trans);
             inDbgPointsSize(4);
             inDbgDrawPoints(vec4(1, 1, 1, 1), trans);
-        }
-
-        if (inDbgDrawMeshOrientation) {
-            inDbgLineWidth(4);
-            inDbgSetBuffer([vec2(0, 0), vec2(32, 0)], [0, 1]);
-            inDbgDrawLines(vec4(1, 0, 0, 0.3), trans);
-            inDbgSetBuffer([vec2(0, 0), vec2(0, -32)], [0, 1]);
-            inDbgDrawLines(vec4(0, 1, 0, 0.3), trans);
-            inDbgLineWidth(1);
         }
     }
 
