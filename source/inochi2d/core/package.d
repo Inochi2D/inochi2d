@@ -78,8 +78,8 @@ package(inochi2d) {
         glGenTextures(1, &fStencil);
 
         // Attach textures to framebuffer
-        // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fColor, 0);
-        // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, fStencil, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fColor, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, fStencil, 0);
     }
 }
 
@@ -94,7 +94,8 @@ void inBeginScene() {
     glViewport(0, 0, inViewportWidth, inViewportHeight);
 
     // Bind our framebuffer
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, fBuffer);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fBuffer);
+    glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT);
 
     // Everything else is the actual texture used by the meshes at id 0
@@ -111,6 +112,7 @@ void inEndScene() {
 
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
+    glFlush();
 }
 
 /**
@@ -131,7 +133,6 @@ void inSetCamera(Camera camera) {
     Draw scene to area
 */
 void inDrawScene(vec4 area) {
-    glEnable(GL_FRAMEBUFFER_SRGB); 
 
     // Bind our vertex array
     glBindVertexArray(sceneVAO);
@@ -176,7 +177,15 @@ void inDrawScene(vec4 area) {
     glDisableVertexAttribArray(1);
 
     glDisable(GL_BLEND);
-    glDisable(GL_FRAMEBUFFER_SRGB); 
+}
+
+/**
+    Gets the Inochi2D framebuffer render image
+
+    DO NOT MODIFY THIS IMAGE!
+*/
+GLuint inGetRenderImage() {
+    return fColor;
 }
 
 /**
@@ -196,7 +205,7 @@ void inSetViewport(int width, int height) nothrow {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, null);
 
     glBindFramebuffer(GL_FRAMEBUFFER, fBuffer);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, fColor, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fColor, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, fStencil, 0);
     
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
