@@ -156,10 +156,20 @@ public:
             vec4(other.translation, 1)
         );
 
+        vec3 standAloneTrans = vec3(
+            this.translation_ *
+            vec4(0, 0, 0, 1)
+        );
+
         // Handle translation locks
         if (!lockTranslationX) tnew.translation.x = pixelSnap ? round(trans.x) : trans.x;
+        else tnew.translation.x = pixelSnap ? round(standAloneTrans.x) : standAloneTrans.x;
+
         if (!lockTranslationY) tnew.translation.y = pixelSnap ? round(trans.y) : trans.y;
+        else tnew.translation.x = pixelSnap ? round(standAloneTrans.y) : standAloneTrans.y;
+
         if (!lockTranslationZ) tnew.translation.z = pixelSnap ? round(trans.z) : trans.z;
+        else tnew.translation.x = pixelSnap ? round(standAloneTrans.z) : standAloneTrans.z;
 
         tnew.update();
 
