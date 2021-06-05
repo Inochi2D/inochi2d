@@ -191,7 +191,7 @@ public:
 
         // Set default filtering and wrapping
         this.setFiltering(Filtering.Linear);
-        this.setWrapping(Wrapping.Repeat);
+        this.setWrapping(Wrapping.Clamp);
     }
 
     /**
@@ -231,6 +231,8 @@ public:
         this.bind();
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapping);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapping);
+        
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, [0f, 0f, 0f, 0f].ptr);
     }
 
     /**
@@ -284,6 +286,13 @@ public:
         bind();
         glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf.ptr);
         return buf;
+    }
+
+    /**
+        Gets this texture's texture id
+    */
+    GLuint getTextureId() {
+        return id;
     }
 }
 
