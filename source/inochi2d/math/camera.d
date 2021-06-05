@@ -39,7 +39,7 @@ public:
         int width, height;
         inGetViewport(width, height);
 
-        vec2 realSize = vec2(width/scale.x, height/scale.y);
+        vec2 realSize = vec2(cast(float)width/scale.x, cast(float)height/scale.y);
 
         return 
             mat4.orthographic(0f, realSize.x, realSize.y, 0, 0, ushort.max) * 
