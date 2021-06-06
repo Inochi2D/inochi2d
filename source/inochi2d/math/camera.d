@@ -40,6 +40,9 @@ public:
         inGetViewport(width, height);
 
         vec2 realSize = vec2(cast(float)width/scale.x, cast(float)height/scale.y);
+        if(!position.isFinite) position = vec2(0);
+        if(!scale.isFinite) scale = vec2(1);
+        if(!realSize.isFinite) return mat4.identity;
 
         return 
             mat4.orthographic(0f, realSize.x, realSize.y, 0, 0, ushort.max) * 
