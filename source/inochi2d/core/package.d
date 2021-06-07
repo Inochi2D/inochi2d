@@ -13,6 +13,7 @@ public import inochi2d.core.texture;
 public import inochi2d.core.nodes;
 public import inochi2d.core.puppet;
 public import inochi2d.core.meshdata;
+public import inochi2d.core.param;
 import inochi2d.core.dbg;
 
 import bindbc.opengl;

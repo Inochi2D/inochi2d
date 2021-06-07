@@ -172,6 +172,13 @@ public:
     Node root;
 
     /**
+        Parameters
+    */
+    @Name("param", "Parameters")
+    @Optional
+    Parameter[] parameters;
+
+    /**
         INP Texture slots for this puppet
     */
     @Ignore
@@ -368,5 +375,8 @@ public:
         this.scanParts!true(this.root);
         this.selfSort();
         this.root.finalize();
+        foreach(parameter; parameters) {
+            parameter.finalize(this);
+        }
     }
 }
