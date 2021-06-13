@@ -79,8 +79,10 @@ package(inochi2d) {
         glGenTextures(1, &fStencil);
 
         // Attach textures to framebuffer
+        glBindFramebuffer(GL_FRAMEBUFFER, fBuffer);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fColor, 0);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, fStencil, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 }
 
@@ -134,40 +136,45 @@ void inSetCamera(Camera camera) {
     Draw scene to area
 */
 void inDrawScene(vec4 area) {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, cast(int)area.z, cast(int)area.w);
 
     // Bind our vertex array
     glBindVertexArray(sceneVAO);
     
     glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 
     sceneShader.use();
-    sceneShader.setUniform(sceneMVP, mat4.orthographic(0, area.z, area.w, 0, 0, max(area.z, area.w)) * mat4.translation(area.x, area.y, 0));
+    sceneShader.setUniform(sceneMVP, 
+        mat4.orthographic(0, area.z, area.w, 0, 0, max(area.z, area.w)) * 
+        mat4.translation(area.x, area.y, 0)
+    );
 
     // Bind the texture
-    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, fColor);
+    glActiveTexture(GL_TEXTURE0);
 
     // Enable points array
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, sceneVBO);
+    glEnableVertexAttribArray(0); // verts
     float[] data = [
-        area.x,         area.y+area.w,         0, 0,
-        area.x,         area.y,  0, 1,
-        area.x+area.z,  area.y+area.w,         1, 0,
+        area.x,         area.y+area.w,          0, 0,
+        area.x,         area.y,                 0, 1,
+        area.x+area.z,  area.y+area.w,          1, 0,
         
-        area.x+area.z,  area.y+area.w,         1, 0,
-        area.x,         area.y,  0, 1,
-        area.x+area.z,  area.y,  1, 1,
+        area.x+area.z,  area.y+area.w,          1, 0,
+        area.x,         area.y,                 0, 1,
+        area.x+area.z,  area.y,                 1, 1,
     ];
-    glBufferData(GL_ARRAY_BUFFER, 24*float.sizeof, data.ptr, GL_DYNAMIC_DRAW);
 
+    glBindBuffer(GL_ARRAY_BUFFER, sceneVBO);
+    glBufferData(GL_ARRAY_BUFFER, 24*float.sizeof, data.ptr, GL_DYNAMIC_DRAW);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4*float.sizeof, null);
 
     // Enable UVs array
     glEnableVertexAttribArray(1); // uvs
-    glBindBuffer(GL_ARRAY_BUFFER, sceneVBO);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4*float.sizeof, cast(float*)(2*float.sizeof));
 
     // Draw

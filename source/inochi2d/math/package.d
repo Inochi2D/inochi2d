@@ -10,7 +10,7 @@ module inochi2d.math;
 import gl3n.util;
 public import gl3n.linalg;
 public import gl3n.math;
-public import std.math;
+public import std.math : isNaN;
 public import gl3n.interpolate;
 
 public import inochi2d.math.transform;
