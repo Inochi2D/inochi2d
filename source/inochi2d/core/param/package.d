@@ -60,14 +60,14 @@ public:
 }
 
 /**
-    A breakpoint in a parameter
+    A keypoint in a parameter
 */
-struct ParameterBreakpoint {
+struct KeyPoint {
 
     /**
         The breakpoint location
     */
-    vec2 breakpoint;
+    vec2 keypoint;
 
     /**
         List of bindings
@@ -78,8 +78,8 @@ struct ParameterBreakpoint {
         Serializes a binding
     */
     void serialize(S)(ref S serializer) {
-        serializer.putKey("breakpoint");
-        breakpoint.serialize(serializer);
+        serializer.putKey("keypoint");
+        keypoint.serialize(serializer);
         serializer.putKey("bindings");
         serializer.serializeValue(bindings);
     }
@@ -88,7 +88,7 @@ struct ParameterBreakpoint {
         Deserializes a binding
     */
     SerdeException deserializeFromAsdf(Asdf data) {
-        breakpoint.deserialize(data);
+        keypoint.deserialize(data);
         data["bindings"].deserializeValue(this.bindings);
         return null;
     }
@@ -120,6 +120,12 @@ public:
     string name;
 
     /**
+        The parameter's handle
+    */
+    @Ignore
+    vec2 handle = vec2(0);
+
+    /**
         Whether the parameter is 2D
     */
     @Name("is_2d")
@@ -148,14 +154,15 @@ public:
     /**
         The breakpoints of the parameter
     */
-    ParameterBreakpoint[] breakpoints;
+    @Name("keypoints", "breakpoints") // Breakpoints specified for backwards compatibility
+    KeyPoint[] keypoints;
 
     /**
         Finalize loading of parameter
     */
     void finalize(Puppet puppet) {
-        foreach(breakpoint; breakpoints) {
-            breakpoint.finalize(puppet);
+        foreach(keypoint; keypoints) {
+            keypoint.finalize(puppet);
         }
     }
 }
