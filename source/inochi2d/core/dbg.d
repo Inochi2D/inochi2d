@@ -26,7 +26,7 @@ package(inochi2d) {
 }
 
 private {
-    void inUpdateDbgVerts(vec2[] points) {
+    void inUpdateDbgVerts(vec3[] points) {
 
         // Generate bad line drawing indices
         ushort[] vts = new ushort[points.length+1];
@@ -38,10 +38,10 @@ private {
         inUpdateDbgVerts(points, vts);
     }
 
-    void inUpdateDbgVerts(vec2[] points, ushort[] indices) {
+    void inUpdateDbgVerts(vec3[] points, ushort[] indices) {
         glBindVertexArray(dbgVAO);
         glBindBuffer(GL_ARRAY_BUFFER, dbgVBO);
-        glBufferData(GL_ARRAY_BUFFER, points.length*vec2.sizeof, points.ptr, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, points.length*vec3.sizeof, points.ptr, GL_DYNAMIC_DRAW);
         cVBO = dbgVBO;
 
     
@@ -72,7 +72,7 @@ void inDbgLineWidth(float size) {
 /**
     Draws points with specified color
 */
-void inDbgSetBuffer(vec2[] points) {
+void inDbgSetBuffer(vec3[] points) {
     inUpdateDbgVerts(points);
 }
 
@@ -90,7 +90,7 @@ void inDbgSetBuffer(GLuint vbo, GLuint ibo, int count) {
 /**
     Draws points with specified color
 */
-void inDbgSetBuffer(vec2[] points, ushort[] indices) {
+void inDbgSetBuffer(vec3[] points, ushort[] indices) {
     inUpdateDbgVerts(points, indices);
 }
 
@@ -107,7 +107,7 @@ void inDbgDrawPoints(vec4 color, mat4 transform = mat4.identity) {
 
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, cVBO);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, null);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, null);
         
         glDrawElements(GL_POINTS, indiceCount, GL_UNSIGNED_SHORT, null);
         glDisableVertexAttribArray(0);
@@ -128,7 +128,7 @@ void inDbgDrawLines(vec4 color, mat4 transform = mat4.identity) {
 
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, cVBO);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, null);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, null);
         
         glDrawElements(GL_LINE_STRIP, indiceCount, GL_UNSIGNED_SHORT, null);
         glDisableVertexAttribArray(0);
