@@ -7,6 +7,7 @@
     Authors: Luna Nielsen
 */
 module inochi2d.core.nodes.drawable;
+public import inochi2d.core.nodes.defstack;
 import inochi2d.fmt.serialize;
 import inochi2d.math;
 import inochi2d.core.nodes;
@@ -47,6 +48,22 @@ private:
         );
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, vertices.length*vec2.sizeof, vertices.ptr, GL_DYNAMIC_DRAW);
+
+        this.updateBounds();
+    }
+
+    void updateBounds() {
+
+        // Calculate bounds
+        Transform wtransform = transform;
+        bounds = vec4(wtransform.translation.xyxy);
+        foreach(vertex; vertices) {
+            vec2 vertOriented = vec2(transform.matrix * vec4(vertex, 0, 1));
+            if (vertOriented.x < bounds.x) bounds.x = vertOriented.x;
+            if (vertOriented.y < bounds.y) bounds.y = vertOriented.y;
+            if (vertOriented.x > bounds.z) bounds.z = vertOriented.x;
+            if (vertOriented.y > bounds.w) bounds.w = vertOriented.y;
+        }
     }
 
 protected:
@@ -148,6 +165,7 @@ public:
     this(MeshData data, uint uuid, Node parent = null) {
         super(uuid, parent);
         this.data = data;
+        this.deformStack = DeformationStack(this);
 
         // Set the deformable points to their initial position
         this.vertices = data.vertices.dup;
@@ -167,6 +185,16 @@ public:
     vec2[] vertices;
 
     /**
+        The bounds of this drawable
+    */
+    vec4 bounds;
+
+    /**
+        Deformation stack
+    */
+    DeformationStack deformStack;
+
+    /**
         Refreshes the drawable, updating its vertices
     */
     final void refresh() {
@@ -179,6 +207,8 @@ public:
     override
     void update() {
         super.update();
+
+        deformStack.update();
     }
 
     /**
@@ -200,8 +230,17 @@ public:
         super.drawOutlineOne();
         auto trans = transform.matrix();
         if (inDbgDrawMeshOutlines) {
-            inDbgSetBuffer(vbo, ibo, cast(int)data.indices.length);
-            inDbgDrawLines(vec4(0.5, 0.5, 0.5, 0.4), trans);
+            this.updateBounds();
+
+            float width = bounds.z-bounds.x;
+            float height = bounds.w-bounds.y;
+            inDbgSetBuffer([
+                vec3(bounds.x, bounds.y, 0),
+                vec3(bounds.x + width, bounds.y, 0),
+                vec3(bounds.x + width, bounds.y+height, 0),
+                vec3(bounds.x, bounds.y+height, 0),
+            ]);
+            inDbgDrawLines(vec4(0.5, 0.5, 0.5, 1));
         }
 
         if (inDbgDrawMeshVertexPoints) {
