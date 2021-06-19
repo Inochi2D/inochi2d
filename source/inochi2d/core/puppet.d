@@ -280,6 +280,8 @@ public:
         Populate texture slots with all visible textures in the model
     */
     final void populateTextureSlots() {
+        if (textureSlots.length > 0) textureSlots.length = 0;
+        
         foreach(part; rootParts) {
             foreach(texture; part.textures) {
                 this.addTextureToSlot(texture);
