@@ -125,8 +125,14 @@ public:
 
         // Handle rotation locks
         if (!lockRotationX) tnew.rotation.x = rot.roll;
+        else tnew.rotation.x = this.rotation.x;
+        
         if (!lockRotationY) tnew.rotation.y = rot.pitch;
+        else tnew.rotation.y = this.rotation.y;
+
         if (!lockRotationZ) tnew.rotation.z = rot.yaw;
+        else tnew.rotation.z = this.rotation.z;
+
         tnew.rotation_ = quat.euler_rotation(tnew.rotation.x, tnew.rotation.y, tnew.rotation.z).to_matrix!(4, 4);
 
         //
@@ -150,7 +156,7 @@ public:
             // That has been pre-calculated above.
             // Do note we also multiply by its inverse, this is so that the rotations and scaling doesn't
             // start stacking up weirdly causing cascadingly more extreme transformation.
-            tnew.scale_ * tnew.rotation_ * this.translation_ * tnew.rotation_.inverse() * tnew.scale_.inverse() * 
+            other.scale_ * other.rotation_ * this.translation_ * other.rotation_.inverse() * other.scale_.inverse() * 
 
             // Also our local translation
             vec4(other.translation, 1)
