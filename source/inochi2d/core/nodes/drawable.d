@@ -240,7 +240,9 @@ public:
                 vec3(bounds.x + width, bounds.y+height, 0),
                 vec3(bounds.x, bounds.y+height, 0),
             ]);
-            inDbgDrawLines(vec4(0.5, 0.5, 0.5, 1));
+            inDbgLineWidth(3);
+            inDbgDrawLines(vec4(.5, .5, .5, 1));
+            inDbgLineWidth(1);
         }
 
         if (inDbgDrawMeshVertexPoints) {
