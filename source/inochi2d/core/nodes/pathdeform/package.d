@@ -132,10 +132,15 @@ protected:
             serializer.putKey("bindings");
             state = serializer.arrayBegin();
                 foreach(item, data; bindings) {
+
+                    // (Safety measure) Skip null items
+                    if (item is null) continue;
+
                     serializer.elemBegin;
                     auto obj = serializer.objectBegin();
                         serializer.putKey("bound_to");
                         serializer.putValue(item.uuid);
+                        
                         serializer.putKey("bind_data");
                         serializer.serializeValue(data);
                     serializer.objectEnd(obj);
@@ -248,6 +253,7 @@ public:
         // Then iterates over every joint that should affect that part
         // Then appplies the deformation across that part's joints
         foreach(Drawable part, size_t[][] entry; bindings) {
+            if (part is null) continue;
             MeshData mesh = part.getMesh();
             
             foreach(jointEntry, vertList; entry) {

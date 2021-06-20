@@ -52,20 +52,6 @@ private:
         this.updateBounds();
     }
 
-    void updateBounds() {
-
-        // Calculate bounds
-        Transform wtransform = transform;
-        bounds = vec4(wtransform.translation.xyxy);
-        foreach(vertex; vertices) {
-            vec2 vertOriented = vec2(transform.matrix * vec4(vertex, 0, 1));
-            if (vertOriented.x < bounds.x) bounds.x = vertOriented.x;
-            if (vertOriented.y < bounds.y) bounds.y = vertOriented.y;
-            if (vertOriented.x > bounds.z) bounds.z = vertOriented.x;
-            if (vertOriented.y > bounds.w) bounds.w = vertOriented.y;
-        }
-    }
-
 protected:
     /**
         OpenGL Index Buffer Object
@@ -221,6 +207,23 @@ public:
 
     override
     string typeId() { return "Drawable"; }
+
+    /**
+        Updates the drawable's bounds
+    */
+    void updateBounds() {
+
+        // Calculate bounds
+        Transform wtransform = transform;
+        bounds = vec4(wtransform.translation.xyxy);
+        foreach(vertex; vertices) {
+            vec2 vertOriented = vec2(transform.matrix * vec4(vertex, 0, 1));
+            if (vertOriented.x < bounds.x) bounds.x = vertOriented.x;
+            if (vertOriented.y < bounds.y) bounds.y = vertOriented.y;
+            if (vertOriented.x > bounds.z) bounds.z = vertOriented.x;
+            if (vertOriented.y > bounds.w) bounds.w = vertOriented.y;
+        }
+    }
 
     /**
         Draws the drawable's outline

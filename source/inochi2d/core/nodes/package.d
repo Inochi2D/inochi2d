@@ -436,6 +436,37 @@ public:
 
         return null;
     }
+
+    /**
+        Force sets the node's ID
+
+        THIS IS NOT A SAFE OPERATION.
+    */
+    final void forceSetUUID(uint uuid) {
+        this.uuid_ = uuid;
+    }
+
+    /**
+        Gets the combined bounds of the node
+    */
+    vec4 getCombinedBounds() {
+        vec4 combined = vec4(0);
+        
+        // Get Bounds as drawable
+        if (Drawable drawable = cast(Drawable)this) {
+            combined = drawable.bounds;
+        }
+
+        foreach(child; children) {
+            vec4 cbounds = child.getCombinedBounds();
+            if (cbounds.x < combined.x) combined.x = cbounds.x;
+            if (cbounds.y < combined.y) combined.y = cbounds.y;
+            if (cbounds.z > combined.z) combined.z = cbounds.z;
+            if (cbounds.w > combined.w) combined.w = cbounds.w;
+        }
+
+        return combined;
+    }
 }
 
 //
