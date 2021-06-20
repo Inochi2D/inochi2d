@@ -450,7 +450,8 @@ public:
         Gets the combined bounds of the node
     */
     vec4 getCombinedBounds() {
-        vec4 combined = vec4(0);
+        auto tr = transform;
+        vec4 combined = vec4(tr.translation.x, tr.translation.y, tr.translation.x, tr.translation.y);
         
         // Get Bounds as drawable
         if (Drawable drawable = cast(Drawable)this) {
