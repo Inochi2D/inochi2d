@@ -61,15 +61,20 @@ private:
         Applies deformation to parent
     */
     void apply() {
-        MeshData mesh = parent.getMesh();
-        foreach(i; 0..deformData.length) {
+        if (deformations.length > 0) {
+            MeshData mesh = parent.getMesh();
+            foreach(i; 0..deformData.length) {
 
-            // Vertex position calculated
-            const(vec2) vp = *(mesh.vertices.ptr+i) + *(deformData.ptr+i);
+                // Vertex position calculated
+                const(vec2) vp = *(mesh.vertices.ptr+i) + *(deformData.ptr+i);
 
-            // Tiny optimization, avoid array bounds checking
-            vec2* cvp = (parent.vertices.ptr+i);
-            *cvp = vp;
+                // Tiny optimization, avoid array bounds checking
+                vec2* cvp = (parent.vertices.ptr+i);
+                *cvp = vp;
+            }
+
+            // Tell parent to update its vertex data
+            parent.updateVertices();
         }
     }
 
