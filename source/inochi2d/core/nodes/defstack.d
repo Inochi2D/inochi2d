@@ -20,33 +20,21 @@ struct Deformation {
 struct DeformationStack {
 private:
     size_t idx = 0;
-
     vec2[] deformData;
-    float deformCount;
-
     Drawable parent;
 
     /**
         Calculate the combined deformations
     */
-    void calculate(size_t size) {
+    void calculate() {
 
         // Initial variables        
         bool hasInitialized = false;
-        deformCount = 0;
 
-        // Set size of deform data
-        if (deformData.length != size) {
-            deformData.length = size;
-        }
-
-        foreach(deformation; deformations) {
+        foreach(defId, deformation; deformations) {
 
             // TODO: Emit a warning for mismatched deformation data
-            if (deformation.vertexOffsets.length != size) continue;
-
-            // We're adding a new deformation to the calculation
-            deformCount++;
+            if (deformation.vertexOffsets.length != parent.vertices.length) continue;
 
             // Initialize deformData with initial values if need be
             if (!hasInitialized) {
@@ -57,7 +45,14 @@ private:
 
             // If already initialized then add the next deformation data with existing
             // TODO: Use SIMD?
-            foreach(i; 0..size) deformData[i] += deformation.vertexOffsets[i];
+            foreach(i; 0..deformData.length) {
+                
+                // Set to 0 first if we're doing a new calculation
+                if (defId == 0) deformData[i] = vec2(0);
+
+                // Add deformation
+                deformData[i] += deformation.vertexOffsets[i];
+            }
         }
         
     }
@@ -70,7 +65,7 @@ private:
         foreach(i; 0..deformData.length) {
 
             // Vertex position calculated
-            const(vec2) vp = *(mesh.vertices.ptr+i) + (*(deformData.ptr+i)/deformCount);
+            const(vec2) vp = *(mesh.vertices.ptr+i) + *(deformData.ptr+i);
 
             // Tiny optimization, avoid array bounds checking
             vec2* cvp = (parent.vertices.ptr+i);
@@ -82,12 +77,27 @@ public:
 
     this(Drawable parent) {
         this.parent = parent;
+        this.resize();
     }
 
     /**
         List of deformations to apply
     */
     Deformation[] deformations;
+
+    /**
+        Resizes the deformation stack's internal buffer
+    */
+    void resize() {
+        if (parent is null) return;
+        
+        deformData.length = parent.vertices.length;
+
+        // Zero it out so that we don't have problems
+        foreach(i; 0..deformData.length) {
+            deformData[i] = vec2(0);
+        }
+    }
 
     /**
         Push deformation on to stack
@@ -107,7 +117,7 @@ public:
     void update() {
         if (parent is null) return;
         
-        this.calculate(parent.vertices.length);
+        this.calculate();
         this.apply();
         idx = 0;
     }

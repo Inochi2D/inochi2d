@@ -79,7 +79,7 @@ private:
     @Ignore
     Part[] rootParts;
 
-    void scanPartsRecurse(Node node) {
+    void scanPartsRecurse(ref Node node) {
 
         // Don't need to scan null nodes
         if (node is null) return;
@@ -104,7 +104,7 @@ private:
         }
     }
 
-    final void scanParts(bool reparent = false)(Node node) {
+    final void scanParts(bool reparent = false)(ref Node node) {
 
         // We want rootParts to be cleared so that we
         // don't draw the same part multiple times
@@ -118,7 +118,7 @@ private:
         // anymore, we clear its children first, then assign its new child
         // to our "new" root node. In some cases the root node will be
         // quite different.
-        if (reparent) { 
+        static if (reparent) { 
             if (puppetRootNode !is null) puppetRootNode.clearChildren();
             node.parent = puppetRootNode;
         }
@@ -380,5 +380,12 @@ public:
         foreach(parameter; parameters) {
             parameter.finalize(this);
         }
+    }
+
+    /**
+        Gets the internal root parts array
+    */
+    final Part[] getRootParts() {
+        return rootParts;
     }
 }
