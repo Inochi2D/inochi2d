@@ -74,7 +74,7 @@ private:
             }
 
             // Tell parent to update its vertex data
-            parent.updateVertices();
+            parent.refresh();
         }
     }
 
