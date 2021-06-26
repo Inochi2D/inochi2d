@@ -334,40 +334,6 @@ public:
     */
     void drawOne() { }
 
-    /**
-        Draws this node outline and its subnodes' outlines
-    */
-    void drawOutline() {
-        this.drawOutlineOne();
-        foreach(child; children) {
-            child.drawOutline();
-        }
-    }
-    
-    /**
-        Draws this node outline
-    */
-    void drawOutlineOne() {
-        auto trans = transform.matrix();
-
-        if (inDbgDrawMeshOrientation) {
-            inDbgLineWidth(4);
-
-            // X
-            inDbgSetBuffer([vec3(0, 0, 0), vec3(32, 0, 0)], [0, 1]);
-            inDbgDrawLines(vec4(1, 0, 0, 0.7), trans);
-
-            // Y
-            inDbgSetBuffer([vec3(0, 0, 0), vec3(0, -32, 0)], [0, 1]);
-            inDbgDrawLines(vec4(0, 1, 0, 0.7), trans);
-            
-            // Z
-            inDbgSetBuffer([vec3(0, 0, 0), vec3(0, 0, -32)], [0, 1]);
-            inDbgDrawLines(vec4(0, 0, 1, 0.7), trans);
-
-            inDbgLineWidth(1);
-        }
-    }
 
     /**
         Finalizes this node and any children
@@ -481,6 +447,54 @@ public:
             tmp = tmp.parent;
         }
         return true;
+    }
+
+    /**
+        Draws orientation of the node
+    */
+    void drawOrientation() {
+        auto trans = transform.matrix();
+        inDbgLineWidth(4);
+
+        // X
+        inDbgSetBuffer([vec3(0, 0, 0), vec3(32, 0, 0)], [0, 1]);
+        inDbgDrawLines(vec4(1, 0, 0, 0.7), trans);
+
+        // Y
+        inDbgSetBuffer([vec3(0, 0, 0), vec3(0, -32, 0)], [0, 1]);
+        inDbgDrawLines(vec4(0, 1, 0, 0.7), trans);
+        
+        // Z
+        inDbgSetBuffer([vec3(0, 0, 0), vec3(0, 0, -32)], [0, 1]);
+        inDbgDrawLines(vec4(0, 0, 1, 0.7), trans);
+
+        inDbgLineWidth(1);
+    }
+
+    /**
+        Draws bounds
+    */
+    void drawBounds() {
+        vec4 bounds = this.getCombinedBounds;
+
+        float width = bounds.z-bounds.x;
+        float height = bounds.w-bounds.y;
+        inDbgSetBuffer([
+            vec3(bounds.x, bounds.y, 0),
+            vec3(bounds.x + width, bounds.y, 0),
+            
+            vec3(bounds.x + width, bounds.y, 0),
+            vec3(bounds.x + width, bounds.y+height, 0),
+            
+            vec3(bounds.x + width, bounds.y+height, 0),
+            vec3(bounds.x, bounds.y+height, 0),
+            
+            vec3(bounds.x, bounds.y+height, 0),
+            vec3(bounds.x, bounds.y, 0),
+        ]);
+        inDbgLineWidth(3);
+        inDbgDrawLines(vec4(.5, .5, .5, 1));
+        inDbgLineWidth(1);
     }
 }
 

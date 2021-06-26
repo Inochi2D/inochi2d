@@ -130,7 +130,7 @@ void inDbgDrawLines(vec4 color, mat4 transform = mat4.identity) {
         glBindBuffer(GL_ARRAY_BUFFER, cVBO);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, null);
         
-        glDrawElements(GL_LINE_STRIP, indiceCount, GL_UNSIGNED_SHORT, null);
+        glDrawElements(GL_LINES, indiceCount, GL_UNSIGNED_SHORT, null);
         glDisableVertexAttribArray(0);
 
     glDisable(GL_LINE_SMOOTH);

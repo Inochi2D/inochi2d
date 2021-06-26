@@ -193,7 +193,6 @@ public:
     override
     void update() {
         super.update();
-
         deformStack.update();
     }
 
@@ -226,35 +225,72 @@ public:
     }
 
     /**
-        Draws the drawable's outline
+        Draws bounds
     */
     override
-    void drawOutlineOne() {
-        super.drawOutlineOne();
+    void drawBounds() {
+        float width = bounds.z-bounds.x;
+        float height = bounds.w-bounds.y;
+        inDbgSetBuffer([
+            vec3(bounds.x, bounds.y, 0),
+            vec3(bounds.x + width, bounds.y, 0),
+            
+            vec3(bounds.x + width, bounds.y, 0),
+            vec3(bounds.x + width, bounds.y+height, 0),
+            
+            vec3(bounds.x + width, bounds.y+height, 0),
+            vec3(bounds.x, bounds.y+height, 0),
+            
+            vec3(bounds.x, bounds.y+height, 0),
+            vec3(bounds.x, bounds.y, 0),
+        ]);
+        inDbgLineWidth(3);
+        inDbgDrawLines(vec4(.5, .5, .5, 1));
+        inDbgLineWidth(1);
+    }
+
+    /**
+        Draws line of mesh
+    */
+    void drawMeshLines() {
         auto trans = transform.matrix();
-        if (inDbgDrawMeshOutlines) {
-            this.updateBounds();
+        ushort[] indices = data.indices;
 
-            float width = bounds.z-bounds.x;
-            float height = bounds.w-bounds.y;
-            inDbgSetBuffer([
-                vec3(bounds.x, bounds.y, 0),
-                vec3(bounds.x + width, bounds.y, 0),
-                vec3(bounds.x + width, bounds.y+height, 0),
-                vec3(bounds.x, bounds.y+height, 0),
-            ]);
-            inDbgLineWidth(3);
-            inDbgDrawLines(vec4(.5, .5, .5, 1));
-            inDbgLineWidth(1);
+        vec3[] points = new vec3[indices.length*2];
+        foreach(i; 0..indices.length/3) {
+            size_t ix = i*3;
+            size_t iy = ix*2;
+            auto indice = indices[ix];
+
+            points[iy+0] = vec3(vertices[indice], 0);
+            points[iy+1] = vec3(vertices[indices[ix+1]], 0);
+
+            points[iy+2] = vec3(vertices[indices[ix+1]], 0);
+            points[iy+3] = vec3(vertices[indices[ix+2]], 0);
+
+            points[iy+4] = vec3(vertices[indices[ix+2]], 0);
+            points[iy+5] = vec3(vertices[indice], 0);
         }
 
-        if (inDbgDrawMeshVertexPoints) {
-            inDbgSetBuffer(vbo, ibo, cast(int)data.indices.length);
-            inDbgPointsSize(8);
-            inDbgDrawPoints(vec4(0, 0, 0, 1), trans);
-            inDbgPointsSize(4);
-            inDbgDrawPoints(vec4(1, 1, 1, 1), trans);
+        inDbgSetBuffer(points);
+        inDbgDrawLines(vec4(.5, .5, .5, 1), trans);
+    }
+
+    /**
+        Draws the points of the mesh
+    */
+    void drawMeshPoints() {
+        auto trans = transform.matrix();
+        vec3[] points = new vec3[vertices.length];
+        foreach(i, point; vertices) {
+            points[i] = vec3(point, 0);
         }
+
+        inDbgSetBuffer(points);
+        inDbgPointsSize(8);
+        inDbgDrawPoints(vec4(0, 0, 0, 1), trans);
+        inDbgPointsSize(4);
+        inDbgDrawPoints(vec4(1, 1, 1, 1), trans);
     }
 
     /**

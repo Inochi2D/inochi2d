@@ -272,36 +272,8 @@ public:
     }
 
     
-    override
-    void drawOutlineOne() {
-        auto trans = transform.matrix();
-
-        if (inDbgDrawMeshOrientation) {
-            inDbgLineWidth(4);
-            // X
-            inDbgSetBuffer([vec3(0, 0, 0), vec3(32, 0, 0)], [0, 1]);
-            inDbgDrawLines(vec4(1, 0, 0, 0.7), trans);
-
-            // Y
-            inDbgSetBuffer([vec3(0, 0, 0), vec3(0, -32, 0)], [0, 1]);
-            inDbgDrawLines(vec4(0, 1, 0, 0.7), trans);
-            
-            // Z
-            inDbgSetBuffer([vec3(0, 0, 0), vec3(0, 0, -32)], [0, 1]);
-            inDbgDrawLines(vec4(0, 0, 1, 0.7), trans);
-
-            foreach(i, joint; computedJoints) {
-                inDbgSetBuffer(
-                    [vec3(joints[i].x, joints[i].y, 0), vec3(joints[i].x+32, joints[i].y, 0)], [0, 1]);
-                inDbgDrawLines(vec4(1, 0, 0, 0.3), trans*mat4(joint));
-
-                inDbgSetBuffer(
-                    [vec3(joints[i].x, joints[i].y, 0), vec3(joints[i].x, joints[i].y-32, 0)], [0, 1]);
-                inDbgDrawLines(vec4(0, 1, 0, 0.3), trans*mat4(joint));
-
-            }
-            inDbgLineWidth(1);
-        }
+    void drawHandles() {
+        
     }
 
     /**

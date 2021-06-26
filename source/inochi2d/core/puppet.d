@@ -229,13 +229,6 @@ public:
     }
 
     /**
-        Draws the puppet's outlines for every drawable
-    */
-    final void drawOutlines() {
-        root.drawOutline();
-    }
-
-    /**
         Gets this puppet's root transform
     */
     final Transform transform() {
