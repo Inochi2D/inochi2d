@@ -468,6 +468,20 @@ public:
 
         return combined;
     }
+
+    /**
+        Gets whether nodes can be reparented
+    */
+    bool canReparent(Node to) {
+        Node tmp = to;
+        while(tmp !is null) {
+            if (tmp.uuid == this.uuid) return false;
+            
+            // Check next up
+            tmp = tmp.parent;
+        }
+        return true;
+    }
 }
 
 //
