@@ -3,6 +3,8 @@
 </p>
 
 # Inochi2D
+[![Support me on Patreon](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3Dclipsey%26type%3Dpatrons&style=for-the-badge)](https://patreon.com/clipsey)
+
 Inochi2D is a library for realtime 2D puppet animation and the reference implementation of the Inochi2D Puppet standard.
 
 **Currently this library and the standard is in the prototype stage and is not recommended for production use.**  
