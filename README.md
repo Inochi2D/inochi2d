@@ -23,6 +23,8 @@ https://user-images.githubusercontent.com/7032834/118187302-0a14b280-b43f-11eb-9
 If you're a model rigger you may want to check out [Inochi Creator](https://github.com/Inochi2D/inochi-creator), the official Inochi2D rigging app in development.  
 This repository is purely for the standard and is not useful if you're an end user.
 
+&nbsp;
+
 # Supported platforms
 The reference library requires at least OpenGL 4.2 or above, as well support for the SPIR-V ARB extension for per-part shaders.  
 *Inochi2D will disable custom shaders if SPIR-V is not found.* 
