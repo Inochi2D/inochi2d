@@ -45,7 +45,7 @@ private:
     void drawSelf() {
 
         // Bind the vertex array
-        this.bindVertexArray();
+        incDrawableBindVAO();
 
         maskShader.use();
         maskShader.setUniform(mvp, inGetCamera().matrix * transform.matrix());

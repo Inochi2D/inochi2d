@@ -21,6 +21,16 @@ package(inochi2d) {
     void inInitDrawable() {
         glGenVertexArrays(1, &drawableVAO);
     }
+
+
+    /**
+        Binds the internal vertex array for rendering
+    */
+    void incDrawableBindVAO() {
+
+        // Bind our vertex array
+        glBindVertexArray(drawableVAO);
+    }
 }
 
 /**
@@ -70,15 +80,6 @@ protected:
         The data in here is only to be used for reference.
     */
     MeshData data;
-
-    /**
-        Binds the internal vertex array for rendering
-    */
-    final void bindVertexArray() {
-
-        // Bind our vertex array
-        glBindVertexArray(drawableVAO);
-    }
 
     /**
         Binds Index Buffer for rendering

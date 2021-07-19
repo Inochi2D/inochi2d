@@ -22,12 +22,36 @@ package(inochi2d) {
     private {
         Shader partShader;
         Shader partMaskShader;
+
+        /* GLSL Uniforms (Normal) */
+        GLint mvp;
+        GLint gopacity;
+
+        /* GLSL Uniforms (Masks) */
+        GLint mmvp;
+        GLint mthreshold;
+        GLint mgopacity;
+
+        GLuint sVertexBuffer;
+        GLuint sUVBuffer;
+        GLuint sElementBuffer;
     }
 
     void inInitPart() {
         inRegisterNodeType!Part;
         partShader = new Shader(import("basic/basic.vert"), import("basic/basic.frag"));
         partMaskShader = new Shader(import("basic/basic.vert"), import("basic/basic-mask.frag"));
+
+        mvp = partShader.getUniformLocation("mvp");
+        gopacity = partShader.getUniformLocation("opacity");
+        
+        mmvp = partMaskShader.getUniformLocation("mvp");
+        mthreshold = partMaskShader.getUniformLocation("threshold");
+        mgopacity = partMaskShader.getUniformLocation("opacity");
+        
+        glGenBuffers(1, &sVertexBuffer);
+        glGenBuffers(1, &sUVBuffer);
+        glGenBuffers(1, &sElementBuffer);
     }
 }
 
@@ -101,15 +125,6 @@ private:
     
     GLuint uvbo;
 
-    /* GLSL Uniforms (Normal) */
-    GLint mvp;
-    GLint gopacity;
-
-    /* GLSL Uniforms (Masks) */
-    GLint mmvp;
-    GLint mthreshold;
-    GLint mgopacity;
-
     uint[] pendingMasks;
 
     void updateUVs() {
@@ -127,7 +142,7 @@ private:
         if (textures.length == 0) return;
 
         // Bind the vertex array
-        this.bindVertexArray();
+        incDrawableBindVAO();
 
         static if (isMask) {
             partMaskShader.use();
@@ -365,13 +380,6 @@ public:
     this(Node parent = null) {
         super(parent);
         glGenBuffers(1, &uvbo);
-
-        mvp = partShader.getUniformLocation("mvp");
-        gopacity = partShader.getUniformLocation("opacity");
-        
-        mmvp = partMaskShader.getUniformLocation("mvp");
-        mthreshold = partMaskShader.getUniformLocation("threshold");
-        mgopacity = partMaskShader.getUniformLocation("opacity");
     }
 
     /**
@@ -401,6 +409,7 @@ public:
     void drawOne() {
         if (!enabled) return;
         if (opacity == 0) return; // Might as well save the trouble
+        if (!data.isReady) return; // Yeah, don't even try
         
         glUniform1f(mthreshold, maskAlphaThreshold);
         glUniform1f(mgopacity, opacity);
@@ -447,4 +456,56 @@ public:
         }
         pendingMasks.length = 0;
     }
+}
+
+/**
+    Draws a texture at the transform of the specified part
+*/
+void inDrawTextureAtPart(Texture texture, Part part) {
+    const float texWidthP = texture.width()/2;
+    const float texHeightP = texture.height()/2;
+
+    // Bind the vertex array
+    incDrawableBindVAO();
+
+    partShader.use();
+    partShader.setUniform(mvp, inGetCamera().matrix * part.transform.matrix());
+    partShader.setUniform(gopacity, part.opacity);
+    
+    // Bind the texture
+    texture.bind();
+
+    // Enable points array
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, sVertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, 4*vec2.sizeof, [
+        -texWidthP, -texHeightP,
+        texWidthP, -texHeightP,
+        -texWidthP, texHeightP,
+        texWidthP, texHeightP,
+    ].ptr, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, null);
+
+    // Enable UVs array
+    glEnableVertexAttribArray(1); // uvs
+    glBindBuffer(GL_ARRAY_BUFFER, sUVBuffer);
+    glBufferData(GL_ARRAY_BUFFER, 4*vec2.sizeof, [
+        0, 0,
+        1, 0,
+        0, 1,
+        1, 1,
+    ].ptr, GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, null);
+
+    // Bind element array and draw our mesh
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sElementBuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6*ushort.sizeof, [
+        0, 1, 2,
+        2, 1, 3
+    ].ptr, GL_STATIC_DRAW);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, null);
+
+    // Disable the vertex attribs after use
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
 }
