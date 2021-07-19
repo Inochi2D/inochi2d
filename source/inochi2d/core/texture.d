@@ -216,6 +216,13 @@ public:
     }
 
     /**
+        Gets the size of the texture
+    */
+    vec2i size() {
+        return vec2i(width_, height_);
+    }
+
+    /**
         Set the filtering mode used for the texture
     */
     void setFiltering(Filtering filtering) {

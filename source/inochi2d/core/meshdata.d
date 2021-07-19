@@ -31,6 +31,13 @@ struct MeshData {
     */
     ushort[] indices;
 
+    /**
+        Whether the mesh data is ready to be used
+    */
+    bool isReady() {
+        return indices.length != 0 && indices.length % 3 == 0;
+    }
+
     void serialize(S)(ref S serializer) {
         auto state = serializer.objectBegin();
             serializer.putKey("verts");
