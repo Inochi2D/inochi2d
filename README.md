@@ -19,6 +19,10 @@ https://user-images.githubusercontent.com/7032834/118187302-0a14b280-b43f-11eb-9
 
 &nbsp;
 
+# Rigging
+If you're a model rigger you may want to check out [Inochi Creator](https://github.com/Inochi2D/inochi-creator), the official Inochi2D rigging app in development.  
+This repository is purely for the standard and is not useful if you're an end user.
+
 # Supported platforms
 The reference library requires at least OpenGL 4.2 or above, as well support for the SPIR-V ARB extension for per-part shaders.  
 *Inochi2D will disable custom shaders if SPIR-V is not found.* 
@@ -100,7 +104,7 @@ while(!glfwWindowShouldClose(window)) {
     // you have to do that your self.
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // Run updateInochi2D first
+    // Run inUpdate first
     // This updates various submodules and time managment for animation
     inUpdate();
 
@@ -111,8 +115,11 @@ while(!glfwWindowShouldClose(window)) {
     // NOTE: You *need* to do this otherwise rendering may break
     inBeginScene();
 
-    // Draw myPuppet.
-    myPuppet.draw();
+        // Draw and update myPuppet.
+        // Convention for using Inochi2D in D is to put everything
+        // in a scene block one indent in.
+        myPuppet.update();
+        myPuppet.draw();
 
     // Ends drawing in to the Inochi2D scene.
     inEndScene();
@@ -127,7 +134,9 @@ while(!glfwWindowShouldClose(window)) {
 ```
 
 ### NOTE
-Currently not in the dub database use `dub add-local (inochi2d folder) "1.0.0"` to add inochi2d as a local package. You can then add `inochi2d` as a dependency.
+The version on dub is not always up to date with the newest features, to use inochi2d from the repo either:
+ * Add `~master` as your version in your `dub.selections.json` file after having added inochi2d as a dependency.
+ * Clone this repo and run `dub add-local (inochi2d folder) "1.0.0"` to add inochi2d as a local package. You can then add `inochi2d` as a dependency.
 
 &nbsp;
 
