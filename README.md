@@ -12,8 +12,7 @@ If you want to try it out anyways you can clone this repo and run `dub add-local
 
 &nbsp;
 
-
-https://user-images.githubusercontent.com/7032834/118187302-0a14b280-b43f-11eb-918e-63da0873d157.mp4
+https://user-images.githubusercontent.com/7032834/131196598-d8dee8a7-0c8c-455d-9cea-32183d459b44.mp4
 
 *Early prototype video*
 
