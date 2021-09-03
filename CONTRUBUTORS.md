@@ -6,4 +6,4 @@ This document lists the people who've contributed to the development of Inochi2D
 
 ## Translation
 Japanese Translation:
- - [Veertig Nix](https://twitter.com/40Nix) (Documentation and UI translation)
+ - [Veertig Nix](https://twitter.com/40Nix) (Documentation and README translation)

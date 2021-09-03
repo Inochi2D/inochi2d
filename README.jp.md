@@ -1,4 +1,9 @@
+<p align="center">
+  <img width="256" height="256" src="logo.png">
+</p>
+
 # Inochi2D
+[![Support me on Patreon](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3Dclipsey%26type%3Dpatrons&style=for-the-badge)](https://patreon.com/clipsey)
 
 Inochi2Dはリアルタイム2Dパペットアニメーションライブラリで、Inochi2DPuppetスタンダードのリファレンス実装です。
 
