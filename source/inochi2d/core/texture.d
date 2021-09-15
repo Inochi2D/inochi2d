@@ -115,6 +115,17 @@ public:
         this.width = image.w;
         this.height = image.h;
     }
+    
+    /**
+        Loads uncompressed texture from memory
+    */
+    this(ubyte[] buffer, int w, int h, int channels = 4) {
+        this.data = buffer;
+
+        // Set the width/height data
+        this.width = w;
+        this.height = h;
+    }
 
     /**
         Saves image
@@ -288,6 +299,9 @@ public:
         write_image(file, width, height, getTextureData(), 4);
     }
 
+    /**
+        Gets the texture data for the texture
+    */
     ubyte[] getTextureData() {
         ubyte[] buf = new ubyte[width*height*4];
         bind();

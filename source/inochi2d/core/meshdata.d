@@ -27,6 +27,18 @@ struct MeshData {
     vec2[] uvs;
 
     /**
+        Start coordinate of UVs
+    */
+    @Optional
+    vec2 uvStart;
+    
+    /**
+        End coordinate of UVs
+    */
+    @Optional
+    vec2 uvEnd;
+
+    /**
         Indices in the mesh
     */
     ushort[] indices;
@@ -62,6 +74,26 @@ struct MeshData {
                 serializer.arrayEnd(arr);
             }
 
+            if (uvStart.isFinite) {
+                serializer.putKey("uvStart");
+                arr = serializer.arrayBegin();
+                    serializer.elemBegin;
+                    serializer.serializeValue(uvStart.x);
+                    serializer.elemBegin;
+                    serializer.serializeValue(uvStart.y);
+                serializer.arrayEnd(arr);
+            }
+
+            if (uvEnd.isFinite) {
+                serializer.putKey("uvEnd");
+                arr = serializer.arrayBegin();
+                    serializer.elemBegin;
+                    serializer.serializeValue(uvEnd.x);
+                    serializer.elemBegin;
+                    serializer.serializeValue(uvEnd.y);
+                serializer.arrayEnd(arr);
+            }
+
             serializer.putKey("indices");
             serializer.serializeValue(indices);
         serializer.objectEnd(state);
@@ -94,6 +126,14 @@ struct MeshData {
                 elements.popFront;
                 uvs ~= vec2(x, y);
             }
+        }
+        if (!data["uvStart"].isEmpty) {
+            elements = data["uvs"].byElement;
+            elements.front.deserializeValue(uvStart.x);
+            elements.popFront;
+            elements.front.deserializeValue(uvStart.y);
+            elements.popFront;
+
         }
 
         foreach(indiceData; data["indices"].byElement) {

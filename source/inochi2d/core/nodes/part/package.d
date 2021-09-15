@@ -75,7 +75,16 @@ Part inCreateSimplePart(string file, Node parent = null) {
     for real-time use when you want to add/remove parts on the fly
 */
 Part inCreateSimplePart(ShallowTexture texture, Node parent = null, string name = "New Part") {
-	Texture tex = new Texture(texture);
+	return inCreateSimplePart(new Texture(texture), parent, name);
+}
+
+/**
+    Creates a simple part that is sized after the texture given
+
+    This is unoptimal for normal use and should only be used
+    for real-time use when you want to add/remove parts on the fly
+*/
+Part inCreateSimplePart(Texture tex, Node parent = null, string name = "New Part") {
 	MeshData data = MeshData([
 		vec2(-(tex.width/2), -(tex.height/2)),
 		vec2(-(tex.width/2), tex.height/2),
@@ -88,6 +97,8 @@ Part inCreateSimplePart(ShallowTexture texture, Node parent = null, string name 
 		vec2(1, 0),
 		vec2(1, 1),
 	], 
+    vec2(0, 0),
+    vec2(1, 1),
 	[
 		0, 1, 2,
 		2, 1, 3
@@ -337,6 +348,8 @@ protected:
 public:
     /**
         List of textures this part can use
+
+        TODO: use more than texture 0
     */
     Texture[] textures;
 

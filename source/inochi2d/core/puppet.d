@@ -259,6 +259,25 @@ public:
     }
 
     /**
+        Returns all the parts in the puppet
+    */
+    Part[] getAllParts() {
+        Part[] parts;
+
+        void partScanRecurse(Node n) {
+            if (Part pn = cast(Part)n) {
+                parts ~= pn;
+            }
+
+            foreach(child; n.children) {
+                partScanRecurse(child);
+            }
+        }
+
+        return parts;
+    }
+
+    /**
         Adds a texture to a new slot if it doesn't already exist within this puppet
     */
     final uint addTextureToSlot(Texture texture) {
