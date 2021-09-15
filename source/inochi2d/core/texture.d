@@ -18,7 +18,7 @@ enum Filtering {
     /**
         Linear filtering will try to smooth out textures
     */
-    Linear = GL_LINEAR,
+    Linear = GL_LINEAR_MIPMAP_LINEAR,
 
     /**
         Point filtering will try to preserve pixel edges.
@@ -240,6 +240,9 @@ public:
         this.bind();
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filtering);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filtering);
+
+        glBindTexture(GL_TEXTURE_2D, id);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, 16);
     }
 
     /**
