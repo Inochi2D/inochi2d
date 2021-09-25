@@ -158,6 +158,7 @@ private:
         // Not found
         return null;
     }
+
 public:
     /**
         Meta information about this puppet
@@ -275,6 +276,24 @@ public:
         }
 
         return parts;
+    }
+
+    /**
+        Finds nodes based on their type
+    */
+    final T[] findNodesType(T)(Node n) if (is(T : Node)) {
+        T[] nodes;
+
+        if (T item = cast(T)n) {
+            nodes ~= item;
+        }
+
+        // Recurse through children
+        foreach(child; n.children) {
+            nodes ~= findNodesType!T(child);
+        }
+
+        return nodes;
     }
 
     /**
