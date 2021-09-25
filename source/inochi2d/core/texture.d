@@ -202,7 +202,7 @@ public:
 
         // Set default filtering and wrapping
         this.setFiltering(Filtering.Linear);
-        this.setWrapping(Wrapping.Clamp);
+        this.setWrapping(Wrapping.Mirror);
     }
 
     /**
