@@ -195,6 +195,7 @@ public:
     void update() {
         super.update();
         deformStack.update();
+        this.updateBounds();
     }
 
     /**
@@ -230,6 +231,8 @@ public:
     */
     override
     void drawBounds() {
+        if (vertices.length == 0) return;
+        
         float width = bounds.z-bounds.x;
         float height = bounds.w-bounds.y;
         inDbgSetBuffer([
@@ -254,6 +257,8 @@ public:
         Draws line of mesh
     */
     void drawMeshLines() {
+        if (vertices.length == 0) return;
+
         auto trans = transform.matrix();
         ushort[] indices = data.indices;
 
@@ -281,6 +286,8 @@ public:
         Draws the points of the mesh
     */
     void drawMeshPoints() {
+        if (vertices.length == 0) return;
+
         auto trans = transform.matrix();
         vec3[] points = new vec3[vertices.length];
         foreach(i, point; vertices) {
