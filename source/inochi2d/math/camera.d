@@ -29,6 +29,18 @@ public:
     */
     vec2 scale = vec2(1, 1);
 
+    vec2 getRealSize() {
+        int width, height;
+        inGetViewport(width, height);
+
+        return vec2(cast(float)width/scale.x, cast(float)height/scale.y);
+    }
+
+    vec2 getCenterOffset() {
+        vec2 realSize = getRealSize();
+        return realSize/2;
+    }
+
     /**
         Matrix for this camera
 
@@ -36,10 +48,7 @@ public:
         height = height of camera area
     */
     mat4 matrix() {
-        int width, height;
-        inGetViewport(width, height);
-
-        vec2 realSize = vec2(cast(float)width/scale.x, cast(float)height/scale.y);
+        vec2 realSize = getRealSize();
         if(!position.isFinite) position = vec2(0);
         if(!scale.isFinite) scale = vec2(1);
         if(!realSize.isFinite) return mat4.identity;
