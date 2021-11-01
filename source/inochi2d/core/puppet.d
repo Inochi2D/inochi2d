@@ -225,6 +225,7 @@ public:
         this.selfSort();
 
         foreach(rootPart; rootParts) {
+            if (!rootPart.renderEnabled) continue;
             rootPart.drawOne();
         }
     }

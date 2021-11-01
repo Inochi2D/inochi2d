@@ -164,16 +164,26 @@ package(inochi2d):
 public:
 
     /**
+        Whether the node is enabled
+    */
+    bool enabled = true;
+
+    /**
+        Whether the node is enabled for rendering
+
+        Disabled nodes will not be drawn.
+
+        This happens recursively
+    */
+    bool renderEnabled() {
+        if (parent) return !parent.renderEnabled ? false : enabled;
+        return enabled;
+    }
+
+    /**
         Visual name of the node
     */
     string name = "Unnamed Node";
-
-    /**
-        Whether the node is enabled
-
-        Disabled nodes will not be drawn.
-    */
-    bool enabled = true;
 
     /**
         Returns the unique identifier for this node
@@ -322,7 +332,7 @@ public:
         Draws this node and it's subnodes
     */
     void draw() {
-        if (!enabled) return;
+        if (!renderEnabled) return;
 
         foreach(child; children) {
             child.draw();
