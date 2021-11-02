@@ -39,7 +39,7 @@ uint inCreateUUID() {
     import std.random : uniform;
 
     uint id = uniform!uint();
-    while (takenUUIDs.canFind(id)) { uniform!uint(); } // Make sure the ID is actually unique in the current context
+    while (takenUUIDs.canFind(id)) { id = uniform!uint(); } // Make sure the ID is actually unique in the current context
 
     return id;
 }
