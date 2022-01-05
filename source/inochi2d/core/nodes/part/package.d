@@ -482,7 +482,10 @@ void inDrawTextureAtPart(Texture texture, Part part) {
     incDrawableBindVAO();
 
     partShader.use();
-    partShader.setUniform(mvp, inGetCamera().matrix * part.transform.matrix());
+    partShader.setUniform(mvp, 
+        inGetCamera().matrix * 
+        mat4.translation(part.transform.matrix() * vec3(1, 1, 1))
+    );
     partShader.setUniform(gopacity, part.opacity);
     
     // Bind the texture
