@@ -50,6 +50,27 @@ struct MeshData {
         return indices.length != 0 && indices.length % 3 == 0;
     }
 
+    MeshData copy() {
+        MeshData newData;
+
+        // Copy verts
+        newData.vertices.length = vertices.length;
+        newData.vertices[] = vertices[];
+
+        // Copy UVs
+        newData.uvs.length = uvs.length;
+        newData.uvs[] = uvs[];
+
+        // Copy UVs
+        newData.indices.length = indices.length;
+        newData.indices[] = indices[];
+
+        newData.uvStart = uvStart;
+        newData.uvEnd = uvEnd;
+
+        return newData;
+    }
+
     void serialize(S)(ref S serializer) {
         auto state = serializer.objectBegin();
             serializer.putKey("verts");
