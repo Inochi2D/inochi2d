@@ -20,6 +20,12 @@ import bindbc.opengl;
 import inochi2d.math;
 import std.stdio;
 
+version(Windows) {
+    // Ask Windows nicely to use dedicated GPUs :)
+    export extern(C) int NvOptimusEnablement = 0x00000001;
+    export extern(C) int AmdPowerXpressRequestHighPerformance = 0x00000001;
+}
+
 // Internal rendering constants
 private {
     // Viewport
