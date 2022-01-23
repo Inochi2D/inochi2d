@@ -99,6 +99,8 @@ void inDbgSetBuffer(vec3[] points, ushort[] indices) {
 */
 void inDbgDrawPoints(vec4 color, mat4 transform = mat4.identity) {
     glEnable(GL_POINT_SMOOTH);
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+
         glBindVertexArray(dbgVAO);
 
         dbgShader.use();
@@ -112,6 +114,7 @@ void inDbgDrawPoints(vec4 color, mat4 transform = mat4.identity) {
         glDrawElements(GL_POINTS, indiceCount, GL_UNSIGNED_SHORT, null);
         glDisableVertexAttribArray(0);
 
+    glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
     glDisable(GL_POINT_SMOOTH);
 }
 
@@ -120,6 +123,8 @@ void inDbgDrawPoints(vec4 color, mat4 transform = mat4.identity) {
 */
 void inDbgDrawLines(vec4 color, mat4 transform = mat4.identity) {
     glEnable(GL_LINE_SMOOTH);
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+    
         glBindVertexArray(dbgVAO);
 
         dbgShader.use();
@@ -133,5 +138,6 @@ void inDbgDrawLines(vec4 color, mat4 transform = mat4.identity) {
         glDrawElements(GL_LINES, indiceCount, GL_UNSIGNED_SHORT, null);
         glDisableVertexAttribArray(0);
 
+    glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
     glDisable(GL_LINE_SMOOTH);
 }

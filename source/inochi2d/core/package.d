@@ -41,6 +41,8 @@ private {
     GLuint fColor;
     GLuint fStencil;
 
+    vec4 inClearColor;
+
 
     Shader[] blendingShaders;
 
@@ -70,6 +72,8 @@ package(inochi2d) {
         // Some defaults that should be changed by app writer
         inCamera = new Camera;
 
+        inClearColor = vec4(0, 0, 0, 0);
+
         // Shader for scene
         sceneShader = new Shader(import("scene.vert"), import("scene.frag"));
         sceneMVP = sceneShader.getUniformLocation("mvp");
@@ -95,7 +99,7 @@ package(inochi2d) {
 /**
     Begins rendering to the framebuffer
 */
-void inBeginScene() { 
+void inBeginScene() {
     glEnable(GL_BLEND);
     glDisable(GL_DEPTH_TEST);
 
@@ -104,13 +108,13 @@ void inBeginScene() {
 
     // Bind our framebuffer
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fBuffer);
-    glClearColor(0, 0, 0, 0);
+    glClearColor(inClearColor.r, inClearColor.g, inClearColor.b, inClearColor.a);
     glClear(GL_COLOR_BUFFER_BIT);
 
     // Everything else is the actual texture used by the meshes at id 0
     glActiveTexture(GL_TEXTURE0);
 
-    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+    glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 /**
@@ -151,7 +155,7 @@ void inDrawScene(vec4 area) {
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
-    glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
+    glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
     sceneShader.use();
     sceneShader.setUniform(sceneMVP, 
@@ -264,4 +268,11 @@ void inDumpViewport(ref ubyte[] dumpTo) {
         
         ri++;
     }
+}
+
+/**
+    Sets the background clear color
+*/
+void inSetClearColor(float r, float g, float b, float a) {
+    inClearColor = vec4(r, g, b, a);
 }

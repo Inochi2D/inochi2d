@@ -202,7 +202,7 @@ public:
 
         // Set default filtering and wrapping
         this.setFiltering(Filtering.Linear);
-        this.setWrapping(Wrapping.Mirror);
+        this.setWrapping(Wrapping.Clamp);
     }
 
     /**
@@ -362,4 +362,22 @@ void inEndTextureLoading() {
     enforce(started, "Texture loading pass not started!");
     started = false;
     textureBindings.length = 0;
+}
+
+void inTexPremultiply(ref ubyte[] data) {
+    foreach(i; 0..data.length/4) {
+        data[((i*4)+0)] = cast(ubyte)((cast(int)data[((i*4)+0)] * cast(int)data[((i*4)+3)])/255);
+        data[((i*4)+1)] = cast(ubyte)((cast(int)data[((i*4)+1)] * cast(int)data[((i*4)+3)])/255);
+        data[((i*4)+2)] = cast(ubyte)((cast(int)data[((i*4)+2)] * cast(int)data[((i*4)+3)])/255);
+    }
+}
+
+void inTexUnPremuliply(ref ubyte[] data) {
+    foreach(i; 0..data.length/4) {
+        if (data[((i*4)+3)] == 0) continue;
+
+        data[((i*4)+0)] = cast(ubyte)(cast(int)data[((i*4)+0)] * 255 / cast(int)data[((i*4)+3)]);
+        data[((i*4)+1)] = cast(ubyte)(cast(int)data[((i*4)+1)] * 255 / cast(int)data[((i*4)+3)]);
+        data[((i*4)+2)] = cast(ubyte)(cast(int)data[((i*4)+2)] * 255 / cast(int)data[((i*4)+3)]);
+    }
 }

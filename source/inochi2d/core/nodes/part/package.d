@@ -484,7 +484,7 @@ void inDrawTextureAtPart(Texture texture, Part part) {
     partShader.use();
     partShader.setUniform(mvp, 
         inGetCamera().matrix * 
-        mat4.translation(part.transform.matrix() * vec3(1, 1, 1))
+        mat4.translation(vec3(part.transform.matrix() * vec4(1, 1, 1, 1)))
     );
     partShader.setUniform(gopacity, part.opacity);
     

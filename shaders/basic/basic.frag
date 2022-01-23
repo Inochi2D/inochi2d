@@ -12,5 +12,5 @@ uniform sampler2D fbo;
 uniform float opacity;
 
 void main() {
-    outColor = texture(fbo, texUVs) * vec4(1, 1, 1, opacity);
+    outColor = texture(fbo, texUVs) * opacity;
 }
