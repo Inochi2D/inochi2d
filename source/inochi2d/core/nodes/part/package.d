@@ -125,6 +125,19 @@ enum MaskingMode {
 }
 
 /**
+    Blending modes
+
+    TODO: Implement advanced blending system
+*/
+enum BlendMode {
+    // Normal blending mode
+    Normal,
+
+    // Multiply blending mode
+    Multiply
+}
+
+/**
     Dynamic Mesh Part
 */
 @TypeId("Part")
@@ -160,10 +173,22 @@ private:
             partMaskShader.setUniform(mmvp, inGetCamera().matrix * transform.matrix());
             partMaskShader.setUniform(mthreshold, maskAlphaThreshold);
             partMaskShader.setUniform(mgopacity, opacity);
+            glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         } else {
             partShader.use();
             partShader.setUniform(mvp, inGetCamera().matrix * transform.matrix());
             partShader.setUniform(gopacity, opacity);
+
+            // COMPAT MODE
+            switch(blendingMode) {
+                case BlendMode.Normal: 
+                    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); break;
+                case BlendMode.Multiply: 
+                    glBlendFunc(GL_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA); break;
+                default: assert(0);
+            }
+
+            // TODO: EXT MODE
         }
 
         // Bind the texture
@@ -233,6 +258,9 @@ protected:
             serializer.arrayEnd(state);
         }
 
+        serializer.putKey("blend_mode");
+        serializer.serializeValue(blendingMode);
+
         if (mask.length > 0) {
 
             serializer.putKey("mask_mode");
@@ -279,6 +307,9 @@ protected:
                 serializer.putValue(name);
             serializer.arrayEnd(state);
         }
+
+        serializer.putKey("blend_mode");
+        serializer.serializeValue(blendingMode);
 
         serializer.putKey("mask_mode");
         serializer.serializeValue(maskingMode);
@@ -329,6 +360,9 @@ protected:
         data["opacity"].deserializeValue(this.opacity);
         data["mask_threshold"].deserializeValue(this.maskAlphaThreshold);
 
+        // Older models may not have blend mode
+        if (!data["blend_mode"].isEmpty) data["blend_mode"].deserializeValue(this.blendingMode);
+
         if (!data["masked_by"].isEmpty) {
             data["mask_mode"].deserializeValue(this.maskingMode);
 
@@ -362,6 +396,11 @@ public:
         Masking mode
     */
     MaskingMode maskingMode = MaskingMode.Mask;
+
+    /**
+        Blending mode
+    */
+    BlendMode blendingMode = BlendMode.Normal;
     
     /**
         Alpha Threshold for the masking system, the higher the more opaque pixels will be discarded in the masking process

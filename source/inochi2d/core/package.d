@@ -114,7 +114,7 @@ void inBeginScene() {
     // Everything else is the actual texture used by the meshes at id 0
     glActiveTexture(GL_TEXTURE0);
 
-    glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 /**
@@ -155,7 +155,7 @@ void inDrawScene(vec4 area) {
     glDisable(GL_CULL_FACE);
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
-    glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
     sceneShader.use();
     sceneShader.setUniform(sceneMVP, 
