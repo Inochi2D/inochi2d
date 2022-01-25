@@ -19,13 +19,7 @@ enum Filtering {
     /**
         Linear filtering will try to smooth out textures
     */
-    Linear = GL_LINEAR, //_MIPMAP_LINEAR, THIS CAUSES A CRASH
-
-    /**
-        BUG: This together with genMipmap currently causes crashes
-        on some devices for some reason??
-    */
-    LinearMipmapped = GL_LINEAR_MIPMAP_LINEAR,
+    Linear = GL_LINEAR_MIPMAP_LINEAR,
 
     /**
         Point filtering will try to preserve pixel edges.
@@ -271,6 +265,7 @@ public:
         glPixelStorei(GL_UNPACK_ALIGNMENT, alignment);
         glTexImage2D(GL_TEXTURE_2D, 0, colorMode, width_, height_, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.ptr);
         
+        this.genMipmap();
     }
 
     /**
@@ -295,6 +290,8 @@ public:
         // Update the texture
         glPixelStorei(GL_UNPACK_ALIGNMENT, alignment);
         glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, this.colorMode, GL_UNSIGNED_BYTE, data.ptr);
+
+        this.genMipmap();
     }
 
     /**
