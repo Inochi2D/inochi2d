@@ -277,6 +277,7 @@ public:
         Generate mipmaps
     */
     void genMipmap() {
+        this.bind();
         glHint(GL_GENERATE_MIPMAP_HINT, GL_NICEST);
         glGenerateMipmap(GL_TEXTURE_2D);
     }

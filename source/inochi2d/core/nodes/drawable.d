@@ -85,6 +85,7 @@ protected:
         Binds Index Buffer for rendering
     */
     final void bindIndex() {
+
         // Bind element array and draw our mesh
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
         glDrawElements(GL_TRIANGLES, cast(int)data.indices.length, GL_UNSIGNED_SHORT, null);

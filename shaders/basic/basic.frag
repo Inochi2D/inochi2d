@@ -8,9 +8,9 @@
 in vec2 texUVs;
 out vec4 outColor;
 
-uniform sampler2D fbo;
+uniform sampler2D tex;
 uniform float opacity;
 
 void main() {
-    outColor = texture(fbo, texUVs) * opacity;
+    outColor = texture(tex, texUVs) * opacity;
 }
