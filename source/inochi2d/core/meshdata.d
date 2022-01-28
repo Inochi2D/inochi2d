@@ -44,10 +44,86 @@ struct MeshData {
     ushort[] indices;
 
     /**
+        Adds a new vertex
+    */
+    void add(vec2 vertex, vec2 uv) {
+        vertices ~= vertex;
+        uvs ~= uv;
+    }
+
+    /**
+        Clear connections/indices
+    */
+    void clearConnections() {
+        indices.length = 0;
+    }
+
+    /**
+        Connects 2 vertices together
+    */
+    void connect(ushort first, ushort second) {
+        indices ~= [first, second];
+    }
+
+    /**
+        Find the index of a vertex
+    */
+    int find(vec2 vert) {
+        foreach(idx, v; vertices) {
+            if (v == vert) return cast(int)idx;
+        }
+        return -1;
+    }
+
+    /**
         Whether the mesh data is ready to be used
     */
     bool isReady() {
         return indices.length != 0 && indices.length % 3 == 0;
+    }
+
+    /**
+        Whether the mesh data is ready to be triangulated
+    */
+    bool canTriangulate() {
+        return indices.length != 0 && indices.length % 3 == 0;
+    }
+
+    /**
+        Fixes the winding order of a mesh.
+    */
+    void fixWinding() {
+        if (!isReady) return;
+        foreach(i; 0..indices.length/3) {
+            bool cw = cross(vec3(vertices[i+1]-vertices[i], 0), vec3(vertices[i+2]-vertices[i], 0)).z < 0;
+
+            // Swap winding
+            if (cw) {
+                vec2 swap = vertices[i+1];
+                vertices[i+1] = vertices[i+2];
+                vertices[i+2] = swap;
+            }
+        }
+    }
+
+    /**
+        Gets connections at a certain point
+    */
+    int connectionsAtPoint(vec2 point) {
+        int p = find(point);
+        if (p == -1) return 0;
+        return connectionsAtPoint(cast(ushort)p);
+    }
+
+    /**
+        Gets connections at a certain point
+    */
+    int connectionsAtPoint(ushort point) {
+        int found = 0;
+        foreach(index; indices) {
+            if (index == point) found++;
+        }
+        return found;
     }
 
     MeshData copy() {
@@ -242,5 +318,10 @@ struct MeshData {
 
 
         return data;
+    }
+
+    void dbg() {
+        import std.stdio : writefln;
+        writefln("%s %s %s", vertices.length, uvs.length, indices.length);
     }
 }
