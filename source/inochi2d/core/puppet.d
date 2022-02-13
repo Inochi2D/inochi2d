@@ -84,9 +84,6 @@ private:
         // Don't need to scan null nodes
         if (node is null) return;
 
-        // Don't count disabled parts
-        if (!node.enabled) return;
-
         // If we have a part do the main check
         if (Part part = cast(Part)node) {
             rootParts ~= part;
