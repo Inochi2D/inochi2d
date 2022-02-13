@@ -334,7 +334,7 @@ public:
         // Update position
         if (offset == OFFSET_START) {
             this.parent_.children_ = this ~ this.parent_.children_;
-        } else if (offset == OFFSET_END || offset == parent_.children_.length) {
+        } else if (offset == OFFSET_END || offset >= parent_.children_.length) {
             this.parent_.children_ ~= this;
         } else {
             this.parent_.children_ = this.parent_.children_[0..offset] ~ this ~ this.parent_.children_[offset+1..$-1];
