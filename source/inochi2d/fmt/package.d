@@ -135,10 +135,15 @@ Puppet inLoadINPPuppet(ubyte[] buffer) {
     Writes Inochi2D puppet to file
 */
 void inWriteINPPuppet(Puppet p, string file) {
-    isLoadingINP_ = true;
+    import inochi2d.ver : IN_VERSION;
     import std.range : appender;
+    import std.json : JSONValue;
+
+    isLoadingINP_ = true;
     auto app = appender!(ubyte[]);
 
+    // Write the current used Inochi2D version to the version_ meta tag.
+    p.meta.version_ = IN_VERSION;
     string puppetJson = inToJson(p);
 
     app ~= MAGIC_BYTES;
@@ -161,7 +166,6 @@ void inWriteINPPuppet(Puppet p, string file) {
     app ~= nativeToBigEndian(cast(uint)p.extData.length)[0..4];
 
     foreach(name, payload; p.extData) {
-        import std.json : JSONValue;
         
         // Write payload name and its length
         app ~= nativeToBigEndian(cast(uint)name.length)[0..4];
