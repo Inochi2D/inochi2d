@@ -71,7 +71,7 @@ enum PuppetAllowedModification {
     AllowRedistribute = "allowRedistribute",
 }
 
-struct PuppetUsageRights {
+class PuppetUsageRights {
     /**
         Who is allowed to use the puppet?
     */
@@ -118,7 +118,7 @@ struct PuppetUsageRights {
 /**
     Puppet meta information
 */
-struct PuppetMeta {
+class PuppetMeta {
 
     /**
         Name of the puppet
@@ -313,6 +313,7 @@ public:
     */
     this() { 
         this.puppetRootNode = new Node(this); 
+        this.meta = new PuppetMeta();
         root = new Node(this.puppetRootNode); 
         root.name = "Root";
     }
@@ -321,6 +322,7 @@ public:
         Creates a new puppet from a node tree
     */
     this(Node root) {
+        this.meta = new PuppetMeta();
         this.root = root;
         this.puppetRootNode = new Node(this);
         this.root.name = "Root";
