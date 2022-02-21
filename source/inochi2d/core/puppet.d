@@ -14,6 +14,107 @@ import std.json;
 */
 enum NO_THUMBNAIL = uint.max;
 
+enum PuppetAllowedUsers {
+    /**
+        Only the author(s) are allowed to use the puppet
+    */
+    OnlyAuthor = "onlyAuthor",
+
+    /**
+        Only licensee(s) are allowed to use the puppet
+    */
+    OnlyLicensee = "onlyLicensee",
+
+    /**
+        Everyone may use the model
+    */
+    Everyone = "everyone"
+}
+
+enum PuppetAllowedRedistribution {
+    /**
+        Redistribution is prohibited
+    */
+    Prohibited = "prohibited",
+
+    /**
+        Redistribution is allowed, but only under
+        the same license as the original.
+    */
+    ViralLicense = "viralLicense",
+
+    /**
+        Redistribution is allowed, and the puppet
+        may be redistributed under a different
+        license than the original.
+
+        This goes in conjunction with modification rights.
+    */
+    CopyleftLicense = "copyleftLicense"
+}
+
+enum PuppetAllowedModification {
+    /**
+        Modification is prohibited
+    */
+    Prohibited = "prohibited",
+
+    /**
+        Modification is only allowed for personal use
+    */
+    AllowPersonal = "allowPersonal",
+
+    /**
+        Modification is allowed with redistribution,
+        see allowedRedistribution for redistribution terms.
+    */
+    AllowRedistribute = "allowRedistribute",
+}
+
+struct PuppetUsageRights {
+    /**
+        Who is allowed to use the puppet?
+    */
+    @Optional
+    PuppetAllowedUsers allowedUsers = PuppetAllowedUsers.OnlyAuthor;
+
+    /**
+        Whether violence content is allowed
+    */
+    @Optional
+    bool allowViolence = false;
+
+    /**
+        Whether sexual content is allowed
+    */
+    @Optional
+    bool allowSexual = false;
+
+    /**
+        Whether commerical use is allowed
+    */
+    @Optional
+    bool allowCommercial = false;
+
+    /**
+        Whether a model may be redistributed
+    */
+    @Optional
+    PuppetAllowedRedistribution allowRedistribution = PuppetAllowedRedistribution.Prohibited;
+
+    /**
+        Whether a model may be modified
+    */
+    @Optional
+    PuppetAllowedModification allowModification = PuppetAllowedModification.Prohibited;
+
+    /**
+        Whether the author(s) must be attributed for use.
+    */
+    @Optional
+    bool requireAttribution = false;
+}
+
 /**
     Puppet meta information
 */
@@ -30,15 +131,34 @@ struct PuppetMeta {
     string version_ = "1.0-alpha";
 
     /**
-        Authors of the puppet
+        Rigger(s) of the puppet
     */
-    string[] authors;
+    @Optional
+    string rigger;
+
+    /**
+        Artist(s) of the puppet
+    */
+    @Optional
+    string artist;
+
+    /**
+        Usage Rights of the puppet
+    */
+    @Optional
+    PuppetUsageRights rights;
 
     /**
         Copyright string
     */
     @Optional
     string copyright;
+
+    /**
+        URL of license
+    */
+    @Optional
+    string licenseURL;
 
     /**
         Contact information of the first author
