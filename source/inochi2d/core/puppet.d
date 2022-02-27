@@ -176,7 +176,6 @@ class PuppetMeta {
         Texture ID of this puppet's thumbnail
     */
     @Optional
-    @Name("thumbnail_id")
     uint thumbnailId = NO_THUMBNAIL;
 
     /**
