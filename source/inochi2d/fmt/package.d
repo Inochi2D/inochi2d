@@ -103,6 +103,8 @@ Puppet inLoadINPPuppet(ubyte[] buffer) {
     Puppet puppet = inLoadJsonDataFromMemory!Puppet(puppetData);
     puppet.textureSlots = slots;
 
+    puppet.updateTextureState();
+    
     inEndTextureLoading();
 
     if (inVerifySection(buffer[bufferOffset..bufferOffset+=8], EXT_SECTION)) {

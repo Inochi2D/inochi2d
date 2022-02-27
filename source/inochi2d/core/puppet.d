@@ -178,6 +178,13 @@ class PuppetMeta {
     @Optional
     @Name("thumbnail_id")
     uint thumbnailId = NO_THUMBNAIL;
+
+    /**
+        Whether the puppet should preserve pixel borders.
+        This feature is mainly useful for puppets which use pixel art.
+    */
+    @Optional
+    bool preservePixels = false;
 }
 
 /**
@@ -363,6 +370,17 @@ public:
     */
     final void rescanNodes() {
         this.scanParts!false(root);
+    }
+
+    /**
+        Updates the texture state for all texture slots.
+    */
+    final void updateTextureState() {
+
+        // Update filtering mode for texture slots
+        foreach(texutre; textureSlots) {
+            texutre.setFiltering(meta.preservePixels ? Filtering.Point : Filtering.Linear);
+        }
     }
 
     /**
