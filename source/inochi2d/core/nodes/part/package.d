@@ -204,7 +204,7 @@ private:
                     glBlendFunc(GL_ONE, GL_ONE); break;
                 case BlendMode.Screen:
                     glBlendEquation(GL_FUNC_ADD);
-                    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR);
+                    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR); break;
                 default: assert(0);
             }
 
