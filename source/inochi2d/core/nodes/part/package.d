@@ -136,11 +136,14 @@ enum BlendMode {
     // Multiply blending mode
     Multiply,
     
-    // Linear "Dodge"
+    // Color Dodge
+    ColorDodge,
+
+    // Linear Dodge
     LinearDodge,
 
-    // GL Add
-    Add
+    // Screen
+    Screen
 }
 
 /**
@@ -188,13 +191,20 @@ private:
             // COMPAT MODE
             switch(blendingMode) {
                 case BlendMode.Normal: 
+                    glBlendEquation(GL_FUNC_ADD);
                     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); break;
                 case BlendMode.Multiply: 
+                    glBlendEquation(GL_FUNC_ADD);
                     glBlendFunc(GL_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA); break;
-                case BlendMode.LinearDodge:
+                case BlendMode.ColorDodge:
+                    glBlendEquation(GL_FUNC_ADD);
                     glBlendFunc(GL_DST_COLOR, GL_ONE); break;
-                case BlendMode.Add:
+                case BlendMode.LinearDodge:
+                    glBlendEquation(GL_FUNC_ADD);
                     glBlendFunc(GL_ONE, GL_ONE); break;
+                case BlendMode.Screen:
+                    glBlendEquation(GL_FUNC_ADD);
+                    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR);
                 default: assert(0);
             }
 
