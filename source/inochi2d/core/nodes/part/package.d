@@ -134,7 +134,13 @@ enum BlendMode {
     Normal,
 
     // Multiply blending mode
-    Multiply
+    Multiply,
+    
+    // Linear "Dodge"
+    LinearDodge,
+
+    // GL Add
+    Add
 }
 
 /**
@@ -185,6 +191,10 @@ private:
                     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); break;
                 case BlendMode.Multiply: 
                     glBlendFunc(GL_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA); break;
+                case BlendMode.LinearDodge:
+                    glBlendFunc(GL_DST_COLOR, GL_ONE); break;
+                case BlendMode.Add:
+                    glBlendFunc(GL_ONE, GL_ONE); break;
                 default: assert(0);
             }
 
