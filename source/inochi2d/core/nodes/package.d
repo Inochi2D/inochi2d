@@ -114,6 +114,9 @@ protected:
         serializer.putKey("transform");
         serializer.serializeValue(this.localTransform);
         
+        serializer.putKey("lockToRoot");
+        serializer.serializeValue(this.lockToRoot_);
+        
         if (children.length > 0) {
             serializer.putKey("children");
             auto childArray = serializer.arrayBegin();
@@ -143,6 +146,9 @@ protected:
         
         serializer.putKey("transform");
         serializer.serializeValue(this.localTransform);
+        
+        serializer.putKey("lockToRoot");
+        serializer.serializeValue(this.lockToRoot_);
         
         if (children.length > 0) {
             serializer.putKey("children");
