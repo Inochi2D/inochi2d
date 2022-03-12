@@ -84,6 +84,9 @@ private:
     @Name("zsort")
     float zsort_ = 0;
 
+    @Name("lockToRoot")
+    bool lockToRoot_;
+
 protected:
 
     // Send mask reset request one node up
@@ -219,6 +222,28 @@ public:
     }
 
     /**
+        Lock translation to root
+    */
+    ref bool lockToRoot() {
+        return lockToRoot_;
+    }
+
+    /**
+        Lock translation to root
+    */
+    void lockToRoot(bool value) {
+        
+        // Automatically handle converting lock space and proper world space.
+        if (value && !lockToRoot_) {
+            localTransform.translation = transformNoLock().translation;
+        } else if (!value && lockToRoot_) {
+            localTransform.translation = localTransform.translation-parent.transformNoLock().translation;
+        }
+
+        lockToRoot_ = value;
+    }
+
+    /**
         Constructs a new puppet root node
     */
     this(Puppet puppet) {
@@ -252,7 +277,18 @@ public:
     Transform transform() {
         localTransform.update();
         
-        // TODO: handle calculating world space transform
+        if (lockToRoot_) return localTransform * puppet.root.localTransform;
+        if (parent !is null) return localTransform * parent.transform();
+        return localTransform;
+    }
+
+    /**
+        The transform in world space without locking
+    */
+    @Ignore
+    Transform transformNoLock() {
+        localTransform.update();
+        
         if (parent !is null) return localTransform * parent.transform();
         return localTransform;
     }

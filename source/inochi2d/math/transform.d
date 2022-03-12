@@ -162,21 +162,10 @@ public:
             vec4(other.translation, 1)
         );
 
-        vec3 standAloneTrans = vec3(
-            this.translation_ *
-            vec4(0, 0, 0, 1)
-        );
-
-        // Handle translation locks
-        if (!lockTranslationX) tnew.translation.x = pixelSnap ? round(trans.x) : trans.x;
-        else tnew.translation.x = pixelSnap ? round(standAloneTrans.x) : standAloneTrans.x;
-
-        if (!lockTranslationY) tnew.translation.y = pixelSnap ? round(trans.y) : trans.y;
-        else tnew.translation.y = pixelSnap ? round(standAloneTrans.y) : standAloneTrans.y;
-
-        if (!lockTranslationZ) tnew.translation.z = pixelSnap ? round(trans.z) : trans.z;
-        else tnew.translation.z = pixelSnap ? round(standAloneTrans.z) : standAloneTrans.z;
-
+        // Handle translation
+        tnew.translation.x = pixelSnap ? round(trans.x) : trans.x;
+        tnew.translation.y = pixelSnap ? round(trans.y) : trans.y;
+        tnew.translation.z = pixelSnap ? round(trans.z) : trans.z;
         tnew.update();
 
         return tnew;
@@ -210,11 +199,6 @@ public:
         auto state = serializer.objectBegin();
             serializer.putKey("trans");
             translation.serialize(serializer);
-        
-            if (lockTranslationX || lockTranslationY || lockTranslationZ) {
-                serializer.putKey("trans_lock");
-                serializer.serializeValue([lockTranslationX, lockTranslationY, lockTranslationZ]);
-            }
 
             serializer.putKey("rot");
             rotation.serialize(serializer);
@@ -239,16 +223,6 @@ public:
         translation.deserialize(data["trans"]);
         rotation.deserialize(data["rot"]);
         scale.deserialize(data["scale"]);
-
-        // Deserialize locks
-        if (data["trans_lock"] != Asdf.init) {
-            bool[] states;
-            data["trans_lock"].deserializeValue(states);
-
-            this.lockTranslationX = states[0];
-            this.lockTranslationY = states[1];
-            this.lockTranslationZ = states[2];
-        }
         
         if (data["rot_lock"] != Asdf.init) {
             bool[] states;
