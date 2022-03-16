@@ -10,7 +10,8 @@ out vec4 outColor;
 
 uniform sampler2D tex;
 uniform float opacity;
+uniform vec3 tint;
 
 void main() {
-    outColor = texture(tex, texUVs) * opacity;
+    outColor = texture(tex, texUVs) * vec4(tint.xyz, 1) * opacity;
 }

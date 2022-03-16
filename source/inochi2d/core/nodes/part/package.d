@@ -26,6 +26,7 @@ package(inochi2d) {
         /* GLSL Uniforms (Normal) */
         GLint mvp;
         GLint gopacity;
+        GLint gtint;
 
         /* GLSL Uniforms (Masks) */
         GLint mmvp;
@@ -44,6 +45,7 @@ package(inochi2d) {
 
         mvp = partShader.getUniformLocation("mvp");
         gopacity = partShader.getUniformLocation("opacity");
+        gtint = partShader.getUniformLocation("tint");
         
         mmvp = partMaskShader.getUniformLocation("mvp");
         mthreshold = partMaskShader.getUniformLocation("threshold");
@@ -187,6 +189,7 @@ private:
             partShader.use();
             partShader.setUniform(mvp, inGetCamera().matrix * transform.matrix());
             partShader.setUniform(gopacity, opacity);
+            partShader.setUniform(gtint, tint);
 
             // COMPAT MODE
             switch(blendingMode) {
@@ -280,11 +283,14 @@ protected:
 
         serializer.putKey("blend_mode");
         serializer.serializeValue(blendingMode);
+        
+        serializer.putKey("tint");
+        tint.serialize(serializer);
+
+        serializer.putKey("mask_mode");
+        serializer.serializeValue(maskingMode);
 
         if (mask.length > 0) {
-
-            serializer.putKey("mask_mode");
-            serializer.serializeValue(maskingMode);
 
             serializer.putKey("masked_by");
             auto state = serializer.arrayBegin();
@@ -330,6 +336,9 @@ protected:
 
         serializer.putKey("blend_mode");
         serializer.serializeValue(blendingMode);
+
+        serializer.putKey("tint");
+        tint.serialize(serializer);
 
         serializer.putKey("mask_mode");
         serializer.serializeValue(maskingMode);
@@ -379,6 +388,9 @@ protected:
 
         data["opacity"].deserializeValue(this.opacity);
         data["mask_threshold"].deserializeValue(this.maskAlphaThreshold);
+
+        // Older models may not have tint
+        if (!data["tint"].isEmpty) deserialize(tint, data["tint"]);
 
         // Older models may not have blend mode
         if (!data["blend_mode"].isEmpty) data["blend_mode"].deserializeValue(this.blendingMode);
@@ -431,6 +443,11 @@ public:
         Opacity of the mesh
     */
     float opacity = 1;
+
+    /**
+        Tint of color based texture
+    */
+    vec3 tint = vec3(1, 1, 1);
 
     /**
         Gets the active texture
@@ -546,6 +563,7 @@ void inDrawTextureAtPart(Texture texture, Part part) {
         mat4.translation(vec3(part.transform.matrix() * vec4(1, 1, 1, 1)))
     );
     partShader.setUniform(gopacity, part.opacity);
+    partShader.setUniform(gtint, part.tint);
     
     // Bind the texture
     texture.bind();
