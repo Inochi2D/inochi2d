@@ -449,7 +449,9 @@ public:
         
         if (auto exc = data["transform"].deserializeValue(this.localTransform)) return exc;
         
-        if (auto exc = data["lockToRoot"].deserializeValue(this.lockToRoot_)) return exc;
+        if (!data["lockToRoot"].isEmpty) {
+            if (auto exc = data["lockToRoot"].deserializeValue(this.lockToRoot_)) return exc;
+        }
 
         // Pre-populate our children with the correct types
         foreach(child; data["children"].byElement) {
