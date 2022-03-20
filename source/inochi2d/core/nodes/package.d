@@ -434,7 +434,10 @@ public:
             this.serializeSelf(serializer);
         serializer.objectEnd(state);
     }
-    
+
+    /**
+        Deserializes node from Asdf formatted JSON data.
+    */
     SerdeException deserializeFromAsdf(Asdf data) {
 
         if (auto exc = data["uuid"].deserializeValue(this.uuid_)) return exc;
