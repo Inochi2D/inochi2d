@@ -28,6 +28,12 @@ private:
     mat4 scale_ = mat4.identity;
 
     @Ignore
+    mat4 rotationInv = mat4.identity;
+
+    @Ignore
+    bool rotationInvDirty = false;
+
+    @Ignore
     vec3 translationCache = vec3(0, 0, 0);
 
     @Ignore
@@ -35,6 +41,14 @@ private:
 
     @Ignore
     vec2 scaleCache = vec2(1, 1);
+
+    mat4 getRotationInv() {
+        if (rotationInvDirty) {
+            rotationInv = quat.euler_rotation(this.rotation.x, this.rotation.y, this.rotation.z).inverse().to_matrix!(4, 4);
+            rotationInvDirty = false;
+        }
+        return rotationInv;
+    }
 
 public:
 
@@ -159,6 +173,7 @@ public:
         //
         //  TRANSLATION
         //
+        mat4 otherScaleInv = mat4.scaling(1 / other.scale.x, 1 / other.scale.y, 1);
 
         // Calculate new TRS
         vec3 trans = vec3(
@@ -167,7 +182,7 @@ public:
             // That has been pre-calculated above.
             // Do note we also multiply by its inverse, this is so that the rotations and scaling doesn't
             // start stacking up weirdly causing cascadingly more extreme transformation.
-            other.scale_ * other.rotation_ * this.translation_ * other.rotation_.inverse() * other.scale_.inverse() * 
+            other.scale_ * other.rotation_ * this.translation_ * other.getRotationInv() * otherScaleInv *
 
             // Also our local translation
             vec4(other.translation, 1)
@@ -203,6 +218,7 @@ public:
         }
         if (rotation != rotationCache) {
             rotation_ = quat.euler_rotation(this.rotation.x, this.rotation.y, this.rotation.z).to_matrix!(4, 4);
+            rotationInvDirty = true;
             recalc = true;
             rotationCache = rotation;
         }
