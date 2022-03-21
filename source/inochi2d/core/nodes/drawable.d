@@ -31,6 +31,15 @@ package(inochi2d) {
         // Bind our vertex array
         glBindVertexArray(drawableVAO);
     }
+
+    bool doGenerateBounds = false;
+}
+
+/**
+    Sets whether Inochi2D should keep track of the bounds
+*/
+void incSetUpdateBounds(bool state) {
+    doGenerateBounds = state;
 }
 
 /**
@@ -252,6 +261,7 @@ public:
         Updates the drawable's bounds
     */
     void updateBounds() {
+        if (!doGenerateBounds) return;
 
         // Calculate bounds
         Transform wtransform = transform;
@@ -270,6 +280,7 @@ public:
     */
     override
     void drawBounds() {
+        if (!doGenerateBounds) return;
         if (vertices.length == 0) return;
         
         float width = bounds.z-bounds.x;
