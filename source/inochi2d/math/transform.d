@@ -2,7 +2,9 @@
     Copyright © 2020, Inochi2D Project
     Distributed under the 2-Clause BSD License, see LICENSE file.
     
-    Authors: Luna Nielsen
+    Authors:
+        Luna Nielsen
+        Asahi Lina
 */
 module inochi2d.math.transform;
 public import inochi2d.math;
@@ -24,6 +26,15 @@ private:
 
     @Ignore
     mat4 scale_ = mat4.identity;
+
+    @Ignore
+    vec3 translationCache = vec3(0, 0, 0);
+
+    @Ignore
+    vec3 rotationCache = vec3(0, 0, 0);
+
+    @Ignore
+    vec2 scaleCache = vec2(1, 1);
 
 public:
 
@@ -183,10 +194,26 @@ public:
         Updates the internal matrix of this transform
     */
     void update() {
-        translation_ = mat4.translation(translation);
-        rotation_ = quat.euler_rotation(this.rotation.x, this.rotation.y, this.rotation.z).to_matrix!(4, 4);
-        scale_ = mat4.scaling(scale.x, scale.y, 1);
-        trs =  translation_ * rotation_ * scale_;
+        bool recalc = false;
+
+        if (translation != translationCache) {
+            translation_ = mat4.translation(translation);
+            recalc = true;
+            translationCache = translation;
+        }
+        if (rotation != rotationCache) {
+            rotation_ = quat.euler_rotation(this.rotation.x, this.rotation.y, this.rotation.z).to_matrix!(4, 4);
+            recalc = true;
+            rotationCache = rotation;
+        }
+        if (scale != scaleCache) {
+            scale_ = mat4.scaling(scale.x, scale.y, 1);
+            recalc = true;
+            scaleCache = scale;
+        }
+
+        if (recalc)
+            trs = translation_ * rotation_ * scale_;
     }
 
     @Ignore
