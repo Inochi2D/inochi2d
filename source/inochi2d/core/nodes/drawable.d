@@ -61,12 +61,8 @@ private:
     void updateVertices() {
 
         // Important check since the user can change this every frame
-        enforce(
-            vertices.length == data.vertices.length, 
-            "Data length mismatch, if you want to change the mesh you need to change its data with Part.rebuffer."
-        );
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, vertices.length*vec2.sizeof, vertices.ptr, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, data.vertices.length*vec2.sizeof, data.vertices.ptr, GL_DYNAMIC_DRAW);
 
         // Zero-fill the deformation delta
         this.deformation.length = vertices.length;
@@ -202,10 +198,9 @@ public:
         this.updateVertices();
     }
 
-    /**
-        The mesh's vertices
-    */
-    vec2[] vertices;
+    ref vec2[] vertices() {
+        return data.vertices;
+    }
 
     /**
         Static computed deformation

@@ -98,9 +98,7 @@ Part inCreateSimplePart(Texture tex, Node parent = null, string name = "New Part
 		vec2(0, 1),
 		vec2(1, 0),
 		vec2(1, 1),
-	], 
-    vec2(0, 0),
-    vec2(1, 1),
+	],
 	[
 		0, 1, 2,
 		2, 1, 3

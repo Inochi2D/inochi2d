@@ -27,18 +27,6 @@ struct MeshData {
     vec2[] uvs;
 
     /**
-        Start coordinate of UVs
-    */
-    @Optional
-    vec2 uvStart;
-    
-    /**
-        End coordinate of UVs
-    */
-    @Optional
-    vec2 uvEnd;
-
-    /**
         Indices in the mesh
     */
     ushort[] indices;
@@ -99,9 +87,10 @@ struct MeshData {
 
             // Swap winding
             if (cw) {
-                vec2 swap = vertices[i+1];
-                vertices[i+1] = vertices[i+2];
-                vertices[i+2] = swap;
+                ushort swap = indices[i+1];
+                indices[i+1] = indices[i+2];
+                indices[i+2] = swap;
+                
             }
         }
     }
@@ -141,9 +130,6 @@ struct MeshData {
         newData.indices.length = indices.length;
         newData.indices[] = indices[];
 
-        newData.uvStart = uvStart;
-        newData.uvEnd = uvEnd;
-
         return newData;
     }
 
@@ -168,26 +154,6 @@ struct MeshData {
                         serializer.elemBegin;
                         serializer.serializeValue(uv.y);
                     }
-                serializer.arrayEnd(arr);
-            }
-
-            if (uvStart.isFinite) {
-                serializer.putKey("uvStart");
-                arr = serializer.arrayBegin();
-                    serializer.elemBegin;
-                    serializer.serializeValue(uvStart.x);
-                    serializer.elemBegin;
-                    serializer.serializeValue(uvStart.y);
-                serializer.arrayEnd(arr);
-            }
-
-            if (uvEnd.isFinite) {
-                serializer.putKey("uvEnd");
-                arr = serializer.arrayBegin();
-                    serializer.elemBegin;
-                    serializer.serializeValue(uvEnd.x);
-                    serializer.elemBegin;
-                    serializer.serializeValue(uvEnd.y);
                 serializer.arrayEnd(arr);
             }
 
@@ -223,14 +189,6 @@ struct MeshData {
                 elements.popFront;
                 uvs ~= vec2(x, y);
             }
-        }
-        if (!data["uvStart"].isEmpty) {
-            elements = data["uvs"].byElement;
-            elements.front.deserializeValue(uvStart.x);
-            elements.popFront;
-            elements.front.deserializeValue(uvStart.y);
-            elements.popFront;
-
         }
 
         foreach(indiceData; data["indices"].byElement) {
