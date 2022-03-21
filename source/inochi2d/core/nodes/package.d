@@ -277,15 +277,33 @@ public:
     Transform localTransform;
 
     /**
+        The cached world space transform of the node
+    */
+    @Ignore
+    Transform globalTransform;
+
+    @Ignore
+    bool recalculateTransform = true;
+
+    /**
         The transform in world space
     */
     @Ignore
     Transform transform() {
-        localTransform.update();
-        
-        if (lockToRoot_) return localTransform * puppet.root.localTransform;
-        if (parent !is null) return localTransform * parent.transform();
-        return localTransform;
+        if (recalculateTransform) {
+            localTransform.update();
+
+            if (lockToRoot_)
+                globalTransform = localTransform * puppet.root.localTransform;
+            else if (parent !is null)
+                globalTransform = localTransform * parent.transform();
+            else
+                globalTransform = localTransform;
+
+            recalculateTransform = false;
+        }
+
+        return globalTransform;
     }
 
     /**
@@ -415,6 +433,8 @@ public:
     */
     void update() {
         if (!enabled) return;
+
+        recalculateTransform = true;
 
         foreach(child; children) {
             child.update();
