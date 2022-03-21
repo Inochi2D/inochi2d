@@ -62,19 +62,10 @@ private:
     */
     void apply() {
         if (deformations.length > 0) {
-            MeshData mesh = parent.getMesh();
-            foreach(i; 0..deformData.length) {
-
-                // Vertex position calculated
-                const(vec2) vp = *(mesh.vertices.ptr+i) + *(deformData.ptr+i);
-
-                // Tiny optimization, avoid array bounds checking
-                vec2* cvp = (parent.vertices.ptr+i);
-                *cvp = vp;
-            }
+            parent.deformation[0..$] = deformData[0..parent.deformation.length-1];
 
             // Tell parent to update its vertex data
-            parent.refresh();
+            parent.refreshDeform();
         }
     }
 

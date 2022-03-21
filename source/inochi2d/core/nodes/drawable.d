@@ -219,13 +219,8 @@ public:
     final void refresh() {
         this.updateVertices();
     }
-
-    /**
-        Sets the deformation delta
-    */
-    final
-    void setDeformation(ref vec2[] deformation) {
-        this.deformation = deformation;
+    
+    final void refreshDeform() {
         this.updateDeform();
     }
 
