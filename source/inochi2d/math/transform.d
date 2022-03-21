@@ -158,8 +158,6 @@ public:
         if (!lockRotationZ) tnew.rotation.z = rot.yaw;
         else tnew.rotation.z = this.rotation.z;
 
-        tnew.rotation_ = quat.euler_rotation(tnew.rotation.x, tnew.rotation.y, tnew.rotation.z).to_matrix!(4, 4);
-
         //
         //  SCALE
         //
@@ -168,7 +166,6 @@ public:
         vec2 scale = vec2(this.scale_ * vec4(other.scale, 1, 1));
         if (!lockScaleX) tnew.scale.x = scale.x;
         if (!lockScaleY) tnew.scale.y = scale.y;
-        tnew.scale_ = mat4.scaling(scale.x, scale.y, 1);
 
         //
         //  TRANSLATION
