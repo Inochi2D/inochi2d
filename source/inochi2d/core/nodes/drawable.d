@@ -38,7 +38,7 @@ package(inochi2d) {
 /**
     Sets whether Inochi2D should keep track of the bounds
 */
-void incSetUpdateBounds(bool state) {
+void inSetUpdateBounds(bool state) {
     doGenerateBounds = state;
 }
 
