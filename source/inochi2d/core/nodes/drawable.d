@@ -220,6 +220,9 @@ public:
         this.updateVertices();
     }
     
+    /**
+        Refreshes the drawable, updating its deformation deltas
+    */
     final void refreshDeform() {
         this.updateDeform();
     }
@@ -232,7 +235,6 @@ public:
         super.update();
         deformStack.update();
         this.updateDeform();
-        this.updateBounds();
     }
 
     /**

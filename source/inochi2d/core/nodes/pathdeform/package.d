@@ -264,8 +264,6 @@ public:
                     part.vertices[i] = (joint * vec3(mesh.vertices[i], 0)).xy;
                 }
             }
-
-            part.refresh();
         }
 
         super.update();
