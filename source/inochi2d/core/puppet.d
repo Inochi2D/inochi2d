@@ -400,19 +400,7 @@ public:
         Returns all the parts in the puppet
     */
     Part[] getAllParts() {
-        Part[] parts;
-
-        void partScanRecurse(Node n) {
-            if (Part pn = cast(Part)n) {
-                parts ~= pn;
-            }
-
-            foreach(child; n.children) {
-                partScanRecurse(child);
-            }
-        }
-
-        return parts;
+        return findNodesType!Part(root);
     }
 
     /**
