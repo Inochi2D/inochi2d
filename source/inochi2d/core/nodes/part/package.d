@@ -224,12 +224,18 @@ private:
         glBindBuffer(GL_ARRAY_BUFFER, uvbo);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, null);
 
+        // Enable deform array
+        glEnableVertexAttribArray(2); // deforms
+        glBindBuffer(GL_ARRAY_BUFFER, dbo);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, null);
+
         // Bind index buffer
         this.bindIndex();
 
         // Disable the vertex attribs after use
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
+        glDisableVertexAttribArray(2);
     }
 
 protected:

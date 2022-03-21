@@ -38,3 +38,13 @@ V dampen(V)(V pos, V target, float delta, float speed = 1) if(is_vector!V) {
 float dampen(float pos, float target, float delta, float speed = 1) {
     return (pos - target) * pow(1e-4f, delta*speed) + target;
 }
+
+/**
+    Gets whether a point is within an axis aligned rectangle
+*/
+bool contains(vec4 a, vec2 b) {
+    return  b.x >= a.x && 
+            b.y >= a.y &&
+            b.x <= a.x+a.z &&
+            b.y <= a.y+a.w;
+}

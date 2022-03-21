@@ -59,6 +59,25 @@ private:
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, vertices.length*vec2.sizeof, vertices.ptr, GL_DYNAMIC_DRAW);
 
+        // Zero-fill the deformation delta
+        this.deformation.length = vertices.length;
+        foreach(i; 0..deformation.length) {
+            this.deformation[i] = vec2(0, 0);
+        }
+        this.updateDeform();
+    }
+
+    void updateDeform() {
+    
+        // Important check since the user can change this every frame
+        enforce(
+            deformation.length == vertices.length, 
+            "Data length mismatch, if you want to change the mesh you need to change its data with Part.rebuffer."
+        );
+
+        glBindBuffer(GL_ARRAY_BUFFER, dbo);
+        glBufferData(GL_ARRAY_BUFFER, this.deformation.length*vec2.sizeof, this.deformation.ptr, GL_DYNAMIC_DRAW);
+
         this.updateBounds();
     }
 
@@ -72,6 +91,11 @@ protected:
         OpenGL Vertex Buffer Object
     */
     GLuint vbo;
+
+    /**
+        OpenGL Vertex Buffer Object for deformation
+    */
+    GLuint dbo;
 
     /**
         The mesh data of this part
@@ -138,6 +162,7 @@ public:
         // Generate the buffers
         glGenBuffers(1, &vbo);
         glGenBuffers(1, &ibo);
+        glGenBuffers(1, &dbo);
     }
 
     /**
@@ -161,6 +186,7 @@ public:
         // Generate the buffers
         glGenBuffers(1, &vbo);
         glGenBuffers(1, &ibo);
+        glGenBuffers(1, &dbo);
 
         // Update indices and vertices
         this.updateIndices();
@@ -171,6 +197,11 @@ public:
         The mesh's vertices
     */
     vec2[] vertices;
+
+    /**
+        Static computed deformation
+    */
+    vec2[] deformation;
 
     /**
         The bounds of this drawable
@@ -190,12 +221,22 @@ public:
     }
 
     /**
+        Sets the deformation delta
+    */
+    final
+    void setDeformation(ref vec2[] deformation) {
+        this.deformation = deformation;
+        this.updateDeform();
+    }
+
+    /**
         Updates the drawable
     */
     override
     void update() {
         super.update();
         deformStack.update();
+        this.updateDeform();
         this.updateBounds();
     }
 
@@ -218,8 +259,8 @@ public:
         // Calculate bounds
         Transform wtransform = transform;
         bounds = vec4(wtransform.translation.xyxy);
-        foreach(vertex; vertices) {
-            vec2 vertOriented = vec2(transform.matrix * vec4(vertex, 0, 1));
+        foreach(i, vertex; vertices) {
+            vec2 vertOriented = vec2(transform.matrix * vec4(vertex+deformation[i], 0, 1));
             if (vertOriented.x < bounds.x) bounds.x = vertOriented.x;
             if (vertOriented.y < bounds.y) bounds.y = vertOriented.y;
             if (vertOriented.x > bounds.z) bounds.z = vertOriented.x;
