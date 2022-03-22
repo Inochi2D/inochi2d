@@ -126,6 +126,11 @@ public:
     vec2 handle = vec2(0);
 
     /**
+        The parameter's scalar delta
+    */
+    float[2][2] delta = [[0, 1], [0, 1]];
+
+    /**
         Whether the parameter is 2D
     */
     @Name("is_2d")
