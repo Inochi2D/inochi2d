@@ -89,6 +89,16 @@ private:
 
 protected:
 
+    /**
+        The offset to the transform to apply
+    */
+    Transform offsetTransform;
+
+    /**
+        The offset to apply to sorting
+    */
+    float offsetSort = 0f;
+
     // Send mask reset request one node up
     void resetMask() {
         if (parent !is null) parent.resetMask();
@@ -210,14 +220,14 @@ public:
         Gets the relative Z sorting
     */
     float relZSort() {
-        return zsort_;
+        return zsort_ + offsetSort;
     }
 
     /**
         Gets the Z sorting
     */
     float zSort() {
-        return parent !is null ? parent.zSort() + zsort_ : zsort_;
+        return parent !is null ? parent.zSort() + relZSort : relZSort;
     }
 
     /**
@@ -289,18 +299,32 @@ public:
         The transform in world space
     */
     @Ignore
-    Transform transform() {
+    Transform transform(bool ignoreParam=false)() {
         if (recalculateTransform) {
             localTransform.update();
+            offsetTransform.update();
 
-            if (lockToRoot_)
-                globalTransform = localTransform * puppet.root.localTransform;
-            else if (parent !is null)
-                globalTransform = localTransform * parent.transform();
-            else
-                globalTransform = localTransform;
+            static if (ignoreParam) {
 
-            recalculateTransform = false;
+                if (lockToRoot_)
+                    globalTransform = offsetTransform * localTransform * puppet.root.localTransform;
+                else if (parent !is null)
+                    globalTransform = offsetTransform * localTransform * parent.transform();
+                else
+                    globalTransform = offsetTransform * localTransform;
+
+                recalculateTransform = false;
+            } else {
+
+                if (lockToRoot_)
+                    globalTransform = localTransform * puppet.root.localTransform;
+                else if (parent !is null)
+                    globalTransform = localTransform * parent.transform();
+                else
+                    globalTransform = localTransform;
+
+                recalculateTransform = false;
+            }
         }
 
         return globalTransform;
@@ -400,6 +424,42 @@ public:
             this.parent_.children_ = this.parent_.children_[0..offset] ~ this ~ this.parent_.children_[offset+1..$-1];
         }
         if (this.puppet !is null) this.puppet.rescanNodes();
+    }
+
+    /**
+        Sets offset value
+    */
+    bool setValue(string key, float value) {
+        switch(key) {
+            case "zSort":
+                offsetSort = value;
+                return true;
+            case "transform.t.x":
+                offsetTransform.translation.x = value;
+                return true;
+            case "transform.t.y":
+                offsetTransform.translation.y = value;
+                return true;
+            case "transform.t.z":
+                offsetTransform.translation.z = value;
+                return true;
+            case "transform.r.x":
+                offsetTransform.rotation.x = value;
+                return true;
+            case "transform.r.y":
+                offsetTransform.rotation.y = value;
+                return true;
+            case "transform.r.z":
+                offsetTransform.rotation.z = value;
+                return true;
+            case "transform.s.x":
+                offsetTransform.scale.x = value;
+                return true;
+            case "transform.s.y":
+                offsetTransform.scale.y = value;
+                return true;
+            default: return false;
+        }
     }
 
     /**

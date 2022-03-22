@@ -177,14 +177,14 @@ private:
         static if (isMask) {
             partMaskShader.use();
             partMaskShader.setUniform(mmvp, inGetCamera().matrix * transform.matrix());
-            partMaskShader.setUniform(mthreshold, maskAlphaThreshold);
-            partMaskShader.setUniform(mgopacity, opacity);
+            partMaskShader.setUniform(mthreshold, maskAlphaThreshold+offsetMaskThreshold);
+            partMaskShader.setUniform(mgopacity, opacity+offsetOpacity);
             glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         } else {
             partShader.use();
             partShader.setUniform(mvp, inGetCamera().matrix * transform.matrix());
-            partShader.setUniform(gopacity, opacity);
-            partShader.setUniform(gtint, tint);
+            partShader.setUniform(gopacity, opacity+offsetOpacity);
+            partShader.setUniform(gtint, tint+offsetTint);
 
             // COMPAT MODE
             switch(blendingMode) {
@@ -412,6 +412,14 @@ protected:
         return null;
     }
 
+    //
+    //      PARAMETER OFFSETS
+    //
+    float offsetMaskThreshold = 0;
+    float offsetOpacity = 0;
+    vec3 offsetTint = vec3(0);
+
+
 public:
     /**
         List of textures this part can use
@@ -487,6 +495,32 @@ public:
         mthreshold = partMaskShader.getUniformLocation("threshold");
         mgopacity = partMaskShader.getUniformLocation("opacity");
         this.updateUVs();
+    }
+
+    override
+    bool setValue(string key, float value) {
+        
+        // Skip our list of our parent already handled it
+        if (super.setValue(key, value)) return true;
+
+        switch(key) {
+            case "alphaThreshold":
+                offsetMaskThreshold = value;
+                return true;
+            case "opacity":
+                offsetOpacity = value;
+                return true;
+            case "tint.r":
+                offsetTint.x = value;
+                return true;
+            case "tint.g":
+                offsetTint.y = value;
+                return true;
+            case "tint.b":
+                offsetTint.z = value;
+                return true;
+            default: return false;
+        }
     }
     
     override

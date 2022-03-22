@@ -203,7 +203,7 @@ public:
     }
 
     /**
-        Static computed deformation
+        Deformation offset to apply
     */
     vec2[] deformation;
 
@@ -297,7 +297,7 @@ public:
         inDbgDrawLines(vec4(.5, .5, .5, 1));
         inDbgLineWidth(1);
     }
-
+    
     /**
         Draws line of mesh
     */
