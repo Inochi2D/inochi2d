@@ -356,7 +356,7 @@ public:
     /**
         Changes this mesh's data
     */
-    void rebuffer(MeshData data) {
+    void rebuffer(ref MeshData data) {
         this.data = data;
         this.updateIndices();
         this.updateVertices();

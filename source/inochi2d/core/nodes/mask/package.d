@@ -100,7 +100,7 @@ public:
     }
 
     override
-    void rebuffer(MeshData data) {
+    void rebuffer(ref MeshData data) {
         super.rebuffer(data);
     }
 
