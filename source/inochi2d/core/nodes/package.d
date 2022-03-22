@@ -432,31 +432,31 @@ public:
     bool setValue(string key, float value) {
         switch(key) {
             case "zSort":
-                offsetSort = value;
+                offsetSort += value;
                 return true;
             case "transform.t.x":
-                offsetTransform.translation.x = value;
+                offsetTransform.translation.x += value;
                 return true;
             case "transform.t.y":
-                offsetTransform.translation.y = value;
+                offsetTransform.translation.y += value;
                 return true;
             case "transform.t.z":
-                offsetTransform.translation.z = value;
+                offsetTransform.translation.z += value;
                 return true;
             case "transform.r.x":
-                offsetTransform.rotation.x = value;
+                offsetTransform.rotation.x += value;
                 return true;
             case "transform.r.y":
-                offsetTransform.rotation.y = value;
+                offsetTransform.rotation.y += value;
                 return true;
             case "transform.r.z":
-                offsetTransform.rotation.z = value;
+                offsetTransform.rotation.z += value;
                 return true;
             case "transform.s.x":
-                offsetTransform.scale.x = value;
+                offsetTransform.scale.x += value;
                 return true;
             case "transform.s.y":
-                offsetTransform.scale.y = value;
+                offsetTransform.scale.y += value;
                 return true;
             default: return false;
         }
@@ -485,6 +485,18 @@ public:
     void finalize() {
         foreach(child; children) {
             child.finalize();
+        }
+    }
+
+    void beginUpdate() {
+        offsetSort = 0;
+        offsetTransform.clear();
+
+        // Iterate through children
+        foreach(child; children_) {
+            if (!child.enabled) continue;
+
+            child.beginUpdate();
         }
     }
 

@@ -341,6 +341,8 @@ public:
     */
     final void update() {
 
+        root.beginUpdate();
+
         // Update parameters
         foreach(parameter; parameters) {
             parameter.update();

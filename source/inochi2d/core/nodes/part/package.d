@@ -505,22 +505,30 @@ public:
 
         switch(key) {
             case "alphaThreshold":
-                offsetMaskThreshold = value;
+                offsetMaskThreshold += value;
                 return true;
             case "opacity":
-                offsetOpacity = value;
+                offsetOpacity += value;
                 return true;
             case "tint.r":
-                offsetTint.x = value;
+                offsetTint.x += value;
                 return true;
             case "tint.g":
-                offsetTint.y = value;
+                offsetTint.y += value;
                 return true;
             case "tint.b":
-                offsetTint.z = value;
+                offsetTint.z += value;
                 return true;
             default: return false;
         }
+    }
+
+    override
+    void beginUpdate() {
+        offsetMaskThreshold = 0;
+        offsetOpacity = 0;
+        offsetTint = vec3(0);
+        super.beginUpdate();
     }
     
     override

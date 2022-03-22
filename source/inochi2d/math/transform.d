@@ -229,6 +229,12 @@ public:
             trs = translation_ * rotation_ * scale_;
     }
 
+    void clear() {
+        translation = vec3(0);
+        rotation = vec3(0);
+        scale = vec2(1, 1);
+    }
+
     @Ignore
     string toString() {
         import std.format : format;
