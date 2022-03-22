@@ -82,15 +82,20 @@ struct MeshData {
     */
     void fixWinding() {
         if (!isReady) return;
-        foreach(i; 0..indices.length/3) {
-            bool cw = cross(vec3(vertices[i+1]-vertices[i], 0), vec3(vertices[i+2]-vertices[i], 0)).z < 0;
+        
+        foreach(j; 0..indices.length/3) {
+            size_t i = j*3;
+
+            vec2 vertA = vertices[indices[i+0]];
+            vec2 vertB = vertices[indices[i+1]];
+            vec2 vertC = vertices[indices[i+2]];
+            bool cw = cross(vec3(vertB-vertA, 0), vec3(vertC-vertA, 0)).z < 0;
 
             // Swap winding
             if (cw) {
                 ushort swap = indices[i+1];
                 indices[i+1] = indices[i+2];
-                indices[i+2] = swap;
-                
+                indices[i+2] = swap;   
             }
         }
     }
