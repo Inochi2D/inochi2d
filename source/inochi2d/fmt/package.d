@@ -94,7 +94,9 @@ Puppet inLoadINPPuppet(ubyte[] buffer) {
         inInterpretDataFromBuffer(buffer[bufferOffset..bufferOffset+=4], textureLength);
 
         ubyte textureType = buffer[bufferOffset++];
-        inAddTextureBinary(ShallowTexture(buffer[bufferOffset..bufferOffset+=textureLength]));
+        if (textureLength == 0) {
+            inAddTextureBinary(ShallowTexture([], 0, 0, 4));
+        } else inAddTextureBinary(ShallowTexture(buffer[bufferOffset..bufferOffset+=textureLength]));
     
         // Readd to puppet so that stuff doesn't break if we re-save the puppet
         slots ~= inGetLatestTexture();
@@ -152,7 +154,7 @@ void inWriteINPPuppet(Puppet p, string file) {
     app ~= nativeToBigEndian(cast(uint)puppetJson.length)[0..4];
     app ~= cast(ubyte[])puppetJson;
     
-    // Begin text section
+    // Begin texture section
     app ~= TEX_SECTION;
     app ~= nativeToBigEndian(cast(uint)p.textureSlots.length)[0..4];
     foreach(texture; p.textureSlots) {
