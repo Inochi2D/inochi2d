@@ -165,4 +165,6 @@ public:
             keypoint.finalize(puppet);
         }
     }
+
+    void update() {} // stub
 }

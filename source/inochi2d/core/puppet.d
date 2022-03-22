@@ -340,6 +340,13 @@ public:
         Updates the nodes
     */
     final void update() {
+
+        // Update parameters
+        foreach(parameter; parameters) {
+            parameter.update();
+        }
+
+        // Update nodes
         root.update();
     }
 
