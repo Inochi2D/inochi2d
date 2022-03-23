@@ -26,6 +26,13 @@ public:
     string name;
 
     /**
+        Optimized indexable name generated at runtime
+
+        DO NOT SERIALIZE THIS.
+    */
+    string indexableName;
+
+    /**
         The current parameter value
     */
     vec2 value = vec2(0);
@@ -76,6 +83,8 @@ public:
         this.isVec2 = isVec2;
         if (!isVec2)
             axisPoints[1] = [0];
+        
+        this.makeIndexable();
     }
 
     /**
@@ -144,6 +153,7 @@ public:
         Finalize loading of parameter
     */
     void finalize(Puppet puppet) {
+        this.makeIndexable();
         foreach(binding; bindings) {
             binding.finalize(puppet);
         }
@@ -225,5 +235,10 @@ public:
         foreach(binding; bindings) {
             binding.deleteKeypoints(axis, index);
         }
+    }
+
+    void makeIndexable() {
+        import std.uni : toLower;
+        indexableName = name.toLower;
     }
 }
