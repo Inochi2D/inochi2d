@@ -3,106 +3,12 @@ import inochi2d.fmt.serialize;
 import inochi2d.math.serialization;
 import inochi2d.core;
 import inochi2d.math;
+import std.exception;
+import std.array;
+import std.algorithm.mutation;
+import std.stdio;
 
-/**
-    A binding to a parameter
-*/
-struct ParameterBinding {
-public:
-    /**
-        UUID of the node
-    */
-    uint nodeRef;
-
-    /**
-        The node to bind to
-    */
-    Node node;
-
-    /**
-        The parameter to bind
-    */
-    string paramName;
-
-    /**
-        The value at that breakpoint
-    */
-    float value;
-
-    /**
-        Serializes a binding
-    */
-    void serialize(S)(ref S serializer) {
-        serializer.putKey("node");
-        serializer.putValue(node.uuid);
-        serializer.putKey("param_name");
-        serializer.putValue(paramName);
-        serializer.putKey("value");
-        serializer.putValue(value);
-    }
-    
-    /**
-        Deserializes a binding
-    */
-    SerdeException deserializeFromAsdf(Asdf data) {
-        data["node"].deserializeValue(this.nodeRef);
-        data["param_name"].deserializeValue(this.paramName);
-        data["value"].deserializeValue(this.value);
-        return null;
-    }
-
-    /**
-        Finalize loading of parameter
-    */
-    void finalize(Puppet puppet) {
-        this.node = puppet.find(nodeRef);
-    }
-}
-
-/**
-    A keypoint in a parameter
-*/
-struct KeyPoint {
-
-    /**
-        The breakpoint location
-    */
-    vec2 keypoint;
-
-    /**
-        List of bindings
-    */
-    ParameterBinding[] bindings;
-
-    /**
-        Serializes a binding
-    */
-    void serialize(S)(ref S serializer) {
-        serializer.putKey("keypoint");
-        keypoint.serialize(serializer);
-        serializer.putKey("bindings");
-        serializer.serializeValue(bindings);
-    }
-    
-    /**
-        Deserializes a binding
-    */
-    SerdeException deserializeFromAsdf(Asdf data) {
-        keypoint.deserialize(data);
-        data["bindings"].deserializeValue(this.bindings);
-        return null;
-    }
-
-
-    /**
-        Finalize loading of parameter
-    */
-    void finalize(Puppet puppet) {
-        foreach(binding; bindings) {
-            binding.finalize(puppet);
-        }
-    }
-}
+public import inochi2d.core.param.binding;
 
 /**
     A parameter
@@ -115,26 +21,39 @@ public:
     uint uuid;
 
     /**
-        name of the parameter
+        Name of the parameter
     */
     string name;
 
     /**
-        The parameter's handle
+        The current parameter value
     */
-    @Ignore
-    vec2 handle = vec2(0);
-
-    /**
-        The parameter's scalar delta
-    */
-    float[2][2] delta = [[0, 1], [0, 1]];
+    vec2 value = vec2(0);
 
     /**
         Whether the parameter is 2D
     */
-    @Name("is_2d")
     bool isVec2;
+
+    /**
+        The parameter's minimum bounds
+    */
+    vec2 min;
+
+    /**
+        The parameter's maximum bounds
+    */
+    vec2 max;
+
+    /**
+        Position of the keypoints in two dimensions
+    */
+    float[][2] keypointPos = [[0, 1], [0]];
+
+    /**
+        Binding to targets
+    */
+    ParameterBinding[] bindings;
 
     /**
         For serialization
@@ -157,19 +76,98 @@ public:
     }
 
     /**
-        The breakpoints of the parameter
+        Serializes a parameter
     */
-    @Name("keypoints", "breakpoints") // Breakpoints specified for backwards compatibility
-    KeyPoint[] keypoints;
+    void serialize(S)(ref S serializer) {
+        serializer.putKey("uuid");
+        serializer.putValue(uuid);
+        serializer.putKey("name");
+        serializer.putValue(name);
+        serializer.putKey("is_vec2");
+        serializer.putValue(isVec2);
+        serializer.putKey("min");
+        min.serialize(serializer);
+        serializer.putKey("max");
+        max.serialize(serializer);
+        serializer.putKey("keypoint_pos");
+        serializer.serializeValue(keypointPos);
+        serializer.putKey("bindings");
+        serializer.serializeValue(bindings);
+    }
+
+    /**
+        Deserializes a parameter
+    */
+    SerdeException deserializeFromAsdf(Asdf data) {
+        data["uuid"].deserializeValue(this.uuid);
+        data["name"].deserializeValue(this.name);
+        data["is_vec2"].deserializeValue(this.isVec2);
+        min.deserialize(data["min"]);
+        max.deserialize(data["max"]);
+        data["keypoint_pos"].deserializeValue(this.keypointPos);
+
+        foreach(child; data["bindings"].byElement) {
+            string paramName;
+            child["param_name"].deserializeValue(paramName);
+
+            if (paramName == "deform") {
+                auto binding = new DeformationParameterBinding(this);
+                binding.deserializeFromAsdf(child);
+                bindings ~= binding;
+            } else {
+                auto binding = new ValueParameterBinding(this);
+                binding.deserializeFromAsdf(child);
+                bindings ~= binding;
+            }
+        }
+
+        return null;
+    }
 
     /**
         Finalize loading of parameter
     */
     void finalize(Puppet puppet) {
-        foreach(keypoint; keypoints) {
-            keypoint.finalize(puppet);
+        foreach(binding; bindings) {
+            binding.finalize(puppet);
         }
     }
 
-    void update() {} // stub
+    void update() {
+        vec2 range = max - min;
+        vec2 tmp = (value - min);
+        vec2 off = vec2(tmp.x / range.x, tmp.y / range.y);
+
+        vec2 clamped = off.clamp(vec2(0, 0), vec2(1, ));
+        if (off != clamped) {
+            debug writefln("Clamped parameter offset %s -> %s", off, clamped);
+        }
+
+        void interpAxis(uint dimension, float val, out uint index, out float offset) {
+            float[] pos = keypointPos[dimension];
+
+            foreach(i; 0..pos.length - 1) {
+                if (pos[i + 1] > val || i == (pos.length - 2)) {
+                    index = cast(uint)i;
+                    offset = (val - pos[i]) / (pos[i + 1] - pos[i]);
+                    return;
+                }
+            }
+        }
+
+        vec2u index;
+        vec2 offset;
+
+        interpAxis(0, clamped.x, index.x, offset.x);
+        if (isVec2) interpAxis(1, clamped.y, index.y, offset.y);
+
+        foreach(binding; bindings) {
+            binding.apply(index, offset);
+        }
+    }
+
+    uint keypointCount(uint dimension = 0) {
+        return cast(uint)keypointPos[dimension].length;
+    }
+
 }
