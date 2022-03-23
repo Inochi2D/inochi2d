@@ -66,12 +66,7 @@ public:
         Gets the value adjusted to the internal range (0.0->1.0)
     */
     vec2 adjustedValue() {
-        vec2 range = max - min;
-        vec2 tmp = (value - min);
-        vec2 off = vec2(tmp.x / range.x, tmp.y / range.y);
-
-        vec2 clamped = off.clamp(vec2(0, 0), vec2(1, 1));
-        return clamped;
+        return this.adjustValue(value);
     }
 
     /**
@@ -84,6 +79,7 @@ public:
             value.y * (max.y-min.y) + min.y
         );
     }
+
 
     /**
         For serialization
@@ -184,9 +180,6 @@ public:
 
     void update() {
         vec2 clamped = this.adjustedValue;
-        if (off != clamped) {
-            debug writefln("Clamped parameter offset %s -> %s", off, clamped);
-        }
 
         void interpAxis(uint axis, float val, out uint index, out float offset) {
             float[] pos = axisPoints[axis];
@@ -254,6 +247,22 @@ public:
         foreach(binding; bindings) {
             binding.deleteKeypoints(axis, index);
         }
+    }
+
+    /**
+        Gets the specified value adjusted to the internal range (0.0->1.0)
+    */
+    vec2 adjustValue(vec2 value) {
+        vec2 range = max - min;
+        vec2 tmp = (value - min);
+        vec2 off = vec2(tmp.x / range.x, tmp.y / range.y);
+
+        vec2 clamped = off.clamp(vec2(0, 0), vec2(1, 1));
+        if (off != clamped) {
+            debug writefln("Clamped parameter offset %s -> %s", off, clamped);
+        }
+        
+        return clamped;
     }
 
     void makeIndexable() {
