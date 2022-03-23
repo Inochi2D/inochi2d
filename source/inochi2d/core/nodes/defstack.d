@@ -64,7 +64,7 @@ public:
     
     void preUpdate() {
         foreach(i; 0..this.parent.deformation.length) {
-            this.parent.deformation[i] = 0f;
+            this.parent.deformation[i] = vec2(0);
         }
     }
 
