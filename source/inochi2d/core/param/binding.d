@@ -41,6 +41,8 @@ interface ParameterBinding {
     */
     void reInterpolate();
 
+    ref bool[][] getIsSet();
+
     /**
         Add a keypoint
     */
@@ -82,6 +84,13 @@ public:
         Whether the value at each 2D keypoint is user-set
     */
     bool[][] isSet;
+
+    /**
+        Returns isSet
+    */
+    ref bool[][] getIsSet() {
+        return isSet;
+    }
 
     this(Parameter parameter) {
         this.parameter = parameter;
