@@ -522,6 +522,19 @@ public:
         reInterpolate();
     }
 
+    void setKeypoint(vec2u index, T value)
+    {
+        values[index.x][index.y] = value;
+        isSet[index.x][index.y] = false;
+        reInterpolate();
+    }
+
+    void clearKeypoint(vec2u index)
+    {
+        isSet[index.x][index.y] = false;
+        reInterpolate();
+    }
+
     /**
         Apply parameter to target node
     */
