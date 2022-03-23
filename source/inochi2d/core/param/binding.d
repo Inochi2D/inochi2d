@@ -229,6 +229,13 @@ public:
         // List of indices to commit
         vec2u[] commitPoints;
 
+        // Used by extendAndIntersect for x/y factor
+        float[][] interpDistance;
+        interpDistance.length = xCount;
+        foreach(x; 0..xCount) {
+            interpDistance[x].length = yCount;
+        }
+
         // Current interpolation axis
         bool yMajor = false;
 
@@ -253,32 +260,38 @@ public:
             if (yMajor) return values[min][maj];
             else return values[maj][min];
         }
-        void reset(uint maj, uint min, T val) {
+        float getDistance(uint maj, uint min) {
+            if (yMajor) return interpDistance[min][maj];
+            else return interpDistance[maj][min];
+        }
+        void reset(uint maj, uint min, T val, float distance = 0) {
             if (yMajor) {
                 //debug writefln("set (%d, %d) -> %s", min, maj, val);
                 assert(!valid[min][maj]);
                 values[min][maj] = val;
+                interpDistance[min][maj] = distance;
                 newlySet[min][maj] = true;
             } else {
                 //debug writefln("set (%d, %d) -> %s", maj, min, val);
                 assert(!valid[maj][min]);
                 values[maj][min] = val;
+                interpDistance[maj][min] = distance;
                 newlySet[maj][min] = true;
             }
         }
-        void set(uint maj, uint min, T val) {
-            reset(maj, min, val);
+        void set(uint maj, uint min, T val, float distance = 0) {
+            reset(maj, min, val, distance);
             if (yMajor) commitPoints ~= vec2u(min, maj);
             else commitPoints ~= vec2u(maj, min);
         }
+        float axisPoint(uint idx) {
+            if (yMajor) return parameter.axisPoints[0][idx];
+            else return parameter.axisPoints[1][idx];
+        }
         T interp(uint maj, uint left, uint mid, uint right) {
-            uint axis;
-            if (yMajor) axis = 0;
-            else axis = 1;
-
-            float leftOff = parameter.axisPoints[axis][left];
-            float midOff = parameter.axisPoints[axis][mid];
-            float rightOff = parameter.axisPoints[axis][right];
+            float leftOff = axisPoint(left);
+            float midOff = axisPoint(mid);
+            float rightOff = axisPoint(right);
             float off = (midOff - leftOff) / (rightOff - leftOff);
 
             //writefln("interp %d %d %d %d -> %f %f %f %f", maj, left, mid, right,
@@ -371,22 +384,26 @@ public:
             yMajor = secondPass;
             bool detectedIntersections = false;
 
-            void setOrAverage(uint maj, uint min, T val) {
+            void setOrAverage(uint maj, uint min, T val, float origin) {
+                float minDist = abs(axisPoint(min) - origin);
                 // Same logic as in interpolate1D2D
                 if (secondPass && isNewlySet(maj, min)) {
                     // Found an intersection, do not commit the previous points
                     if (!detectedIntersections) {
                         commitPoints.length = 0;
                     }
-                    // Average out the point at the intersection
-                    set(maj, min, (val + get(maj, min)) * 0.5f);
+                    float majDist = getDistance(maj, min);
+                    float frac = minDist / (minDist + majDist * majDist / minDist);
+                    // Interpolate the point at the intersection
+                    set(maj, min, val * (1 - frac) + get(maj, min) * frac);
                     // From now on we're only computing intersection points
                     detectedIntersections = true;
                 }
                 // If we've found no intersections so far, continue with normal
                 // 1D extension.
-                if (!detectedIntersections)
-                    set(maj, min, val);
+                if (!detectedIntersections) {
+                    set(maj, min, val, minDist);
+                }
             }
 
             foreach(i; 0..majorCnt()) {
@@ -400,15 +417,19 @@ public:
                 if (j >= cnt) continue;
 
                 // Replicate leftwards
+                T val = get(i, j);
+                float origin = axisPoint(j);
                 foreach(k; 0..j)
-                    setOrAverage(i, k, get(i, j));
+                    setOrAverage(i, k, val, origin);
 
                 // Find last element set
                 for(j = cnt - 1; j < cnt && !isValid(i, j); j--) {}
 
                 // Replicate rightwards
+                val = get(i, j);
+                origin = axisPoint(j);
                 foreach(k; (j + 1)..cnt)
-                    setOrAverage(i, k, get(i, j));
+                    setOrAverage(i, k, val, origin);
             }
         }
 
@@ -760,5 +781,19 @@ unittest {
             [ 0,  1,  2,  2]
         ],
         "intersecting-expansion"
+    );
+
+    runTestUniform(
+        [
+            [ x,  5,  x],
+            [ x,  x,  x],
+            [ 0,  x,  x]
+        ],
+        [
+            [ 4,  5,  5],
+            [ 2,  3,  3],
+            [ 0,  1,  1]
+        ],
+        "nondiagonal-gradient"
     );
 }
