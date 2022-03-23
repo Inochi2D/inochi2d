@@ -63,6 +63,29 @@ public:
     ParameterBinding[] bindings;
 
     /**
+        Gets the value adjusted to the internal range (0.0->1.0)
+    */
+    vec2 adjustedValue() {
+        vec2 range = max - min;
+        vec2 tmp = (value - min);
+        vec2 off = vec2(tmp.x / range.x, tmp.y / range.y);
+
+        vec2 clamped = off.clamp(vec2(0, 0), vec2(1, 1));
+        return clamped;
+    }
+
+    /**
+        Sets the value adjusted up from the internal range (0.0->1.0)
+        to the user defined range.
+    */
+    void adjustedValue(vec2 value) {
+        this.value = vec2(
+            value.x * (max.x-min.x) + min.x,
+            value.y * (max.y-min.y) + min.y
+        );
+    }
+
+    /**
         For serialization
     */
     this() { }
@@ -160,11 +183,7 @@ public:
     }
 
     void update() {
-        vec2 range = max - min;
-        vec2 tmp = (value - min);
-        vec2 off = vec2(tmp.x / range.x, tmp.y / range.y);
-
-        vec2 clamped = off.clamp(vec2(0, 0), vec2(1, ));
+        vec2 clamped = this.adjustedValue;
         if (off != clamped) {
             debug writefln("Clamped parameter offset %s -> %s", off, clamped);
         }
