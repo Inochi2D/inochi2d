@@ -365,6 +365,18 @@ public:
     }
 
     /**
+        Removes a parameter from this puppet
+    */
+    final void removeParameter(Parameter param) {
+        import std.algorithm.searching : countUntil;
+        import std.algorithm.mutation : remove;
+        ptrdiff_t idx = parameters.countUntil(param);
+        if (idx >= 0) {
+            parameters = parameters.remove(idx);
+        }
+    }
+
+    /**
         Gets this puppet's root transform
     */
     final Transform transform() {
