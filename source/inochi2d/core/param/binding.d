@@ -46,12 +46,12 @@ interface ParameterBinding {
     /**
         Add a keypoint
     */
-    void insertKeyPoint(uint dimension, uint index);
+    void insertKeypoints(uint axis, uint index);
 
     /**
         Remove a keypoint
     */
-    void deleteKeyPoint(uint dimension, uint index);
+    void deleteKeypoints(uint axis, uint index);
 }
 
 /**
@@ -101,8 +101,8 @@ public:
         this.target.node = targetNode;
         this.target.paramName = paramName;
 
-        uint xCount = parameter.keypointCount(0);
-        uint yCount = parameter.keypointCount(1);
+        uint xCount = parameter.axisPointCount(0);
+        uint yCount = parameter.axisPointCount(1);
         values.length = xCount;
         isSet.length = xCount;
         foreach(i; 0..xCount) {
@@ -134,8 +134,8 @@ public:
         data["values"].deserializeValue(this.values);
         data["isSet"].deserializeValue(this.isSet);
 
-        uint xCount = parameter.keypointCount(0);
-        uint yCount = parameter.keypointCount(1);
+        uint xCount = parameter.axisPointCount(0);
+        uint yCount = parameter.axisPointCount(1);
 
         enforce(this.values.length == xCount, "Mismatched X value count");
         foreach(i; this.values) {
@@ -181,17 +181,17 @@ public:
         applyToTarget(p0.interp(p1, offset.x));
     }
 
-    void insertKeyPoint(uint dimension, uint index) {
-        assert(dimension == 0 || dimension == 1);
+    void insertKeypoints(uint axis, uint index) {
+        assert(axis == 0 || axis == 1);
 
-        if (dimension == 0) {
-            uint yCount = parameter.keypointCount(1);
+        if (axis == 0) {
+            uint yCount = parameter.axisPointCount(1);
 
             values.insertInPlace(index, cast(T[])[]);
             values[index].length = yCount;
             isSet.insertInPlace(index, cast(bool[])[]);
             isSet[index].length = yCount;
-        } else if (dimension == 1) {
+        } else if (axis == 1) {
             foreach(i; this.values) {
                 i.insertInPlace(index, T.init);
             }
@@ -203,13 +203,13 @@ public:
         reInterpolate();
     }
 
-    void deleteKeyPoint(uint dimension, uint index) {
-        assert(dimension == 0 || dimension == 1);
+    void deleteKeypoints(uint axis, uint index) {
+        assert(axis == 0 || axis == 1);
 
-        if (dimension == 0) {
+        if (axis == 0) {
             values = values.remove(index);
             isSet = isSet.remove(index);
-        } else if (dimension == 1) {
+        } else if (axis == 1) {
             foreach(i; 0..this.values.length) {
                 values[i] = values[i].remove(index);
             }

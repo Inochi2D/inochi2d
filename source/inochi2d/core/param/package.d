@@ -46,9 +46,9 @@ public:
     vec2 max = vec2(1, 1);
 
     /**
-        Position of the keypoints in two dimensions
+        Position of the keypoints along each axis
     */
-    float[][2] keypointPos = [[0, 1], [0]];
+    float[][2] axisPoints = [[0, 1], [0, 1]];
 
     /**
         Binding to targets
@@ -70,9 +70,12 @@ public:
     /**
         Create new parameter
     */
-    this(string name) {
+    this(string name, bool isVec2) {
         this.uuid = inCreateUUID();
         this.name = name;
+        this.isVec2 = isVec2;
+        if (!isVec2)
+            axisPoints[1] = [0];
     }
 
     /**
@@ -89,8 +92,8 @@ public:
         min.serialize(serializer);
         serializer.putKey("max");
         max.serialize(serializer);
-        serializer.putKey("keypoint_pos");
-        serializer.serializeValue(keypointPos);
+        serializer.putKey("axis_points");
+        serializer.serializeValue(axisPoints);
         serializer.putKey("bindings");
         serializer.serializeValue(bindings);
     }
@@ -104,7 +107,7 @@ public:
         data["is_vec2"].deserializeValue(this.isVec2);
         min.deserialize(data["min"]);
         max.deserialize(data["max"]);
-        data["keypoint_pos"].deserializeValue(this.keypointPos);
+        data["axis_points"].deserializeValue(this.axisPoints);
 
         foreach(child; data["bindings"].byElement) {
             string paramName;
@@ -143,8 +146,8 @@ public:
             debug writefln("Clamped parameter offset %s -> %s", off, clamped);
         }
 
-        void interpAxis(uint dimension, float val, out uint index, out float offset) {
-            float[] pos = keypointPos[dimension];
+        void interpAxis(uint axis, float val, out uint index, out float offset) {
+            float[] pos = axisPoints[axis];
 
             foreach(i; 0..pos.length - 1) {
                 if (pos[i + 1] > val || i == (pos.length - 2)) {
@@ -166,8 +169,48 @@ public:
         }
     }
 
-    uint keypointCount(uint dimension = 0) {
-        return cast(uint)keypointPos[dimension].length;
+    uint axisPointCount(uint axis = 0) {
+        return cast(uint)axisPoints[axis].length;
     }
 
+    void insertAxisPoint(uint axis, float off) {
+        assert(off > 0 && off < 1, "offset out of bounds");
+        if (isVec2)
+            assert(axis <= 1, "bad axis");
+        else
+            assert(axis == 0, "bad axis");
+
+        // Find the index at which to insert
+        uint index;
+        for(index = 1; index < axisPoints[axis].length; index++) {
+            if (axisPoints[axis][index] > off)
+                break;
+        }
+
+        // Insert it into the position list
+        axisPoints[axis].insertInPlace(index, off);
+
+        // Tell all bindings to insert space into their arrays
+        foreach(binding; bindings) {
+            binding.insertKeypoints(axis, index);
+        }
+    }
+
+    void deleteAxisPoint(uint axis, uint index) {
+        if (isVec2)
+            assert(axis <= 1, "bad axis");
+        else
+            assert(axis == 0, "bad axis");
+
+        assert(index > 0, "cannot delete axis point at 0");
+        assert(index < (axisPoints[axis].length - 1), "cannot delete axis point at 1");
+
+        // Remove the keypoint
+        axisPoints[axis].remove(index);
+
+        // Tell all bindings to remove it from their arrays
+        foreach(binding; bindings) {
+            binding.deleteKeypoints(axis, index);
+        }
+    }
 }
