@@ -13,6 +13,31 @@ struct Deformation {
         Deformed values
     */
     vec2[] vertexOffsets;
+
+    Deformation opBinary(string op : "*")(float other) {
+        Deformation new_;
+
+        new_.vertexOffsets.length = vertexOffsets.length;
+
+        foreach(i; 0..vertexOffsets.length) {
+            new_.vertexOffsets[i] = vertexOffsets[i] * other;
+        }
+
+        return new_;
+    }
+
+    Deformation opBinary(string op : "+")(Deformation other) {
+        assert(vertexOffsets.length == other.vertexOffsets.length);
+
+        Deformation new_;
+        new_.vertexOffsets.length = vertexOffsets.length;
+
+        foreach(i; 0..vertexOffsets.length) {
+            new_.vertexOffsets[i] = vertexOffsets[i] + other.vertexOffsets[i];
+        }
+
+        return new_;
+    }
 }
 
 /**
