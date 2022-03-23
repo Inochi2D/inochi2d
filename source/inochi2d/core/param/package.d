@@ -38,12 +38,12 @@ public:
     /**
         The parameter's minimum bounds
     */
-    vec2 min;
+    vec2 min = vec2(0, 0);
 
     /**
         The parameter's maximum bounds
     */
-    vec2 max;
+    vec2 max = vec2(1, 1);
 
     /**
         Position of the keypoints in two dimensions
