@@ -6,6 +6,7 @@ import inochi2d.math;
 import std.exception;
 import std.array;
 import std.algorithm.mutation;
+import std.stdio;
 
 /**
     A target to bind to
@@ -35,6 +36,11 @@ abstract class ParameterBinding {
         Apply a binding to the model at the given parameter value
     */
     abstract void apply(vec2u leftKeypoint, vec2 offset);
+
+    /**
+        Clear all keypoint data
+    */
+    abstract void clear();
 
     /**
         Update keypoint interpolation
@@ -112,14 +118,7 @@ public:
         this.target.node = targetNode;
         this.target.paramName = paramName;
 
-        uint xCount = parameter.axisPointCount(0);
-        uint yCount = parameter.axisPointCount(1);
-        values.length = xCount;
-        isSet.length = xCount;
-        foreach(i; 0..xCount) {
-            values[i].length = yCount;
-            isSet[i].length = yCount;
-        }
+        clear();
     }
 
     /**
@@ -172,10 +171,294 @@ public:
     }
 
     /**
+        Clear all keypoint data
+    */
+    override
+    void clear() {
+        uint xCount = parameter.axisPointCount(0);
+        uint yCount = parameter.axisPointCount(1);
+
+        values.length = xCount;
+        isSet.length = xCount;
+        foreach(x; 0..xCount) {
+            isSet[x].length = 0;
+            isSet[x].length = yCount;
+
+            values[x].length = yCount;
+            foreach(y; 0..yCount) {
+                clearValue(values[x][y]);
+            }
+        }
+    }
+
+    void clearValue(T i) {
+        // Default: no-op
+    }
+
+    /**
         Re-calculate interpolation
     */
     override
     void reInterpolate() {
+        uint xCount = parameter.axisPointCount(0);
+        uint yCount = parameter.axisPointCount(1);
+
+        // Currently valid points
+        bool[][] valid;
+        uint validCount = 0;
+        uint totalCount = xCount * yCount;
+
+        // Initialize validity map to user-set points
+        foreach(x; 0..xCount) {
+            valid ~= isSet[x].dup;
+            foreach(y; 0..yCount) {
+                if (isSet[x][y]) validCount++;
+            }
+        }
+
+        // If there are zero valid points, just clear ourselves
+        if (validCount == 0) {
+            clear();
+            return;
+        }
+
+        // Whether any given point was just set
+        bool[][] newlySet;
+        newlySet.length = xCount;
+
+        // List of indices to commit
+        vec2u[] commitPoints;
+
+        // Current interpolation axis
+        bool yMajor = false;
+
+        // Helpers to handle interpolation across both axes more easily
+        uint majorCnt() {
+            if (yMajor) return yCount;
+            else return xCount;
+        }
+        uint minorCnt() {
+            if (yMajor) return xCount;
+            else return yCount;
+        }
+        bool isValid(uint maj, uint min) {
+            if (yMajor) return valid[min][maj];
+            else return valid[maj][min];
+        }
+        bool isNewlySet(uint maj, uint min) {
+            if (yMajor) return newlySet[min][maj];
+            else return newlySet[maj][min];
+        }
+        T get(uint maj, uint min) {
+            if (yMajor) return values[min][maj];
+            else return values[maj][min];
+        }
+        void reset(uint maj, uint min, T val) {
+            if (yMajor) {
+                //debug writefln("set (%d, %d) -> %s", min, maj, val);
+                assert(!valid[min][maj]);
+                values[min][maj] = val;
+                newlySet[min][maj] = true;
+            } else {
+                //debug writefln("set (%d, %d) -> %s", maj, min, val);
+                assert(!valid[maj][min]);
+                values[maj][min] = val;
+                newlySet[maj][min] = true;
+            }
+        }
+        void set(uint maj, uint min, T val) {
+            reset(maj, min, val);
+            if (yMajor) commitPoints ~= vec2u(min, maj);
+            else commitPoints ~= vec2u(maj, min);
+        }
+        T interp(uint maj, uint left, uint mid, uint right) {
+            uint axis;
+            if (yMajor) axis = 0;
+            else axis = 1;
+
+            float leftOff = parameter.axisPoints[axis][left];
+            float midOff = parameter.axisPoints[axis][mid];
+            float rightOff = parameter.axisPoints[axis][right];
+            float off = (midOff - leftOff) / (rightOff - leftOff);
+
+            //writefln("interp %d %d %d %d -> %f %f %f %f", maj, left, mid, right,
+            //leftOff, midOff, rightOff, off);
+            return get(maj, left) * (1 - off) + get(maj, right) * off;
+        }
+
+        void interpolate1D2D(bool secondPass) {
+            yMajor = secondPass;
+            bool detectedIntersections = false;
+
+            foreach(i; 0..majorCnt()) {
+                uint l = 0;
+                uint cnt = minorCnt();
+
+                // Find first element set
+                for(; l < cnt && !isValid(i, l); l++) {}
+
+                // Empty row, we're done
+                if (l >= cnt) continue;
+
+                while (true) {
+                    // Advance until before a missing element
+                    for(; l < cnt - 1 && isValid(i, l + 1); l++) {}
+
+                    // Reached right side, done
+                    if (l >= (cnt - 1)) break;
+
+                    // Find next set element
+                    uint r = l + 1;
+                    for(; r < cnt && !isValid(i, r); r++) {}
+
+                    // If we ran off the edge, we're done
+                    if (r >= cnt) break;
+
+                    // Interpolate between the pair of valid elements
+                    foreach (m; (l + 1)..r) {
+                        T val = interp(i, l, m, r);
+
+                        // If we're running the second stage of intersecting 1D interpolation
+                        if (secondPass && isNewlySet(i, m)) {
+                            // Found an intersection, do not commit the previous points
+                            if (!detectedIntersections) {
+                                //debug writefln("Intersection at %d, %d", i, m);
+                                commitPoints.length = 0;
+                            }
+                            // Average out the point at the intersection
+                            set(i, m, (val + get(i, m)) * 0.5f);
+                            // From now on we're only computing intersection points
+                            detectedIntersections = true;
+                        }
+                        // If we've found no intersections so far, continue with normal
+                        // 1D interpolation.
+                        if (!detectedIntersections)
+                            set(i, m, val);
+                    }
+
+                    // Look for the next pair
+                    l = r;
+                }
+            }
+        }
+
+        void extrapolateCorners() {
+            if (yCount <= 1 || xCount <= 1) return;
+
+            void extrapolateCorner(uint baseX, uint baseY, uint offX, uint offY) {
+                T base = values[baseX][baseY];
+                T dX = values[baseX + offX][baseY] + (base * -1f);
+                T dY = values[baseX][baseY + offY] + (base * -1f);
+                values[baseX + offX][baseY + offY] = base + dX + dY;
+                commitPoints ~= vec2u(baseX + offX, baseY + offY);
+            }
+
+            foreach(x; 0..xCount - 1) {
+                foreach(y; 0..yCount - 1) {
+                    if (valid[x][y] && valid[x + 1][y] && valid[x][y + 1] && !valid[x + 1][y + 1])
+                        extrapolateCorner(x, y, 1, 1);
+                    else if (valid[x][y] && valid[x + 1][y] && !valid[x][y + 1] && valid[x + 1][y + 1])
+                        extrapolateCorner(x + 1, y, -1, 1);
+                    else if (valid[x][y] && !valid[x + 1][y] && valid[x][y + 1] && valid[x + 1][y + 1])
+                        extrapolateCorner(x, y + 1, 1, -1);
+                    else if (!valid[x][y] && valid[x + 1][y] && valid[x][y + 1] && valid[x + 1][y + 1])
+                        extrapolateCorner(x + 1, y + 1, -1, -1);
+                }
+            }
+        }
+
+        void extendAndIntersect(bool secondPass) {
+            yMajor = secondPass;
+            bool detectedIntersections = false;
+
+            void setOrAverage(uint maj, uint min, T val) {
+                // Same logic as in interpolate1D2D
+                if (secondPass && isNewlySet(maj, min)) {
+                    // Found an intersection, do not commit the previous points
+                    if (!detectedIntersections) {
+                        commitPoints.length = 0;
+                    }
+                    // Average out the point at the intersection
+                    set(maj, min, (val + get(maj, min)) * 0.5f);
+                    // From now on we're only computing intersection points
+                    detectedIntersections = true;
+                }
+                // If we've found no intersections so far, continue with normal
+                // 1D extension.
+                if (!detectedIntersections)
+                    set(maj, min, val);
+            }
+
+            foreach(i; 0..majorCnt()) {
+                uint j;
+                uint cnt = minorCnt();
+
+                // Find first element set
+                for(j = 0; j < cnt && !isValid(i, j); j++) {}
+
+                // Empty row, we're done
+                if (j >= cnt) continue;
+
+                // Replicate leftwards
+                foreach(k; 0..j)
+                    setOrAverage(i, k, get(i, j));
+
+                // Find last element set
+                for(j = cnt - 1; j < cnt && !isValid(i, j); j--) {}
+
+                // Replicate rightwards
+                foreach(k; (j + 1)..cnt)
+                    setOrAverage(i, k, get(i, j));
+            }
+        }
+
+        while (true) {
+            foreach(i; commitPoints) {
+                assert(!valid[i.x][i.y], "trying to double-set a point");
+                valid[i.x][i.y] = true;
+                validCount++;
+            }
+            commitPoints.length = 0;
+
+            // Are we done?
+            if (validCount == totalCount) break;
+
+            // Reset the newlySet array
+            foreach(x; 0..xCount) {
+                newlySet[x].length = 0;
+                newlySet[x].length = yCount;
+            }
+
+            // Try 1D interpolation in the X-Major direction
+            interpolate1D2D(false);
+            // Try 1D interpolation in the Y-Major direction, with intersection detection
+            // If this finds an intersection with the above, it will fall back to
+            // computing *only* the intersecting points as the average of the interpolated values.
+            // If that happens, the next loop will re-try normal 1D interpolation.
+            interpolate1D2D(true);
+            // Did we get work done? If so, commit and loop
+            if (commitPoints.length > 0) continue;
+
+            // Now try corner extrapolation
+            extrapolateCorners();
+            // Did we get work done? If so, commit and loop
+            if (commitPoints.length > 0) continue;
+
+            // Running out of options. Expand out points in both axes outwards, but if
+            // two expansions intersect then compute the average and commit only intersections.
+            // This works like interpolate1D2D, in two passes, one per axis, changing behavior
+            // once an intersection is detected.
+            extendAndIntersect(false);
+            extendAndIntersect(true);
+            // Did we get work done? If so, commit and loop
+            if (commitPoints.length > 0) continue;
+
+            // Should never happen
+            break;
+        }
+
+        // The above algorithm should be guaranteed to succeed in all cases.
+        enforce(validCount == totalCount, "Interpolation failed to complete");
     }
 
     override
@@ -277,4 +560,192 @@ class DeformationParameterBinding : ParameterBindingImpl!Deformation {
             d.deformStack.push(value);
         }
     }
+
+    override
+    void clearValue(Deformation val) {
+        // Reset deformation to identity, with the right vertex count
+        val.vertexOffsets.length = 0;
+        if (Drawable d = cast(Drawable)target.node) {
+            val.vertexOffsets.length = d.vertices.length;
+        }
+    }
+}
+
+@("TestInterpolation")
+unittest {
+    void printArray(float[][] arr) {
+        foreach(row; arr) {
+            writefln(" %s", row);
+        }
+    }
+
+    void runTest(float[][] input, float[][] expect, float[][2] axisPoints, string description) {
+        Parameter param = new Parameter();
+        param.axisPoints = axisPoints;
+
+        ValueParameterBinding bind = new ValueParameterBinding(param);
+
+        // Assign values to ValueParameterBinding and consider NaN as !isSet
+        bind.values = input;
+        bind.isSet.length = input.length;
+        foreach(x; 0..input.length) {
+            bind.isSet[x].length = input[0].length;
+            foreach(y; 0..input[0].length) {
+                bind.isSet[x][y] = !isNaN(input[x][y]);
+            }
+        }
+
+        // Run the interpolation
+        bind.reInterpolate();
+
+        // Check results with a fudge factor for rounding error
+        const float epsilon = 0.0001;
+        foreach(x; 0..bind.values.length) {
+            foreach(y; 0..bind.values[0].length) {
+                float delta = abs(expect[x][y] - bind.values[x][y]);
+                if (isNaN(delta) || delta > epsilon) {
+                    writefln("Output mismatch at %d, %d", x, y);
+                    writeln("Expected:");
+                    printArray(expect);
+                    writeln("Output:");
+                    printArray(bind.values);
+                    assert(false, description);
+                }
+            }
+        }
+    }
+
+    void runTestUniform(float[][] input, float[][] expect, string description) {
+        float[][2] axisPoints = [[0], [0]];
+
+        // Initialize axisPoints as uniformly spaced
+        axisPoints[0].length = input.length;
+        axisPoints[1].length = input[0].length;
+        if (input.length > 1) {
+            foreach(x; 0..input.length) {
+                axisPoints[0][x] = x / cast(float)(input.length - 1);
+            }
+        }
+        if (input[0].length > 1) {
+            foreach(y; 0..input[0].length) {
+
+                axisPoints[1][y] = y / cast(float)(input[0].length - 1);
+            }
+        }
+
+        runTest(input, expect, axisPoints, description);
+    }
+
+    float x = float.init;
+
+    runTestUniform(
+        [[1f], [ x], [ x], [4f]],
+        [[1f], [2f], [3f], [4f]],
+        "1d-uniform-interpolation"
+    );
+
+    runTest(
+        [[0f], [ x], [ x], [4f]],
+        [[0f], [1f], [3f], [4f]],
+        [[0f, 0.25f, 0.75f, 1f], [0f]],
+        "1d-nonuniform-interpolation"
+    );
+
+    runTestUniform(
+        [
+            [ 4,  x,  x, 10],
+            [ x,  x,  x,  x],
+            [ x,  x,  x,  x],
+            [ 1,  x,  x,  7]
+        ],
+        [
+            [ 4,  6,  8, 10],
+            [ 3,  5,  7,  9],
+            [ 2,  4,  6,  8],
+            [ 1,  3,  5,  7]
+        ],
+        "square-interpolation"
+    );
+
+    runTestUniform(
+        [
+            [ 4,  x,  x,  x],
+            [ x,  x,  x,  x],
+            [ x,  x,  x,  x],
+            [ 1,  x,  x,  7]
+        ],
+        [
+            [ 4,  6,  8, 10],
+            [ 3,  5,  7,  9],
+            [ 2,  4,  6,  8],
+            [ 1,  3,  5,  7]
+        ],
+        "corner-extrapolation"
+    );
+
+    runTestUniform(
+        [
+            [ 9,  x,  x,  0],
+            [ x,  x,  x,  x],
+            [ x,  x,  x,  x],
+            [ 0,  x,  x,  9]
+        ],
+        [
+            [ 9,  6,  3,  0],
+            [ 6,  5,  4,  3],
+            [ 3,  4,  5,  6],
+            [ 0,  3,  6,  9]
+        ],
+        "cross-interpolation"
+    );
+
+    runTestUniform(
+        [
+            [ x,  x,  2,  x,  x],
+            [ x,  x,  x,  x,  x],
+            [ 0,  x,  x,  x,  4],
+            [ x,  x,  x,  x,  x],
+            [ x,  x, 10,  x,  x]
+        ],
+        [
+            [-2,  0,  2,  2,  2],
+            [-1,  1,  3,  3,  3],
+            [ 0,  2,  4,  4,  4],
+            [ 3,  5,  7,  7,  7],
+            [ 6,  8, 10, 10, 10]
+        ],
+        "diamond-interpolation"
+    );
+
+    runTestUniform(
+        [
+            [ x,  x,  x,  x],
+            [ x,  3,  4,  x],
+            [ x,  1,  2,  x],
+            [ x,  x,  x,  x]
+        ],
+        [
+            [ 3,  3,  4,  4],
+            [ 3,  3,  4,  4],
+            [ 1,  1,  2,  2],
+            [ 1,  1,  2,  2]
+        ],
+        "edge-expansion"
+    );
+
+    runTestUniform(
+        [
+            [ x,  x,  x,  x],
+            [ x,  x,  4,  x],
+            [ x,  x,  x,  x],
+            [ 0,  x,  x,  x]
+        ],
+        [
+            [ 2,  3,  4,  4],
+            [ 2,  3,  4,  4],
+            [ 1,  2,  3,  3],
+            [ 0,  1,  2,  2]
+        ],
+        "intersecting-expansion"
+    );
 }
