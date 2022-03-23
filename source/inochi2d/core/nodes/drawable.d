@@ -231,6 +231,12 @@ public:
         this.updateDeform();
     }
 
+    override
+    void beginUpdate() {
+        deformStack.preUpdate();
+        super.beginUpdate();
+    }
+
     /**
         Updates the drawable
     */
