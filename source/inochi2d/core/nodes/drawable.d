@@ -168,6 +168,9 @@ public:
         glGenBuffers(1, &vbo);
         glGenBuffers(1, &ibo);
         glGenBuffers(1, &dbo);
+
+        // Create deformation stack
+        this.deformStack = DeformationStack(this);
     }
 
     /**

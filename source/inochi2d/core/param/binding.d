@@ -25,33 +25,43 @@ struct BindTarget {
 /**
     A binding to a parameter, of a given value type
 */
-interface ParameterBinding {
+abstract class ParameterBinding {
     /**
         Finalize loading of parameter
     */
-    void finalize(Puppet puppet);
+    abstract void finalize(Puppet puppet);
 
     /**
         Apply a binding to the model at the given parameter value
     */
-    void apply(vec2u leftKeypoint, vec2 offset);
+    abstract void apply(vec2u leftKeypoint, vec2 offset);
 
     /**
         Update keypoint interpolation
     */
-    void reInterpolate();
+    abstract void reInterpolate();
 
-    ref bool[][] getIsSet();
+    abstract ref bool[][] getIsSet();
 
     /**
         Add a keypoint
     */
-    void insertKeypoints(uint axis, uint index);
+    abstract void insertKeypoints(uint axis, uint index);
 
     /**
         Remove a keypoint
     */
-    void deleteKeypoints(uint axis, uint index);
+    abstract void deleteKeypoints(uint axis, uint index);
+
+    /**
+        Serialize
+    */
+    void serialize(S)(ref S serializer) { }
+
+    /**
+        Deserialize
+    */
+    SerdeException deserializeFromAsdf(Asdf data) { return null; }
 }
 
 /**
@@ -88,6 +98,7 @@ public:
     /**
         Returns isSet
     */
+    override
     ref bool[][] getIsSet() {
         return isSet;
     }
@@ -114,6 +125,7 @@ public:
     /**
         Serializes a binding
     */
+    override
     void serialize(S)(ref S serializer) {
         serializer.putKey("node");
         serializer.putValue(target.node.uuid);
@@ -128,6 +140,7 @@ public:
     /**
         Deserializes a binding
     */
+    override
     SerdeException deserializeFromAsdf(Asdf data) {
         data["node"].deserializeValue(this.nodeRef);
         data["param_name"].deserializeValue(this.target.paramName);
@@ -153,6 +166,7 @@ public:
     /**
         Finalize loading of parameter
     */
+    override
     void finalize(Puppet puppet) {
         this.target.node = puppet.find(nodeRef);
     }
@@ -160,9 +174,11 @@ public:
     /**
         Re-calculate interpolation
     */
+    override
     void reInterpolate() {
     }
 
+    override
     void apply(vec2u leftKeypoint, vec2 offset) {
         T p0, p1;
 
@@ -181,6 +197,7 @@ public:
         applyToTarget(p0.interp(p1, offset.x));
     }
 
+    override
     void insertKeypoints(uint axis, uint index) {
         assert(axis == 0 || axis == 1);
 
@@ -203,6 +220,7 @@ public:
         reInterpolate();
     }
 
+    override
     void deleteKeypoints(uint axis, uint index) {
         assert(axis == 0 || axis == 1);
 

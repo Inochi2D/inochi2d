@@ -82,20 +82,22 @@ public:
         Serializes a parameter
     */
     void serialize(S)(ref S serializer) {
-        serializer.putKey("uuid");
-        serializer.putValue(uuid);
-        serializer.putKey("name");
-        serializer.putValue(name);
-        serializer.putKey("is_vec2");
-        serializer.putValue(isVec2);
-        serializer.putKey("min");
-        min.serialize(serializer);
-        serializer.putKey("max");
-        max.serialize(serializer);
-        serializer.putKey("axis_points");
-        serializer.serializeValue(axisPoints);
-        serializer.putKey("bindings");
-        serializer.serializeValue(bindings);
+        auto state = serializer.objectBegin;
+            serializer.putKey("uuid");
+            serializer.putValue(uuid);
+            serializer.putKey("name");
+            serializer.putValue(name);
+            serializer.putKey("is_vec2");
+            serializer.putValue(isVec2);
+            serializer.putKey("min");
+            min.serialize(serializer);
+            serializer.putKey("max");
+            max.serialize(serializer);
+            serializer.putKey("axis_points");
+            serializer.serializeValue(axisPoints);
+            serializer.putKey("bindings");
+            serializer.serializeValue(bindings);
+        serializer.objectEnd(state);
     }
 
     /**
@@ -104,23 +106,29 @@ public:
     SerdeException deserializeFromAsdf(Asdf data) {
         data["uuid"].deserializeValue(this.uuid);
         data["name"].deserializeValue(this.name);
-        data["is_vec2"].deserializeValue(this.isVec2);
-        min.deserialize(data["min"]);
-        max.deserialize(data["max"]);
-        data["axis_points"].deserializeValue(this.axisPoints);
+        if (!data["is_vec2"].isEmpty) data["is_vec2"].deserializeValue(this.isVec2);
+        if (!data["min"].isEmpty) min.deserialize(data["min"]);
+        if (!data["max"].isEmpty) max.deserialize(data["max"]);
+        if (!data["axis_points"].isEmpty) data["axis_points"].deserializeValue(this.axisPoints);
 
-        foreach(child; data["bindings"].byElement) {
-            string paramName;
-            child["param_name"].deserializeValue(paramName);
+        if (!data["bindings"].isEmpty) {
+            foreach(Asdf child; data["bindings"].byElement) {
+                
+                // Skip empty children
+                if (child["param_name"].isEmpty) continue;
 
-            if (paramName == "deform") {
-                auto binding = new DeformationParameterBinding(this);
-                binding.deserializeFromAsdf(child);
-                bindings ~= binding;
-            } else {
-                auto binding = new ValueParameterBinding(this);
-                binding.deserializeFromAsdf(child);
-                bindings ~= binding;
+                string paramName;
+                child["param_name"].deserializeValue(paramName);
+
+                if (paramName == "deform") {
+                    auto binding = new DeformationParameterBinding(this);
+                    binding.deserializeFromAsdf(child);
+                    bindings ~= binding;
+                } else {
+                    auto binding = new ValueParameterBinding(this);
+                    binding.deserializeFromAsdf(child);
+                    bindings ~= binding;
+                }
             }
         }
 
