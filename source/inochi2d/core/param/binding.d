@@ -62,12 +62,17 @@ abstract class ParameterBinding {
     /**
         Serialize
     */
-    void serialize(S)(ref S serializer) { }
+    void serializeSelf(ref InochiSerializerCompact serializer);
+
+    /**
+        Serialize
+    */
+    void serializeSelf(ref InochiSerializer serializer);
 
     /**
         Deserialize
     */
-    SerdeException deserializeFromAsdf(Asdf data) { return null; }
+    SerdeException deserializeFromAsdf(Asdf data);
 }
 
 /**
@@ -125,15 +130,34 @@ public:
         Serializes a binding
     */
     override
-    void serialize(S)(ref S serializer) {
-        serializer.putKey("node");
-        serializer.putValue(target.node.uuid);
-        serializer.putKey("param_name");
-        serializer.putValue(target.paramName);
-        serializer.putKey("values");
-        serializer.putValue(values);
-        serializer.putKey("isSet");
-        serializer.putValue(isSet);
+    void serializeSelf(ref InochiSerializer serializer) {
+        auto state = serializer.objectBegin();
+            serializer.putKey("node");
+            serializer.putValue(target.node.uuid);
+            serializer.putKey("param_name");
+            serializer.putValue(target.paramName);
+            serializer.putKey("values");
+            serializer.serializeValue(values);
+            serializer.putKey("isSet");
+            serializer.serializeValue(isSet);
+        serializer.objectEnd(state);
+    }
+
+    /**
+        Serializes a binding
+    */
+    override
+    void serializeSelf(ref InochiSerializerCompact serializer) {
+        auto state = serializer.objectBegin();
+            serializer.putKey("node");
+            serializer.putValue(target.node.uuid);
+            serializer.putKey("param_name");
+            serializer.putValue(target.paramName);
+            serializer.putKey("values");
+            serializer.serializeValue(values);
+            serializer.putKey("isSet");
+            serializer.serializeValue(isSet);
+        serializer.objectEnd(state);
     }
 
     /**
@@ -546,7 +570,7 @@ public:
     void setKeypoint(vec2u index, T value)
     {
         values[index.x][index.y] = value;
-        isSet[index.x][index.y] = false;
+        isSet[index.x][index.y] = true;
         reInterpolate();
     }
 

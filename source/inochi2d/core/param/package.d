@@ -96,7 +96,12 @@ public:
             serializer.putKey("axis_points");
             serializer.serializeValue(axisPoints);
             serializer.putKey("bindings");
-            serializer.serializeValue(bindings);
+            auto arrstate = serializer.arrayBegin();
+                foreach(binding; bindings) {
+                    serializer.elemBegin();
+                    binding.serializeSelf(serializer);
+                }
+            serializer.arrayEnd(arrstate);
         serializer.objectEnd(state);
     }
 

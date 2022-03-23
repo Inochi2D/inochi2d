@@ -304,8 +304,7 @@ public:
             localTransform.update();
             offsetTransform.update();
 
-            static if (ignoreParam) {
-
+            static if (!ignoreParam) {
                 if (lockToRoot_)
                     globalTransform = offsetTransform * localTransform * puppet.root.localTransform;
                 else if (parent !is null)

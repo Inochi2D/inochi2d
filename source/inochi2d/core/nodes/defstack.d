@@ -38,6 +38,28 @@ struct Deformation {
 
         return new_;
     }
+
+    void serialize(S)(ref S serializer) {
+        import inochi2d.math.serialization : serialize;
+        auto state = serializer.arrayBegin();
+            foreach(offset; vertexOffsets) {
+                serializer.elemBegin;
+                offset.serialize(serializer);
+            }
+        serializer.arrayEnd(state);
+    }
+
+    SerdeException deserializeFromAsdf(Asdf data) {
+        import inochi2d.math.serialization : deserialize;
+        foreach(elem; data.byElement()) {
+            vec2 offset;
+            offset.deserialize(elem);
+
+            vertexOffsets ~= offset;
+        }
+
+        return null;
+    }
 }
 
 /**
