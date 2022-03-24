@@ -324,6 +324,31 @@ public:
         return closestAxis;
     }
 
+    /**
+        Gets the breakpoint closests to the cursor
+    */
+    vec2 getClosestBreakpointLocation() {
+
+        vec2 closestPoint = value;
+        float closestDist = float.infinity;
+        foreach(xIdx; 0..axisPoints[0].length) {
+            foreach(yIdx; 0..axisPoints[1].length) {
+                vec2 pos = vec2(
+                    (max.x - min.x) * axisPoints[0][xIdx] + min.x,
+                    (max.y - min.y) * axisPoints[1][yIdx] + min.y
+                );
+
+                float dist = value.distance(pos);
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    closestPoint = pos;
+                }
+            }
+        }
+
+        return closestPoint;
+    }
+
     void removeBinding(ParameterBinding binding) {
         import std.algorithm.searching : countUntil;
         import std.algorithm.mutation : remove;
