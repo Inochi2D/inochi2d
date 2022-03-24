@@ -296,6 +296,43 @@ public:
         return clamped;
     }
 
+    /**
+        Gets the breakpoint closests to the cursor
+    */
+    vec2u getClosestBreakpoint() {
+
+        vec2u closestAxis;
+        vec2 adjValue = adjustedValue();
+        vec2 closestPoint = adjustedValue();
+        float closestDist = float.infinity;
+        foreach(xIdx; 0..axisPoints[0].length) {
+            foreach(yIdx; 0..axisPoints[1].length) {
+                vec2 pos = vec2(
+                    axisPoints[0][xIdx],
+                    axisPoints[1][yIdx]
+                );
+
+                float dist = adjValue.distance(pos);
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    closestPoint = pos;
+                    closestAxis = vec2u(cast(uint)xIdx, cast(uint)yIdx);
+                }
+            }
+        }
+
+        return closestAxis;
+    }
+
+    void removeBinding(ParameterBinding binding) {
+        import std.algorithm.searching : countUntil;
+        import std.algorithm.mutation : remove;
+        ptrdiff_t idx = bindings.countUntil(binding);
+        if (idx >= 0) {
+            bindings = bindings.remove(idx);
+        }
+    }
+
     void makeIndexable() {
         import std.uni : toLower;
         indexableName = name.toLower;

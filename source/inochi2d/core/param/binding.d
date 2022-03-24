@@ -27,6 +27,7 @@ struct BindTarget {
     A binding to a parameter, of a given value type
 */
 abstract class ParameterBinding {
+
     /**
         Finalize loading of parameter
     */
@@ -47,7 +48,15 @@ abstract class ParameterBinding {
     */
     abstract void reInterpolate();
 
+    /**
+        Returns isSet
+    */
     abstract ref bool[][] getIsSet();
+
+    /**
+        Gets how many breakpoints this binding is set to
+    */
+    abstract uint getSetCount();
 
     /**
         Add a keypoint
@@ -64,6 +73,16 @@ abstract class ParameterBinding {
     */
     abstract void deleteKeypoints(uint axis, uint index);
 
+    /**
+        Gets name of binding
+    */
+    abstract string getName();
+
+    /**
+        Gets the node of the binding
+    */
+    abstract Node getNode();
+    
     /**
         Serialize
     */
@@ -112,11 +131,41 @@ public:
     bool[][] isSet;
 
     /**
+        Gets name of binding
+    */
+    override
+    string getName() {
+        return target.paramName;
+    }
+
+    /**
+        Gets the node of the binding
+    */
+    override
+    Node getNode() {
+        return target.node;
+    }
+
+    /**
         Returns isSet
     */
     override
     ref bool[][] getIsSet() {
         return isSet;
+    }
+
+    /**
+        Gets how many breakpoints this binding is set to
+    */
+    override
+    uint getSetCount() {
+        uint count = 0;
+        foreach(x; 0..isSet.length) {
+            foreach(y; 0..isSet[x].length) {
+                if (isSet[x][y]) count++;
+            }
+        }
+        return count;
     }
 
     this(Parameter parameter) {
@@ -220,8 +269,28 @@ public:
         }
     }
 
-    void clearValue(T i) {
+    void clearValue(ref T i) {
         // Default: no-op
+    }
+
+    /**
+        Sets value at specified keypoint
+    */
+    void setValue(vec2u point, T value) {
+        values[point.x][point.y] = value;
+        isSet[point.x][point.y] = true;
+        
+        reInterpolate();
+    }
+
+    /**
+        Sets value at specified keypoint
+    */
+    void unset(vec2u point) {
+        clearValue(values[point.x][point.y]);
+        isSet[point.x][point.y] = false;
+
+        reInterpolate();
     }
 
     /**
@@ -640,6 +709,11 @@ class ValueParameterBinding : ParameterBindingImpl!float {
     void applyToTarget(float value) {
         target.node.setValue(target.paramName, value);
     }
+
+    override
+    void clearValue(ref float val) {
+        val = 0f;
+    }
 }
 
 class DeformationParameterBinding : ParameterBindingImpl!Deformation {
@@ -661,7 +735,7 @@ class DeformationParameterBinding : ParameterBindingImpl!Deformation {
     }
 
     override
-    void clearValue(Deformation val) {
+    void clearValue(ref Deformation val) {
         // Reset deformation to identity, with the right vertex count
         val.vertexOffsets.length = 0;
         if (Drawable d = cast(Drawable)target.node) {
