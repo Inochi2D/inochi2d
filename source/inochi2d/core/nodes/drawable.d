@@ -322,14 +322,14 @@ public:
             size_t iy = ix*2;
             auto indice = indices[ix];
 
-            points[iy+0] = vec3(vertices[indice], 0);
-            points[iy+1] = vec3(vertices[indices[ix+1]], 0);
+            points[iy+0] = vec3(vertices[indice]+deformation[indice], 0);
+            points[iy+1] = vec3(vertices[indices[ix+1]]+deformation[indices[ix+1]], 0);
 
-            points[iy+2] = vec3(vertices[indices[ix+1]], 0);
-            points[iy+3] = vec3(vertices[indices[ix+2]], 0);
+            points[iy+2] = vec3(vertices[indices[ix+1]]+deformation[indices[ix+1]], 0);
+            points[iy+3] = vec3(vertices[indices[ix+2]]+deformation[indices[ix+2]], 0);
 
-            points[iy+4] = vec3(vertices[indices[ix+2]], 0);
-            points[iy+5] = vec3(vertices[indice], 0);
+            points[iy+4] = vec3(vertices[indices[ix+2]]+deformation[indices[ix+2]], 0);
+            points[iy+5] = vec3(vertices[indice]+deformation[indice], 0);
         }
 
         inDbgSetBuffer(points);
@@ -345,7 +345,7 @@ public:
         auto trans = transform.matrix();
         vec3[] points = new vec3[vertices.length];
         foreach(i, point; vertices) {
-            points[i] = vec3(point, 0);
+            points[i] = vec3(point+deformation[i], 0);
         }
 
         inDbgSetBuffer(points);

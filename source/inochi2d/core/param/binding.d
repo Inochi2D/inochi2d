@@ -284,7 +284,7 @@ public:
     /**
         Gets the value at the specified point
     */
-    T getValue(vec2u point) {
+    ref T getValue(vec2u point) {
         return values[point.x][point.y];
     }
 
@@ -752,9 +752,11 @@ class DeformationParameterBinding : ParameterBindingImpl!Deformation {
     override
     void clearValue(ref Deformation val) {
         // Reset deformation to identity, with the right vertex count
-        val.vertexOffsets.length = 0;
         if (Drawable d = cast(Drawable)target.node) {
             val.vertexOffsets.length = d.vertices.length;
+            foreach(i; 0..d.vertices.length) {
+                val.vertexOffsets[i] = vec2(0);
+            }
         }
     }
 }

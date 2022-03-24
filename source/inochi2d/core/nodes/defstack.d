@@ -14,6 +14,10 @@ struct Deformation {
     */
     vec2[] vertexOffsets;
 
+    void update(vec2[] points) {
+        vertexOffsets = points.dup;
+    }
+
     Deformation opBinary(string op : "*")(float other) {
         Deformation new_;
 
