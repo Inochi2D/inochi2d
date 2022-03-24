@@ -357,13 +357,34 @@ public:
         return null;
     }
 
-
     bool hasBinding(Node n, string bindingName) {
-        foreach(binding; bindings) {
+        foreach(ref binding; bindings) {
             if (binding.getNode() != n) continue;
             if (binding.getName == bindingName) return true;
         }
         return false;
+    }
+
+    ParameterBinding createBinding(Node n, string bindingName) {
+        if (bindingName == "deform") {
+            return new DeformationParameterBinding(this, n, bindingName);
+        } else {
+            return new ValueParameterBinding(this, n, bindingName);
+        }
+    }
+
+    ParameterBinding getOrAddBinding(Node n, string bindingName) {
+        ParameterBinding binding = getBinding(n, bindingName);
+        if (binding is null) {
+            binding = createBinding(n, bindingName);
+            addBinding(binding);
+        }
+        return binding;
+    }
+
+    void addBinding(ParameterBinding binding) {
+        assert(!hasBinding(binding.getNode, binding.getName));
+        bindings ~= binding;
     }
 
     void removeBinding(ParameterBinding binding) {
