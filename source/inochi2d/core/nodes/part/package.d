@@ -14,6 +14,7 @@ import inochi2d.math;
 import bindbc.opengl;
 import std.exception;
 import std.algorithm.mutation : copy;
+import std.math : isFinite;
 
 public import inochi2d.core.meshdata;
 
@@ -177,14 +178,14 @@ private:
         static if (isMask) {
             partMaskShader.use();
             partMaskShader.setUniform(mmvp, inGetCamera().matrix * transform.matrix());
-            partMaskShader.setUniform(mthreshold, maskAlphaThreshold+offsetMaskThreshold);
-            partMaskShader.setUniform(mgopacity, opacity+offsetOpacity);
+            partMaskShader.setUniform(mthreshold, clamp(offsetMaskThreshold.isFinite ? offsetMaskThreshold : maskAlphaThreshold, 0, 1));
+            partMaskShader.setUniform(mgopacity, clamp(offsetOpacity.isFinite ? offsetOpacity : opacity, 0, 1));
             glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         } else {
             partShader.use();
             partShader.setUniform(mvp, inGetCamera().matrix * transform.matrix());
-            partShader.setUniform(gopacity, opacity+offsetOpacity);
-            partShader.setUniform(gtint, tint+offsetTint);
+            partShader.setUniform(gopacity, clamp(offsetOpacity.isFinite ? offsetOpacity : opacity, 0, 1));
+            partShader.setUniform(gtint, clamp(tint*offsetTint, vec3(0, 0, 0), vec3(1, 1, 1)));
 
             // COMPAT MODE
             switch(blendingMode) {
@@ -415,8 +416,8 @@ protected:
     //
     //      PARAMETER OFFSETS
     //
-    float offsetMaskThreshold = 0;
-    float offsetOpacity = 0;
+    float offsetMaskThreshold = float.nan;
+    float offsetOpacity = float.nan;
     vec3 offsetTint = vec3(0);
 
 
@@ -525,8 +526,8 @@ public:
 
     override
     void beginUpdate() {
-        offsetMaskThreshold = 0;
-        offsetOpacity = 0;
+        offsetMaskThreshold = float.nan;
+        offsetOpacity = float.nan;
         offsetTint = vec3(0);
         super.beginUpdate();
     }
@@ -540,7 +541,7 @@ public:
     override
     void drawOne() {
         if (!enabled) return;
-        if (opacity == 0) return; // Might as well save the trouble
+        if (opacity*offsetOpacity == 0) return; // Might as well save the trouble
         if (!data.isReady) return; // Yeah, don't even try
         
         glUniform1f(mthreshold, maskAlphaThreshold);
