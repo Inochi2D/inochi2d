@@ -295,7 +295,10 @@ public:
         vec2 tmp = (value - min);
         vec2 off = vec2(tmp.x / range.x, tmp.y / range.y);
 
-        vec2 clamped = off.clamp(vec2(0, 0), vec2(1, 1));
+        vec2 clamped = vec2(
+            clamp(off.x, 0, 1),
+            clamp(off.y, 0, 1),
+        );
         if (off != clamped) {
             debug writefln("Clamped parameter offset %s -> %s", off, clamped);
         }
