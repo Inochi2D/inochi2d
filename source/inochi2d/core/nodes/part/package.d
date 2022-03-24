@@ -541,7 +541,7 @@ public:
     override
     void drawOne() {
         if (!enabled) return;
-        if (opacity*offsetOpacity == 0) return; // Might as well save the trouble
+        if ((offsetOpacity.isFinite && offsetOpacity == 0) || opacity == 0) return; // Might as well save the trouble
         if (!data.isReady) return; // Yeah, don't even try
         
         glUniform1f(mthreshold, maskAlphaThreshold);
