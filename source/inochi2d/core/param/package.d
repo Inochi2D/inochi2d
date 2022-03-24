@@ -208,6 +208,31 @@ public:
         return cast(uint)axisPoints[axis].length;
     }
 
+    void moveAxisPoint(uint axis, uint oldidx, float newoff) {
+        assert(newoff > 0 && newoff < 1, "offset out of bounds");
+        if (isVec2)
+            assert(axis <= 1, "bad axis");
+        else
+            assert(axis == 0, "bad axis");
+        assert(oldidx > 0 && oldidx < axisPoints[axis].length-1, "invlid move index");
+
+        // Find the index at which to insert
+        uint index;
+        for(index = 1; index < axisPoints[axis].length; index++) {
+            if (axisPoints[axis][index] > newoff)
+                break;
+        }
+
+        // Insert it into the new position in the list
+        axisPoints[axis].insertInPlace(oldidx, newoff);
+        axisPoints[axis].remove(oldidx);
+
+        // Tell all bindings to reinterpolate
+        foreach(binding; bindings) {
+            binding.reInterpolate();
+        }
+    }
+
     void insertAxisPoint(uint axis, float off) {
         assert(off > 0 && off < 1, "offset out of bounds");
         if (isVec2)
