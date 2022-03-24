@@ -274,6 +274,13 @@ public:
     }
 
     /**
+        Gets the value at the specified point
+    */
+    T getValue(vec2u point) {
+        return values[point.x][point.y];
+    }
+
+    /**
         Sets value at specified keypoint
     */
     void setValue(vec2u point, T value) {

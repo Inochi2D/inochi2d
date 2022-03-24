@@ -349,6 +349,23 @@ public:
         return closestPoint;
     }
 
+    ParameterBinding getBinding(Node n, string bindingName) {
+        foreach(ref binding; bindings) {
+            if (binding.getNode() != n) continue;
+            if (binding.getName == bindingName) return binding;
+        }
+        return null;
+    }
+
+
+    bool hasBinding(Node n, string bindingName) {
+        foreach(binding; bindings) {
+            if (binding.getNode() != n) continue;
+            if (binding.getName == bindingName) return true;
+        }
+        return false;
+    }
+
     void removeBinding(ParameterBinding binding) {
         import std.algorithm.searching : countUntil;
         import std.algorithm.mutation : remove;
