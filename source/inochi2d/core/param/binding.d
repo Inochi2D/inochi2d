@@ -618,10 +618,10 @@ public:
             isSet.insertInPlace(index, cast(bool[])[]);
             isSet[index].length = yCount;
         } else if (axis == 1) {
-            foreach(i; this.values) {
+            foreach(ref i; this.values) {
                 i.insertInPlace(index, T.init);
             }
-            foreach(i; this.isSet) {
+            foreach(ref i; this.isSet) {
                 i.insertInPlace(index, false);
             }
         }

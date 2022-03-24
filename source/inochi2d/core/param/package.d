@@ -63,23 +63,22 @@ public:
     ParameterBinding[] bindings;
 
     /**
-        Gets the value adjusted to the internal range (0.0->1.0)
+        Gets the value normalized to the internal range (0.0->1.0)
     */
-    vec2 adjustedValue() {
-        return this.adjustValue(value);
+    vec2 normalizedValue() {
+        return this.mapValue(value);
     }
 
     /**
-        Sets the value adjusted up from the internal range (0.0->1.0)
+        Sets the value normalized up from the internal range (0.0->1.0)
         to the user defined range.
     */
-    void adjustedValue(vec2 value) {
+    void normalizedValue(vec2 value) {
         this.value = vec2(
             value.x * (max.x-min.x) + min.x,
             value.y * (max.y-min.y) + min.y
         );
     }
-
 
     /**
         For serialization
@@ -179,7 +178,7 @@ public:
     }
 
     void update() {
-        vec2 clamped = this.adjustedValue;
+        vec2 clamped = this.normalizedValue;
 
         void interpAxis(uint axis, float val, out uint index, out float offset) {
             float[] pos = axisPoints[axis];
@@ -209,12 +208,12 @@ public:
     }
 
     void moveAxisPoint(uint axis, uint oldidx, float newoff) {
+        assert(oldidx > 0 && oldidx < this.axisPointCount(axis)-1, "invalid point index");
         assert(newoff > 0 && newoff < 1, "offset out of bounds");
         if (isVec2)
             assert(axis <= 1, "bad axis");
         else
             assert(axis == 0, "bad axis");
-        assert(oldidx > 0 && oldidx < this.axisPointCount(axis)-1, "invlid move index");
 
         // Find the index at which to insert
         uint index;
@@ -281,9 +280,9 @@ public:
     }
 
     /**
-        Gets the specified value adjusted to the internal range (0.0->1.0)
+        Maps an input value to the internal range (0.0->1.0)
     */
-    vec2 adjustValue(vec2 value) {
+    vec2 mapValue(vec2 value) {
         vec2 range = max - min;
         vec2 tmp = (value - min);
         vec2 off = vec2(tmp.x / range.x, tmp.y / range.y);
@@ -292,8 +291,40 @@ public:
         if (off != clamped) {
             debug writefln("Clamped parameter offset %s -> %s", off, clamped);
         }
-        
+
         return clamped;
+    }
+
+    /**
+        Maps an internal value (0.0->1.0) to the input range
+    */
+    vec2 unmapValue(vec2 value) {
+        vec2 range = max - min;
+        return vec2(range.x * value.x, range.y * value.y) + min;
+    }
+
+    /**
+        Maps an input value to the internal range (0.0->1.0) for an axis
+    */
+    float mapAxis(uint axis, float value) {
+        vec2 input = min;
+        if (axis == 0) input.x = value;
+        else input.y = value;
+        vec2 output = mapValue(input);
+        if (axis == 0) return output.x;
+        else return output.y;
+    }
+
+    /**
+        Maps an internal value (0.0->1.0) to the input range for an axis
+    */
+    float unmapAxis(uint axis, float value) {
+        vec2 input = min;
+        if (axis == 0) input.x = value;
+        else input.y = value;
+        vec2 output = unmapValue(input);
+        if (axis == 0) return output.x;
+        else return output.y;
     }
 
     /**
@@ -302,8 +333,8 @@ public:
     vec2u getClosestBreakpoint() {
 
         vec2u closestAxis;
-        vec2 adjValue = adjustedValue();
-        vec2 closestPoint = adjustedValue();
+        vec2 adjValue = normalizedValue();
+        vec2 closestPoint = normalizedValue();
         float closestDist = float.infinity;
         foreach(xIdx; 0..axisPoints[0].length) {
             foreach(yIdx; 0..axisPoints[1].length) {
