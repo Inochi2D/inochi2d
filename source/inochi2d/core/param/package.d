@@ -214,22 +214,28 @@ public:
             assert(axis <= 1, "bad axis");
         else
             assert(axis == 0, "bad axis");
-        assert(oldidx > 0 && oldidx < axisPoints[axis].length-1, "invlid move index");
+        assert(oldidx > 0 && oldidx < this.axisPointCount(axis)-1, "invlid move index");
 
         // Find the index at which to insert
         uint index;
         for(index = 1; index < axisPoints[axis].length; index++) {
-            if (axisPoints[axis][index] > newoff)
+            if (axisPoints[axis][index+1] > newoff)
                 break;
         }
+        
+        if (oldidx != index) {
+            // BUG: Apparently deleting the oldindex and replacing it with newindex causes a crash.
 
-        // Insert it into the new position in the list
-        axisPoints[axis].insertInPlace(oldidx, newoff);
-        axisPoints[axis].remove(oldidx);
+            // Insert it into the new position in the list
+            auto swap = axisPoints[oldidx];
+            axisPoints[axis] = axisPoints[axis].remove(oldidx);
+            axisPoints[axis].insertInPlace(index, swap);
+            writeln("after move ", this.axisPointCount(0));
+        }
 
         // Tell all bindings to reinterpolate
         foreach(binding; bindings) {
-            binding.reInterpolate();
+            binding.moveKeypoints(axis, oldidx, index);
         }
     }
 
@@ -266,7 +272,7 @@ public:
         assert(index < (axisPoints[axis].length - 1), "cannot delete axis point at 1");
 
         // Remove the keypoint
-        axisPoints[axis].remove(index);
+        axisPoints[axis] = axisPoints[axis].remove(index);
 
         // Tell all bindings to remove it from their arrays
         foreach(binding; bindings) {

@@ -52,6 +52,11 @@ abstract class ParameterBinding {
     /**
         Add a keypoint
     */
+    abstract void moveKeypoints(uint axis, uint oldindex, uint index);
+
+    /**
+        Add a keypoint
+    */
     abstract void insertKeypoints(uint axis, uint index);
 
     /**
@@ -542,6 +547,42 @@ public:
             }
             foreach(i; this.isSet) {
                 i.insertInPlace(index, false);
+            }
+        }
+
+        reInterpolate();
+    }
+
+    override
+    void moveKeypoints(uint axis, uint oldindex, uint newindex) {
+        assert(axis == 0 || axis == 1);
+
+        if (axis == 0) {
+            {
+                auto swap = values[oldindex];
+                values = values.remove(oldindex);
+                values.insertInPlace(newindex, swap);
+            }
+
+            {
+                auto swap = isSet[oldindex];
+                isSet = isSet.remove(oldindex);
+                isSet.insertInPlace(newindex, swap);
+            }
+        } else if (axis == 1) {
+            foreach(ref i; this.values) {
+                {
+                    auto swap = i[oldindex];
+                    i = i.remove(oldindex);
+                    i.insertInPlace(newindex, swap);
+                }
+            }
+            foreach(i; this.isSet) {
+                {
+                    auto swap = i[oldindex];
+                    i = i.remove(oldindex);
+                    i.insertInPlace(newindex, swap);
+                }
             }
         }
 
