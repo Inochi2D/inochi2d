@@ -14,7 +14,7 @@ import inochi2d.math;
 import bindbc.opengl;
 import std.exception;
 import std.algorithm.mutation : copy;
-import std.math : isFinite;
+import std.math : isNaN;
 
 public import inochi2d.core.meshdata;
 
@@ -178,14 +178,19 @@ private:
         static if (isMask) {
             partMaskShader.use();
             partMaskShader.setUniform(mmvp, inGetCamera().matrix * transform.matrix());
-            partMaskShader.setUniform(mthreshold, clamp(offsetMaskThreshold.isFinite ? offsetMaskThreshold : maskAlphaThreshold, 0, 1));
-            partMaskShader.setUniform(mgopacity, clamp(offsetOpacity.isFinite ? offsetOpacity : opacity, 0, 1));
+            partMaskShader.setUniform(mthreshold, clamp(!offsetOpacity.isNaN ? offsetMaskThreshold : maskAlphaThreshold, 0, 1));
+            partMaskShader.setUniform(mgopacity, clamp(!offsetOpacity.isNaN ? offsetOpacity : opacity, 0, 1));
             glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         } else {
             partShader.use();
             partShader.setUniform(mvp, inGetCamera().matrix * transform.matrix());
-            partShader.setUniform(gopacity, clamp(offsetOpacity.isFinite ? offsetOpacity : opacity, 0, 1));
-            partShader.setUniform(gtint, clamp(tint*offsetTint, vec3(0, 0, 0), vec3(1, 1, 1)));
+            partShader.setUniform(gopacity, clamp(!offsetOpacity.isNaN ? offsetOpacity : opacity, 0, 1));
+            
+            vec3 clampedColor = tint;
+            if (!offsetTint.x.isNaN) clampedColor.x = clamp(tint.x*offsetTint.x, 0, 1);
+            if (!offsetTint.y.isNaN) clampedColor.y = clamp(tint.y*offsetTint.y, 0, 1);
+            if (!offsetTint.z.isNaN) clampedColor.z = clamp(tint.z*offsetTint.z, 0, 1);
+            partShader.setUniform(gtint, clampedColor);
 
             // COMPAT MODE
             switch(blendingMode) {
@@ -506,19 +511,19 @@ public:
 
         switch(key) {
             case "alphaThreshold":
-                offsetMaskThreshold += value;
+                offsetMaskThreshold = value;
                 return true;
             case "opacity":
-                offsetOpacity += value;
+                offsetOpacity = value;
                 return true;
             case "tint.r":
-                offsetTint.x += value;
+                offsetTint.x = value;
                 return true;
             case "tint.g":
-                offsetTint.y += value;
+                offsetTint.y = value;
                 return true;
             case "tint.b":
-                offsetTint.z += value;
+                offsetTint.z = value;
                 return true;
             default: return false;
         }
@@ -528,7 +533,7 @@ public:
     void beginUpdate() {
         offsetMaskThreshold = float.nan;
         offsetOpacity = float.nan;
-        offsetTint = vec3(0);
+        offsetTint = vec3(float.nan, float.nan, float.nan);
         super.beginUpdate();
     }
     
@@ -541,11 +546,7 @@ public:
     override
     void drawOne() {
         if (!enabled) return;
-        if ((offsetOpacity.isFinite && offsetOpacity == 0) || opacity == 0) return; // Might as well save the trouble
         if (!data.isReady) return; // Yeah, don't even try
-        
-        glUniform1f(mthreshold, maskAlphaThreshold);
-        glUniform1f(mgopacity, opacity);
         
         if (mask.length > 0) {
             inBeginMask();
