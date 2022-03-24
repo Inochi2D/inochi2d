@@ -740,9 +740,9 @@ class DeformationParameterBinding : ParameterBindingImpl!Deformation {
         super(parameter, targetNode, paramName);
     }
 
-    void update(vec2[] offsets) {
-        this.isSet[offsets.x][offsets.y] = true;
-        this.values[offsets.x][offsets.y].vertexOffsets = offsets.dup;
+    void update(vec2u point, vec2[] offsets) {
+        this.isSet[point.x][point.y] = true;
+        this.values[point.x][point.y].vertexOffsets = offsets.dup;
         this.reInterpolate();
     }
 
