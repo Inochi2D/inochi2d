@@ -287,6 +287,16 @@ public:
         }
     }
 
+    void reverseAxis(uint axis) {
+        axisPoints[axis].reverse();
+        foreach(ref i; axisPoints[axis]) {
+            i = 1 - i;
+        }
+        foreach(binding; bindings) {
+            binding.reverseAxis(axis);
+        }
+    }
+
     /**
         Maps an input value to the internal range (0.0->1.0)
     */

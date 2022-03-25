@@ -52,6 +52,11 @@ abstract class ParameterBinding {
     abstract void clear();
 
     /**
+        Flip the keypoints on an axis
+    */
+    abstract void reverseAxis(uint axis);
+
+    /**
         Update keypoint interpolation
     */
     abstract void reInterpolate();
@@ -306,6 +311,19 @@ public:
         isSet[point.x][point.y] = false;
 
         reInterpolate();
+    }
+
+    /**
+        Flip the keypoints on an axis
+    */
+    override void reverseAxis(uint axis) {
+        if (axis == 0) {
+            values.reverse();
+            isSet.reverse();
+        } else {
+            foreach(ref i; values) i.reverse();
+            foreach(ref i; isSet) i.reverse();
+        }
     }
 
     /**
