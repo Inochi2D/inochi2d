@@ -185,9 +185,7 @@ public:
         }
     }
 
-    void update() {
-        vec2 clamped = this.normalizedValue;
-
+    void findOffset(vec2 offset, out vec2u index, out vec2 outOffset) {
         void interpAxis(uint axis, float val, out uint index, out float offset) {
             float[] pos = axisPoints[axis];
 
@@ -200,12 +198,15 @@ public:
             }
         }
 
+        interpAxis(0, offset.x, index.x, outOffset.x);
+        if (isVec2) interpAxis(1, offset.y, index.y, outOffset.y);
+    }
+
+    void update() {
         vec2u index;
         vec2 offset;
 
-        interpAxis(0, clamped.x, index.x, offset.x);
-        if (isVec2) interpAxis(1, clamped.y, index.y, offset.y);
-
+        findOffset(normalizedValue, index, offset);
         foreach(binding; bindings) {
             binding.apply(index, offset);
         }
@@ -313,10 +314,17 @@ public:
     }
 
     /**
+        Get the offset (0..1) of a specified keypoint index
+    */
+    vec2 getKeypointOffset(vec2u index) {
+        return vec2(axisPoints[0][index.x], axisPoints[1][index.y]);
+    }
+
+    /**
         Get the value at a specified keypoint index
     */
     vec2 getKeypointValue(vec2u index) {
-        return unmapValue(vec2(axisPoints[0][index.x], axisPoints[1][index.y]));
+        return unmapValue(getKeypointOffset(index));
     }
 
     /**

@@ -52,6 +52,36 @@ abstract class ParameterBinding {
     abstract void clear();
 
     /**
+        Sets value at specified keypoint to the current value
+    */
+    abstract void setCurrent(vec2u point);
+
+    /**
+        Unsets value at specified keypoint
+    */
+    abstract void unset(vec2u point);
+
+    /**
+        Resets value at specified keypoint to default
+    */
+    abstract  void reset(vec2u point);
+
+    /**
+        Returns whether the specified keypoint is set
+    */
+    abstract bool isSet(vec2u index);
+
+    /**
+        Scales the value, optionally with axis awareness
+    */
+    abstract void scaleValueAt(vec2u index, int axis, float scale);
+
+    /**
+        Extrapolates the value across an axis
+    */
+    abstract void extrapolateValueAt(vec2u index, int axis);
+
+    /**
         Flip the keypoints on an axis
     */
     abstract void reverseAxis(uint axis);
@@ -62,7 +92,7 @@ abstract class ParameterBinding {
     abstract void reInterpolate();
 
     /**
-        Returns isSet
+        Returns isSet_
     */
     abstract ref bool[][] getIsSet();
 
@@ -72,19 +102,24 @@ abstract class ParameterBinding {
     abstract uint getSetCount();
 
     /**
-        Add a keypoint
+        Move keypoints to a new axis point
     */
     abstract void moveKeypoints(uint axis, uint oldindex, uint index);
 
     /**
-        Add a keypoint
+        Add keypoints along a new axis point
     */
     abstract void insertKeypoints(uint axis, uint index);
 
     /**
-        Remove a keypoint
+        Remove keypoints along an axis point
     */
     abstract void deleteKeypoints(uint axis, uint index);
+
+    /**
+        Gets target of binding
+    */
+    BindTarget getTarget();
 
     /**
         Gets name of binding
@@ -95,7 +130,7 @@ abstract class ParameterBinding {
         Gets the node of the binding
     */
     abstract Node getNode();
-    
+
     /**
         Serialize
     */
@@ -141,7 +176,15 @@ public:
     /**
         Whether the value at each 2D keypoint is user-set
     */
-    bool[][] isSet;
+    bool[][] isSet_;
+
+    /**
+        Gets target of binding
+    */
+    override
+    BindTarget getTarget() {
+        return target;
+    }
 
     /**
         Gets name of binding
@@ -160,11 +203,11 @@ public:
     }
 
     /**
-        Returns isSet
+        Returns isSet_
     */
     override
     ref bool[][] getIsSet() {
-        return isSet;
+        return isSet_;
     }
 
     /**
@@ -173,9 +216,9 @@ public:
     override
     uint getSetCount() {
         uint count = 0;
-        foreach(x; 0..isSet.length) {
-            foreach(y; 0..isSet[x].length) {
-                if (isSet[x][y]) count++;
+        foreach(x; 0..isSet_.length) {
+            foreach(y; 0..isSet_[x].length) {
+                if (isSet_[x][y]) count++;
             }
         }
         return count;
@@ -206,7 +249,7 @@ public:
             serializer.putKey("values");
             serializer.serializeValue(values);
             serializer.putKey("isSet");
-            serializer.serializeValue(isSet);
+            serializer.serializeValue(isSet_);
         serializer.objectEnd(state);
     }
 
@@ -223,7 +266,7 @@ public:
             serializer.putKey("values");
             serializer.serializeValue(values);
             serializer.putKey("isSet");
-            serializer.serializeValue(isSet);
+            serializer.serializeValue(isSet_);
         serializer.objectEnd(state);
     }
 
@@ -235,7 +278,7 @@ public:
         data["node"].deserializeValue(this.nodeRef);
         data["param_name"].deserializeValue(this.target.paramName);
         data["values"].deserializeValue(this.values);
-        data["isSet"].deserializeValue(this.isSet);
+        data["isSet"].deserializeValue(this.isSet_);
 
         uint xCount = parameter.axisPointCount(0);
         uint yCount = parameter.axisPointCount(1);
@@ -245,9 +288,9 @@ public:
             enforce(i.length == yCount, "Mismatched Y value count");
         }
 
-        enforce(this.isSet.length == xCount, "Mismatched X isSet count");
-        foreach(i; this.isSet) {
-            enforce(i.length == yCount, "Mismatched Y isSet count");
+        enforce(this.isSet_.length == xCount, "Mismatched X isSet_ count");
+        foreach(i; this.isSet_) {
+            enforce(i.length == yCount, "Mismatched Y isSet_ count");
         }
 
         return null;
@@ -270,10 +313,10 @@ public:
         uint yCount = parameter.axisPointCount(1);
 
         values.length = xCount;
-        isSet.length = xCount;
+        isSet_.length = xCount;
         foreach(x; 0..xCount) {
-            isSet[x].length = 0;
-            isSet[x].length = yCount;
+            isSet_[x].length = 0;
+            isSet_[x].length = yCount;
 
             values[x].length = yCount;
             foreach(y; 0..yCount) {
@@ -298,19 +341,49 @@ public:
     */
     void setValue(vec2u point, T value) {
         values[point.x][point.y] = value;
-        isSet[point.x][point.y] = true;
+        isSet_[point.x][point.y] = true;
         
         reInterpolate();
     }
 
     /**
-        Sets value at specified keypoint
+        Sets value at specified keypoint to the current value
     */
-    void unset(vec2u point) {
-        clearValue(values[point.x][point.y]);
-        isSet[point.x][point.y] = false;
+    override
+    void setCurrent(vec2u point) {
+        isSet_[point.x][point.y] = true;
 
         reInterpolate();
+    }
+
+    /**
+        Unsets value at specified keypoint
+    */
+    override
+    void unset(vec2u point) {
+        clearValue(values[point.x][point.y]);
+        isSet_[point.x][point.y] = false;
+
+        reInterpolate();
+    }
+
+    /**
+        Resets value at specified keypoint to default
+    */
+    override
+    void reset(vec2u point) {
+        clearValue(values[point.x][point.y]);
+        isSet_[point.x][point.y] = true;
+
+        reInterpolate();
+    }
+
+    /**
+        Returns whether the specified keypoint is set
+    */
+    override
+    bool isSet(vec2u index) {
+        return isSet_[index.x][index.y];
     }
 
     /**
@@ -319,10 +392,10 @@ public:
     override void reverseAxis(uint axis) {
         if (axis == 0) {
             values.reverse();
-            isSet.reverse();
+            isSet_.reverse();
         } else {
             foreach(ref i; values) i.reverse();
-            foreach(ref i; isSet) i.reverse();
+            foreach(ref i; isSet_) i.reverse();
         }
     }
 
@@ -341,9 +414,9 @@ public:
 
         // Initialize validity map to user-set points
         foreach(x; 0..xCount) {
-            valid ~= isSet[x].dup;
+            valid ~= isSet_[x].dup;
             foreach(y; 0..yCount) {
-                if (isSet[x][y]) validCount++;
+                if (isSet_[x][y]) validCount++;
             }
         }
 
@@ -613,8 +686,7 @@ public:
         enforce(validCount == totalCount, "Interpolation failed to complete");
     }
 
-    override
-    void apply(vec2u leftKeypoint, vec2 offset) {
+    T interpolate(vec2u leftKeypoint, vec2 offset) {
         T p0, p1;
 
         if (parameter.isVec2) {
@@ -629,7 +701,12 @@ public:
             p1 = values[leftKeypoint.x + 1][0];
         }
 
-        applyToTarget(p0.interp(p1, offset.x));
+        return p0.interp(p1, offset.x);
+    }
+
+    override
+    void apply(vec2u leftKeypoint, vec2 offset) {
+        applyToTarget(interpolate(leftKeypoint, offset));
     }
 
     override
@@ -641,13 +718,13 @@ public:
 
             values.insertInPlace(index, cast(T[])[]);
             values[index].length = yCount;
-            isSet.insertInPlace(index, cast(bool[])[]);
-            isSet[index].length = yCount;
+            isSet_.insertInPlace(index, cast(bool[])[]);
+            isSet_[index].length = yCount;
         } else if (axis == 1) {
             foreach(ref i; this.values) {
                 i.insertInPlace(index, T.init);
             }
-            foreach(ref i; this.isSet) {
+            foreach(ref i; this.isSet_) {
                 i.insertInPlace(index, false);
             }
         }
@@ -667,9 +744,9 @@ public:
             }
 
             {
-                auto swap = isSet[oldindex];
-                isSet = isSet.remove(oldindex);
-                isSet.insertInPlace(newindex, swap);
+                auto swap = isSet_[oldindex];
+                isSet_ = isSet_.remove(oldindex);
+                isSet_.insertInPlace(newindex, swap);
             }
         } else if (axis == 1) {
             foreach(ref i; this.values) {
@@ -679,7 +756,7 @@ public:
                     i.insertInPlace(newindex, swap);
                 }
             }
-            foreach(i; this.isSet) {
+            foreach(i; this.isSet_) {
                 {
                     auto swap = i[oldindex];
                     i = i.remove(oldindex);
@@ -697,30 +774,44 @@ public:
 
         if (axis == 0) {
             values = values.remove(index);
-            isSet = isSet.remove(index);
+            isSet_ = isSet_.remove(index);
         } else if (axis == 1) {
             foreach(i; 0..this.values.length) {
                 values[i] = values[i].remove(index);
             }
-            foreach(i; 0..this.isSet.length) {
-                isSet[i] = isSet[i].remove(index);
+            foreach(i; 0..this.isSet_.length) {
+                isSet_[i] = isSet_[i].remove(index);
             }
         }
 
         reInterpolate();
     }
 
-    void setKeypoint(vec2u index, T value)
+    override void scaleValueAt(vec2u index, int axis, float scale)
     {
-        values[index.x][index.y] = value;
-        isSet[index.x][index.y] = true;
-        reInterpolate();
+        /* Default to just scalar scale */
+        setValue(index, getValue(index) * scale);
     }
 
-    void clearKeypoint(vec2u index)
+    override void extrapolateValueAt(vec2u index, int axis)
     {
-        isSet[index.x][index.y] = false;
-        reInterpolate();
+        vec2 offset = parameter.getKeypointOffset(index);
+
+        switch (axis) {
+            case -1: offset = vec2(1, 1) - offset; break;
+            case 0: offset.x = 1 - offset.x; break;
+            case 1: offset.y = 1 - offset.y; break;
+            default: assert(false, "bad axis");
+        }
+
+        vec2u srcIndex;
+        vec2 subOffset;
+        parameter.findOffset(offset, srcIndex, subOffset);
+
+        T srcVal = interpolate(srcIndex, subOffset);
+
+        setValue(index, srcVal);
+        scaleValueAt(index, axis, -1);
     }
 
     /**
@@ -747,6 +838,12 @@ class ValueParameterBinding : ParameterBindingImpl!float {
     void clearValue(ref float val) {
         val = 0f;
     }
+
+    override void scaleValueAt(vec2u index, int axis, float scale)
+    {
+        /* Nodes know how to do axis-aware scaling */
+        setValue(index, target.node.scaleValue(target.paramName, getValue(index), axis, scale));
+    }
 }
 
 class DeformationParameterBinding : ParameterBindingImpl!Deformation {
@@ -759,7 +856,7 @@ class DeformationParameterBinding : ParameterBindingImpl!Deformation {
     }
 
     void update(vec2u point, vec2[] offsets) {
-        this.isSet[point.x][point.y] = true;
+        this.isSet_[point.x][point.y] = true;
         this.values[point.x][point.y].vertexOffsets = offsets.dup;
         this.reInterpolate();
     }
@@ -783,6 +880,22 @@ class DeformationParameterBinding : ParameterBindingImpl!Deformation {
             }
         }
     }
+
+    override
+    void scaleValueAt(vec2u index, int axis, float scale)
+    {
+        vec2 vecScale;
+
+        switch (axis) {
+            case -1: vecScale = vec2(scale, scale); break;
+            case 0: vecScale = vec2(scale, 1); break;
+            case 1: vecScale = vec2(1, scale); break;
+            default: assert(false, "Bad axis");
+        }
+
+        /* Default to just scalar scale */
+        setValue(index, getValue(index) * vecScale);
+    }
 }
 
 @("TestInterpolation")
@@ -799,13 +912,13 @@ unittest {
 
         ValueParameterBinding bind = new ValueParameterBinding(param);
 
-        // Assign values to ValueParameterBinding and consider NaN as !isSet
+        // Assign values to ValueParameterBinding and consider NaN as !isSet_
         bind.values = input;
-        bind.isSet.length = input.length;
+        bind.isSet_.length = input.length;
         foreach(x; 0..input.length) {
-            bind.isSet[x].length = input[0].length;
+            bind.isSet_[x].length = input[0].length;
             foreach(y; 0..input[0].length) {
-                bind.isSet[x][y] = !isNaN(input[x][y]);
+                bind.isSet_[x][y] = !isNaN(input[x][y]);
             }
         }
 

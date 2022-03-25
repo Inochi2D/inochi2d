@@ -462,6 +462,39 @@ public:
     }
 
     /**
+        Scale an offset value, given an axis and a scale
+
+        If axis is -1, apply magnitude and sign to signed properties.
+        If axis is 0 or 1, apply magnitude only unless the property is
+        signed and aligned with that axis.
+
+        Note that scale adjustments are not considered aligned,
+        since we consider preserving aspect ratio to be the user
+        intent by default.
+    */
+    float scaleValue(string key, float value, int axis, float scale) {
+        if (axis == -1) return value * scale;
+
+        float newVal = abs(scale) * value;
+        switch(key) {
+            case "transform.r.z": // Z-rotation is XY-mirroring
+                newVal = scale * value;
+                break;
+            case "transform.r.y": // Y-rotation is X-mirroring
+            case "transform.t.x":
+                if (axis == 0) newVal = scale * value;
+                break;
+            case "transform.r.x": // X-rotation is Y-mirroring
+            case "transform.t.y":
+                if (axis == 1) newVal = scale * value;
+                break;
+            default:
+                break;
+        }
+        return newVal;
+    }
+
+    /**
         Draws this node and it's subnodes
     */
     void draw() {

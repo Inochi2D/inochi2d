@@ -30,6 +30,18 @@ struct Deformation {
         return new_;
     }
 
+    Deformation opBinary(string op : "*")(vec2 scale) {
+        Deformation new_;
+
+        new_.vertexOffsets.length = vertexOffsets.length;
+
+        foreach(i; 0..vertexOffsets.length) {
+            new_.vertexOffsets[i] = vec2(vertexOffsets[i].x * scale.x, vertexOffsets[i].y * scale.y);
+        }
+
+        return new_;
+    }
+
     Deformation opBinary(string op : "+")(Deformation other) {
         assert(vertexOffsets.length == other.vertexOffsets.length);
 
