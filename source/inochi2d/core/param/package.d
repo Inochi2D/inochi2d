@@ -211,10 +211,16 @@ public:
         }
     }
 
+    /**
+        Get number of points for an axis
+    */
     uint axisPointCount(uint axis = 0) {
         return cast(uint)axisPoints[axis].length;
     }
 
+    /**
+        Move an axis point to a new offset
+    */
     void moveAxisPoint(uint axis, uint oldidx, float newoff) {
         assert(oldidx > 0 && oldidx < this.axisPointCount(axis)-1, "invalid point index");
         assert(newoff > 0 && newoff < 1, "offset out of bounds");
@@ -246,6 +252,9 @@ public:
         }
     }
 
+    /**
+        Add a new axis point at the given offset
+    */
     void insertAxisPoint(uint axis, float off) {
         assert(off > 0 && off < 1, "offset out of bounds");
         if (isVec2)
@@ -269,6 +278,9 @@ public:
         }
     }
 
+    /**
+        Delete a specified axis point by index
+    */
     void deleteAxisPoint(uint axis, uint index) {
         if (isVec2)
             assert(axis <= 1, "bad axis");
@@ -287,6 +299,9 @@ public:
         }
     }
 
+    /**
+        Flip the mapping across an axis
+    */
     void reverseAxis(uint axis) {
         axisPoints[axis].reverse();
         foreach(ref i; axisPoints[axis]) {
@@ -298,7 +313,14 @@ public:
     }
 
     /**
-        Maps an input value to the internal range (0.0->1.0)
+        Get the value at a specified keypoint index
+    */
+    vec2 getKeypointValue(vec2u index) {
+        return unmapValue(vec2(axisPoints[0][index.x], axisPoints[1][index.y]));
+    }
+
+    /**
+        Maps an input value to an offset (0.0->1.0)
     */
     vec2 mapValue(vec2 value) {
         vec2 range = max - min;
@@ -317,15 +339,15 @@ public:
     }
 
     /**
-        Maps an internal value (0.0->1.0) to the input range
+        Maps an offset (0.0->1.0) to a value
     */
-    vec2 unmapValue(vec2 value) {
+    vec2 unmapValue(vec2 offset) {
         vec2 range = max - min;
-        return vec2(range.x * value.x, range.y * value.y) + min;
+        return vec2(range.x * offset.x, range.y * offset.y) + min;
     }
 
     /**
-        Maps an input value to the internal range (0.0->1.0) for an axis
+        Maps an input value to an offset (0.0->1.0) for an axis
     */
     float mapAxis(uint axis, float value) {
         vec2 input = min;
@@ -339,68 +361,68 @@ public:
     /**
         Maps an internal value (0.0->1.0) to the input range for an axis
     */
-    float unmapAxis(uint axis, float value) {
+    float unmapAxis(uint axis, float offset) {
         vec2 input = min;
-        if (axis == 0) input.x = value;
-        else input.y = value;
+        if (axis == 0) input.x = offset;
+        else input.y = offset;
         vec2 output = unmapValue(input);
         if (axis == 0) return output.x;
         else return output.y;
     }
 
     /**
-        Gets the breakpoint closests to the cursor
+        Gets the axis point closest to a given offset
     */
-    vec2u getClosestBreakpoint() {
-
-        vec2u closestAxis;
-        vec2 adjValue = normalizedValue();
-        vec2 closestPoint = normalizedValue();
+    uint getClosestAxisPointIndex(uint axis, float offset) {
+        uint closestPoint = 0;
         float closestDist = float.infinity;
-        foreach(xIdx; 0..axisPoints[0].length) {
-            foreach(yIdx; 0..axisPoints[1].length) {
-                vec2 pos = vec2(
-                    axisPoints[0][xIdx],
-                    axisPoints[1][yIdx]
-                );
 
-                float dist = adjValue.distance(pos);
-                if (dist < closestDist) {
-                    closestDist = dist;
-                    closestPoint = pos;
-                    closestAxis = vec2u(cast(uint)xIdx, cast(uint)yIdx);
-                }
-            }
-        }
-
-        return closestAxis;
-    }
-
-    /**
-        Gets the breakpoint closests to the cursor
-    */
-    vec2 getClosestBreakpointLocation() {
-
-        vec2 closestPoint = value;
-        float closestDist = float.infinity;
-        foreach(xIdx; 0..axisPoints[0].length) {
-            foreach(yIdx; 0..axisPoints[1].length) {
-                vec2 pos = vec2(
-                    (max.x - min.x) * axisPoints[0][xIdx] + min.x,
-                    (max.y - min.y) * axisPoints[1][yIdx] + min.y
-                );
-
-                float dist = value.distance(pos);
-                if (dist < closestDist) {
-                    closestDist = dist;
-                    closestPoint = pos;
-                }
+        foreach(i, pointVal; axisPoints[axis]) {
+            float dist = abs(pointVal - offset);
+            if (dist < closestDist) {
+                closestDist = dist;
+                closestPoint = cast(uint)i;
             }
         }
 
         return closestPoint;
     }
 
+    /**
+        Find the keypoint closest to the current value
+    */
+    vec2u findClosestKeypoint() {
+        return findClosestKeypoint(value);
+    }
+
+    /**
+        Find the keypoint closest to a value
+    */
+    vec2u findClosestKeypoint(vec2 value) {
+        vec2 mapped = mapValue(value);
+        uint x = getClosestAxisPointIndex(0, mapped.x);
+        uint y = getClosestAxisPointIndex(1, mapped.y);
+
+        return vec2u(x, y);
+    }
+
+    /**
+        Find the keypoint closest to the current value
+    */
+    vec2 getClosestKeypointValue() {
+        return getKeypointValue(findClosestKeypoint());
+    }
+
+    /**
+        Find the keypoint closest to a value
+    */
+    vec2 getClosestKeypointValue(vec2 value) {
+        return getKeypointValue(findClosestKeypoint(value));
+    }
+
+    /**
+        Find a binding by node ref and name
+    */
     ParameterBinding getBinding(Node n, string bindingName) {
         foreach(ref binding; bindings) {
             if (binding.getNode() != n) continue;
@@ -409,6 +431,9 @@ public:
         return null;
     }
 
+    /**
+        Check if a binding exists for a given node and name
+    */
     bool hasBinding(Node n, string bindingName) {
         foreach(ref binding; bindings) {
             if (binding.getNode() != n) continue;
@@ -417,6 +442,9 @@ public:
         return false;
     }
 
+    /**
+        Create a new binding (without adding it) for a given node and name
+    */
     ParameterBinding createBinding(Node n, string bindingName) {
         if (bindingName == "deform") {
             return new DeformationParameterBinding(this, n, bindingName);
@@ -425,6 +453,9 @@ public:
         }
     }
 
+    /**
+        Find a binding if it exists, or create and add a new one, and return it
+    */
     ParameterBinding getOrAddBinding(Node n, string bindingName) {
         ParameterBinding binding = getBinding(n, bindingName);
         if (binding is null) {
@@ -434,11 +465,17 @@ public:
         return binding;
     }
 
+    /**
+        Add a new binding (must not exist)
+    */
     void addBinding(ParameterBinding binding) {
         assert(!hasBinding(binding.getNode, binding.getName));
         bindings ~= binding;
     }
 
+    /**
+        Remove an existing binding by ref
+    */
     void removeBinding(ParameterBinding binding) {
         import std.algorithm.searching : countUntil;
         import std.algorithm.mutation : remove;
