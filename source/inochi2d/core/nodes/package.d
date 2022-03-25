@@ -452,10 +452,10 @@ public:
                 offsetTransform.rotation.z += value;
                 return true;
             case "transform.s.x":
-                offsetTransform.scale.x += value;
+                offsetTransform.scale.x *= 1 + value;
                 return true;
             case "transform.s.y":
-                offsetTransform.scale.y += value;
+                offsetTransform.scale.y *= 1 + value;
                 return true;
             default: return false;
         }
