@@ -82,6 +82,16 @@ abstract class ParameterBinding {
     abstract void extrapolateValueAt(vec2u index, int axis);
 
     /**
+        Copies the value to a point on another compatible binding
+    */
+    abstract void copyKeypointToBinding(vec2u src, ParameterBinding other, vec2u dest);
+
+    /**
+        Swaps the value to a point on another compatible binding
+    */
+    abstract void swapKeypointWithBinding(vec2u src, ParameterBinding other, vec2u dest);
+
+    /**
         Flip the keypoints on an axis
     */
     abstract void reverseAxis(uint axis);
@@ -817,6 +827,38 @@ public:
 
         setValue(index, srcVal);
         scaleValueAt(index, axis, -1);
+    }
+
+    override void copyKeypointToBinding(vec2u src, ParameterBinding other, vec2u dest)
+    {
+        if (!isSet(src)) {
+            other.unset(dest);
+        } else if (auto o = cast(ParameterBindingImpl!T)(other)) {
+            o.setValue(dest, getValue(src));
+        } else {
+            assert(false, "ParameterBinding class mismatch");
+        }
+    }
+
+    override void swapKeypointWithBinding(vec2u src, ParameterBinding other, vec2u dest)
+    {
+        if (auto o = cast(ParameterBindingImpl!T)(other)) {
+            bool thisSet = isSet(src);
+            bool otherSet = other.isSet(dest);
+            T thisVal = getValue(src);
+            T otherVal = o.getValue(dest);
+
+            // Swap directly, to avoid clobbering by update
+            o.values[dest.x][dest.y] = thisVal;
+            o.isSet_[dest.x][dest.y] = thisSet;
+            values[src.x][src.y] = otherVal;
+            isSet_[src.x][src.y] = otherSet;
+
+            reInterpolate();
+            o.reInterpolate();
+        } else {
+            assert(false, "ParameterBinding class mismatch");
+        }
     }
 
     /**
