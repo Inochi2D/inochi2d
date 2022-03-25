@@ -883,7 +883,7 @@ class ValueParameterBinding : ParameterBindingImpl!float {
 
     override
     void clearValue(ref float val) {
-        val = 0f;
+        val = target.node.getDefaultValue(target.paramName);
     }
 
     override void scaleValueAt(vec2u index, int axis, float scale)

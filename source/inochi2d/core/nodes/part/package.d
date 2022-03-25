@@ -178,13 +178,13 @@ private:
         static if (isMask) {
             partMaskShader.use();
             partMaskShader.setUniform(mmvp, inGetCamera().matrix * transform.matrix());
-            partMaskShader.setUniform(mthreshold, clamp(!offsetOpacity.isNaN ? offsetMaskThreshold : maskAlphaThreshold, 0, 1));
-            partMaskShader.setUniform(mgopacity, clamp(!offsetOpacity.isNaN ? offsetOpacity : opacity, 0, 1));
+            partMaskShader.setUniform(mthreshold, clamp(offsetMaskThreshold + maskAlphaThreshold, 0, 1));
+            partMaskShader.setUniform(mgopacity, clamp(offsetOpacity * opacity, 0, 1));
             glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         } else {
             partShader.use();
             partShader.setUniform(mvp, inGetCamera().matrix * transform.matrix());
-            partShader.setUniform(gopacity, clamp(!offsetOpacity.isNaN ? offsetOpacity : opacity, 0, 1));
+            partShader.setUniform(gopacity, clamp(offsetOpacity * opacity, 0, 1));
             
             vec3 clampedColor = tint;
             if (!offsetTint.x.isNaN) clampedColor.x = clamp(tint.x*offsetTint.x, 0, 1);
@@ -421,8 +421,8 @@ protected:
     //
     //      PARAMETER OFFSETS
     //
-    float offsetMaskThreshold = float.nan;
-    float offsetOpacity = float.nan;
+    float offsetMaskThreshold = 0;
+    float offsetOpacity = 1;
     vec3 offsetTint = vec3(0);
 
 
@@ -504,6 +504,40 @@ public:
     }
 
     override
+    bool hasParam(string key) {
+        if (super.hasParam(key)) return true;
+
+        switch(key) {
+            case "alphaThreshold":
+            case "opacity":
+            case "tint.r":
+            case "tint.g":
+            case "tint.b":
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    override
+    float getDefaultValue(string key) {
+        // Skip our list of our parent already handled it
+        float def = super.getDefaultValue(key);
+        if (!isNaN(def)) return def;
+
+        switch(key) {
+            case "alphaThreshold":
+                return 0;
+            case "opacity":
+            case "tint.r":
+            case "tint.g":
+            case "tint.b":
+                return 1;
+            default: return float();
+        }
+    }
+
+    override
     bool setValue(string key, float value) {
         
         // Skip our list of our parent already handled it
@@ -531,9 +565,9 @@ public:
 
     override
     void beginUpdate() {
-        offsetMaskThreshold = float.nan;
-        offsetOpacity = float.nan;
-        offsetTint = vec3(float.nan, float.nan, float.nan);
+        offsetMaskThreshold = 0;
+        offsetOpacity = 1;
+        offsetTint = vec3(1, 1, 1);
         super.beginUpdate();
     }
     

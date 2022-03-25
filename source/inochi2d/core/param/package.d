@@ -453,21 +453,28 @@ public:
     /**
         Create a new binding (without adding it) for a given node and name
     */
-    ParameterBinding createBinding(Node n, string bindingName) {
+    ParameterBinding createBinding(Node n, string bindingName, bool setZero = true) {
+        ParameterBinding b;
         if (bindingName == "deform") {
-            return new DeformationParameterBinding(this, n, bindingName);
+            b = new DeformationParameterBinding(this, n, bindingName);
         } else {
-            return new ValueParameterBinding(this, n, bindingName);
+            b = new ValueParameterBinding(this, n, bindingName);
         }
+
+        vec2u zeroIndex = findClosestKeypoint(vec2(0, 0));
+        vec2 zero = getKeypointValue(zeroIndex);
+        if (abs(zero.x) < 0.001 && abs(zero.y) < 0.001) b.reset(zeroIndex);
+
+        return b;
     }
 
     /**
         Find a binding if it exists, or create and add a new one, and return it
     */
-    ParameterBinding getOrAddBinding(Node n, string bindingName) {
+    ParameterBinding getOrAddBinding(Node n, string bindingName, bool setZero = true) {
         ParameterBinding binding = getBinding(n, bindingName);
         if (binding is null) {
-            binding = createBinding(n, bindingName);
+            binding = createBinding(n, bindingName, setZero);
             addBinding(binding);
         }
         return binding;

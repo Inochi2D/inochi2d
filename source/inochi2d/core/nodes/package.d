@@ -446,6 +446,27 @@ public:
     }
 
     /**
+        Gets the default offset value
+    */
+    float getDefaultValue(string key) {
+        switch(key) {
+            case "zSort":
+            case "transform.t.x":
+            case "transform.t.y":
+            case "transform.t.z":
+            case "transform.r.x":
+            case "transform.r.y":
+            case "transform.r.z":
+                return 0;
+            case "transform.s.x":
+            case "transform.s.y":
+                return 1;
+            default:
+                return float();
+        }
+    }
+
+    /**
         Sets offset value
     */
     bool setValue(string key, float value) {
@@ -472,10 +493,10 @@ public:
                 offsetTransform.rotation.z += value;
                 return true;
             case "transform.s.x":
-                offsetTransform.scale.x *= 1 + value;
+                offsetTransform.scale.x *= value;
                 return true;
             case "transform.s.y":
-                offsetTransform.scale.y *= 1 + value;
+                offsetTransform.scale.y *= value;
                 return true;
             default: return false;
         }
