@@ -426,6 +426,26 @@ public:
     }
 
     /**
+        Return whether this node supports a parameter
+    */
+    bool hasParam(string key) {
+        switch(key) {
+            case "zSort":
+            case "transform.t.x":
+            case "transform.t.y":
+            case "transform.t.z":
+            case "transform.r.x":
+            case "transform.r.y":
+            case "transform.r.z":
+            case "transform.s.x":
+            case "transform.s.y":
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /**
         Sets offset value
     */
     bool setValue(string key, float value) {

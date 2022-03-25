@@ -132,6 +132,11 @@ abstract class ParameterBinding {
     abstract Node getNode();
 
     /**
+        Checks whether a binding is compatible with another node
+    */
+    abstract bool isCompatibleWithNode(Node other);
+
+    /**
         Serialize
     */
     void serializeSelf(ref InochiSerializerCompact serializer);
@@ -844,6 +849,11 @@ class ValueParameterBinding : ParameterBindingImpl!float {
         /* Nodes know how to do axis-aware scaling */
         setValue(index, target.node.scaleValue(target.paramName, getValue(index), axis, scale));
     }
+
+    override bool isCompatibleWithNode(Node other)
+    {
+        return other.hasParam(this.target.paramName);
+    }
 }
 
 class DeformationParameterBinding : ParameterBindingImpl!Deformation {
@@ -895,6 +905,19 @@ class DeformationParameterBinding : ParameterBindingImpl!Deformation {
 
         /* Default to just scalar scale */
         setValue(index, getValue(index) * vecScale);
+    }
+
+    override bool isCompatibleWithNode(Node other)
+    {
+        if (Drawable d = cast(Drawable)target.node) {
+            if (Drawable o = cast(Drawable)other) {
+                return d.vertices.length == o.vertices.length;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
     }
 }
 
