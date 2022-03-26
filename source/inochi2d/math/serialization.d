@@ -29,7 +29,7 @@ void serialize(T, S)(T matr, ref S serializer) if(is_matrix!T) {
     serializer.arrayEnd(state);
 }
 
-SerdeException deserialize(V)(ref V value, Asdf data) if (is_vector!V) {
+SerdeException deserialize(V)(ref V value, Fghj data) if (is_vector!V) {
     int i = 0;
     foreach(val; data.byElement) {
         val.deserializeValue(value.vector[i++]);
@@ -37,6 +37,6 @@ SerdeException deserialize(V)(ref V value, Asdf data) if (is_vector!V) {
     return null;
 }
 
-bool isEmpty(Asdf value) {
-    return value == Asdf.init;
+bool isEmpty(Fghj value) {
+    return value == Fghj.init;
 }

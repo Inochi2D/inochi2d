@@ -54,7 +54,7 @@ struct AutomationBinding {
     /**
         Deserializes a parameter
     */
-    SerdeException deserializeFromAsdf(Asdf data) {
+    SerdeException deserializeFromFghj(Fghj data) {
         data["param"].deserializeValue(this.paramId);
         data["axis"].deserializeValue(this.axis);
         this.range.deserialize(data["axis"]);
@@ -102,7 +102,7 @@ protected:
 
     void serializeSelf(ref InochiSerializer serializer) { }
     void serializeSelf(ref InochiSerializerCompact serializer) { }
-    void deserializeSelf(Asdf data) { }
+    void deserializeSelf(Fghj data) { }
 
 public:
     /**
@@ -174,7 +174,7 @@ public:
     /**
         Deserializes a parameter
     */
-    SerdeException deserializeFromAsdf(Asdf data) {
+    SerdeException deserializeFromFghj(Fghj data) {
         data["name"].deserializeValue(this.name);
         data["bindings"].deserializeValue(this.bindings);
         this.deserializeSelf(data);

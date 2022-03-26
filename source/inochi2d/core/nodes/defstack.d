@@ -65,7 +65,7 @@ struct Deformation {
         serializer.arrayEnd(state);
     }
 
-    SerdeException deserializeFromAsdf(Asdf data) {
+    SerdeException deserializeFromFghj(Fghj data) {
         import inochi2d.math.serialization : deserialize;
         foreach(elem; data.byElement()) {
             vec2 offset;

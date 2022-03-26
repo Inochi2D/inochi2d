@@ -265,12 +265,12 @@ public:
         serializer.objectEnd(state);
     }
 
-    SerdeException deserializeFromAsdf(Asdf data) {
+    SerdeException deserializeFromFghj(Fghj data) {
         translation.deserialize(data["trans"]);
         rotation.deserialize(data["rot"]);
         scale.deserialize(data["scale"]);
         
-        if (data["rot_lock"] != Asdf.init) {
+        if (data["rot_lock"] != Fghj.init) {
             bool[] states;
             data["rot_lock"].deserializeValue(states);
 
@@ -279,7 +279,7 @@ public:
             this.lockRotationZ = states[2];
         }
         
-        if (data["scale_lock"] != Asdf.init) {
+        if (data["scale_lock"] != Fghj.init) {
             bool[] states;
             data["scale_lock"].deserializeValue(states);
             this.lockScaleX = states[0];

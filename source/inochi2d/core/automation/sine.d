@@ -58,7 +58,7 @@ protected:
     }
 
     override
-    void deserializeSelf(Asdf data) {
+    void deserializeSelf(Fghj data) {
         data["speed"].deserializeValue(speed);
         data["sine_type"].deserializeValue(sineType);
     }

@@ -601,9 +601,9 @@ public:
     }
 
     /**
-        Deserializes node from Asdf formatted JSON data.
+        Deserializes node from Fghj formatted JSON data.
     */
-    SerdeException deserializeFromAsdf(Asdf data) {
+    SerdeException deserializeFromFghj(Fghj data) {
 
         if (auto exc = data["uuid"].deserializeValue(this.uuid_)) return exc;
 

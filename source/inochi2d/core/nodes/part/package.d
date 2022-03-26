@@ -370,8 +370,8 @@ protected:
     }
 
     override
-    SerdeException deserializeFromAsdf(Asdf data) {
-        super.deserializeFromAsdf(data);
+    SerdeException deserializeFromFghj(Fghj data) {
+        super.deserializeFromFghj(data);
 
     
         

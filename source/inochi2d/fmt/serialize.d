@@ -1,7 +1,7 @@
 module inochi2d.fmt.serialize;
 import inochi2d.core;
 import std.json;
-public import asdf;
+public import fghj;
 public import inochi2d.math.serialization;
 
 import std.array : appender, Appender;
@@ -26,7 +26,7 @@ interface IDeserializable(T) {
     /**
         Custom deserializer function
     */
-    static T deserialize(Asdf data);
+    static T deserialize(Fghj data);
 }
 
 /**
@@ -100,7 +100,7 @@ InochiSerializerCompact inCreateCompactSerializer(Appender!(char[]) app) {
 alias InochiSerializer = JsonSerializer!("\t", void delegate(const(char)[]) pure nothrow @safe);
 alias InochiSerializerCompact = JsonSerializer!("", void delegate(const(char)[]) pure nothrow @safe);
 
-string getString(Asdf data) {
+string getString(Fghj data) {
 
     auto app = appender!(char[]);
     data.toString((const(char)[] chars) => put(app, chars));

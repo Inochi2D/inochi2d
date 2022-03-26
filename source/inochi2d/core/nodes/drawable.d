@@ -143,9 +143,9 @@ protected:
     }
 
     override
-    SerdeException deserializeFromAsdf(Asdf data) {
+    SerdeException deserializeFromFghj(Fghj data) {
         import std.stdio : writeln;
-        super.deserializeFromAsdf(data);
+        super.deserializeFromFghj(data);
         if (auto exc = data["mesh"].deserializeValue(this.data)) return exc;
 
         this.vertices = this.data.vertices.dup;

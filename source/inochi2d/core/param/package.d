@@ -143,7 +143,7 @@ public:
     /**
         Deserializes a parameter
     */
-    SerdeException deserializeFromAsdf(Asdf data) {
+    SerdeException deserializeFromFghj(Fghj data) {
         data["uuid"].deserializeValue(this.uuid);
         data["name"].deserializeValue(this.name);
         if (!data["is_vec2"].isEmpty) data["is_vec2"].deserializeValue(this.isVec2);
@@ -152,7 +152,7 @@ public:
         if (!data["axis_points"].isEmpty) data["axis_points"].deserializeValue(this.axisPoints);
 
         if (!data["bindings"].isEmpty) {
-            foreach(Asdf child; data["bindings"].byElement) {
+            foreach(Fghj child; data["bindings"].byElement) {
                 
                 // Skip empty children
                 if (child["param_name"].isEmpty) continue;
@@ -162,11 +162,11 @@ public:
 
                 if (paramName == "deform") {
                     auto binding = new DeformationParameterBinding(this);
-                    binding.deserializeFromAsdf(child);
+                    binding.deserializeFromFghj(child);
                     bindings ~= binding;
                 } else {
                     auto binding = new ValueParameterBinding(this);
-                    binding.deserializeFromAsdf(child);
+                    binding.deserializeFromFghj(child);
                     bindings ~= binding;
                 }
             }

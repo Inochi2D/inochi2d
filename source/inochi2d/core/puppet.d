@@ -570,7 +570,7 @@ public:
     /**
         Deserializes a puppet
     */
-    SerdeException deserializeFromAsdf(Asdf data) {
+    SerdeException deserializeFromFghj(Fghj data) {
         data["meta"].deserializeValue(this.meta);
         data["nodes"].deserializeValue(this.root);
         data["param"].deserializeValue(this.parameters);
@@ -582,10 +582,11 @@ public:
 
             if (inHasAutomationType(type)) {
                 auto auto_ = inInstantiateAutomation(type, this);
-                auto_.deserializeFromAsdf(key);
+                auto_.deserializeFromFghj(key);
                 this.automation ~= auto_;
             }
         }
+        this.finalizeDeserialization(data);
 
         return null;
     }
@@ -593,7 +594,7 @@ public:
     /**
         Finalizer
     */
-    void finalizeDeserialization(Asdf data) {
+    void finalizeDeserialization(Fghj data) {
         this.root.setPuppet(this);
         this.root.name = "Root";
         this.puppetRootNode = new Node(this);

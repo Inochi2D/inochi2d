@@ -159,7 +159,7 @@ abstract class ParameterBinding {
     /**
         Deserialize
     */
-    SerdeException deserializeFromAsdf(Asdf data);
+    SerdeException deserializeFromFghj(Fghj data);
 }
 
 /**
@@ -289,7 +289,7 @@ public:
         Deserializes a binding
     */
     override
-    SerdeException deserializeFromAsdf(Asdf data) {
+    SerdeException deserializeFromFghj(Fghj data) {
         data["node"].deserializeValue(this.nodeRef);
         data["param_name"].deserializeValue(this.target.paramName);
         data["values"].deserializeValue(this.values);
