@@ -277,3 +277,10 @@ void inDumpViewport(ref ubyte[] dumpTo) {
 void inSetClearColor(float r, float g, float b, float a) {
     inClearColor = vec4(r, g, b, a);
 }
+
+/**
+    UDA for sub-classable parts of the spec
+    eg. Nodes and Automation can be extended by
+    adding new subclasses that aren't in the base spec.
+*/
+struct TypeId { string id; }

@@ -10,10 +10,10 @@ module inochi2d.core.nodes.drawable;
 public import inochi2d.core.nodes.defstack;
 import inochi2d.fmt.serialize;
 import inochi2d.math;
-import inochi2d.core.nodes;
 import bindbc.opengl;
 import std.exception;
 import inochi2d.core.dbg;
+import inochi2d.core;
 
 private GLuint drawableVAO;
 

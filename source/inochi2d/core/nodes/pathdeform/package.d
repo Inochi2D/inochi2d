@@ -11,6 +11,7 @@ import inochi2d.fmt.serialize;
 import inochi2d.core.nodes.part;
 import inochi2d.core.nodes;
 import inochi2d.core.dbg;
+import inochi2d.core;
 import inochi2d.math;
 
 package(inochi2d) {
