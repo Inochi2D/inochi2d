@@ -303,6 +303,13 @@ public:
     Parameter[] parameters;
 
     /**
+        Parameters
+    */
+    @Name("automation", "Automation")
+    @Optional
+    Automation[] automation;
+
+    /**
         INP Texture slots for this puppet
     */
     @Ignore
@@ -545,6 +552,45 @@ public:
     }
 
     /**
+        Serializes a puppet
+    */
+    void serialize(S)(ref S serializer) {
+        auto state = serializer.objectBegin;
+            serializer.putKey("meta");
+            serializer.serializeValue(meta);
+            serializer.putKey("nodes");
+            serializer.serializeValue(root);
+            serializer.putKey("param");
+            serializer.serializeValue(parameters);
+            serializer.putKey("automation");
+            serializer.serializeValue(automation);
+        serializer.objectEnd(state);
+    }
+
+    /**
+        Deserializes a puppet
+    */
+    SerdeException deserializeFromAsdf(Asdf data) {
+        data["meta"].deserializeValue(this.meta);
+        data["nodes"].deserializeValue(this.root);
+        data["param"].deserializeValue(this.parameters);
+
+        // Deserialize automation
+        foreach(key; data["automation"].byElement) {
+            string type;
+            key["type"].deserializeValue(type);
+
+            if (inHasAutomationType(type)) {
+                auto auto_ = inInstantiateAutomation(type, this);
+                auto_.deserializeFromAsdf(key);
+                this.automation ~= auto_;
+            }
+        }
+
+        return null;
+    }
+
+    /**
         Finalizer
     */
     void finalizeDeserialization(Asdf data) {
@@ -556,6 +602,9 @@ public:
         this.root.finalize();
         foreach(parameter; parameters) {
             parameter.finalize(this);
+        }
+        foreach(automation_; automation) {
+            automation_.finalize(this);
         }
     }
 

@@ -1,0 +1,74 @@
+/*
+    Copyright © 2022, Inochi2D Project
+    Distributed under the 2-Clause BSD License, see LICENSE file.
+    
+    Authors: Luna Nielsen
+*/
+module inochi2d.core.automation.sine;
+import inochi2d.core.automation;
+import inochi2d;
+import std.math;
+
+enum SineType {
+    Sin,
+    Cos,
+    Tan
+}
+
+@TypeId("sine")
+class SineAutomation : Automation {
+protected:
+    override
+    void onUpdate(AutomationBinding binding) {
+        float wave;
+        switch(sineType) {
+            case SineType.Sin:
+                wave = this.remapRange((sin((currentTime()*deltaTime())*speed)+1.0)/2f, binding.range);
+                break;
+            case SineType.Cos:
+                wave = this.remapRange((cos((currentTime()*deltaTime())*speed)+1.0)/2f, binding.range);
+                break;
+            case SineType.Tan:
+                wave = this.remapRange((tan((currentTime()*deltaTime())*speed)+1.0)/2f, binding.range);
+                break;
+            default: assert(0);
+        }
+
+        if (binding.axis == 0) {
+            binding.param.value.x = clamp(wave, binding.param.min.x, binding.param.max.x);
+        } else {
+            binding.param.value.y = clamp(wave, binding.param.min.y, binding.param.max.y);
+        }
+    }
+
+    override
+    void serializeSelf(ref InochiSerializer serializer) {
+        serializer.putKey("speed");
+        serializer.putValue(speed);
+        serializer.putKey("sine_type");
+        serializer.putValue(cast(int)sineType);
+    }
+
+    override
+    void serializeSelf(ref InochiSerializerCompact serializer) {
+        serializer.putKey("speed");
+        serializer.putValue(speed);
+        serializer.putKey("sine_type");
+        serializer.putValue(cast(int)sineType);
+    }
+
+    override
+    void deserializeSelf(Asdf data) {
+        data["speed"].deserializeValue(speed);
+        data["sine_type"].deserializeValue(sineType);
+    }
+public:
+    float speed = 1;
+    SineType sineType;
+
+    this(Puppet parent) {
+        super(parent);
+    }
+}
+
+mixin InAutomation!SineAutomation;

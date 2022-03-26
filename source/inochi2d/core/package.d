@@ -14,6 +14,7 @@ public import inochi2d.core.nodes;
 public import inochi2d.core.puppet;
 public import inochi2d.core.meshdata;
 public import inochi2d.core.param;
+public import inochi2d.core.automation;
 import inochi2d.core.dbg;
 
 import bindbc.opengl;
