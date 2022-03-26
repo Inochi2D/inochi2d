@@ -23,13 +23,13 @@ protected:
         float wave;
         switch(sineType) {
             case SineType.Sin:
-                wave = this.remapRange((sin((currentTime()*deltaTime())*speed)+1.0)/2f, binding.range);
+                wave = this.remapRange((sin((currentTime()*deltaTime()*speed)+phase)+1.0)/2f, binding.range);
                 break;
             case SineType.Cos:
-                wave = this.remapRange((cos((currentTime()*deltaTime())*speed)+1.0)/2f, binding.range);
+                wave = this.remapRange((cos((currentTime()*deltaTime()*speed)+phase)+1.0)/2f, binding.range);
                 break;
             case SineType.Tan:
-                wave = this.remapRange((tan((currentTime()*deltaTime())*speed)+1.0)/2f, binding.range);
+                wave = this.remapRange((tan((currentTime()*deltaTime()*speed)+phase)+1.0)/2f, binding.range);
                 break;
             default: assert(0);
         }
@@ -63,10 +63,24 @@ protected:
         data["sine_type"].deserializeValue(sineType);
     }
 public:
-    float speed = 1;
-    SineType sineType;
+
+    /**
+        Speed of the wave
+    */
+    float speed = 1f;
+
+    /**
+        The phase of the wave
+    */
+    float phase = 0f;
+
+    /**
+        The type of wave
+    */
+    SineType sineType = SineType.Sin;
 
     this(Puppet parent) {
+        this.typeId = "sine";
         super(parent);
     }
 }
