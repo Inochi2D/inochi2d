@@ -106,6 +106,11 @@ protected:
 
 public:
     /**
+        Human readable name of automation
+    */
+    string name;
+
+    /**
         Whether the automation is enabled
     */
     bool enabled;
@@ -158,6 +163,8 @@ public:
         auto state = serializer.objectBegin;
             serializer.putKey("type");
             serializer.serializeValue(typeId);
+            serializer.putKey("name");
+            serializer.serializeValue(name);
             serializer.putKey("bindings");
             serializer.serializeValue(bindings);
             this.serializeSelf(serializer);
@@ -168,6 +175,7 @@ public:
         Deserializes a parameter
     */
     SerdeException deserializeFromAsdf(Asdf data) {
+        data["name"].deserializeValue(this.name);
         data["bindings"].deserializeValue(this.bindings);
         this.deserializeSelf(data);
         return null;
