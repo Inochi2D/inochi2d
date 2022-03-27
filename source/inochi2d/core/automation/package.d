@@ -5,7 +5,6 @@
     Authors: Luna Nielsen
 */
 module inochi2d.core.automation;
-public import inochi2d.core.automation.sine;
 import inochi2d.math.serialization;
 import inochi2d;
 
@@ -36,6 +35,19 @@ struct AutomationBinding {
         Min/max range of binding
     */
     vec2 range;
+
+    /**
+        Gets the value at the specified axis
+    */
+    float getAxisValue() {
+        if (axis == 0) {
+            return param.value.x;
+        }
+        if (axis == 1) {
+            return param.value.y;
+        }
+        return float.nan;
+    }
 
     /**
         Serializes a parameter
@@ -77,10 +89,10 @@ private:
     @Ignore
     Puppet parent;
 
+protected:
+
     @Ignore
     AutomationBinding[] bindings;
-
-protected:
 
     /**
         Helper function to remap range from 0.0-1.0
@@ -98,7 +110,7 @@ protected:
         Use deltaTime() to get delta time
         Use binding.range to get the range to apply the automation within.
     */
-    void onUpdate(AutomationBinding binding) { }
+    void onUpdate() { }
 
     void serializeSelf(ref InochiSerializer serializer) { }
     void serializeSelf(ref InochiSerializerCompact serializer) { }
@@ -130,7 +142,7 @@ public:
     /**
         Adds a binding
     */
-    final void bind(AutomationBinding binding) {
+    void bind(AutomationBinding binding) {
         this.bindings ~= binding;
     }
 
@@ -150,10 +162,7 @@ public:
     */
     final void update() {
         if (!enabled) return;
-
-        foreach(binding; bindings) {
-            this.onUpdate(binding);
-        }
+        this.onUpdate();
     }
 
     /**
