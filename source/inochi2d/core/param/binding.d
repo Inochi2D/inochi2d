@@ -996,10 +996,10 @@ unittest {
             foreach(y; 0..bind.values[0].length) {
                 float delta = abs(expect[x][y] - bind.values[x][y]);
                 if (isNaN(delta) || delta > epsilon) {
-                    writefln("Output mismatch at %d, %d", x, y);
-                    writeln("Expected:");
+                    debug writefln("Output mismatch at %d, %d", x, y);
+                    debug writeln("Expected:");
                     printArray(expect);
-                    writeln("Output:");
+                    debug writeln("Output:");
                     printArray(bind.values);
                     assert(false, description);
                 }
