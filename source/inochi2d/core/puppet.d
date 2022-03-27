@@ -357,7 +357,7 @@ public:
         root.beginUpdate();
 
         if (renderParameters) {
-            
+
             // Update parameters
             foreach(parameter; parameters) {
                 parameter.update();
@@ -366,6 +366,18 @@ public:
 
         // Update nodes
         root.update();
+    }
+
+    /**
+        Returns the index of a parameter
+    */
+    ptrdiff_t findParameterIndex(string name) {
+        foreach(i, parameter; parameters) {
+            if (parameter.name == name) {
+                return i; 
+            }
+        }
+        return -1;
     }
 
     /**
