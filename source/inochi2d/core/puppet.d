@@ -322,6 +322,12 @@ public:
     JSONValue[string] extData;
 
     /**
+        Whether parameters should be rendered
+    */
+    @Ignore
+    bool renderParameters = true;
+
+    /**
         Creates a new puppet from nothing ()
     */
     this() { 
@@ -350,9 +356,12 @@ public:
 
         root.beginUpdate();
 
-        // Update parameters
-        foreach(parameter; parameters) {
-            parameter.update();
+        if (renderParameters) {
+            
+            // Update parameters
+            foreach(parameter; parameters) {
+                parameter.update();
+            }
         }
 
         // Update nodes
