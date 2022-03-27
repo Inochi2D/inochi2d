@@ -42,6 +42,10 @@ Puppet inLoadPuppet(string file) {
             enforce(inVerifyMagicBytes(buffer), "Invalid data format for INP puppet");
             return inLoadINPPuppet(buffer);
 
+        case ".inx":
+            enforce(inVerifyMagicBytes(buffer), "Invalid data format for Inochi Creator INX");
+            return inLoadINPPuppet(buffer);
+
         default:
             throw new Exception("Invalid file format of %s at path %s".format(extension(file), file));
     }
