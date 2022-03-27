@@ -339,10 +339,6 @@ public:
             clamp(off.x, 0, 1),
             clamp(off.y, 0, 1),
         );
-        if (off != clamped) {
-            debug writefln("Clamped parameter offset %s -> %s", off, clamped);
-        }
-
         return clamped;
     }
 
