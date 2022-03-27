@@ -40,13 +40,28 @@ struct AutomationBinding {
         Gets the value at the specified axis
     */
     float getAxisValue() {
-        if (axis == 0) {
-            return param.value.x;
+        switch(axis) {
+            case 0:
+                return param.value.x;
+            case 1:
+                return param.value.y;
+            default: return float.nan;
         }
-        if (axis == 1) {
-            return param.value.y;
+    }
+
+    /**
+        Sets axis value (WITHOUT REMAPPING)
+    */
+    void setAxisValue(float value) {
+        switch(axis) {
+            case 0:
+                param.value.x = value;
+                break;
+            case 1:
+                param.value.y = value;
+                break;
+            default: assert(0);
         }
-        return float.nan;
     }
 
     /**

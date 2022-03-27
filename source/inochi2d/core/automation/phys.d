@@ -99,8 +99,15 @@ protected:
                 this.simulate(i, binding);
             }
 
+            // Constrain values
             foreach(i; 0..4+(bindings.length*2)) {
                 this.constrain();
+            }
+
+            // Clamp and apply everything to be within range
+            foreach(i, ref node; nodes) {
+                node.position.x = clamp(node.position.x, bindings[i].range.x, bindings[i].range.y);
+                bindings[i].setAxisValue(node.position.x);
             }
         }
     }
