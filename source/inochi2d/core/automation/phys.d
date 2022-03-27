@@ -77,7 +77,8 @@ protected:
             // We need the distance to be larger than 0 so that
             // we don't get division by zero problems.
             if (dist > 0) {
-                diff = (nodes[i].distance - dist) / dist;
+                // Node2 decides how far away it wants to be from Node1
+                diff = (node2.distance - dist) / dist;
             }
 
             // Apply out fancy new link
