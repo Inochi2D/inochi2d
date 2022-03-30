@@ -220,14 +220,14 @@ public:
         Gets the relative Z sorting
     */
     float relZSort() {
-        return zsort_ + offsetSort;
+        return zsort_;
     }
 
     /**
         Gets the Z sorting
     */
     float zSort() {
-        return parent !is null ? parent.zSort() + relZSort : relZSort;
+        return (parent !is null ? parent.zSort() : 0) + relZSort + offsetSort;
     }
 
     /**
