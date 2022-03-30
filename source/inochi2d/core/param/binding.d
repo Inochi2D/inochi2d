@@ -196,7 +196,7 @@ private:
     */
     uint nodeRef;
 
-    InterpolateMode interpolateMode_;
+    InterpolateMode interpolateMode_ = InterpolateMode.Linear;
 
 public:
     /**
