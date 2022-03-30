@@ -748,9 +748,9 @@ public:
     }
 
     T interpolateNearest(vec2u leftKeypoint, vec2 offset) {
-        ulong px = leftKeypoint.x + offset.x >= 0.5 ? 1 : 0;
+        ulong px = leftKeypoint.x + ((offset.x >= 0.5) ? 1 : 0);
         if (parameter.isVec2) {
-            ulong py = leftKeypoint.y + offset.y >= 0.5 ? 1 : 0;
+            ulong py = leftKeypoint.y + ((offset.y >= 0.5) ? 1 : 0);
             return values[px][py];
         } else {
             return values[px][0];
