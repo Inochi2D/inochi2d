@@ -32,6 +32,20 @@ struct BindTarget {
 }
 
 /**
+    Interpolation mode between keypoints
+*/
+enum InterpolateMode {
+    /**
+        Round to nearest
+    */
+    Nearest,
+    /**
+        Linear interpolation
+    */
+    Linear
+}
+
+/**
     A binding to a parameter, of a given value type
 */
 abstract class ParameterBinding {
@@ -147,6 +161,16 @@ abstract class ParameterBinding {
     abstract bool isCompatibleWithNode(Node other);
 
     /**
+        Gets the interpolation mode
+    */
+    abstract InterpolateMode interpolateMode();
+
+    /**
+        Sets the interpolation mode
+    */
+    abstract void interpolateMode(InterpolateMode mode);
+
+    /**
         Serialize
     */
     void serializeSelf(ref InochiSerializerCompact serializer);
@@ -171,6 +195,8 @@ private:
         Node reference (for deserialization)
     */
     uint nodeRef;
+
+    InterpolateMode interpolateMode_;
 
 public:
     /**
@@ -265,6 +291,8 @@ public:
             serializer.serializeValue(values);
             serializer.putKey("isSet");
             serializer.serializeValue(isSet_);
+            serializer.putKey("interpolate_mode");
+            serializer.serializeValue(interpolateMode_);
         serializer.objectEnd(state);
     }
 
@@ -282,6 +310,8 @@ public:
             serializer.serializeValue(values);
             serializer.putKey("isSet");
             serializer.serializeValue(isSet_);
+            serializer.putKey("interpolate_mode");
+            serializer.serializeValue(interpolateMode_);
         serializer.objectEnd(state);
     }
 
@@ -294,6 +324,12 @@ public:
         data["param_name"].deserializeValue(this.target.paramName);
         data["values"].deserializeValue(this.values);
         data["isSet"].deserializeValue(this.isSet_);
+        auto mode = data["interpolate_mode"];
+        if (mode != Fghj.init) {
+            mode.deserializeValue(this.interpolateMode_);
+        } else {
+            this.interpolateMode_ = InterpolateMode.Linear;
+        }
 
         uint xCount = parameter.axisPointCount(0);
         uint yCount = parameter.axisPointCount(1);
@@ -702,6 +738,26 @@ public:
     }
 
     T interpolate(vec2u leftKeypoint, vec2 offset) {
+        switch (interpolateMode_) {
+            case InterpolateMode.Nearest:
+                return interpolateNearest(leftKeypoint, offset);
+            case InterpolateMode.Linear:
+                return interpolateLinear(leftKeypoint, offset);
+            default: assert(0);
+        }
+    }
+
+    T interpolateNearest(vec2u leftKeypoint, vec2 offset) {
+        ulong px = leftKeypoint.x + offset.x >= 0.5 ? 1 : 0;
+        if (parameter.isVec2) {
+            ulong py = leftKeypoint.y + offset.y >= 0.5 ? 1 : 0;
+            return values[px][py];
+        } else {
+            return values[px][0];
+        }
+    }
+
+    T interpolateLinear(vec2u leftKeypoint, vec2 offset) {
         T p0, p1;
 
         if (parameter.isVec2) {
@@ -859,6 +915,20 @@ public:
         } else {
             assert(false, "ParameterBinding class mismatch");
         }
+    }
+
+    /**
+        Get the interpolation mode
+    */
+    override InterpolateMode interpolateMode() {
+        return interpolateMode_;
+    }
+
+    /**
+        Set the interpolation mode
+    */
+    override void interpolateMode(InterpolateMode mode) {
+        interpolateMode_ = mode;
     }
 
     /**
