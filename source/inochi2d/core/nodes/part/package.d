@@ -14,6 +14,7 @@ import inochi2d.math;
 import bindbc.opengl;
 import std.exception;
 import std.algorithm.mutation : copy;
+import inochi2d.core.nodes.common;
 import std.math : isNaN;
 
 public import inochi2d.core.meshdata;
@@ -123,28 +124,6 @@ enum MaskingMode {
         The path should be dodge masked by the drawables specified
     */
     DodgeMask
-}
-
-/**
-    Blending modes
-
-    TODO: Implement advanced blending system
-*/
-enum BlendMode {
-    // Normal blending mode
-    Normal,
-
-    // Multiply blending mode
-    Multiply,
-    
-    // Color Dodge
-    ColorDodge,
-
-    // Linear Dodge
-    LinearDodge,
-
-    // Screen
-    Screen
 }
 
 /**
