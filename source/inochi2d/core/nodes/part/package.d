@@ -14,7 +14,7 @@ import inochi2d.math;
 import bindbc.opengl;
 import std.exception;
 import std.algorithm.mutation : copy;
-import inochi2d.core.nodes.common;
+public import inochi2d.core.nodes.common;
 import std.math : isNaN;
 
 public import inochi2d.core.meshdata;
