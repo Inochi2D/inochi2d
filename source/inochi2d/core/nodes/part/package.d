@@ -170,26 +170,7 @@ private:
             if (!offsetTint.y.isNaN) clampedColor.y = clamp(tint.y*offsetTint.y, 0, 1);
             if (!offsetTint.z.isNaN) clampedColor.z = clamp(tint.z*offsetTint.z, 0, 1);
             partShader.setUniform(gtint, clampedColor);
-
-            // COMPAT MODE
-            switch(blendingMode) {
-                case BlendMode.Normal: 
-                    glBlendEquation(GL_FUNC_ADD);
-                    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); break;
-                case BlendMode.Multiply: 
-                    glBlendEquation(GL_FUNC_ADD);
-                    glBlendFunc(GL_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA); break;
-                case BlendMode.ColorDodge:
-                    glBlendEquation(GL_FUNC_ADD);
-                    glBlendFunc(GL_DST_COLOR, GL_ONE); break;
-                case BlendMode.LinearDodge:
-                    glBlendEquation(GL_FUNC_ADD);
-                    glBlendFunc(GL_ONE, GL_ONE); break;
-                case BlendMode.Screen:
-                    glBlendEquation(GL_FUNC_ADD);
-                    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR); break;
-                default: assert(0);
-            }
+            inSetBlendMode(blendingMode);
 
             // TODO: EXT MODE
         }
@@ -557,6 +538,16 @@ public:
     }
 
     override
+    void draw() {
+        if (!enabled) return;
+        this.drawOne();
+
+        foreach(child; children) {
+            child.draw();
+        }
+    }
+
+    override
     void drawOne() {
         if (!enabled) return;
         if (!data.isReady) return; // Yeah, don't even try
@@ -584,13 +575,9 @@ public:
     }
 
     override
-    void draw() {
-        if (!enabled) return;
-        this.drawOne();
-
-        foreach(child; children) {
-            child.draw();
-        }
+    void drawOneDirect(bool forMasking) {
+        if (forMasking) this.drawSelf!true();
+        else this.drawSelf!false();
     }
 
     override

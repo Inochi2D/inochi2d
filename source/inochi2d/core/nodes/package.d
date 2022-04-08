@@ -17,6 +17,7 @@ public import inochi2d.core.nodes.part;
 public import inochi2d.core.nodes.mask;
 public import inochi2d.core.nodes.pathdeform;
 public import inochi2d.core.nodes.drawable;
+public import inochi2d.core.nodes.composite;
 //public import inochi2d.core.nodes.shapes; // This isn't mainline yet!
 
 import std.exception;
@@ -350,7 +351,7 @@ public:
     /**
         Gets the parent of this node
     */
-    final Node parent() {
+    final ref Node parent() {
         return parent_;
     }
 

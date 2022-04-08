@@ -251,12 +251,17 @@ public:
     }
 
     /**
-        Updates the drawable
+        Draws the drawable
     */
     override
     void drawOne() {
         super.drawOne();
     }
+
+    /**
+        Draws the drawable without any processing
+    */
+    void drawOneDirect(bool forMasking) { }
 
     override
     string typeId() { return "Drawable"; }

@@ -110,6 +110,11 @@ public:
     }
 
     override
+    void drawOneDirect(bool forMasking) {
+        this.drawSelf();
+    }
+
+    override
     void draw() {
         if (!enabled) return;
         foreach(child; children) {

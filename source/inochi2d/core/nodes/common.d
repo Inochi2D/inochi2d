@@ -7,6 +7,7 @@
     Authors: Luna Nielsen
 */
 module inochi2d.core.nodes.common;
+import bindbc.opengl;
 
 /**
     Blending modes
@@ -26,4 +27,25 @@ enum BlendMode {
 
     // Screen
     Screen
+}
+
+void inSetBlendMode(BlendMode blendingMode) {
+    switch(blendingMode) {
+        case BlendMode.Normal: 
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); break;
+        case BlendMode.Multiply: 
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendFunc(GL_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA); break;
+        case BlendMode.ColorDodge:
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendFunc(GL_DST_COLOR, GL_ONE); break;
+        case BlendMode.LinearDodge:
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendFunc(GL_ONE, GL_ONE); break;
+        case BlendMode.Screen:
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR); break;
+        default: assert(0);
+    }
 }

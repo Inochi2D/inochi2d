@@ -203,15 +203,22 @@ private:
         for Z sorting
     */
     @Ignore
-    Part[] rootParts;
+    Node[] rootParts;
 
     void scanPartsRecurse(ref Node node) {
 
         // Don't need to scan null nodes
         if (node is null) return;
 
-        // If we have a part do the main check
-        if (Part part = cast(Part)node) {
+        // Do the main check
+        if (Composite composite = cast(Composite)node) {
+            
+            // Composite nodes handle and keep their own root node list, as such we should just draw them directly
+            composite.scanParts();
+            rootParts ~= composite;
+            return;
+
+        } if (Part part = cast(Part)node) {
             rootParts ~= part;
             foreach(child; part.children) {
                 scanPartsRecurse(child);
@@ -631,9 +638,11 @@ public:
     }
 
     /**
-        Gets the internal root parts array
+        Gets the internal root parts array 
+
+        Do note that some root parts may be Composites instead.
     */
-    final Part[] getRootParts() {
+    final Node[] getRootParts() {
         return rootParts;
     }
 }

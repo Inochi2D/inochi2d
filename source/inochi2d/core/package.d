@@ -42,6 +42,10 @@ private {
     GLuint fColor;
     GLuint fStencil;
 
+    GLuint cfBuffer;
+    GLuint cfColor;
+    GLuint cfStencil;
+
     vec4 inClearColor;
 
 
@@ -49,6 +53,8 @@ private {
 
     // Camera
     Camera inCamera;
+
+    bool isCompositing;
 }
 
 // Things only available internally for Inochi2D rendering
@@ -68,6 +74,7 @@ package(inochi2d) {
         inInitDrawable();
         inInitPart();
         inInitMask();
+        inInitComposite();
         inInitDebug();
 
         // Some defaults that should be changed by app writer
@@ -81,18 +88,26 @@ package(inochi2d) {
         glGenVertexArrays(1, &sceneVAO);
         glGenBuffers(1, &sceneVBO);
 
-        // Generate the framebuffer we'll be using to render the model
+        // Generate the framebuffer we'll be using to render the model and composites
         glGenFramebuffers(1, &fBuffer);
+        glGenFramebuffers(1, &cfBuffer);
         
         // Generate the color and stencil-depth textures needed
         // Note: we're not using the depth buffer but OpenGL 3.4 does not support stencil-only buffers
         glGenTextures(1, &fColor);
         glGenTextures(1, &fStencil);
+        glGenTextures(1, &cfColor);
+        glGenTextures(1, &cfStencil);
 
         // Attach textures to framebuffer
         glBindFramebuffer(GL_FRAMEBUFFER, fBuffer);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fColor, 0);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, fStencil, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, cfBuffer);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, cfColor, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, cfStencil, 0);
+
+        // go back to default fb
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 }
@@ -117,6 +132,38 @@ void inBeginScene() {
 
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 }
+
+/**
+    Begins a composition step
+*/
+void inBeginComposite() {
+
+    // We don't allow recursive compositing
+    if (isCompositing) return;
+    isCompositing = true;
+
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, cfBuffer);
+    glClearColor(0, 0, 0, 0);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    // Everything else is the actual texture used by the meshes at id 0
+    glActiveTexture(GL_TEXTURE0);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+/**
+    Ends a composition step, re-binding the internal framebuffer
+*/
+void inEndComposite() {
+
+    // We don't allow recursive compositing
+    if (!isCompositing) return;
+    isCompositing = false;
+
+    glBindFramebuffer(GL_FRAMEBUFFER, fBuffer);
+    glFlush();
+}
+
 
 /**
     Ends rendering to the framebuffer
@@ -208,6 +255,15 @@ GLuint inGetRenderImage() {
 }
 
 /**
+    Gets the Inochi2D composite render image
+
+    DO NOT MODIFY THIS IMAGE!
+*/
+GLuint inGetCompositeImage() {
+    return cfColor;
+}
+
+/**
     Sets the viewport area to render to
 */
 void inSetViewport(int width, int height) nothrow {
@@ -215,6 +271,7 @@ void inSetViewport(int width, int height) nothrow {
     inViewportWidth = width;
     inViewportHeight = height;
 
+    // Render Framebuffer
     glBindTexture(GL_TEXTURE_2D, fColor);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -226,6 +283,20 @@ void inSetViewport(int width, int height) nothrow {
     glBindFramebuffer(GL_FRAMEBUFFER, fBuffer);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fColor, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, fStencil, 0);
+    
+
+    // Composite framebuffer
+    glBindTexture(GL_TEXTURE_2D, cfColor);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    glBindTexture(GL_TEXTURE_2D, cfStencil);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, null);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, cfBuffer);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, cfColor, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, cfStencil, 0);
     
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
