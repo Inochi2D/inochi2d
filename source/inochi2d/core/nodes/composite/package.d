@@ -98,8 +98,13 @@ private:
 
         glBindVertexArray(cVAO);
         cShader.use();
-        cShader.setUniform(gopacity, opacity);
-        cShader.setUniform(gtint, tint);
+        cShader.setUniform(gopacity, clamp(offsetOpacity * opacity, 0, 1));
+        
+        vec3 clampedColor = tint;
+        if (!offsetTint.x.isNaN) clampedColor.x = clamp(tint.x*offsetTint.x, 0, 1);
+        if (!offsetTint.y.isNaN) clampedColor.y = clamp(tint.y*offsetTint.y, 0, 1);
+        if (!offsetTint.z.isNaN) clampedColor.z = clamp(tint.z*offsetTint.z, 0, 1);
+        cShader.setUniform(gtint, clampedColor);
         inSetBlendMode(blendingMode);
 
         // Enable points array
@@ -228,6 +233,11 @@ protected:
         return super.deserializeFromFghj(data);
     }
 
+    //
+    //      PARAMETER OFFSETS
+    //
+    float offsetOpacity = 1;
+    vec3 offsetTint = vec3(0);
 
     override
     string typeId() { return "Composite"; }
@@ -270,17 +280,72 @@ public:
     }
 
     override
+    bool hasParam(string key) {
+        if (super.hasParam(key)) return true;
+
+        switch(key) {
+            case "opacity":
+            case "tint.r":
+            case "tint.g":
+            case "tint.b":
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    override
+    float getDefaultValue(string key) {
+        // Skip our list of our parent already handled it
+        float def = super.getDefaultValue(key);
+        if (!isNaN(def)) return def;
+
+        switch(key) {
+            case "opacity":
+            case "tint.r":
+            case "tint.g":
+            case "tint.b":
+                return 1;
+            default: return float();
+        }
+    }
+
+    override
+    bool setValue(string key, float value) {
+        
+        // Skip our list of our parent already handled it
+        if (super.setValue(key, value)) return true;
+
+        switch(key) {
+            case "opacity":
+                offsetOpacity = value;
+                return true;
+            case "tint.r":
+                offsetTint.x = value;
+                return true;
+            case "tint.g":
+                offsetTint.y = value;
+                return true;
+            case "tint.b":
+                offsetTint.z = value;
+                return true;
+            default: return false;
+        }
+    }
+
+    override
+    void beginUpdate() {
+        offsetOpacity = 1;
+        offsetTint = vec3(1, 1, 1);
+        super.beginUpdate();
+    }
+
+    override
     void drawOne() {
         super.drawOne();
 
         this.selfSort();
         this.drawSelf();
-    }
-
-    override
-    void beginUpdate() {
-        this.selfSort();
-        super.beginUpdate();
     }
 
     override
