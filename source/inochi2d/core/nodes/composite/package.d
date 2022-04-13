@@ -16,7 +16,7 @@ import bindbc.opengl;
 import std.exception;
 import std.algorithm.sorting;
 
-package(inochi2d) {
+private {
     GLuint cVAO;
     GLuint cBuffer;
     Shader cShader;
@@ -27,8 +27,9 @@ package(inochi2d) {
 
     GLint mthreshold;
     GLint mopacity;
+}
 
-
+package(inochi2d) {
     void inInitComposite() {
         inRegisterNodeType!Composite;
 
