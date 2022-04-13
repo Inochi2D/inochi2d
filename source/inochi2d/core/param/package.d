@@ -465,9 +465,11 @@ public:
             b = new ValueParameterBinding(this, n, bindingName);
         }
 
-        vec2u zeroIndex = findClosestKeypoint(vec2(0, 0));
-        vec2 zero = getKeypointValue(zeroIndex);
-        if (abs(zero.x) < 0.001 && abs(zero.y) < 0.001) b.reset(zeroIndex);
+        if (setZero) {
+            vec2u zeroIndex = findClosestKeypoint(vec2(0, 0));
+            vec2 zero = getKeypointValue(zeroIndex);
+            if (abs(zero.x) < 0.001 && abs(zero.y) < 0.001) b.reset(zeroIndex);
+        }
 
         return b;
     }
