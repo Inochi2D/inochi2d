@@ -984,6 +984,11 @@ class DeformationParameterBinding : ParameterBindingImpl!Deformation {
     }
 
     override
+    void setValue(vec2u point, Deformation value) {
+        super.setValue(point, value.dup);
+    }
+
+    override
     void applyToTarget(Deformation value) {
         enforce(this.target.paramName == "deform");
 
