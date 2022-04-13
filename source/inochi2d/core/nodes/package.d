@@ -18,6 +18,7 @@ public import inochi2d.core.nodes.mask;
 public import inochi2d.core.nodes.pathdeform;
 public import inochi2d.core.nodes.drawable;
 public import inochi2d.core.nodes.composite;
+public import inochi2d.core.nodes.drivers;
 //public import inochi2d.core.nodes.shapes; // This isn't mainline yet!
 
 import std.exception;

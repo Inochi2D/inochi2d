@@ -205,32 +205,40 @@ private:
     @Ignore
     Node[] rootParts;
 
-    void scanPartsRecurse(ref Node node) {
+    /**
+        A list of drivers that need to run to update the puppet
+    */
+    Driver[] drivers;
+
+    void scanPartsRecurse(ref Node node, bool driversOnly = false) {
 
         // Don't need to scan null nodes
         if (node is null) return;
 
-        // Do the main check
-        if (Composite composite = cast(Composite)node) {
-            
-            // Composite nodes handle and keep their own root node list, as such we should just draw them directly
-            composite.scanParts();
-            rootParts ~= composite;
-            return;
+        // Collect Drivers
+        if (Driver part = cast(Driver)node) {
+            drivers ~= part;
+        } else if (!driversOnly) {
+            // Collect drawable nodes only if we aren't inside a Composite node
 
-        } if (Part part = cast(Part)node) {
-            rootParts ~= part;
-            foreach(child; part.children) {
-                scanPartsRecurse(child);
+            if (Composite composite = cast(Composite)node) {
+                // Composite nodes handle and keep their own root node list, as such we should just draw them directly
+                composite.scanParts();
+                rootParts ~= composite;
+
+                // For this subtree, only look for Drivers
+                driversOnly = true;
+            } else if (Part part = cast(Part)node) {
+                // Collect Part nodes
+                rootParts ~= part;
             }
-            
-        } else {
-
             // Non-part nodes just need to be recursed through,
             // they don't draw anything.
-            foreach(child; node.children) {
-                scanPartsRecurse(child);
-            }
+        }
+
+        // Recurse through children nodes
+        foreach(child; node.children) {
+            scanPartsRecurse(child, driversOnly);
         }
     }
 
@@ -241,6 +249,9 @@ private:
         // and if the node tree changed we want to reflect those changes
         // not the old node tree.
         rootParts = [];
+
+        // Same for drivers
+        drivers = [];
 
         this.scanPartsRecurse(node);
 
@@ -373,6 +384,13 @@ public:
 
         // Ensure the transform tree is updated
         root.transformChanged();
+
+        if (renderParameters) {
+            // Update parameter/node driver nodes (e.g. physics)
+            foreach(driver; drivers) {
+                driver.updateDriver();
+            }
+        }
 
         // Update nodes
         root.update();
