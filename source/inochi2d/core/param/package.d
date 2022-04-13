@@ -41,6 +41,11 @@ public:
     string indexableName;
 
     /**
+        Whether this parameter updates the model
+    */
+    bool active = true;
+
+    /**
         The current parameter value
     */
     vec2 value = vec2(0);
@@ -205,6 +210,9 @@ public:
     void update() {
         vec2u index;
         vec2 offset;
+
+        if (!active)
+            return;
 
         findOffset(normalizedValue, index, offset);
         foreach(binding; bindings) {
