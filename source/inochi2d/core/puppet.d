@@ -376,15 +376,27 @@ public:
     }
 
     /**
-        Returns the index of a parameter
+        Returns the index of a parameter by name
     */
     ptrdiff_t findParameterIndex(string name) {
         foreach(i, parameter; parameters) {
             if (parameter.name == name) {
-                return i; 
+                return i;
             }
         }
         return -1;
+    }
+
+    /**
+        Returns a parameter by UUID
+    */
+    Parameter findParameter(uint uuid) {
+        foreach(i, parameter; parameters) {
+            if (parameter.uuid == uuid) {
+                return parameter;
+            }
+        }
+        return null;
     }
 
     /**
