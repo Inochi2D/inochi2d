@@ -32,6 +32,8 @@ package(inochi2d) {
     }
 }
 
+enum InInvalidUUID = uint.max;
+
 /**
     Creates a new UUID for a node
 */
@@ -39,7 +41,7 @@ uint inCreateUUID() {
     import std.algorithm.searching : canFind;
     import std.random : uniform;
 
-    uint id = uniform!uint();
+    uint id = uniform(uint.min, InInvalidUUID);
     while (takenUUIDs.canFind(id)) { id = uniform!uint(); } // Make sure the ID is actually unique in the current context
 
     return id;
