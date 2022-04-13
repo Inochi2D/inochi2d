@@ -479,27 +479,35 @@ public:
                 return true;
             case "transform.t.x":
                 offsetTransform.translation.x += value;
+                transformChanged();
                 return true;
             case "transform.t.y":
                 offsetTransform.translation.y += value;
+                transformChanged();
                 return true;
             case "transform.t.z":
                 offsetTransform.translation.z += value;
+                transformChanged();
                 return true;
             case "transform.r.x":
                 offsetTransform.rotation.x += value;
+                transformChanged();
                 return true;
             case "transform.r.y":
                 offsetTransform.rotation.y += value;
+                transformChanged();
                 return true;
             case "transform.r.z":
                 offsetTransform.rotation.z += value;
+                transformChanged();
                 return true;
             case "transform.s.x":
                 offsetTransform.scale.x *= value;
+                transformChanged();
                 return true;
             case "transform.s.y":
                 offsetTransform.scale.y *= value;
+                transformChanged();
                 return true;
             default: return false;
         }
@@ -582,10 +590,19 @@ public:
     void update() {
         if (!enabled) return;
 
+        foreach(child; children) {
+            child.update();
+        }
+    }
+
+    /**
+        Marks this node's transform (and its descendents') as dirty
+    */
+    void transformChanged() {
         recalculateTransform = true;
 
         foreach(child; children) {
-            child.update();
+            child.transformChanged();
         }
     }
 

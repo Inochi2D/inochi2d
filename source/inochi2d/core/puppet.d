@@ -371,6 +371,9 @@ public:
             }
         }
 
+        // Ensure the transform tree is updated
+        root.transformChanged();
+
         // Update nodes
         root.update();
     }
