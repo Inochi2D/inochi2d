@@ -51,6 +51,11 @@ public:
     vec2 value = vec2(0);
 
     /**
+        The default value
+    */
+    vec2 defaults = vec2(0);
+
+    /**
         Whether the parameter is 2D
     */
     bool isVec2;
@@ -161,6 +166,8 @@ public:
             min.serialize(serializer);
             serializer.putKey("max");
             max.serialize(serializer);
+            serializer.putKey("defaults");
+            defaults.serialize(serializer);
             serializer.putKey("axis_points");
             serializer.serializeValue(axisPoints);
             serializer.putKey("bindings");
@@ -183,6 +190,7 @@ public:
         if (!data["min"].isEmpty) min.deserialize(data["min"]);
         if (!data["max"].isEmpty) max.deserialize(data["max"]);
         if (!data["axis_points"].isEmpty) data["axis_points"].deserializeValue(this.axisPoints);
+        if (!data["defaults"].isEmpty) defaults.deserialize(data["defaults"]);
 
         if (!data["bindings"].isEmpty) {
             foreach(Fghj child; data["bindings"].byElement) {
@@ -213,6 +221,7 @@ public:
     */
     void finalize(Puppet puppet) {
         this.makeIndexable();
+        this.value = defaults;
         foreach(binding; bindings) {
             binding.finalize(puppet);
         }
