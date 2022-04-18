@@ -386,12 +386,22 @@ public:
         Sets the parent of this node
     */
     final void parent(Node node) {
-        this.insert(node, OFFSET_END);
+        this.insertInto(node, OFFSET_END);
+    }
+
+    final ptrdiff_t getIndexInParent() {
+        import std.algorithm.searching : countUntil;
+        return parent_.children_.countUntil(this);
+    }
+
+    final ptrdiff_t getIndexInNode(Node n) {
+        import std.algorithm.searching : countUntil;
+        return n.children_.countUntil(this);
     }
 
     enum OFFSET_START = size_t.min;
     enum OFFSET_END = size_t.max;
-    final void insert(Node node, size_t offset) {
+    final void insertInto(Node node, size_t offset) {
         import std.algorithm.mutation : remove;
         import std.algorithm.searching : countUntil;
         
@@ -424,7 +434,7 @@ public:
         } else if (offset == OFFSET_END || offset >= parent_.children_.length) {
             this.parent_.children_ ~= this;
         } else {
-            this.parent_.children_ = this.parent_.children_[0..offset] ~ this ~ this.parent_.children_[offset+1..$-1];
+            this.parent_.children_ = this.parent_.children_[0..offset] ~ this ~ this.parent_.children_[offset..$];
         }
         if (this.puppet !is null) this.puppet.rescanNodes();
     }

@@ -39,6 +39,7 @@ enum InterpolateMode {
         Round to nearest
     */
     Nearest,
+    
     /**
         Linear interpolation
     */
@@ -765,14 +766,14 @@ public:
             T p01 = values[leftKeypoint.x][leftKeypoint.y + 1];
             T p10 = values[leftKeypoint.x + 1][leftKeypoint.y];
             T p11 = values[leftKeypoint.x + 1][leftKeypoint.y + 1];
-            p0 = p00.interp(p01, offset.y);
-            p1 = p10.interp(p11, offset.y);
+            p0 = p00.lerp(p01, offset.y);
+            p1 = p10.lerp(p11, offset.y);
         } else {
             p0 = values[leftKeypoint.x][0];
             p1 = values[leftKeypoint.x + 1][0];
         }
 
-        return p0.interp(p1, offset.x);
+        return p0.lerp(p1, offset.x);
     }
 
     override
