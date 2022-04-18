@@ -10,10 +10,9 @@ out vec4 outColor;
 
 uniform sampler2D tex;
 uniform float threshold;
-uniform float opacity;
 
 void main() {
-    vec4 color = texture(tex, texUVs) * vec4(1, 1, 1, opacity);
+    vec4 color = texture(tex, texUVs);
     if (color.a <= threshold) discard;
     outColor = vec4(1, 1, 1, 1);
 }

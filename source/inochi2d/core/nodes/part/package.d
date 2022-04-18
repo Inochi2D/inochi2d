@@ -33,7 +33,6 @@ package(inochi2d) {
         /* GLSL Uniforms (Masks) */
         GLint mmvp;
         GLint mthreshold;
-        GLint mgopacity;
 
         GLuint sVertexBuffer;
         GLuint sUVBuffer;
@@ -51,7 +50,6 @@ package(inochi2d) {
         
         mmvp = partMaskShader.getUniformLocation("mvp");
         mthreshold = partMaskShader.getUniformLocation("threshold");
-        mgopacity = partMaskShader.getUniformLocation("opacity");
         
         glGenBuffers(1, &sVertexBuffer);
         glGenBuffers(1, &sUVBuffer);
@@ -158,7 +156,6 @@ private:
             partMaskShader.use();
             partMaskShader.setUniform(mmvp, inGetCamera().matrix * transform.matrix());
             partMaskShader.setUniform(mthreshold, clamp(offsetMaskThreshold + maskAlphaThreshold, 0, 1));
-            partMaskShader.setUniform(mgopacity, clamp(offsetOpacity * opacity, 0, 1));
             glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         } else {
             partShader.use();
@@ -459,7 +456,6 @@ public:
         
         mmvp = partMaskShader.getUniformLocation("mvp");
         mthreshold = partMaskShader.getUniformLocation("threshold");
-        mgopacity = partMaskShader.getUniformLocation("opacity");
         this.updateUVs();
     }
 
