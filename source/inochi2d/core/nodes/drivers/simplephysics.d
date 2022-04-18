@@ -296,7 +296,7 @@ public:
     override
     void finalize() {
         param_ = puppet.findParameter(paramRef);
-        writefln("paramRef %d", paramRef);
+        debug writefln("paramRef %d", paramRef);
         super.finalize();
         resetSystem();
     }
@@ -314,7 +314,7 @@ public:
         param_ = p;
         if (p is null) paramRef = InInvalidUUID;
         else paramRef = p.uuid;
-        writefln("paramRef %d", paramRef);
+        debug writefln("paramRef %d", paramRef);
     }
 
     float getGravity() {
