@@ -26,7 +26,18 @@ enum BlendMode {
     LinearDodge,
 
     // Screen
-    Screen
+    Screen,
+
+    // Clip to Lower
+    // Special blending mode that clips the drawable
+    // to a lower rendered area.
+    ClipToLower,
+
+    // Slice from Lower
+    // Special blending mode that slices the drawable
+    // via a lower rendered area.
+    // Basically inverse ClipToLower
+    SliceFromLower
 }
 
 void inSetBlendMode(BlendMode blendingMode) {
@@ -46,6 +57,12 @@ void inSetBlendMode(BlendMode blendingMode) {
         case BlendMode.Screen:
             glBlendEquation(GL_FUNC_ADD);
             glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR); break;
+        case BlendMode.ClipToLower:
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendFunc(GL_DST_ALPHA, GL_ONE_MINUS_SRC_ALPHA); break;
+        case BlendMode.SliceFromLower:
+            glBlendEquation(GL_FUNC_SUBTRACT);
+            glBlendFunc(GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_SRC_ALPHA); break;
         default: assert(0);
     }
 }
