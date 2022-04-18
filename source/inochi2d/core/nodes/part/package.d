@@ -412,7 +412,7 @@ public:
     /**
         Alpha Threshold for the masking system, the higher the more opaque pixels will be discarded in the masking process
     */
-    float maskAlphaThreshold = 0.01;
+    float maskAlphaThreshold = 0.5;
 
     /**
         Opacity of the mesh
