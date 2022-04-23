@@ -513,6 +513,21 @@ public:
         return false;
     }
 
+    ptrdiff_t getMaskIdx(Drawable drawable) {
+        if (drawable is null) return -1;
+        foreach(i, ref mask; masks) {
+            if (mask.maskSrc.uuid == drawable.uuid) return i;
+        }
+        return -1;
+    }
+
+    ptrdiff_t getMaskIdx(uint uuid) {
+        foreach(i, ref mask; masks) {
+            if (mask.maskSrc.uuid == uuid) return i;
+        }
+        return -1;
+    }
+
     override
     void beginUpdate() {
         offsetMaskThreshold = 0;
@@ -574,9 +589,9 @@ public:
     override
     void finalize() {
         super.finalize();
-        foreach(ref mask; masks) {
-            if (Node nMask = puppet.find!Drawable(mask.maskSrcUUID)) {
-                mask.maskSrc = cast(Drawable)nMask;
+        foreach(i; 0..masks.length) {
+            if (Drawable nMask = puppet.find!Drawable(masks[i].maskSrcUUID)) {
+                masks[i].maskSrc = nMask;
             }
         }
     }
