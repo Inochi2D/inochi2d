@@ -589,8 +589,6 @@ public:
 
         // Iterate through children
         foreach(child; children_) {
-            if (!child.enabled) continue;
-
             child.beginUpdate();
         }
     }
