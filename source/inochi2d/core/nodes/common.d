@@ -8,6 +8,7 @@
 */
 module inochi2d.core.nodes.common;
 import bindbc.opengl;
+import inochi2d.fmt.serialize;
 
 /**
     Blending modes
@@ -65,4 +66,36 @@ void inSetBlendMode(BlendMode blendingMode) {
             glBlendFunc(GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_SRC_ALPHA); break;
         default: assert(0);
     }
+}
+
+/**
+    Masking mode
+*/
+enum MaskingMode {
+
+    /**
+        The part should be masked by the drawables specified
+    */
+    Mask,
+
+    /**
+        The path should be dodge masked by the drawables specified
+    */
+    DodgeMask
+}
+
+/**
+    A binding between a mask and a mode
+*/
+struct MaskBinding {
+public:
+    import inochi2d.core.nodes.drawable : Drawable;
+    @Name("source")
+    uint maskSrcUUID;
+
+    @Name("mode")
+    MaskingMode mode;
+    
+    @Ignore
+    Drawable maskSrc;
 }

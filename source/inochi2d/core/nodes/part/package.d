@@ -109,22 +109,6 @@ Part inCreateSimplePart(Texture tex, Node parent = null, string name = "New Part
 }
 
 /**
-    Masking mode
-*/
-enum MaskingMode {
-
-    /**
-        The part should be masked by the drawables specified
-    */
-    Mask,
-
-    /**
-        The path should be dodge masked by the drawables specified
-    */
-    DodgeMask
-}
-
-/**
     Dynamic Mesh Part
 */
 @TypeId("Part")
@@ -132,8 +116,6 @@ class Part : Drawable {
 private:
     
     GLuint uvbo;
-
-    uint[] pendingMasks;
 
     void updateUVs() {
         glBindBuffer(GL_ARRAY_BUFFER, uvbo);
@@ -201,12 +183,12 @@ private:
 
 protected:
     override
-    void renderMask() {
+    void renderMask(bool dodge = false) {
         
         // Enable writing to stencil buffer and disable writing to color buffer
         glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        glStencilFunc(GL_ALWAYS, dodge ? 0 : 1, 0xFF);
         glStencilMask(0xFF);
 
         // Draw ourselves to the stencil buffer
@@ -251,16 +233,12 @@ protected:
         serializer.putKey("tint");
         tint.serialize(serializer);
 
-        serializer.putKey("mask_mode");
-        serializer.serializeValue(maskingMode);
-
-        if (mask.length > 0) {
-
-            serializer.putKey("masked_by");
+        if (masks.length > 0) {
+            serializer.putKey("masks");
             auto state = serializer.arrayBegin();
-                foreach(m; mask) {
+                foreach(m; masks) {
                     serializer.elemBegin;
-                    serializer.putValue(m.uuid);
+                    serializer.serializeValue(m);
                 }
             serializer.arrayEnd(state);
         }
@@ -304,19 +282,16 @@ protected:
         serializer.putKey("tint");
         tint.serialize(serializer);
 
-        serializer.putKey("mask_mode");
-        serializer.serializeValue(maskingMode);
-
-        if (mask.length > 0) {
-
-            serializer.putKey("masked_by");
+        if (masks.length > 0) {
+            serializer.putKey("masks");
             auto state = serializer.arrayBegin();
-                foreach(m; mask) {
+                foreach(m; masks) {
                     serializer.elemBegin;
-                    serializer.putValue(m.uuid);
+                    serializer.serializeValue(m);
                 }
             serializer.arrayEnd(state);
         }
+
 
         serializer.putKey("mask_threshold");
         serializer.putValue(maskAlphaThreshold);
@@ -360,14 +335,19 @@ protected:
         if (!data["blend_mode"].isEmpty) data["blend_mode"].deserializeValue(this.blendingMode);
 
         if (!data["masked_by"].isEmpty) {
-            data["mask_mode"].deserializeValue(this.maskingMode);
+            MaskingMode mode;
+            data["mask_mode"].deserializeValue(mode);
 
             // Go every masked part
             foreach(imask; data["masked_by"].byElement) {
                 uint uuid;
                 if (auto exc = imask.deserializeValue(uuid)) return exc;
-                this.pendingMasks ~= uuid;
+                this.masks ~= MaskBinding(uuid, mode, null);
             }
+        }
+
+        if (!data["masks"].isEmpty) {
+            data["masks"].deserializeValue(this.masks);
         }
 
         // Update indices and vertices
@@ -382,6 +362,18 @@ protected:
     float offsetOpacity = 1;
     vec3 offsetTint = vec3(0);
 
+    // TODO: Cache this
+    size_t maskCount() {
+        size_t c;
+        foreach(m; masks) if (m.mode == MaskingMode.Mask) c++;
+        return c;
+    }
+
+    size_t dodgeCount() {
+        size_t c;
+        foreach(m; masks) if (m.mode == MaskingMode.DodgeMask) c++;
+        return c;
+    }
 
 public:
     /**
@@ -392,14 +384,9 @@ public:
     Texture[] textures;
 
     /**
-        A part this part should "dodge"
+        List of masks to apply
     */
-    Drawable[] mask;
-
-    /**
-        Masking mode
-    */
-    MaskingMode maskingMode = MaskingMode.Mask;
+    MaskBinding[] masks;
 
     /**
         Blending mode
@@ -519,6 +506,13 @@ public:
         }
     }
 
+    bool isMaskedBy(Drawable drawable) {
+        foreach(mask; masks) {
+            if (mask.maskSrc.uuid == drawable.uuid) return true;
+        }
+        return false;
+    }
+
     override
     void beginUpdate() {
         offsetMaskThreshold = 0;
@@ -548,17 +542,18 @@ public:
         if (!enabled) return;
         if (!data.isReady) return; // Yeah, don't even try
         
-        if (mask.length > 0) {
-            inBeginMask();
+        size_t cMasks = maskCount;
 
-            foreach(drawable; mask) {
-                drawable.renderMask();
+        if (masks.length > 0) {
+            import std.stdio : writeln;
+            inBeginMask(cMasks > 0);
+
+            foreach(ref mask; masks) {
+                mask.maskSrc.renderMask(mask.mode == MaskingMode.DodgeMask);
             }
 
-            // Begin drawing content
-            if (maskingMode == MaskingMode.Mask) inBeginMaskContent();
-            else inBeginDodgeContent();
-            
+            inBeginMaskContent();
+
             // We are the content
             this.drawSelf();
 
@@ -579,12 +574,11 @@ public:
     override
     void finalize() {
         super.finalize();
-        foreach(pmask; pendingMasks) {
-            if (Node nMask = puppet.find!Drawable(pmask)) {
-                mask ~= cast(Drawable)nMask;
+        foreach(ref mask; masks) {
+            if (Node nMask = puppet.find!Drawable(mask.maskSrcUUID)) {
+                mask.maskSrc = cast(Drawable)nMask;
             }
         }
-        pendingMasks.length = 0;
     }
 }
 

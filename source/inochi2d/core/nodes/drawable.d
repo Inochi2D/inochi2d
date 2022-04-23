@@ -120,7 +120,7 @@ protected:
         glDrawElements(GL_TRIANGLES, cast(int)data.indices.length, GL_UNSIGNED_SHORT, null);
     }
 
-    abstract void renderMask();
+    abstract void renderMask(bool dodge = false);
 
     /**
         Allows serializing self data (with pretty serializer)
@@ -392,11 +392,12 @@ public:
 
     This also clears whatever old mask there was.
 */
-void inBeginMask() {
+void inBeginMask(bool hasMasks) {
 
     // Enable and clear the stencil buffer so we can write our mask to it
     glEnable(GL_STENCIL_TEST);
     glClear(GL_STENCIL_BUFFER_BIT);
+    glClearStencil(hasMasks ? 0 : 1);
 }
 
 /**
@@ -413,28 +414,11 @@ void inEndMask() {
 }
 
 /**
-    Stars masking content
+    Starts masking content
 
     NOTE: This have to be run within a inBeginMask and inEndMask block!
 */
 void inBeginMaskContent() {
     glStencilFunc(GL_EQUAL, 1, 0xFF);
-    glStencilMask(0x00);
-}
-
-/**
-    Stars dodging content
-
-    NOTE: This have to be run within a inBeginMask and inEndMask block!
-*/
-void inBeginDodgeContent() {
-
-    // This tells OpenGL that as long as the stencil buffer is 0
-    // in other words that the dodge texture was not drawn there
-    // that it's okay to draw there.
-    //
-    // This effectively makes so that the dodge reference cuts out
-    // a part of this part's texture where they overlap.
-    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
     glStencilMask(0x00);
 }

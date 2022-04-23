@@ -64,12 +64,12 @@ private:
 
 protected:
     override
-    void renderMask() {
+    void renderMask(bool dodge = false) {
         
         // Enable writing to stencil buffer and disable writing to color buffer
         glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        glStencilFunc(GL_ALWAYS, dodge ? 0 : 1, 0xFF);
         glStencilMask(0xFF);
 
         // Draw ourselves to the stencil buffer
