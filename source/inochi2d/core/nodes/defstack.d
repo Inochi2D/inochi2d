@@ -18,10 +18,8 @@ struct Deformation {
         vertexOffsets = points.dup;
     }
 
-    Deformation dup() {
-        Deformation newDef;
-        newDef.vertexOffsets = vertexOffsets.dup;
-        return newDef;
+    this(this) {
+        vertexOffsets = vertexOffsets.dup;
     }
 
     Deformation opBinary(string op : "*")(float other) {
