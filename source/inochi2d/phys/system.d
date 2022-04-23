@@ -6,6 +6,7 @@
 */
 module inochi2d.phys.system;
 import inochi2d;
+import std.math : isFinite;
 
 abstract class PhysicsSystem {
 private:
@@ -112,8 +113,15 @@ public:
         eval(t + h);
         float[] k4 = derivative.dup;
 
-        foreach(i; 0..cur.length)
+        foreach(i; 0..cur.length) {
             *refs[i] = cur[i] + h * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]) / 6f;
+            if (!isFinite(*refs[i])) {
+                // Simulation failed, revert
+                foreach(j; 0..cur.length)
+                    *refs[j] = cur[j];
+                break;
+            }
+        }
 
         t += h;
     }
