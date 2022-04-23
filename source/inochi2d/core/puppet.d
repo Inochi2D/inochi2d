@@ -187,6 +187,17 @@ class PuppetMeta {
 }
 
 /**
+    Puppet physics settings
+*/
+class PuppetPhysics {
+    @Optional
+    float pixelsPerMeter = 1000;
+
+    @Optional
+    float gravity = 9.8;
+}
+
+/**
     A puppet
 */
 class Puppet {
@@ -308,6 +319,12 @@ public:
     PuppetMeta meta;
 
     /**
+        Global physics settings for this puppet
+    */
+    @Name("physics")
+    PuppetPhysics physics;
+
+    /**
         The root node of the puppet
     */
     @Name("nodes", "Root Node")
@@ -351,6 +368,7 @@ public:
     this() { 
         this.puppetRootNode = new Node(this); 
         this.meta = new PuppetMeta();
+        this.physics = new PuppetPhysics();
         root = new Node(this.puppetRootNode); 
         root.name = "Root";
     }
@@ -360,6 +378,7 @@ public:
     */
     this(Node root) {
         this.meta = new PuppetMeta();
+        this.physics = new PuppetPhysics();
         this.root = root;
         this.puppetRootNode = new Node(this);
         this.root.name = "Root";
@@ -619,6 +638,8 @@ public:
         auto state = serializer.objectBegin;
             serializer.putKey("meta");
             serializer.serializeValue(meta);
+            serializer.putKey("physics");
+            serializer.serializeValue(physics);
             serializer.putKey("nodes");
             serializer.serializeValue(root);
             serializer.putKey("param");
@@ -632,14 +653,16 @@ public:
         Deserializes a puppet
     */
     SerdeException deserializeFromFghj(Fghj data) {
-        data["meta"].deserializeValue(this.meta);
-        data["nodes"].deserializeValue(this.root);
-        data["param"].deserializeValue(this.parameters);
+        if (auto exc = data["meta"].deserializeValue(this.meta)) return exc;
+        if (!data["physics"].isEmpty)
+            if (auto exc = data["physics"].deserializeValue(this.physics)) return exc;
+        if (auto exc = data["nodes"].deserializeValue(this.root)) return exc;
+        if (auto exc = data["param"].deserializeValue(this.parameters)) return exc;
 
         // Deserialize automation
         foreach(key; data["automation"].byElement) {
             string type;
-            key["type"].deserializeValue(type);
+            if (auto exc = key["type"].deserializeValue(type)) return exc;
 
             if (inHasAutomationType(type)) {
                 auto auto_ = inInstantiateAutomation(type, this);
