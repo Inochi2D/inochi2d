@@ -221,6 +221,11 @@ private:
     */
     Driver[] drivers;
 
+    /**
+        A list of parameters that are driven by drivers
+    */
+    Driver[Parameter] drivenParameters;
+
     void scanPartsRecurse(ref Node node, bool driversOnly = false) {
 
         // Don't need to scan null nodes
@@ -229,6 +234,8 @@ private:
         // Collect Drivers
         if (Driver part = cast(Driver)node) {
             drivers ~= part;
+            foreach(Parameter param; part.getAffectedParameters())
+                drivenParameters[param] = part;
         } else if (!driversOnly) {
             // Collect drawable nodes only if we aren't inside a Composite node
 
@@ -263,6 +270,7 @@ private:
 
         // Same for drivers
         drivers = [];
+        drivenParameters.clear();
 
         this.scanPartsRecurse(node);
 
@@ -363,6 +371,12 @@ public:
     bool renderParameters = true;
 
     /**
+        Whether drivers should run
+    */
+    @Ignore
+    bool enableDrivers = true;
+
+    /**
         Creates a new puppet from nothing ()
     */
     this() { 
@@ -390,21 +404,21 @@ public:
         Updates the nodes
     */
     final void update() {
-
         root.beginUpdate();
 
         if (renderParameters) {
 
             // Update parameters
             foreach(parameter; parameters) {
-                parameter.update();
+                if (!enableDrivers || parameter !in drivenParameters)
+                    parameter.update();
             }
         }
 
         // Ensure the transform tree is updated
         root.transformChanged();
 
-        if (renderParameters) {
+        if (renderParameters && enableDrivers) {
             // Update parameter/node driver nodes (e.g. physics)
             foreach(driver; drivers) {
                 driver.updateDriver();
@@ -413,6 +427,15 @@ public:
 
         // Update nodes
         root.update();
+    }
+
+    /**
+        Reset drivers/physics nodes
+    */
+    final void resetDrivers() {
+        foreach(driver; drivers) {
+            driver.reset();
+        }
     }
 
     /**
@@ -682,8 +705,6 @@ public:
         this.root.setPuppet(this);
         this.root.name = "Root";
         this.puppetRootNode = new Node(this);
-        this.scanParts!true(this.root);
-        this.selfSort();
         this.root.finalize();
         foreach(parameter; parameters) {
             parameter.finalize(this);
@@ -691,6 +712,8 @@ public:
         foreach(automation_; automation) {
             automation_.finalize(this);
         }
+        this.scanParts!true(this.root);
+        this.selfSort();
     }
 
     /**

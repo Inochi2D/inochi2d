@@ -39,7 +39,13 @@ public:
         super.update();
     }
 
+    Parameter[] getAffectedParameters() {
+        return [];
+    }
+
     abstract void updateDriver();
+
+    abstract void reset();
 
     void drawDebug() {
     }

@@ -223,20 +223,23 @@ public:
     */
     this(uint uuid, Node parent = null) {
         super(uuid, parent);
-        resetSystem();
+        reset();
     }
 
     override
     void beginUpdate() {
         super.beginUpdate();
-
-        if (param is null) return;
-        param.active = false;
     }
 
     override
     void update() {
         super.update();
+    }
+
+    override
+    Parameter[] getAffectedParameters() {
+        if (param_ is null) return [];
+        return [param_];
     }
 
     override
@@ -257,8 +260,6 @@ public:
 
     void updateOutputs() {
         if (param is null) return;
-
-        param.active = true;
 
         auto localPos4 = transform.matrix.inverse * vec4(output.x, output.y, 0, 1);
         vec2 localPos = vec2(localPos4.x, localPos4.y);
@@ -281,7 +282,8 @@ public:
         param.update();
     }
 
-    void resetSystem() {
+    override
+    void reset() {
         updateInputs();
 
         switch (modelType) {
@@ -298,7 +300,7 @@ public:
         param_ = puppet.findParameter(paramRef);
         debug writefln("paramRef %d", paramRef);
         super.finalize();
-        resetSystem();
+        reset();
     }
 
     override
