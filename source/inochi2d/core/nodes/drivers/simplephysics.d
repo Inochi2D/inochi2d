@@ -52,8 +52,10 @@ protected:
     override
     void eval(float t) {
         setD(angle, dAngle);
-        float dd = -(driver.getGravity() / driver.length) * sin(angle);
-        dd -= dAngle * driver.angleDamping;
+        float lengthRatio = driver.getGravity() / driver.length;
+        float critDamp = 2 * sqrt(lengthRatio);
+        float dd = -lengthRatio * sin(angle);
+        dd -= dAngle * driver.angleDamping * critDamp;
         setD(dAngle, dd);
     }
 
@@ -91,7 +93,88 @@ public:
             vec3(bob.x, bob.y, 0),
         ];
 
-        //writefln("pos %s -> %s", driver.anchor, bob);
+        inDbgSetBuffer(points);
+        inDbgLineWidth(3);
+        inDbgDrawLines(vec4(1, 0, 1, 1), trans);
+    }
+}
+
+class SpringPendulum : PhysicsSystem {
+    SimplePhysics driver;
+
+private:
+    vec2 bob = vec2(0, 0);
+    vec2 dBob = vec2(0, 0);
+
+protected:
+    override
+    void eval(float t) {
+        setD(bob, dBob);
+
+        // These are normalized vs. mass
+        float springKsqrt = driver.frequency * 2 * PI;
+        float springK = springKsqrt ^^ 2;
+
+        float g = driver.getGravity();
+        float restLength = driver.length - g / springK;
+
+        vec2 offPos = bob - driver.anchor;
+        vec2 offPosNorm = offPos.normalized;
+
+        float lengthRatio = driver.getGravity() / driver.length;
+        float critDampAngle = 2 * sqrt(lengthRatio);
+        float critDampLength = 2 * springKsqrt;
+
+        float dist = abs(driver.anchor.distance(bob));
+        vec2 force = vec2(0, g);
+        force -= offPosNorm * (dist - restLength) * springK;
+        vec2 ddBob = force;
+
+        vec2 dBobRot = vec2(
+            dBob.x * offPosNorm.y + dBob.y * offPosNorm.x,
+            dBob.y * offPosNorm.y - dBob.x * offPosNorm.x,
+        );
+
+        vec2 ddBobRot = -vec2(
+            dBobRot.x * driver.angleDamping * critDampAngle,
+            dBobRot.y * driver.lengthDamping * critDampLength,
+        );
+
+        vec2 ddBobDamping = vec2(
+            ddBobRot.x * offPosNorm.y - dBobRot.y * offPosNorm.x,
+            ddBobRot.y * offPosNorm.y + dBobRot.x * offPosNorm.x,
+        );
+
+        ddBob += ddBobDamping;
+
+        setD(dBob, ddBob);
+    }
+
+public:
+
+    this(SimplePhysics driver) {
+        this.driver = driver;
+
+        bob = driver.anchor + vec2(0, driver.length);
+
+        addVariable(&bob);
+        addVariable(&dBob);
+    }
+
+    override
+    void tick(float h) {
+        // Run the spring pendulum simulation
+        super.tick(h);
+
+        driver.output = bob;
+    }
+
+    override
+    void drawDebug(mat4 trans = mat4.identity) {
+        vec3[] points = [
+            vec3(driver.anchor.x, driver.anchor.y, 0),
+            vec3(bob.x, bob.y, 0),
+        ];
 
         inDbgSetBuffer(points);
         inDbgLineWidth(3);
@@ -126,19 +209,21 @@ protected:
         serializer.putKey("param");
         serializer.serializeValue(paramRef);
         serializer.putKey("model_type");
-        serializer.serializeValue(modelType);
+        serializer.serializeValue(modelType_);
         serializer.putKey("map_mode");
         serializer.serializeValue(mapMode);
         serializer.putKey("gravity");
         serializer.serializeValue(gravity);
         serializer.putKey("length");
         serializer.serializeValue(length);
-        serializer.putKey("mass");
-        serializer.serializeValue(mass);
+        serializer.putKey("frequency");
+        serializer.serializeValue(frequency);
         serializer.putKey("angle_damping");
         serializer.serializeValue(angleDamping);
         serializer.putKey("length_damping");
         serializer.serializeValue(lengthDamping);
+        serializer.putKey("output_scale");
+        outputScale.serialize(serializer);
     }
 
     /**
@@ -150,19 +235,21 @@ protected:
         serializer.putKey("param");
         serializer.serializeValue(paramRef);
         serializer.putKey("model_type");
-        serializer.serializeValue(modelType);
+        serializer.serializeValue(modelType_);
         serializer.putKey("map_mode");
         serializer.serializeValue(mapMode);
         serializer.putKey("gravity");
         serializer.serializeValue(gravity);
         serializer.putKey("length");
         serializer.serializeValue(length);
-        serializer.putKey("mass");
-        serializer.serializeValue(mass);
+        serializer.putKey("frequency");
+        serializer.serializeValue(frequency);
         serializer.putKey("angle_damping");
         serializer.serializeValue(angleDamping);
         serializer.putKey("length_damping");
         serializer.serializeValue(lengthDamping);
+        serializer.putKey("output_scale");
+        outputScale.serialize(serializer);
     }
 
     override
@@ -172,32 +259,54 @@ protected:
         if (!data["param"].isEmpty)
             if (auto exc = data["param"].deserializeValue(this.paramRef)) return exc;
         if (!data["model_type"].isEmpty)
-            if (auto exc = data["model_type"].deserializeValue(this.modelType)) return exc;
+            if (auto exc = data["model_type"].deserializeValue(this.modelType_)) return exc;
         if (!data["map_mode"].isEmpty)
             if (auto exc = data["map_mode"].deserializeValue(this.mapMode)) return exc;
         if (!data["gravity"].isEmpty)
             if (auto exc = data["gravity"].deserializeValue(this.gravity)) return exc;
         if (!data["length"].isEmpty)
             if (auto exc = data["length"].deserializeValue(this.length)) return exc;
-        if (!data["mass"].isEmpty)
-            if (auto exc = data["mass"].deserializeValue(this.mass)) return exc;
+        if (!data["frequency"].isEmpty)
+            if (auto exc = data["frequency"].deserializeValue(this.frequency)) return exc;
         if (!data["angle_damping"].isEmpty)
             if (auto exc = data["angle_damping"].deserializeValue(this.angleDamping)) return exc;
         if (!data["length_damping"].isEmpty)
             if (auto exc = data["length_damping"].deserializeValue(this.lengthDamping)) return exc;
+        if (!data["output_scale"].isEmpty)
+            if (auto exc = outputScale.deserialize(data["output_scale"])) return exc;
 
         return null;
     }
 
 public:
-    PhysicsModel modelType = PhysicsModel.Pendulum;
+    PhysicsModel modelType_ = PhysicsModel.Pendulum;
     ParamMapMode mapMode = ParamMapMode.AngleLength;
 
+    /**
+        Gravity scale (1.0 = puppet gravity)
+    */
     float gravity = 1.0;
+
+    /**
+        Pendulum/spring rest length (pixels)
+    */
     float length = 100;
-    float mass = 1;
-    float angleDamping = 10;
+
+    /**
+        Resonant frequency (Hz)
+    */
+    float frequency = 1;
+
+    /**
+        Angular damping ratio
+    */
+    float angleDamping = 0.5;
+
+    /**
+        Length damping ratio
+    */
     float lengthDamping = 0.5;
+    vec2 outputScale = vec2(1, 1);
 
     @Ignore
     vec2 anchor = vec2(0, 0);
@@ -247,6 +356,13 @@ public:
         float h = deltaTime();
 
         updateInputs();
+
+        // Minimum physics timestep: 0.01s
+        while (h > 0.01) {
+            system.tick(0.01);
+            h -= 0.01;
+        }
+
         system.tick(h);
         updateOutputs();
     };
@@ -269,6 +385,7 @@ public:
         switch (mapMode) {
             case ParamMapMode.XY:
                 paramVal = localPosNorm - vec2(0, 1);
+                paramVal.y = -paramVal.y; // Y goes up for params
                 break;
             case ParamMapMode.AngleLength:
                 float a = atan2(-localPosNorm.x, localPosNorm.y) / PI;
@@ -278,7 +395,7 @@ public:
             default: assert(0);
         }
 
-        param.value = paramVal;
+        param.value = vec2(paramVal.x * outputScale.x, paramVal.y * outputScale.y);
         param.update();
     }
 
@@ -290,6 +407,9 @@ public:
             case PhysicsModel.Pendulum:
                 system = new Pendulum(this);
                 break;
+            case PhysicsModel.SpringPendulum:
+                system = new SpringPendulum(this);
+                break;
             default:
                 assert(0);
         }
@@ -298,7 +418,6 @@ public:
     override
     void finalize() {
         param_ = puppet.findParameter(paramRef);
-        debug writefln("paramRef %d", paramRef);
         super.finalize();
         reset();
     }
@@ -316,11 +435,23 @@ public:
         param_ = p;
         if (p is null) paramRef = InInvalidUUID;
         else paramRef = p.uuid;
-        debug writefln("paramRef %d", paramRef);
+    }
+
+    float getScale() {
+        return puppet.physics.pixelsPerMeter;
     }
 
     float getGravity() {
-        return gravity * 52714;
+        return gravity * puppet.physics.gravity * getScale();
+    }
+
+    PhysicsModel modelType() {
+        return modelType_;
+    }
+
+    void modelType(PhysicsModel t) {
+        modelType_ = t;
+        reset();
     }
 }
 
