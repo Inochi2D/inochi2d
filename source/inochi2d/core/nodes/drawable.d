@@ -396,8 +396,8 @@ void inBeginMask(bool hasMasks) {
 
     // Enable and clear the stencil buffer so we can write our mask to it
     glEnable(GL_STENCIL_TEST);
-    glClear(GL_STENCIL_BUFFER_BIT);
     glClearStencil(hasMasks ? 0 : 1);
+    glClear(GL_STENCIL_BUFFER_BIT);
 }
 
 /**
