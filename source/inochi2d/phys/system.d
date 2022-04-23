@@ -33,7 +33,7 @@ protected:
     */
     ulong addVariable(vec2* var) {
         ulong index = addVariable(&(var.vector[0]));
-        addVariable(&(var.vector[0]));
+        addVariable(&(var.vector[1]));
         return index;
     }
 
