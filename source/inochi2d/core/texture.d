@@ -78,9 +78,13 @@ public:
         * JPEG baseline
     */
     this(string file) {
+        import std.file : read;
+
+        // Ensure we keep this ref alive until we're done with it
+        ubyte[] fData = cast(ubyte[])read(file);
 
         // Load image from disk, as RGBA 8-bit
-        IFImage image = read_image(file, 4, 8);
+        IFImage image = read_image(fData, 4, 8);
         enforce( image.e == 0, "%s: %s".format(IF_ERROR[image.e], file));
         scope(exit) image.free();
 
@@ -132,7 +136,16 @@ public:
         Saves image
     */
     void save(string file) {
-        write_image(file, this.width, this.height, this.data, 4);
+        import std.file : write;
+        import core.stdc.stdlib : free;
+        int e;
+        ubyte[] sData = write_image_mem(IF_PNG, this.width, this.height, this.data, 4, e);
+        enforce(!e, "%s".format(IF_ERROR[e]));
+
+        write(file, sData);
+
+        // Make sure we free the buffer
+        free(sData.ptr);
     }
 }
 
@@ -159,9 +172,13 @@ public:
         * JPEG baseline
     */
     this(string file) {
+        import std.file : read;
+
+        // Ensure we keep this ref alive until we're done with it
+        ubyte[] fData = cast(ubyte[])read(file);
 
         // Load image from disk, as RGBA 8-bit
-        IFImage image = read_image(file, 4, 8);
+        IFImage image = read_image(fData, 4, 8);
         enforce( image.e == 0, "%s: %s".format(IF_ERROR[image.e], file));
         scope(exit) image.free();
 
