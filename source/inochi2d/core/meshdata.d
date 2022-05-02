@@ -32,6 +32,12 @@ struct MeshData {
     ushort[] indices;
 
     /**
+        Origin of the mesh
+    */
+    @Optional
+    vec2 origin = vec2(0, 0);
+
+    /**
         Adds a new vertex
     */
     void add(vec2 vertex, vec2 uv) {
@@ -135,6 +141,8 @@ struct MeshData {
         newData.indices.length = indices.length;
         newData.indices[] = indices[];
 
+        newData.origin = vec2(origin.x, origin.y);
+
         return newData;
     }
 
@@ -164,6 +172,9 @@ struct MeshData {
 
             serializer.putKey("indices");
             serializer.serializeValue(indices);
+
+            serializer.putKey("origin");
+            origin.serialize(serializer);
         serializer.objectEnd(state);
     }
 
@@ -194,6 +205,10 @@ struct MeshData {
                 elements.popFront;
                 uvs ~= vec2(x, y);
             }
+        }
+
+        if (!data["origin"].isEmpty) {
+            origin.deserialize(data["origin"]);
         }
 
         foreach(indiceData; data["indices"].byElement) {

@@ -22,9 +22,15 @@ package(inochi2d) {
         Shader maskShader;
     }
 
+    /* GLSL Uniforms (Normal) */
+    GLint mvp;
+    GLint offset;
+
     void inInitMask() {
         inRegisterNodeType!Part;
         maskShader = new Shader(import("mask.vert"), import("mask.frag"));
+        offset = maskShader.getUniformLocation("offset");
+        mvp = maskShader.getUniformLocation("mvp");
     }
 }
 
@@ -36,9 +42,6 @@ class Mask : Drawable {
 private:
     this() { }
 
-    /* GLSL Uniforms (Normal) */
-    GLint mvp;
-
     /*
         RENDERING
     */
@@ -48,6 +51,7 @@ private:
         incDrawableBindVAO();
 
         maskShader.use();
+        maskShader.setUniform(offset, data.origin);
         maskShader.setUniform(mvp, inGetCamera().matrix * transform.matrix());
         
         // Enable points array
@@ -96,7 +100,6 @@ public:
     */
     this(MeshData data, uint uuid, Node parent = null) {
         super(data, uuid, parent);
-        mvp = maskShader.getUniformLocation("mvp");
     }
 
     override

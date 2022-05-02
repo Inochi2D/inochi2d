@@ -27,6 +27,7 @@ package(inochi2d) {
 
         /* GLSL Uniforms (Normal) */
         GLint mvp;
+        GLint offset;
         GLint gopacity;
         GLint gtint;
 
@@ -45,6 +46,7 @@ package(inochi2d) {
         partMaskShader = new Shader(import("basic/basic.vert"), import("basic/basic-mask.frag"));
 
         mvp = partShader.getUniformLocation("mvp");
+        offset = partShader.getUniformLocation("offset");
         gopacity = partShader.getUniformLocation("opacity");
         gtint = partShader.getUniformLocation("tint");
         
@@ -136,11 +138,13 @@ private:
 
         static if (isMask) {
             partMaskShader.use();
+            partMaskShader.setUniform(offset, data.origin);
             partMaskShader.setUniform(mmvp, inGetCamera().matrix * transform.matrix());
             partMaskShader.setUniform(mthreshold, clamp(offsetMaskThreshold + maskAlphaThreshold, 0, 1));
             glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         } else {
             partShader.use();
+            partShader.setUniform(offset, data.origin);
             partShader.setUniform(mvp, inGetCamera().matrix * transform.matrix());
             partShader.setUniform(gopacity, clamp(offsetOpacity * opacity, 0, 1));
             
