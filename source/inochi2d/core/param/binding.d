@@ -157,6 +157,11 @@ abstract class ParameterBinding {
     abstract Node getNode();
 
     /**
+        Gets the uuid of the node of the binding
+    */
+    abstract uint getNodeUUID();
+
+    /**
         Checks whether a binding is compatible with another node
     */
     abstract bool isCompatibleWithNode(Node other);
@@ -242,6 +247,14 @@ public:
     override
     Node getNode() {
         return target.node;
+    }
+
+    /**
+        Gets the uuid of the node of the binding
+    */
+    override
+    uint getNodeUUID() {
+        return nodeRef;
     }
 
     /**

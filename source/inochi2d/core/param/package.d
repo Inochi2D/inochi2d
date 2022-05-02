@@ -222,9 +222,15 @@ public:
     void finalize(Puppet puppet) {
         this.makeIndexable();
         this.value = defaults;
-        foreach(binding; bindings) {
-            binding.finalize(puppet);
+
+        ParameterBinding[] validBindingList;
+        foreach(i, binding; bindings) {
+            if (puppet.find!Node(binding.getNodeUUID())) {
+                binding.finalize(puppet);
+                validBindingList ~= binding;
+            }
         }
+        bindings = validBindingList;
     }
 
     void findOffset(vec2 offset, out vec2u index, out vec2 outOffset) {
