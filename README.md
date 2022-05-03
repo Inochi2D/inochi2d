@@ -15,9 +15,11 @@ If you want to try it out anyways you can clone this repo and run `dub add-local
 
 &nbsp;
 
-https://user-images.githubusercontent.com/7032834/131196598-d8dee8a7-0c8c-455d-9cea-32183d459b44.mp4
 
-*Early prototype video*
+
+https://user-images.githubusercontent.com/7032834/166389697-02eeeedb-6a44-4570-9254-f6aa4f095300.mp4
+
+*Video from Beta 0.7.2, [LunaFoxgirlVT](https://twitter.com/LunaFoxgirlVT), model art by [kpon](https://twitter.com/kawaiipony2)*
 
 &nbsp;
 
