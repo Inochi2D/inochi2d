@@ -140,7 +140,7 @@ public:
     /**
         Whether the automation is enabled
     */
-    bool enabled;
+    bool enabled = true;
 
     /**
         Type ID of the automation

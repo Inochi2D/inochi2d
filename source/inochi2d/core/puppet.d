@@ -404,6 +404,12 @@ public:
         Updates the nodes
     */
     final void update() {
+
+        // Update Automators
+        foreach(auto_; this.automation) {
+            auto_.update();
+        }
+
         root.beginUpdate();
 
         if (renderParameters) {

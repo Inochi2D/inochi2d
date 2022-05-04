@@ -24,13 +24,13 @@ protected:
             float wave;
             switch(sineType) {
                 case SineType.Sin:
-                    wave = this.remapRange((sin((currentTime()*deltaTime()*speed)+phase)+1.0)/2f, binding.range);
+                    wave = this.remapRange((sin((currentTime()*speed)+phase)+1.0)/2f, binding.range);
                     break;
                 case SineType.Cos:
-                    wave = this.remapRange((cos((currentTime()*deltaTime()*speed)+phase)+1.0)/2f, binding.range);
+                    wave = this.remapRange((cos((currentTime()*speed)+phase)+1.0)/2f, binding.range);
                     break;
                 case SineType.Tan:
-                    wave = this.remapRange((tan((currentTime()*deltaTime()*speed)+phase)+1.0)/2f, binding.range);
+                    wave = this.remapRange((tan((currentTime()*speed)+phase)+1.0)/2f, binding.range);
                     break;
                 default: assert(0);
             }
