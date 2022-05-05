@@ -133,7 +133,7 @@ protected:
     */
     final
     float remapRange(float value, vec2 range) {
-        return range.x + value / (range.y - range.x);
+        return range.x + value * (range.y - range.x);
     }
 
     /**

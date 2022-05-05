@@ -108,7 +108,7 @@ protected:
             // Clamp and apply everything to be within range
             foreach(i, ref node; nodes) {
                 node.position.x = clamp(node.position.x, bindings[i].range.x, bindings[i].range.y);
-                bindings[i].setAxisValue(bindings[i].getAxisValue()+node.position.x);
+                bindings[i].addAxisOffset(node.position.x);
             }
         }
     }
