@@ -77,9 +77,6 @@ struct AutomationBinding {
                 break;
             default: assert(0);
         }
-
-        param.offset.x = clamp(param.offset.x, 0, 1);
-        param.offset.y = clamp(param.offset.y, 0, 1);
     }
 
     /**

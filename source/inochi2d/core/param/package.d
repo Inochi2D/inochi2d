@@ -267,9 +267,9 @@ public:
         if (!active)
             return;
 
-        findOffset(normalizedValue, index, offset_);
+        findOffset(this.mapValue(value + offset), index, offset_);
         foreach(binding; bindings) {
-            binding.apply(index, offset_+this.offset);
+            binding.apply(index, offset_);
         }
     }
 
