@@ -46,6 +46,11 @@ public:
     bool active = true;
 
     /**
+        Automator calculated offset to apply 
+    */
+    vec2 offset = vec2(0);
+
+    /**
         The current parameter value
     */
     vec2 value = vec2(0);
@@ -230,6 +235,7 @@ public:
                 validBindingList ~= binding;
             }
         }
+        
         bindings = validBindingList;
     }
 
@@ -250,16 +256,20 @@ public:
         if (isVec2) interpAxis(1, offset.y, index.y, outOffset.y);
     }
 
+    void preUpdate() {
+        offset = vec2(0);
+    }
+
     void update() {
         vec2u index;
-        vec2 offset;
+        vec2 offset_;
 
         if (!active)
             return;
 
-        findOffset(normalizedValue, index, offset);
+        findOffset(normalizedValue, index, offset_);
         foreach(binding; bindings) {
-            binding.apply(index, offset);
+            binding.apply(index, offset_+this.offset);
         }
     }
 

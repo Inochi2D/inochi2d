@@ -35,11 +35,7 @@ protected:
                 default: assert(0);
             }
 
-            if (binding.axis == 0) {
-                binding.param.value.x += clamp(wave, binding.param.min.x, binding.param.max.x);
-            } else {
-                binding.param.value.y += clamp(wave, binding.param.min.y, binding.param.max.y);
-            }
+            binding.addAxisOffset(wave);
         }
     }
 

@@ -405,6 +405,11 @@ public:
     */
     final void update() {
 
+        // Rest additive offsets
+        foreach(parameter; parameters) {
+            parameter.preUpdate();
+        }
+
         // Update Automators
         foreach(auto_; this.automation) {
             auto_.update();

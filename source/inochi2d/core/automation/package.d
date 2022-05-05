@@ -65,6 +65,24 @@ struct AutomationBinding {
     }
 
     /**
+        Sets axis value (WITHOUT REMAPPING)
+    */
+    void addAxisOffset(float value) {
+        switch(axis) {
+            case 0:
+                param.offset.x += value;
+                break;
+            case 1:
+                param.offset.y += value;
+                break;
+            default: assert(0);
+        }
+
+        param.offset.x = clamp(param.offset.x, 0, 1);
+        param.offset.y = clamp(param.offset.y, 0, 1);
+    }
+
+    /**
         Serializes a parameter
     */
     void serialize(S)(ref S serializer) {
