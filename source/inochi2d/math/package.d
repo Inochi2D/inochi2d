@@ -7,19 +7,14 @@
     Authors: Luna Nielsen
 */
 module inochi2d.math;
-import gl3n.util;
-public import gl3n.linalg;
-public import gl3n.math;
+import inmath.util;
+public import inmath.linalg;
+public import inmath.math;
 public import std.math : isNaN;
-public import gl3n.interpolate;
+public import inmath.interpolate;
 
 public import inochi2d.math.transform;
 public import inochi2d.math.camera;
-
-// Unsigned int vectors
-alias vec2u = Vector!(uint, 2); /// ditto
-alias vec3u = Vector!(uint, 3); /// ditto
-alias vec4u = Vector!(uint, 4); /// ditto
 
 // Unsigned short vectors
 alias vec2us = Vector!(ushort, 2); /// ditto

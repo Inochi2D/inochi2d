@@ -1,7 +1,7 @@
 module inochi2d.math.serialization;
 import inochi2d.fmt.serialize;
-import gl3n.linalg;
-import gl3n.util;
+import inmath.linalg;
+import inmath.util;
 
 /**
     Serializes any size of vector

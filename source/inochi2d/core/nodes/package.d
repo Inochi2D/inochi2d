@@ -310,11 +310,11 @@ public:
 
             static if (!ignoreParam) {
                 if (lockToRoot_)
-                    globalTransform = offsetTransform * localTransform * puppet.root.localTransform;
+                    globalTransform = localTransform.calcOffset(offsetTransform) * puppet.root.localTransform;
                 else if (parent !is null)
-                    globalTransform = offsetTransform * localTransform * parent.transform();
+                    globalTransform = localTransform.calcOffset(offsetTransform) * parent.transform();
                 else
-                    globalTransform = offsetTransform * localTransform;
+                    globalTransform = localTransform.calcOffset(offsetTransform);
 
                 recalculateTransform = false;
             } else {
