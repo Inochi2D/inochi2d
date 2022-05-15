@@ -186,7 +186,7 @@ void inWriteINPPuppet(Puppet p, string file) {
             app ~= payload;
 
         }
-        }
+    }
 
     // Write it out to file
     write(file, app.data);
