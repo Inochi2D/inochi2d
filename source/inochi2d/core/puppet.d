@@ -362,7 +362,7 @@ public:
         Extended vendor data
     */
     @Ignore
-    JSONValue[string] extData;
+    ubyte[][string] extData;
 
     /**
         Whether parameters should be rendered

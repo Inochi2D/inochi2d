@@ -130,8 +130,8 @@ Puppet inLoadINPPuppet(ubyte[] buffer) {
             inInterpretDataFromBuffer(buffer[bufferOffset..bufferOffset+=4], payloadLength);
 
             // Load the vendor JSON data in to the extData section of the puppet
-            string payload = cast(string)buffer[bufferOffset..bufferOffset+=payloadLength];
-            puppet.extData[sectionName] = parseJSON(payload);
+            ubyte[] payload = buffer[bufferOffset..bufferOffset+=payloadLength];
+            puppet.extData[sectionName] = payload;
         }
     }
     
@@ -169,23 +169,24 @@ void inWriteINPPuppet(Puppet p, string file) {
         app ~= (tex);
     }
 
-    // Begin extended section
-    app ~= EXT_SECTION;
-    app ~= nativeToBigEndian(cast(uint)p.extData.length)[0..4];
+    // Don't waste bytes on empty EXT data sections
+    if (p.extData.length > 0) {
+        // Begin extended section
+        app ~= EXT_SECTION;
+        app ~= nativeToBigEndian(cast(uint)p.extData.length)[0..4];
 
-    foreach(name, payload; p.extData) {
-        
-        // Write payload name and its length
-        app ~= nativeToBigEndian(cast(uint)name.length)[0..4];
-        app ~= cast(ubyte[])name;
+        foreach(name, payload; p.extData) {
+            
+            // Write payload name and its length
+            app ~= nativeToBigEndian(cast(uint)name.length)[0..4];
+            app ~= cast(ubyte[])name;
 
-        // Write payload length and payload
-        string payloadText = payload.toString;
-        app ~= nativeToBigEndian(cast(uint)payloadText.length)[0..4];
-        app ~= cast(ubyte[])payloadText;
+            // Write payload length and payload
+            app ~= nativeToBigEndian(cast(uint)payload.length)[0..4];
+            app ~= payload;
 
-    }
-    
+        }
+        }
 
     // Write it out to file
     write(file, app.data);
