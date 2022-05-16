@@ -18,24 +18,6 @@ private:
     @Ignore
     mat4 trs = mat4.identity;
 
-    @Ignore
-    mat4 translation_ = mat4.identity;
-
-    @Ignore
-    mat4 rotation_ = mat4.identity;
-
-    @Ignore
-    mat4 scale_ = mat4.identity;
-
-    @Ignore
-    vec3 translationCache = vec3(0, 0, 0);
-
-    @Ignore
-    vec3 rotationCache = vec3(0, 0, 0);
-
-    @Ignore
-    vec2 scaleCache = vec2(1, 1);
-
 public:
 
     /**
@@ -87,15 +69,16 @@ public:
         mat4 strs = other.trs * this.trs;
         
         // TRANSLATION
-        tnew.translation = vec3(vec4(1, 1, 1, 1)*strs);
+        tnew.translation = vec3(strs * vec4(1, 1, 1, 1));
         
         // ROTATION
         quat rot = quat.fromMatrix(strs.rotation());
         tnew.rotation = vec3(rot.roll, rot.pitch, rot.yaw);
         
         // SCALE
-        tnew.scale = vec2(vec4(1, 1, 1, 1)*strs.scale());
+        tnew.scale = vec2(strs.scale() * vec4(1, 1, 1, 1));
         tnew.trs = strs;
+        tnew.update();
         return tnew;
     }
 
@@ -111,26 +94,10 @@ public:
         Updates the internal matrix of this transform
     */
     void update() {
-        bool recalc = false;
-
-        if (translation != translationCache) {
-            translation_ = mat4.translation(translation);
-            recalc = true;
-            translationCache = translation;
-        }
-        if (rotation != rotationCache) {
-            rotation_ = quat.eulerRotation(this.rotation.x, this.rotation.y, this.rotation.z).toMatrix!(4, 4);
-            recalc = true;
-            rotationCache = rotation;
-        }
-        if (scale != scaleCache) {
-            scale_ = mat4.scaling(scale.x, scale.y, 1);
-            recalc = true;
-            scaleCache = scale;
-        }
-
-        if (recalc)
-            trs = translation_ * rotation_ * scale_;
+        trs = 
+            mat4.translation(this.translation) *
+            quat.eulerRotation(this.rotation.x, this.rotation.y, this.rotation.z).toMatrix!(4, 4) * 
+            mat4.scaling(this.scale.x, this.scale.y, 1);
     }
 
     void clear() {
