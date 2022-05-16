@@ -54,7 +54,7 @@ public:
 
         tnew.translation = this.translation+other.translation;
         tnew.rotation = this.rotation+other.rotation;
-        tnew.scale = vec2(this.scale.x*other.scale.x, this.scale.y*other.scale.y);
+        tnew.scale = this.scale*other.scale;
         tnew.update();
 
         return tnew;
@@ -72,11 +72,10 @@ public:
         tnew.translation = vec3(strs * vec4(1, 1, 1, 1));
         
         // ROTATION
-        quat rot = quat.fromMatrix(strs.rotation());
-        tnew.rotation = vec3(rot.roll, rot.pitch, rot.yaw);
+        tnew.rotation = this.rotation+other.rotation;
         
         // SCALE
-        tnew.scale = vec2(strs.scale() * vec4(1, 1, 1, 1));
+        tnew.scale = this.scale*other.scale;
         tnew.trs = strs;
         tnew.update();
         return tnew;
@@ -96,7 +95,7 @@ public:
     void update() {
         trs = 
             mat4.translation(this.translation) *
-            quat.eulerRotation(this.rotation.x, this.rotation.y, this.rotation.z).toMatrix!(4, 4) * 
+            quat.eulerRotation(this.rotation.x, this.rotation.y, this.rotation.z).toMatrix!(4, 4) *
             mat4.scaling(this.scale.x, this.scale.y, 1);
     }
 
