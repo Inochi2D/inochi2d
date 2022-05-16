@@ -24,7 +24,7 @@ alias vec4us = Vector!(ushort, 4); /// ditto
 /**
     Smoothly dampens from a position to a target
 */
-V dampen(V)(V pos, V target, double delta, double speed = 1) if(is_vector!V) {
+V dampen(V)(V pos, V target, double delta, double speed = 1) if(isVector!V) {
     return (pos - target) * pow(0.001, delta*speed) + target;
 }
 
