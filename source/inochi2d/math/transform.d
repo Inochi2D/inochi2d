@@ -90,11 +90,11 @@ public:
         tnew.translation = vec3(vec4(1, 1, 1, 1)*strs);
         
         // ROTATION
-        quat rot = quat.from_matrix(strs.get_rotation());
+        quat rot = quat.fromMatrix(strs.rotation());
         tnew.rotation = vec3(rot.roll, rot.pitch, rot.yaw);
         
         // SCALE
-        tnew.scale = vec2(vec4(1, 1, 1, 1)*strs.get_scale());
+        tnew.scale = vec2(vec4(1, 1, 1, 1)*strs.scale());
         tnew.trs = strs;
         return tnew;
     }
@@ -119,7 +119,7 @@ public:
             translationCache = translation;
         }
         if (rotation != rotationCache) {
-            rotation_ = quat.euler_rotation(this.rotation.x, this.rotation.y, this.rotation.z).to_matrix!(4, 4);
+            rotation_ = quat.eulerRotation(this.rotation.x, this.rotation.y, this.rotation.z).toMatrix!(4, 4);
             recalc = true;
             rotationCache = rotation;
         }
@@ -201,7 +201,7 @@ public:
     */
     void update() {
         mat3 translation_ = mat3.translation(vec3(translation, 0));
-        mat3 rotation_ = mat3.zrotation(rotation);
+        mat3 rotation_ = mat3.zRotation(rotation);
         mat3 scale_ = mat3.scaling(scale.x, scale.y, 1);
         trs =  translation_ * rotation_ * scale_;
     }

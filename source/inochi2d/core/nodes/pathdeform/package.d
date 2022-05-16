@@ -73,7 +73,7 @@ private:
 
 
             // Apply our wonky math to our computed joint
-            computedJoints[i] = mat3.translation(vec3(joints[i], 0)) * mat3.zrotation(startAngle-endAngle);
+            computedJoints[i] = mat3.translation(vec3(joints[i], 0)) * mat3.zRotation(startAngle-endAngle);
         }
     }
 
