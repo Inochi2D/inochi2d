@@ -113,7 +113,7 @@ Puppet inLoadINPPuppet(ubyte[] buffer) {
     
     inEndTextureLoading();
 
-    if (inVerifySection(buffer[bufferOffset..bufferOffset+=8], EXT_SECTION)) {
+    if (buffer.length >= bufferOffset + 8 && inVerifySection(buffer[bufferOffset..bufferOffset+=8], EXT_SECTION)) {
         uint sectionCount;
         inInterpretDataFromBuffer(buffer[bufferOffset..bufferOffset+=4], sectionCount);
 
