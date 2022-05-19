@@ -4,11 +4,10 @@
     
     Authors: Luna Nielsen
 */
-#version 330
-out vec4 outColor;
+#version 120
 
 uniform vec4 color;
 
 void main() {
-    outColor = color;
+    gl_FragColor = color;
 }

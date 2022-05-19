@@ -4,8 +4,7 @@
     
     Authors: Luna Nielsen
 */
-#version 330
-out vec4 outColor;
+#version 120
 
 uniform vec4 color;
 
@@ -22,5 +21,5 @@ void main() {
 
     // apply delta
     alpha = 1.0 - smoothstep(1.0 - epsilon, 1.0 + epsilon, r);
-    outColor = color * alpha;
+    gl_FragColor = color * alpha;
 }

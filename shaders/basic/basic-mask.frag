@@ -4,15 +4,14 @@
     
     Authors: Luna Nielsen
 */
-#version 330
-in vec2 texUVs;
-out vec4 outColor;
+#version 120
+varying vec2 texUVs;
 
 uniform sampler2D tex;
 uniform float threshold;
 
 void main() {
-    vec4 color = texture(tex, texUVs);
+    vec4 color = texture2D(tex, texUVs);
     if (color.a <= threshold) discard;
-    outColor = vec4(1, 1, 1, 1);
+    gl_FragColor = vec4(1, 1, 1, 1);
 }

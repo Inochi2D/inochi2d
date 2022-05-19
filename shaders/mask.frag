@@ -4,9 +4,9 @@
     
     Authors: Luna Nielsen
 */
-#version 330
-out vec4 outColor;
+#version 120
+varying vec4 outColor;
 
 void main() {
-    outColor = vec4(0, 0, 0, 1);
+    gl_FragColor = vec4(0, 0, 0, 1);
 }

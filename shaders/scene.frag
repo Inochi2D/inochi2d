@@ -4,14 +4,13 @@
     
     Authors: Luna Nielsen
 */
-#version 330
-in vec2 texUVs;
-out vec4 outColor;
+#version 120
+varying vec2 texUVs;
 
 uniform sampler2D fbo;
 
 void main() {
     // Set color to the corrosponding pixel in the FBO
-    vec4 color = texture(fbo, texUVs);
-    outColor = vec4(color.r * color.a, color.g * color.a, color.b * color.a, color.a);
+    vec4 color = texture2D(fbo, texUVs);
+    gl_FragColor = vec4(color.r * color.a, color.g * color.a, color.b * color.a, color.a);
 }
