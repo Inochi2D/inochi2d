@@ -5,7 +5,8 @@ import bindbc.opengl;
 package(inochi2d) {
     int indiceCount;
 
-    Shader dbgShader;
+    Shader dbgShaderLine;
+    Shader dbgShaderPoint;
     GLuint dbgVAO;
     GLuint dbgVBO;
     GLuint dbgIBO;
@@ -15,13 +16,14 @@ package(inochi2d) {
     GLint mvpId;
     GLint colorId;
     void inInitDebug() {
-        dbgShader = new Shader(import("dbg.vert"), import("dbg.frag"));
+        dbgShaderLine = new Shader(import("dbg.vert"), import("dbgline.frag"));
+        dbgShaderPoint = new Shader(import("dbg.vert"), import("dbgpoint.frag"));
         glGenVertexArrays(1, &dbgVAO);
         glGenBuffers(1, &dbgVBO);
         glGenBuffers(1, &dbgIBO);
 
-        mvpId = dbgShader.getUniformLocation("mvp");
-        colorId = dbgShader.getUniformLocation("color");
+        mvpId = dbgShaderLine.getUniformLocation("mvp");
+        colorId = dbgShaderLine.getUniformLocation("color");
     }
 }
 
@@ -98,14 +100,13 @@ void inDbgSetBuffer(vec3[] points, ushort[] indices) {
     Draws current stored vertices as points with specified color
 */
 void inDbgDrawPoints(vec4 color, mat4 transform = mat4.identity) {
-    glEnable(GL_POINT_SMOOTH);
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 
         glBindVertexArray(dbgVAO);
 
-        dbgShader.use();
-        dbgShader.setUniform(mvpId, inGetCamera().matrix * transform);
-        dbgShader.setUniform(colorId, color);
+        dbgShaderPoint.use();
+        dbgShaderPoint.setUniform(mvpId, inGetCamera().matrix * transform);
+        dbgShaderPoint.setUniform(colorId, color);
 
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, cVBO);
@@ -115,7 +116,6 @@ void inDbgDrawPoints(vec4 color, mat4 transform = mat4.identity) {
         glDisableVertexAttribArray(0);
 
     glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
-    glDisable(GL_POINT_SMOOTH);
 }
 
 /**
@@ -127,9 +127,9 @@ void inDbgDrawLines(vec4 color, mat4 transform = mat4.identity) {
     
         glBindVertexArray(dbgVAO);
 
-        dbgShader.use();
-        dbgShader.setUniform(mvpId, inGetCamera().matrix * transform);
-        dbgShader.setUniform(colorId, color);
+        dbgShaderLine.use();
+        dbgShaderLine.setUniform(mvpId, inGetCamera().matrix * transform);
+        dbgShaderLine.setUniform(colorId, color);
 
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, cVBO);
