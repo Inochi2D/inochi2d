@@ -44,31 +44,41 @@ private:
 
     void verifyShader(GLuint shader) {
 
-        // Get the length of the error log
-        GLint logLength;
-        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
-        if (logLength > 0) {
+        int compileStatus;
+        glGetShaderiv(shader, GL_COMPILE_STATUS, &compileStatus);
+        if (compileStatus == GL_FALSE) {
 
-            // Fetch the error log
-            char[] log = new char[logLength];
-            glGetShaderInfoLog(shader, logLength, null, log.ptr);
+            // Get the length of the error log
+            GLint logLength;
+            glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLength);
+            if (logLength > 0) {
 
-            throw new Exception(cast(string)log);
+                // Fetch the error log
+                char[] log = new char[logLength];
+                glGetShaderInfoLog(shader, logLength, null, log.ptr);
+
+                throw new Exception(cast(string)log);
+            }
         }
     }
 
     void verifyProgram() {
 
-        // Get the length of the error log
-        GLint logLength;
-        glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &logLength);
-        if (logLength > 0) {
+        int linkStatus;
+        glGetProgramiv(shaderProgram, GL_LINK_STATUS, &linkStatus);
+        if (linkStatus == GL_FALSE) {
 
-            // Fetch the error log
-            char[] log = new char[logLength];
-            glGetProgramInfoLog(shaderProgram, logLength, null, log.ptr);
+            // Get the length of the error log
+            GLint logLength;
+            glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &logLength);
+            if (logLength > 0) {
 
-            throw new Exception(cast(string)log);
+                // Fetch the error log
+                char[] log = new char[logLength];
+                glGetProgramInfoLog(shaderProgram, logLength, null, log.ptr);
+
+                throw new Exception(cast(string)log);
+            }
         }
     }
 
