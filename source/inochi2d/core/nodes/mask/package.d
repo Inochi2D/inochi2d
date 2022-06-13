@@ -27,7 +27,7 @@ package(inochi2d) {
     GLint offset;
 
     void inInitMask() {
-        inRegisterNodeType!Part;
+        inRegisterNodeType!Mask;
         maskShader = new Shader(import("mask.vert"), import("mask.frag"));
         offset = maskShader.getUniformLocation("offset");
         mvp = maskShader.getUniformLocation("mvp");
@@ -87,6 +87,13 @@ protected:
     string typeId() { return "Mask"; }
 
 public:
+    /**
+        Constructs a new mask
+    */
+    this(Node parent = null) {
+        MeshData empty;
+        this(empty, inCreateUUID(), parent);
+    }
 
     /**
         Constructs a new mask
