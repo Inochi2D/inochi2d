@@ -29,7 +29,8 @@ package(inochi2d) {
         GLint mvp;
         GLint offset;
         GLint gopacity;
-        GLint gtint;
+        GLint gMultColor;
+        GLint gScreenColor;
 
         /* GLSL Uniforms (Masks) */
         GLint mmvp;
@@ -48,7 +49,8 @@ package(inochi2d) {
         mvp = partShader.getUniformLocation("mvp");
         offset = partShader.getUniformLocation("offset");
         gopacity = partShader.getUniformLocation("opacity");
-        gtint = partShader.getUniformLocation("tint");
+        gMultColor = partShader.getUniformLocation("multColor");
+        gScreenColor = partShader.getUniformLocation("screenColor");
         
         mmvp = partMaskShader.getUniformLocation("mvp");
         mthreshold = partMaskShader.getUniformLocation("threshold");
@@ -152,7 +154,13 @@ private:
             if (!offsetTint.x.isNaN) clampedColor.x = clamp(tint.x*offsetTint.x, 0, 1);
             if (!offsetTint.y.isNaN) clampedColor.y = clamp(tint.y*offsetTint.y, 0, 1);
             if (!offsetTint.z.isNaN) clampedColor.z = clamp(tint.z*offsetTint.z, 0, 1);
-            partShader.setUniform(gtint, clampedColor);
+            partShader.setUniform(gMultColor, clampedColor);
+
+            clampedColor = screenTint;
+            if (!offsetScreenTint.x.isNaN) clampedColor.x = clamp(screenTint.x+offsetScreenTint.x, 0, 1);
+            if (!offsetScreenTint.y.isNaN) clampedColor.y = clamp(screenTint.y+offsetScreenTint.y, 0, 1);
+            if (!offsetScreenTint.z.isNaN) clampedColor.z = clamp(screenTint.z+offsetScreenTint.z, 0, 1);
+            partShader.setUniform(gScreenColor, clampedColor);
             inSetBlendMode(blendingMode);
 
             // TODO: EXT MODE
@@ -237,6 +245,9 @@ protected:
         serializer.putKey("tint");
         tint.serialize(serializer);
 
+        serializer.putKey("screenTint");
+        screenTint.serialize(serializer);
+
         if (masks.length > 0) {
             serializer.putKey("masks");
             auto state = serializer.arrayBegin();
@@ -285,6 +296,9 @@ protected:
 
         serializer.putKey("tint");
         tint.serialize(serializer);
+
+        serializer.putKey("screenTint");
+        screenTint.serialize(serializer);
 
         if (masks.length > 0) {
             serializer.putKey("masks");
@@ -335,6 +349,9 @@ protected:
         // Older models may not have tint
         if (!data["tint"].isEmpty) deserialize(tint, data["tint"]);
 
+        // Older models may not have screen tint
+        if (!data["screenTint"].isEmpty) deserialize(screenTint, data["screenTint"]);
+
         // Older models may not have blend mode
         if (!data["blend_mode"].isEmpty) data["blend_mode"].deserializeValue(this.blendingMode);
 
@@ -365,6 +382,7 @@ protected:
     float offsetMaskThreshold = 0;
     float offsetOpacity = 1;
     vec3 offsetTint = vec3(0);
+    vec3 offsetScreenTint = vec3(0);
 
     // TODO: Cache this
     size_t maskCount() {
@@ -408,9 +426,14 @@ public:
     float opacity = 1;
 
     /**
-        Tint of color based texture
+        Multiplicative tint color
     */
     vec3 tint = vec3(1, 1, 1);
+
+    /**
+        Screen tint color
+    */
+    vec3 screenTint = vec3(0, 0, 0);
 
     /**
         Gets the active texture
@@ -460,6 +483,9 @@ public:
             case "tint.r":
             case "tint.g":
             case "tint.b":
+            case "screenTint.r":
+            case "screenTint.g":
+            case "screenTint.b":
                 return true;
             default:
                 return false;
@@ -480,6 +506,10 @@ public:
             case "tint.g":
             case "tint.b":
                 return 1;
+            case "screenTint.r":
+            case "screenTint.g":
+            case "screenTint.b":
+                return 0;
             default: return float();
         }
     }
@@ -505,6 +535,15 @@ public:
                 return true;
             case "tint.b":
                 offsetTint.z = value;
+                return true;
+            case "screenTint.r":
+                offsetScreenTint.x = value;
+                return true;
+            case "screenTint.g":
+                offsetScreenTint.y = value;
+                return true;
+            case "screenTint.b":
+                offsetScreenTint.z = value;
                 return true;
             default: return false;
         }
@@ -537,6 +576,7 @@ public:
         offsetMaskThreshold = 0;
         offsetOpacity = 1;
         offsetTint = vec3(1, 1, 1);
+        offsetScreenTint = vec3(0, 0, 0);
         super.beginUpdate();
     }
     
@@ -617,7 +657,8 @@ void inDrawTextureAtPart(Texture texture, Part part) {
         mat4.translation(vec3(part.transform.matrix() * vec4(1, 1, 1, 1)))
     );
     partShader.setUniform(gopacity, part.opacity);
-    partShader.setUniform(gtint, part.tint);
+    partShader.setUniform(gMultColor, part.tint);
+    partShader.setUniform(gScreenColor, part.screenTint);
     
     // Bind the texture
     texture.bind();
@@ -660,7 +701,7 @@ void inDrawTextureAtPart(Texture texture, Part part) {
 /**
     Draws a texture at the transform of the specified part
 */
-void inDrawTextureAtPosition(Texture texture, vec2 position, float opacity = 1, vec3 color = vec3(1, 1, 1)) {
+void inDrawTextureAtPosition(Texture texture, vec2 position, float opacity = 1, vec3 color = vec3(1, 1, 1), vec3 screenColor = vec3(1, 1, 1)) {
     const float texWidthP = texture.width()/2;
     const float texHeightP = texture.height()/2;
 
@@ -674,7 +715,8 @@ void inDrawTextureAtPosition(Texture texture, vec2 position, float opacity = 1, 
         mat4.translation(vec3(position, 0))
     );
     partShader.setUniform(gopacity, opacity);
-    partShader.setUniform(gtint, color);
+    partShader.setUniform(gMultColor, color);
+    partShader.setUniform(gScreenColor, screenColor);
     
     // Bind the texture
     texture.bind();

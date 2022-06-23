@@ -10,8 +10,16 @@ out vec4 outColor;
 
 uniform sampler2D tex;
 uniform float opacity;
-uniform vec3 tint;
+uniform vec3 multColor;
+uniform vec3 screenColor;
 
 void main() {
-    outColor = texture(tex, texUVs) * vec4(tint.xyz, 1) * opacity;
+    // Sample texture
+    vec4 texColor = texture(tex, texUVs);
+
+    // Screen color math
+    vec3 screenOut = vec3(1.0) - ((vec3(1.0)-(texColor.xyz)) * vec3(1.0)-(screenColor*texColor.a));
+    
+    // Multiply color math + opacity application.
+    outColor = vec4(screenOut.xyz, texColor.a) * vec4(multColor.xyz, 1) * opacity;
 }

@@ -23,7 +23,8 @@ private {
     Shader cShaderMask;
 
     GLint gopacity;
-    GLint gtint;
+    GLint gMultColor;
+    GLint gScreenColor;
 
     GLint mthreshold;
     GLint mopacity;
@@ -38,7 +39,8 @@ package(inochi2d) {
             import("basic/composite.frag")
         );
         gopacity = cShader.getUniformLocation("opacity");
-        gtint = cShader.getUniformLocation("tint");
+        gMultColor = cShader.getUniformLocation("multColor");
+        gScreenColor = cShader.getUniformLocation("screenColor");
 
         cShaderMask = new Shader(
             import("basic/composite.vert"),
@@ -105,7 +107,13 @@ private:
         if (!offsetTint.x.isNaN) clampedColor.x = clamp(tint.x*offsetTint.x, 0, 1);
         if (!offsetTint.y.isNaN) clampedColor.y = clamp(tint.y*offsetTint.y, 0, 1);
         if (!offsetTint.z.isNaN) clampedColor.z = clamp(tint.z*offsetTint.z, 0, 1);
-        cShader.setUniform(gtint, clampedColor);
+        cShader.setUniform(gMultColor, clampedColor);
+
+        clampedColor = screenTint;
+        if (!offsetScreenTint.x.isNaN) clampedColor.x = clamp(screenTint.x+offsetScreenTint.x, 0, 1);
+        if (!offsetScreenTint.y.isNaN) clampedColor.y = clamp(screenTint.y+offsetScreenTint.y, 0, 1);
+        if (!offsetScreenTint.z.isNaN) clampedColor.z = clamp(screenTint.z+offsetScreenTint.z, 0, 1);
+        cShader.setUniform(gScreenColor, clampedColor);
         inSetBlendMode(blendingMode);
 
         // Enable points array
@@ -198,6 +206,9 @@ protected:
         serializer.putKey("tint");
         tint.serialize(serializer);
 
+        serializer.putKey("screenTint");
+        screenTint.serialize(serializer);
+
         serializer.putKey("mask_threshold");
         serializer.putValue(threshold);
 
@@ -214,6 +225,8 @@ protected:
 
         serializer.putKey("tint");
         tint.serialize(serializer);
+        serializer.putKey("screenTint");
+        screenTint.serialize(serializer);
 
         serializer.putKey("mask_threshold");
         serializer.putValue(threshold);
@@ -229,6 +242,7 @@ protected:
         if (!data["opacity"].isEmpty) data["opacity"].deserializeValue(this.opacity);
         if (!data["mask_threshold"].isEmpty) data["mask_threshold"].deserializeValue(this.threshold);
         if (!data["tint"].isEmpty) deserialize(this.tint, data["tint"]);
+        if (!data["screenTint"].isEmpty) deserialize(this.tint, data["screenTint"]);
         if (!data["blend_mode"].isEmpty) data["blend_mode"].deserializeValue(this.blendingMode);
         
         return super.deserializeFromFghj(data);
@@ -239,6 +253,7 @@ protected:
     //
     float offsetOpacity = 1;
     vec3 offsetTint = vec3(0);
+    vec3 offsetScreenTint = vec3(0);
 
     override
     string typeId() { return "Composite"; }
@@ -261,9 +276,14 @@ public:
     float threshold = 0.5;
 
     /**
-        The tint of the composite
+        Multiplicative tint color
     */
     vec3 tint = vec3(1, 1, 1);
+
+    /**
+        Screen tint color
+    */
+    vec3 screenTint = vec3(0, 0, 0);
 
 
     /**
@@ -289,6 +309,9 @@ public:
             case "tint.r":
             case "tint.g":
             case "tint.b":
+            case "screenTint.r":
+            case "screenTint.g":
+            case "screenTint.b":
                 return true;
             default:
                 return false;
@@ -307,6 +330,10 @@ public:
             case "tint.g":
             case "tint.b":
                 return 1;
+            case "screenTint.r":
+            case "screenTint.g":
+            case "screenTint.b":
+                return 0;
             default: return float();
         }
     }
@@ -329,6 +356,15 @@ public:
                 return true;
             case "tint.b":
                 offsetTint.z = value;
+                return true;
+            case "screenTint.r":
+                offsetScreenTint.x = value;
+                return true;
+            case "screenTint.g":
+                offsetScreenTint.y = value;
+                return true;
+            case "screenTint.b":
+                offsetScreenTint.z = value;
                 return true;
             default: return false;
         }
