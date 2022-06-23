@@ -18,7 +18,7 @@ void main() {
     vec4 texColor = texture(tex, texUVs);
 
     // Screen color math
-    vec3 screenOut = vec3(1.0) - ((vec3(1.0)-(texColor.xyz)) * vec3(1.0)-(screenColor*texColor.a));
+    vec3 screenOut = vec3(1.0) - ((vec3(1.0)-(texColor.xyz)) * (vec3(1.0)-(screenColor*texColor.a)));
     
     // Multiply color math + opacity application.
     outColor = vec4(screenOut.xyz, texColor.a) * vec4(multColor.xyz, 1) * opacity;
