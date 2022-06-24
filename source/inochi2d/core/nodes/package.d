@@ -359,6 +359,18 @@ public:
     }
 
     /**
+        Calculates the relative position between 2 nodes and applies the offset.
+        You should call this before reparenting nodes.
+    */
+    void setRelativeTo(Node to) {
+        auto m1 = to.transformNoLock.matrix;
+        auto m2 = this.transformNoLock.matrix;
+        auto cm = (m1.inverse * m2).translation;
+        this.localTransform.translation = vec3(cm * vec4(0, 0, 0, 1));
+        this.zSort = this.zSortNoOffset-to.zSortNoOffset;
+    }
+
+    /**
         Gets a list of this node's children
     */
     final Node[] children() {
