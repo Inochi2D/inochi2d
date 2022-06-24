@@ -228,10 +228,24 @@ public:
     }
 
     /**
+        Gets the basis zSort offset.
+    */
+    float zSortBase() {
+        return parent !is null ? parent.zSort() : 0;
+    }
+
+    /**
+        Gets the Z sorting without parameter offsets
+    */
+    float zSortNoOffset() {
+        return zSortBase + relZSort;
+    }
+
+    /**
         Gets the Z sorting
     */
     float zSort() {
-        return (parent !is null ? parent.zSort() : 0) + relZSort + offsetSort;
+        return zSortBase + relZSort + offsetSort;
     }
 
     /**
