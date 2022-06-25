@@ -25,7 +25,7 @@ enum Filtering {
         Point filtering will try to preserve pixel edges.
         Due to texture sampling being float based this is imprecise.
     */
-    Point = GL_POINT
+    Point = GL_NEAREST
 }
 
 /**
