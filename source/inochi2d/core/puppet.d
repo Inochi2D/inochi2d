@@ -474,6 +474,16 @@ public:
     }
 
     /**
+        Gets if a node is bound to ANY parameter.
+    */
+    bool getIsNodeBound(Node n) {
+        foreach(i, parameter; parameters) {
+            if (parameter.hasAnyBinding(n)) return true;
+        }
+        return false;
+    }
+
+    /**
         Draws the puppet
     */
     final void draw() {

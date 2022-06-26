@@ -508,6 +508,16 @@ public:
     }
 
     /**
+        Check if any bindings exists for a given node
+    */
+    bool hasAnyBinding(Node n) {
+        foreach(ref binding; bindings) {
+            if (binding.getNode() == n) return true;
+        }
+        return false;
+    }
+
+    /**
         Create a new binding (without adding it) for a given node and name
     */
     ParameterBinding createBinding(Node n, string bindingName, bool setZero = true) {
