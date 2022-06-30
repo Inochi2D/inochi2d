@@ -3,6 +3,7 @@ import inochi2d.fmt.serialize;
 import inochi2d.core;
 import inochi2d.math;
 import std.algorithm.sorting;
+import std.algorithm.mutation : SwapStrategy;
 import std.exception;
 import std.format;
 import std.file;
@@ -288,7 +289,7 @@ private:
         import std.math : cmp;
         sort!((a, b) => cmp(
             a.zSort, 
-            b.zSort) > 0)(rootParts);
+            b.zSort) > 0, SwapStrategy.stable)(rootParts);
     }
 
     Node findNode(Node n, string name) {
