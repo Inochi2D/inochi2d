@@ -19,13 +19,13 @@ enum Filtering {
     /**
         Linear filtering will try to smooth out textures
     */
-    Linear = GL_LINEAR_MIPMAP_LINEAR,
+    Linear,
 
     /**
         Point filtering will try to preserve pixel edges.
         Due to texture sampling being float based this is imprecise.
     */
-    Point = GL_NEAREST
+    Point
 }
 
 /**
@@ -256,8 +256,16 @@ public:
     */
     void setFiltering(Filtering filtering) {
         this.bind();
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filtering);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filtering);
+        glTexParameteri(
+            GL_TEXTURE_2D, 
+            GL_TEXTURE_MIN_FILTER, 
+            filtering == Filtering.Linear ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST
+        );
+        glTexParameteri(
+            GL_TEXTURE_2D, 
+            GL_TEXTURE_MAG_FILTER, 
+            filtering == Filtering.Linear ? GL_LINEAR : GL_NEAREST
+        );
 
         glBindTexture(GL_TEXTURE_2D, id);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, 16);
@@ -270,7 +278,6 @@ public:
         this.bind();
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapping);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapping);
-        
         glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, [0f, 0f, 0f, 0f].ptr);
     }
 
