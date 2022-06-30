@@ -363,11 +363,38 @@ public:
         You should call this before reparenting nodes.
     */
     void setRelativeTo(Node to) {
-        auto m1 = to.transformNoLock.matrix;
-        auto m2 = this.transformNoLock.matrix;
-        auto cm = (m1.inverse * m2).translation;
-        this.localTransform.translation = vec3(cm * vec4(0, 0, 0, 1));
+        setRelativeTo(to.transformNoLock.matrix);
         this.zSort = this.zSortNoOffset-to.zSortNoOffset;
+    }
+
+    /**
+        Calculates the relative position between this node and a matrix and applies the offset.
+        This does not handle zSorting. Pass a Node for that.
+    */
+    void setRelativeTo(mat4 to) {
+        this.localTransform.translation = getRelativePosition(to, this.transformNoLock.matrix);
+    }
+
+    /**
+        Gets a relative position for 2 matrices
+    */
+    static
+    vec3 getRelativePosition(mat4 m1, mat4 m2) {
+        auto cm = (m1.inverse * m2).translation;
+        return vec3(cm * vec4(0, 0, 0, 1));
+    }
+
+    /**
+        Gets the depth of this node
+    */
+    final int depth() {
+        int depthV;
+        Node parent = this;
+        while(parent !is null) {
+            depthV++;
+            parent = parent.parent;
+        }
+        return depthV;
     }
 
     /**
