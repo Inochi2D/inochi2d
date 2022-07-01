@@ -76,7 +76,7 @@ package(inochi2d) {
         inInitPart();
         inInitMask();
         inInitComposite();
-        inInitDebug();
+        version(InDoesRender) inInitDebug();
 
         // Some defaults that should be changed by app writer
         inCamera = new Camera;

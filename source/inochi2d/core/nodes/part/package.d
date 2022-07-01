@@ -44,21 +44,24 @@ package(inochi2d) {
 
     void inInitPart() {
         inRegisterNodeType!Part;
-        partShader = new Shader(import("basic/basic.vert"), import("basic/basic.frag"));
-        partMaskShader = new Shader(import("basic/basic.vert"), import("basic/basic-mask.frag"));
 
-        mvp = partShader.getUniformLocation("mvp");
-        offset = partShader.getUniformLocation("offset");
-        gopacity = partShader.getUniformLocation("opacity");
-        gMultColor = partShader.getUniformLocation("multColor");
-        gScreenColor = partShader.getUniformLocation("screenColor");
-        
-        mmvp = partMaskShader.getUniformLocation("mvp");
-        mthreshold = partMaskShader.getUniformLocation("threshold");
-        
-        glGenBuffers(1, &sVertexBuffer);
-        glGenBuffers(1, &sUVBuffer);
-        glGenBuffers(1, &sElementBuffer);
+        version(InDoesRender) {
+            partShader = new Shader(import("basic/basic.vert"), import("basic/basic.frag"));
+            partMaskShader = new Shader(import("basic/basic.vert"), import("basic/basic-mask.frag"));
+
+            mvp = partShader.getUniformLocation("mvp");
+            offset = partShader.getUniformLocation("offset");
+            gopacity = partShader.getUniformLocation("opacity");
+            gMultColor = partShader.getUniformLocation("multColor");
+            gScreenColor = partShader.getUniformLocation("screenColor");
+            
+            mmvp = partMaskShader.getUniformLocation("mvp");
+            mthreshold = partMaskShader.getUniformLocation("threshold");
+            
+            glGenBuffers(1, &sVertexBuffer);
+            glGenBuffers(1, &sUVBuffer);
+            glGenBuffers(1, &sElementBuffer);
+        }
     }
 }
 

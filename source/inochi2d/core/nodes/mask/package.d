@@ -28,9 +28,11 @@ package(inochi2d) {
 
     void inInitMask() {
         inRegisterNodeType!Mask;
-        maskShader = new Shader(import("mask.vert"), import("mask.frag"));
-        offset = maskShader.getUniformLocation("offset");
-        mvp = maskShader.getUniformLocation("mvp");
+        version(InDoesRender) {
+            maskShader = new Shader(import("mask.vert"), import("mask.frag"));
+            offset = maskShader.getUniformLocation("offset");
+            mvp = maskShader.getUniformLocation("mvp");
+        }
     }
 }
 

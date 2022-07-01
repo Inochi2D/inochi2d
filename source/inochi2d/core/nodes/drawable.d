@@ -20,7 +20,7 @@ private GLuint drawableVAO;
 
 package(inochi2d) {
     void inInitDrawable() {
-        glGenVertexArrays(1, &drawableVAO);
+        version(InDoesRender) glGenVertexArrays(1, &drawableVAO);
     }
 
 
@@ -430,7 +430,7 @@ version (InDoesRender) {
         NOTE: This have to be run within a inBeginMask and inEndMask block!
     */
     void inBeginMaskContent() {
-        
+
         glStencilFunc(GL_EQUAL, 1, 0xFF);
         glStencilMask(0x00);
     }

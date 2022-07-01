@@ -34,47 +34,49 @@ package(inochi2d) {
     void inInitComposite() {
         inRegisterNodeType!Composite;
 
-        cShader = new Shader(
-            import("basic/composite.vert"),
-            import("basic/composite.frag")
-        );
-        gopacity = cShader.getUniformLocation("opacity");
-        gMultColor = cShader.getUniformLocation("multColor");
-        gScreenColor = cShader.getUniformLocation("screenColor");
+        version(InDoesRender) {
+            cShader = new Shader(
+                import("basic/composite.vert"),
+                import("basic/composite.frag")
+            );
+            gopacity = cShader.getUniformLocation("opacity");
+            gMultColor = cShader.getUniformLocation("multColor");
+            gScreenColor = cShader.getUniformLocation("screenColor");
 
-        cShaderMask = new Shader(
-            import("basic/composite.vert"),
-            import("basic/composite-mask.frag")
-        );
-        mthreshold = cShader.getUniformLocation("threshold");
-        mopacity = cShader.getUniformLocation("opacity");
+            cShaderMask = new Shader(
+                import("basic/composite.vert"),
+                import("basic/composite-mask.frag")
+            );
+            mthreshold = cShader.getUniformLocation("threshold");
+            mopacity = cShader.getUniformLocation("opacity");
 
-        glGenVertexArrays(1, &cVAO);
-        glGenBuffers(1, &cBuffer);
+            glGenVertexArrays(1, &cVAO);
+            glGenBuffers(1, &cBuffer);
 
-        // Clip space vertex data since we'll just be superimposing
-        // Our composite framebuffer over the main framebuffer
-        float[] vertexData = [
-            // verts
-            -1f, -1f,
-            -1f, 1f,
-            1f, -1f,
-            1f, -1f,
-            -1f, 1f,
-            1f, 1f,
+            // Clip space vertex data since we'll just be superimposing
+            // Our composite framebuffer over the main framebuffer
+            float[] vertexData = [
+                // verts
+                -1f, -1f,
+                -1f, 1f,
+                1f, -1f,
+                1f, -1f,
+                -1f, 1f,
+                1f, 1f,
 
-            // uvs
-            0f, 0f,
-            0f, 1f,
-            1f, 0f,
-            1f, 0f,
-            0f, 1f,
-            1f, 1f,
-        ];
+                // uvs
+                0f, 0f,
+                0f, 1f,
+                1f, 0f,
+                1f, 0f,
+                0f, 1f,
+                1f, 1f,
+            ];
 
-        glBindVertexArray(cVAO);
-        glBindBuffer(GL_ARRAY_BUFFER, cBuffer);
-        glBufferData(GL_ARRAY_BUFFER, float.sizeof*vertexData.length, vertexData.ptr, GL_STATIC_DRAW);
+            glBindVertexArray(cVAO);
+            glBindBuffer(GL_ARRAY_BUFFER, cBuffer);
+            glBufferData(GL_ARRAY_BUFFER, float.sizeof*vertexData.length, vertexData.ptr, GL_STATIC_DRAW);
+        }
     }
 }
 
