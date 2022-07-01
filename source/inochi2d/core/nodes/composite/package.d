@@ -225,6 +225,7 @@ protected:
 
         serializer.putKey("tint");
         tint.serialize(serializer);
+
         serializer.putKey("screenTint");
         screenTint.serialize(serializer);
 
@@ -242,7 +243,7 @@ protected:
         if (!data["opacity"].isEmpty) data["opacity"].deserializeValue(this.opacity);
         if (!data["mask_threshold"].isEmpty) data["mask_threshold"].deserializeValue(this.threshold);
         if (!data["tint"].isEmpty) deserialize(this.tint, data["tint"]);
-        if (!data["screenTint"].isEmpty) deserialize(this.tint, data["screenTint"]);
+        if (!data["screenTint"].isEmpty) deserialize(this.screenTint, data["screenTint"]);
         if (!data["blend_mode"].isEmpty) data["blend_mode"].deserializeValue(this.blendingMode);
         
         return super.deserializeFromFghj(data);
