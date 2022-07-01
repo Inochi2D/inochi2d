@@ -8,6 +8,7 @@
 */
 module inochi2d.core.nodes.drawable;
 public import inochi2d.core.nodes.defstack;
+import inochi2d.integration;
 import inochi2d.fmt.serialize;
 import inochi2d.math;
 import bindbc.opengl;
@@ -54,15 +55,19 @@ void inSetUpdateBounds(bool state) {
 abstract class Drawable : Node {
 private:
     void updateIndices() {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, data.indices.length*ushort.sizeof, data.indices.ptr, GL_STATIC_DRAW);
+        version (InDoesRender) {
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, data.indices.length*ushort.sizeof, data.indices.ptr, GL_STATIC_DRAW);
+        }
     }
 
     void updateVertices() {
+        version (InDoesRender) {
 
-        // Important check since the user can change this every frame
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, data.vertices.length*vec2.sizeof, data.vertices.ptr, GL_DYNAMIC_DRAW);
+            // Important check since the user can change this every frame
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+            glBufferData(GL_ARRAY_BUFFER, data.vertices.length*vec2.sizeof, data.vertices.ptr, GL_DYNAMIC_DRAW);
+        }
 
         // Zero-fill the deformation delta
         this.deformation.length = vertices.length;
@@ -73,15 +78,17 @@ private:
     }
 
     void updateDeform() {
-    
         // Important check since the user can change this every frame
         enforce(
             deformation.length == vertices.length, 
             "Data length mismatch, if you want to change the mesh you need to change its data with Part.rebuffer."
         );
 
-        glBindBuffer(GL_ARRAY_BUFFER, dbo);
-        glBufferData(GL_ARRAY_BUFFER, this.deformation.length*vec2.sizeof, this.deformation.ptr, GL_DYNAMIC_DRAW);
+        version (InDoesRender) {
+
+            glBindBuffer(GL_ARRAY_BUFFER, dbo);
+            glBufferData(GL_ARRAY_BUFFER, this.deformation.length*vec2.sizeof, this.deformation.ptr, GL_DYNAMIC_DRAW);
+        }
 
         this.updateBounds();
     }
@@ -114,10 +121,11 @@ protected:
         Binds Index Buffer for rendering
     */
     final void bindIndex() {
-
-        // Bind element array and draw our mesh
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-        glDrawElements(GL_TRIANGLES, cast(int)data.indices.length, GL_UNSIGNED_SHORT, null);
+        version (InDoesRender) {
+            // Bind element array and draw our mesh
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+            glDrawElements(GL_TRIANGLES, cast(int)data.indices.length, GL_UNSIGNED_SHORT, null);
+        }
     }
 
     abstract void renderMask(bool dodge = false);
@@ -312,52 +320,54 @@ public:
         inDbgLineWidth(1);
     }
     
-    /**
-        Draws line of mesh
-    */
-    void drawMeshLines() {
-        if (vertices.length == 0) return;
+    version (InDoesRender) {
+        /**
+            Draws line of mesh
+        */
+        void drawMeshLines() {
+            if (vertices.length == 0) return;
 
-        auto trans = transform.matrix();
-        ushort[] indices = data.indices;
+            auto trans = transform.matrix();
+            ushort[] indices = data.indices;
 
-        vec3[] points = new vec3[indices.length*2];
-        foreach(i; 0..indices.length/3) {
-            size_t ix = i*3;
-            size_t iy = ix*2;
-            auto indice = indices[ix];
+            vec3[] points = new vec3[indices.length*2];
+            foreach(i; 0..indices.length/3) {
+                size_t ix = i*3;
+                size_t iy = ix*2;
+                auto indice = indices[ix];
 
-            points[iy+0] = vec3(vertices[indice]-data.origin+deformation[indice], 0);
-            points[iy+1] = vec3(vertices[indices[ix+1]]-data.origin+deformation[indices[ix+1]], 0);
+                points[iy+0] = vec3(vertices[indice]-data.origin+deformation[indice], 0);
+                points[iy+1] = vec3(vertices[indices[ix+1]]-data.origin+deformation[indices[ix+1]], 0);
 
-            points[iy+2] = vec3(vertices[indices[ix+1]]-data.origin+deformation[indices[ix+1]], 0);
-            points[iy+3] = vec3(vertices[indices[ix+2]]-data.origin+deformation[indices[ix+2]], 0);
+                points[iy+2] = vec3(vertices[indices[ix+1]]-data.origin+deformation[indices[ix+1]], 0);
+                points[iy+3] = vec3(vertices[indices[ix+2]]-data.origin+deformation[indices[ix+2]], 0);
 
-            points[iy+4] = vec3(vertices[indices[ix+2]]-data.origin+deformation[indices[ix+2]], 0);
-            points[iy+5] = vec3(vertices[indice]-data.origin+deformation[indice], 0);
+                points[iy+4] = vec3(vertices[indices[ix+2]]-data.origin+deformation[indices[ix+2]], 0);
+                points[iy+5] = vec3(vertices[indice]-data.origin+deformation[indice], 0);
+            }
+
+            inDbgSetBuffer(points);
+            inDbgDrawLines(vec4(.5, .5, .5, 1), trans);
         }
 
-        inDbgSetBuffer(points);
-        inDbgDrawLines(vec4(.5, .5, .5, 1), trans);
-    }
+        /**
+            Draws the points of the mesh
+        */
+        void drawMeshPoints() {
+            if (vertices.length == 0) return;
 
-    /**
-        Draws the points of the mesh
-    */
-    void drawMeshPoints() {
-        if (vertices.length == 0) return;
+            auto trans = transform.matrix();
+            vec3[] points = new vec3[vertices.length];
+            foreach(i, point; vertices) {
+                points[i] = vec3(point-data.origin+deformation[i], 0);
+            }
 
-        auto trans = transform.matrix();
-        vec3[] points = new vec3[vertices.length];
-        foreach(i, point; vertices) {
-            points[i] = vec3(point-data.origin+deformation[i], 0);
+            inDbgSetBuffer(points);
+            inDbgPointsSize(8);
+            inDbgDrawPoints(vec4(0, 0, 0, 1), trans);
+            inDbgPointsSize(4);
+            inDbgDrawPoints(vec4(1, 1, 1, 1), trans);
         }
-
-        inDbgSetBuffer(points);
-        inDbgPointsSize(8);
-        inDbgDrawPoints(vec4(0, 0, 0, 1), trans);
-        inDbgPointsSize(4);
-        inDbgDrawPoints(vec4(1, 1, 1, 1), trans);
     }
 
     /**
@@ -384,41 +394,44 @@ public:
     }
 }
 
-/**
-    Begins a mask
+version (InDoesRender) {
+    /**
+        Begins a mask
 
-    This causes the next draw calls until inBeginMaskContent/inBeginDodgeContent or inEndMask 
-    to be written to the current mask.
+        This causes the next draw calls until inBeginMaskContent/inBeginDodgeContent or inEndMask 
+        to be written to the current mask.
 
-    This also clears whatever old mask there was.
-*/
-void inBeginMask(bool hasMasks) {
+        This also clears whatever old mask there was.
+    */
+    void inBeginMask(bool hasMasks) {
 
-    // Enable and clear the stencil buffer so we can write our mask to it
-    glEnable(GL_STENCIL_TEST);
-    glClearStencil(hasMasks ? 0 : 1);
-    glClear(GL_STENCIL_BUFFER_BIT);
-}
+        // Enable and clear the stencil buffer so we can write our mask to it
+        glEnable(GL_STENCIL_TEST);
+        glClearStencil(hasMasks ? 0 : 1);
+        glClear(GL_STENCIL_BUFFER_BIT);
+    }
 
-/**
-    End masking
+    /**
+        End masking
 
-    Once masking is ended content will no longer be masked by the defined mask.
-*/
-void inEndMask() {
+        Once masking is ended content will no longer be masked by the defined mask.
+    */
+    void inEndMask() {
 
-    // We're done stencil testing, disable it again so that we don't accidentally mask more stuff out
-    glStencilMask(0xFF);
-    glStencilFunc(GL_ALWAYS, 1, 0xFF);   
-    glDisable(GL_STENCIL_TEST);
-}
+        // We're done stencil testing, disable it again so that we don't accidentally mask more stuff out
+        glStencilMask(0xFF);
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);   
+        glDisable(GL_STENCIL_TEST);
+    }
 
-/**
-    Starts masking content
+    /**
+        Starts masking content
 
-    NOTE: This have to be run within a inBeginMask and inEndMask block!
-*/
-void inBeginMaskContent() {
-    glStencilFunc(GL_EQUAL, 1, 0xFF);
-    glStencilMask(0x00);
+        NOTE: This have to be run within a inBeginMask and inEndMask block!
+    */
+    void inBeginMaskContent() {
+        
+        glStencilFunc(GL_EQUAL, 1, 0xFF);
+        glStencilMask(0x00);
+    }
 }

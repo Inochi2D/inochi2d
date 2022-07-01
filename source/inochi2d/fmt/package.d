@@ -9,6 +9,7 @@
 module inochi2d.fmt;
 import inochi2d.fmt.binfmt;
 public import inochi2d.fmt.serialize;
+import inochi2d.integration;
 import inochi2d.core;
 import std.bitmanip;
 import std.exception;
@@ -85,33 +86,51 @@ Puppet inLoadINPPuppet(ubyte[] buffer) {
     enforce(inVerifySection(buffer[bufferOffset..bufferOffset+=8], TEX_SECTION), "Expected Texture Blob section, got nothing!");
 
     // Load textures in to memory
-    inBeginTextureLoading();
+    version (InDoesRender) {
+        inBeginTextureLoading();
 
-    // Get amount of slots
-    uint slotCount;
-    inInterpretDataFromBuffer(buffer[bufferOffset..bufferOffset+=4], slotCount);
+        // Get amount of slots
+        uint slotCount;
+        inInterpretDataFromBuffer(buffer[bufferOffset..bufferOffset+=4], slotCount);
 
-    Texture[] slots;
-    foreach(i; 0..slotCount) {
+        Texture[] slots;
+        foreach(i; 0..slotCount) {
+            
+            uint textureLength;
+            inInterpretDataFromBuffer(buffer[bufferOffset..bufferOffset+=4], textureLength);
+
+            ubyte textureType = buffer[bufferOffset++];
+            if (textureLength == 0) {
+                inAddTextureBinary(ShallowTexture([], 0, 0, 4));
+            } else inAddTextureBinary(ShallowTexture(buffer[bufferOffset..bufferOffset+=textureLength]));
         
-        uint textureLength;
-        inInterpretDataFromBuffer(buffer[bufferOffset..bufferOffset+=4], textureLength);
+            // Readd to puppet so that stuff doesn't break if we re-save the puppet
+            slots ~= inGetLatestTexture();
+        }
 
-        ubyte textureType = buffer[bufferOffset++];
-        if (textureLength == 0) {
-            inAddTextureBinary(ShallowTexture([], 0, 0, 4));
-        } else inAddTextureBinary(ShallowTexture(buffer[bufferOffset..bufferOffset+=textureLength]));
-    
-        // Readd to puppet so that stuff doesn't break if we re-save the puppet
-        slots ~= inGetLatestTexture();
+        Puppet puppet = inLoadJsonDataFromMemory!Puppet(puppetData);
+        puppet.textureSlots = slots;
+        puppet.updateTextureState();
+        inEndTextureLoading();
+    } else version(InRenderless) {
+        inCurrentPuppetTextureSlots.length = 0;
+
+        // Get amount of slots
+        uint slotCount;
+        inInterpretDataFromBuffer(buffer[bufferOffset..bufferOffset+=4], slotCount);
+        foreach(i; 0..slotCount) {
+            
+            uint textureLength;
+            inInterpretDataFromBuffer(buffer[bufferOffset..bufferOffset+=4], textureLength);
+
+            ubyte textureType = buffer[bufferOffset++];
+            if (textureLength == 0) {
+                continue;
+            } else inCurrentPuppetTextureSlots ~= TextureBlob(textureType, buffer[bufferOffset..bufferOffset+=textureLength]);
+        }
+
+        Puppet puppet = inLoadJsonDataFromMemory!Puppet(puppetData);
     }
-
-    Puppet puppet = inLoadJsonDataFromMemory!Puppet(puppetData);
-    puppet.textureSlots = slots;
-
-    puppet.updateTextureState();
-    
-    inEndTextureLoading();
 
     if (buffer.length >= bufferOffset + 8 && inVerifySection(buffer[bufferOffset..bufferOffset+=8], EXT_SECTION)) {
         uint sectionCount;

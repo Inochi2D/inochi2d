@@ -15,6 +15,7 @@ public import inochi2d.core.puppet;
 public import inochi2d.core.meshdata;
 public import inochi2d.core.param;
 public import inochi2d.core.automation;
+public import inochi2d.integration;
 import inochi2d.core.dbg;
 
 import bindbc.opengl;
@@ -82,33 +83,36 @@ package(inochi2d) {
 
         inClearColor = vec4(0, 0, 0, 0);
 
-        // Shader for scene
-        sceneShader = new Shader(import("scene.vert"), import("scene.frag"));
-        sceneMVP = sceneShader.getUniformLocation("mvp");
-        glGenVertexArrays(1, &sceneVAO);
-        glGenBuffers(1, &sceneVBO);
+        version (InDoesRender) {
+            
+            // Shader for scene
+            sceneShader = new Shader(import("scene.vert"), import("scene.frag"));
+            sceneMVP = sceneShader.getUniformLocation("mvp");
+            glGenVertexArrays(1, &sceneVAO);
+            glGenBuffers(1, &sceneVBO);
 
-        // Generate the framebuffer we'll be using to render the model and composites
-        glGenFramebuffers(1, &fBuffer);
-        glGenFramebuffers(1, &cfBuffer);
-        
-        // Generate the color and stencil-depth textures needed
-        // Note: we're not using the depth buffer but OpenGL 3.4 does not support stencil-only buffers
-        glGenTextures(1, &fColor);
-        glGenTextures(1, &fStencil);
-        glGenTextures(1, &cfColor);
-        glGenTextures(1, &cfStencil);
+            // Generate the framebuffer we'll be using to render the model and composites
+            glGenFramebuffers(1, &fBuffer);
+            glGenFramebuffers(1, &cfBuffer);
+            
+            // Generate the color and stencil-depth textures needed
+            // Note: we're not using the depth buffer but OpenGL 3.4 does not support stencil-only buffers
+            glGenTextures(1, &fColor);
+            glGenTextures(1, &fStencil);
+            glGenTextures(1, &cfColor);
+            glGenTextures(1, &cfStencil);
 
-        // Attach textures to framebuffer
-        glBindFramebuffer(GL_FRAMEBUFFER, fBuffer);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fColor, 0);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, fStencil, 0);
-        glBindFramebuffer(GL_FRAMEBUFFER, cfBuffer);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, cfColor, 0);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, cfStencil, 0);
+            // Attach textures to framebuffer
+            glBindFramebuffer(GL_FRAMEBUFFER, fBuffer);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fColor, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, fStencil, 0);
+            glBindFramebuffer(GL_FRAMEBUFFER, cfBuffer);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, cfColor, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, cfStencil, 0);
 
-        // go back to default fb
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            // go back to default fb
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        }
     }
 }
 

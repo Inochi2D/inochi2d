@@ -7,6 +7,7 @@
     Authors: Luna Nielsen
 */
 module inochi2d.core.nodes.part;
+import inochi2d.integration;
 import inochi2d.fmt;
 import inochi2d.core.nodes.drawable;
 import inochi2d.core;
@@ -219,24 +220,25 @@ protected:
     override
     void serializeSelf(ref InochiSerializer serializer) {
         super.serializeSelf(serializer);
-        
-        if (inIsINPMode()) {
-            serializer.putKey("textures");
-            auto state = serializer.arrayBegin();
-                foreach(texture; textures) {
-                    ptrdiff_t index = puppet.getTextureSlotIndexFor(texture);
-                    if (index >= 0) {
-                        serializer.elemBegin;
-                        serializer.putValue(cast(size_t)index);
+        version (InDoesRender) {
+            if (inIsINPMode()) {
+                serializer.putKey("textures");
+                auto state = serializer.arrayBegin();
+                    foreach(texture; textures) {
+                        ptrdiff_t index = puppet.getTextureSlotIndexFor(texture);
+                        if (index >= 0) {
+                            serializer.elemBegin;
+                            serializer.putValue(cast(size_t)index);
+                        }
                     }
-                }
-            serializer.arrayEnd(state);
-        } else {
-            serializer.putKey("textures");
-            auto state = serializer.arrayBegin();
-                serializer.elemBegin;
-                serializer.putValue(name);
-            serializer.arrayEnd(state);
+                serializer.arrayEnd(state);
+            } else {
+                serializer.putKey("textures");
+                auto state = serializer.arrayBegin();
+                    serializer.elemBegin;
+                    serializer.putValue(name);
+                serializer.arrayEnd(state);
+            }
         }
 
         serializer.putKey("blend_mode");
@@ -324,22 +326,36 @@ protected:
         super.deserializeFromFghj(data);
 
     
-        
-        if (inIsINPMode()) {
-
-            foreach(texElement; data["textures"].byElement) {
-                uint textureId;
-                texElement.deserializeValue(textureId);
-                this.textures ~= inGetTextureFromId(textureId);
+        version(InRenderless) {
+            if (inIsINPMode()) {
+                foreach(texElement; data["textures"].byElement) {
+                    uint textureId;
+                    texElement.deserializeValue(textureId);
+                    textureIds ~= textureId;
+                }
+            } else {
+                assert(0, "Raw Inochi2D JSON not supported in renderless mode");
             }
+            
+            // Do nothing in this instance
         } else {
+            if (inIsINPMode()) {
 
-            // TODO: Index textures by ID
-            string texName;
-            auto elements = data["textures"].byElement;
-            if (!elements.empty) {
-                if (auto exc = elements.front.deserializeValue(texName)) return exc;
-                this.textures = [new Texture(texName)];
+                foreach(texElement; data["textures"].byElement) {
+                    uint textureId;
+                    texElement.deserializeValue(textureId);
+                    textureIds ~= textureId;
+                    this.textures ~= inGetTextureFromId(textureId);
+                }
+            } else {
+
+                // TODO: Index textures by ID
+                string texName;
+                auto elements = data["textures"].byElement;
+                if (!elements.empty) {
+                    if (auto exc = elements.front.deserializeValue(texName)) return exc;
+                    this.textures = [new Texture(texName)];
+                }
             }
         }
 
@@ -404,6 +420,11 @@ public:
         TODO: use more than texture 0
     */
     Texture[] textures;
+
+    /**
+        List of texture IDs
+    */
+    int[] textureIds;
 
     /**
         List of masks to apply
@@ -598,29 +619,31 @@ public:
 
     override
     void drawOne() {
-        if (!enabled) return;
-        if (!data.isReady) return; // Yeah, don't even try
-        
-        size_t cMasks = maskCount;
+        version (InDoesRender) {
+            if (!enabled) return;
+            if (!data.isReady) return; // Yeah, don't even try
+            
+            size_t cMasks = maskCount;
 
-        if (masks.length > 0) {
-            import std.stdio : writeln;
-            inBeginMask(cMasks > 0);
+            if (masks.length > 0) {
+                import std.stdio : writeln;
+                inBeginMask(cMasks > 0);
 
-            foreach(ref mask; masks) {
-                mask.maskSrc.renderMask(mask.mode == MaskingMode.DodgeMask);
+                foreach(ref mask; masks) {
+                    mask.maskSrc.renderMask(mask.mode == MaskingMode.DodgeMask);
+                }
+
+                inBeginMaskContent();
+
+                // We are the content
+                this.drawSelf();
+
+                inEndMask();
+                return;
             }
 
-            inBeginMaskContent();
-
-            // We are the content
             this.drawSelf();
-
-            inEndMask();
-            return;
         }
-
-        this.drawSelf();
         super.drawOne();
     }
 
