@@ -13,6 +13,19 @@ version(InRenderless) {
     }
 
     TextureBlob[] inCurrentPuppetTextureSlots;
+
+    string inPartMaskShader = import("basic/basic-mask.frag");
+    string inPartFragmentShader = import("basic/basic.frag");
+    string inPartVertexShader = import("basic/basic.vert");
+
+    string inCompositeMaskShader = import("basic/composite-mask.frag");
+    string inCompositeFragmentShader = import("basic/composite.frag");
+    string inCompositeVertexShader = import("basic/composite.vert");
+
+    string inMaskFragmentShader = import("mask.frag");
+    string inMaskVertexShader = import("mask.vert");
+
+
 } else {
 
 }
