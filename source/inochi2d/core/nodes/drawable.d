@@ -172,10 +172,13 @@ public:
     this(Node parent = null) {
         super(parent);
 
-        // Generate the buffers
-        glGenBuffers(1, &vbo);
-        glGenBuffers(1, &ibo);
-        glGenBuffers(1, &dbo);
+        version(InDoesRender) {
+
+            // Generate the buffers
+            glGenBuffers(1, &vbo);
+            glGenBuffers(1, &ibo);
+            glGenBuffers(1, &dbo);
+        }
 
         // Create deformation stack
         this.deformStack = DeformationStack(this);
@@ -199,10 +202,13 @@ public:
         // Set the deformable points to their initial position
         this.vertices = data.vertices.dup;
 
-        // Generate the buffers
-        glGenBuffers(1, &vbo);
-        glGenBuffers(1, &ibo);
-        glGenBuffers(1, &dbo);
+        version(InDoesRender) {
+            
+            // Generate the buffers
+            glGenBuffers(1, &vbo);
+            glGenBuffers(1, &ibo);
+            glGenBuffers(1, &dbo);
+        }
 
         // Update indices and vertices
         this.updateIndices();
