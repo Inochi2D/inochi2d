@@ -126,8 +126,10 @@ private:
     GLuint uvbo;
 
     void updateUVs() {
-        glBindBuffer(GL_ARRAY_BUFFER, uvbo);
-        glBufferData(GL_ARRAY_BUFFER, data.uvs.length*vec2.sizeof, data.uvs.ptr, GL_STATIC_DRAW);
+        version(InDoesRender) {
+            glBindBuffer(GL_ARRAY_BUFFER, uvbo);
+            glBufferData(GL_ARRAY_BUFFER, data.uvs.length*vec2.sizeof, data.uvs.ptr, GL_STATIC_DRAW);
+        }
     }
 
     /*
@@ -498,7 +500,7 @@ public:
             mmvp = partMaskShader.getUniformLocation("mvp");
             mthreshold = partMaskShader.getUniformLocation("threshold");
         }
-        
+
         this.updateUVs();
     }
 
