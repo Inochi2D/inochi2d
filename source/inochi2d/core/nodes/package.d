@@ -91,6 +91,9 @@ private:
     @Name("lockToRoot")
     bool lockToRoot_;
 
+    @Ignore
+    string nodePath_;
+
 protected:
 
     /**
@@ -207,6 +210,14 @@ public:
         Visual name of the node
     */
     string name = "Unnamed Node";
+
+    /**
+        Name of node as a null-terminated C string
+    */
+    const(char)* cName() {
+        import std.string : toStringz;
+        return name.toStringz;
+    }
 
     /**
         Returns the unique identifier for this node
@@ -385,6 +396,25 @@ public:
     }
 
     /**
+        Gets the path to the node.
+    */
+    final
+    string getNodePath() {
+        import std.array : join;
+        if (nodePath_.length > 0) return nodePath_;
+
+        string[] pathSegments;
+        Node parent = this;
+        while(parent !is null) {
+            pathSegments = parent.name ~ pathSegments;
+            parent = parent.parent;
+        }
+        
+        nodePath_ = "/"~pathSegments.join("/");
+        return nodePath_;
+    }
+
+    /**
         Gets the depth of this node
     */
     final int depth() {
@@ -455,6 +485,7 @@ public:
     enum OFFSET_START = size_t.min;
     enum OFFSET_END = size_t.max;
     final void insertInto(Node node, size_t offset) {
+        nodePath_ = null;
         import std.algorithm.mutation : remove;
         import std.algorithm.searching : countUntil;
         
