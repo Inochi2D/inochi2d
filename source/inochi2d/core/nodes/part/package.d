@@ -478,7 +478,8 @@ public:
     */
     this(Node parent = null) {
         super(parent);
-        glGenBuffers(1, &uvbo);
+        
+        version(InDoesRender) glGenBuffers(1, &uvbo);
     }
 
     /**
@@ -487,13 +488,17 @@ public:
     this(MeshData data, Texture[] textures, uint uuid, Node parent = null) {
         super(data, uuid, parent);
         this.textures = textures;
-        glGenBuffers(1, &uvbo);
 
-        mvp = partShader.getUniformLocation("mvp");
-        gopacity = partShader.getUniformLocation("opacity");
+        version(InDoesRender) {
+            glGenBuffers(1, &uvbo);
+
+            mvp = partShader.getUniformLocation("mvp");
+            gopacity = partShader.getUniformLocation("opacity");
+            
+            mmvp = partMaskShader.getUniformLocation("mvp");
+            mthreshold = partMaskShader.getUniformLocation("threshold");
+        }
         
-        mmvp = partMaskShader.getUniformLocation("mvp");
-        mthreshold = partMaskShader.getUniformLocation("threshold");
         this.updateUVs();
     }
 
