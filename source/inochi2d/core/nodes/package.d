@@ -763,20 +763,31 @@ public:
         this.uuid_ = uuid;
     }
 
+    rect getCombinedBoundsRect() {
+        vec4 combinedBounds = getCombinedBounds();
+        return rect(
+            combinedBounds.x, 
+            combinedBounds.y, 
+            combinedBounds.z-combinedBounds.x, 
+            combinedBounds.w-combinedBounds.y
+        );
+    }
+
     /**
         Gets the combined bounds of the node
     */
-    vec4 getCombinedBounds() {
+    vec4 getCombinedBounds(bool reupdate = false)() {
         auto tr = transform;
         vec4 combined = vec4(tr.translation.x, tr.translation.y, tr.translation.x, tr.translation.y);
         
         // Get Bounds as drawable
         if (Drawable drawable = cast(Drawable)this) {
+            if (reupdate) drawable.updateBounds();
             combined = drawable.bounds;
         }
 
         foreach(child; children) {
-            vec4 cbounds = child.getCombinedBounds();
+            vec4 cbounds = child.getCombinedBounds!(reupdate)();
             if (cbounds.x < combined.x) combined.x = cbounds.x;
             if (cbounds.y < combined.y) combined.y = cbounds.y;
             if (cbounds.z > combined.z) combined.z = cbounds.z;
