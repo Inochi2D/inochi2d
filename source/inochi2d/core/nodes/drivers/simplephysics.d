@@ -97,6 +97,11 @@ public:
         inDbgLineWidth(3);
         inDbgDrawLines(vec4(1, 0, 1, 1), trans);
     }
+
+    override
+    void updateAnchor() {
+        bob = driver.anchor + vec2(0, driver.length);
+    }
 }
 
 class SpringPendulum : PhysicsSystem {
@@ -179,6 +184,11 @@ public:
         inDbgSetBuffer(points);
         inDbgLineWidth(3);
         inDbgDrawLines(vec4(1, 0, 1, 1), trans);
+    }
+
+    override
+    void updateAnchor() {
+        bob = driver.anchor + vec2(0, driver.length);
     }
 }
 
@@ -366,6 +376,10 @@ public:
         system.tick(h);
         updateOutputs();
     };
+
+    void updateAnchors() {
+        system.updateAnchor();
+    }
 
     void updateInputs() {
         auto anchorPos = transform.matrix * vec4(0, 0, 0, 1);

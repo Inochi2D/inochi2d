@@ -80,8 +80,7 @@ protected:
     /**
         Evaluate the simulation at a given time
     */
-    abstract void eval(float t) {
-    }
+    abstract void eval(float t);
 
 public:
     /**
@@ -128,6 +127,14 @@ public:
 
 public:
 
+    /**
+        Updates the anchor for the physics system
+    */
+    abstract void updateAnchor();
+
+    /**
+        Draw debug
+    */
     abstract void drawDebug(mat4 trans = mat4.identity);
 }
 
