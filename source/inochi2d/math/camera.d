@@ -48,11 +48,12 @@ public:
         height = height of camera area
     */
     mat4 matrix() {
-        vec2 realSize = getRealSize();
         if(!position.isFinite) position = vec2(0);
         if(!scale.isFinite) scale = vec2(1);
-        if(!realSize.isFinite) return mat4.identity;
 
+        vec2 realSize = getRealSize();
+        if(!realSize.isFinite) return mat4.identity;
+        
         return 
             mat4.orthographic(0f, realSize.x, realSize.y, 0, 0, ushort.max) * 
             mat4.translation(position.x+(realSize.x/2), position.y+(realSize.y/2), -(ushort.max/2));
