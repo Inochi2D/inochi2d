@@ -743,7 +743,16 @@ public:
 
         Do note that some root parts may be Composites instead.
     */
-    final Node[] getRootParts() {
+    final 
+    ref Node[] getRootParts() {
         return rootParts;
+    }
+
+    /**
+        Gets a list of drivers
+    */
+    final
+    ref Driver[] getDrivers() {
+        return drivers;
     }
 }
