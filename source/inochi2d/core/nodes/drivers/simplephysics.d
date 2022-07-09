@@ -363,6 +363,8 @@ public:
 
     override
     void updateDriver() {
+        system.updateAnchor();
+        
         float h = deltaTime();
 
         updateInputs();
