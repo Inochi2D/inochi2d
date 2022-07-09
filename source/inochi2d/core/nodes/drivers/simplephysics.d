@@ -363,7 +363,6 @@ public:
 
     override
     void updateDriver() {
-        system.updateAnchor();
         
         float h = deltaTime();
 
@@ -377,7 +376,7 @@ public:
 
         system.tick(h);
         updateOutputs();
-    };
+    }
 
     void updateAnchors() {
         system.updateAnchor();
