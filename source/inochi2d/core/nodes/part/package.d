@@ -734,7 +734,7 @@ void inDrawTextureAtPart(Texture texture, Part part) {
 /**
     Draws a texture at the transform of the specified part
 */
-void inDrawTextureAtPosition(Texture texture, vec2 position, float opacity = 1, vec3 color = vec3(1, 1, 1), vec3 screenColor = vec3(1, 1, 1)) {
+void inDrawTextureAtPosition(Texture texture, vec2 position, float opacity = 1, vec3 color = vec3(1, 1, 1), vec3 screenColor = vec3(0, 0, 0)) {
     const float texWidthP = texture.width()/2;
     const float texHeightP = texture.height()/2;
 
