@@ -43,6 +43,14 @@ public:
         return [];
     }
 
+    final
+    bool affectsParameter(ref Parameter param) {
+        foreach(ref Parameter p; getAffectedParameters()) {
+            if (p.uuid == param.uuid) return true;
+        } 
+        return false;
+    }
+
     abstract void updateDriver();
 
     abstract void reset();
