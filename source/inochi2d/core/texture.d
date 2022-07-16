@@ -223,6 +223,10 @@ public:
         this.setWrapping(Wrapping.Clamp);
     }
 
+    ~this() {
+        glDeleteTextures(1, &id);
+    }
+
     /**
         Width of texture
     */
