@@ -18,6 +18,43 @@ import std.stdio;
 
 public import inochi2d.core.param.binding;
 
+class ParamLink {
+private:
+    uint linkUUID;
+
+public:
+    Parameter link;
+    bool axis;
+
+    this() { }
+    
+
+    /**
+        Serializes a param link
+    */
+    void serialize(S)(ref S serializer) {
+        auto state = serializer.objectBegin;
+            serializer.putKey("linkUUID");
+            serializer.putValue(link.uuid);
+            serializer.putKey("axis");
+            serializer.putValue(axis);
+        serializer.objectEnd(state);
+    }
+
+    /**
+        Deserializes a param link
+    */
+    SerdeException deserializeFromFghj(Fghj data) {
+        data["linkUUID"].deserializeValue(this.linkUUID);
+        data["axis"].deserializeValue(this.axis);
+        return null;
+    }
+
+    void finalize(Puppet parent) {
+        link = parent.findParameter(linkUUID);
+    }
+}
+
 /**
     A parameter
 */
@@ -84,6 +121,11 @@ public:
         Binding to targets
     */
     ParameterBinding[] bindings;
+
+    /**
+        Links to other parameters
+    */
+    ParamLink[] links;
 
     /**
         Gets the value normalized to the internal range (0.0->1.0)
@@ -197,6 +239,10 @@ public:
         if (!data["axis_points"].isEmpty) data["axis_points"].deserializeValue(this.axisPoints);
         if (!data["defaults"].isEmpty) defaults.deserialize(data["defaults"]);
 
+        if (!data["links"].isEmpty) {
+            data["links"].deserializeValue(links);
+        }
+
         if (!data["bindings"].isEmpty) {
             foreach(Fghj child; data["bindings"].byElement) {
                 
@@ -237,6 +283,11 @@ public:
         }
         
         bindings = validBindingList;
+
+        // Finalize links
+        foreach(link; links) {
+            link.finalize(puppet);
+        }
     }
 
     void findOffset(vec2 offset, out vec2u index, out vec2 outOffset) {
@@ -266,6 +317,13 @@ public:
 
         if (!active)
             return;
+
+        // Update links
+        foreach(link; links) {
+            int axis = link.axis ? 1 : 0;
+            link.link.value.vector[axis] = link.link.unmapAxis(axis, this.mapAxis(axis, value.vector[axis]));
+            link.link.update();
+        }
 
         findOffset(this.mapValue(value + offset), index, offset_);
         foreach(binding; bindings) {
