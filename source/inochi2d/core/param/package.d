@@ -24,7 +24,8 @@ private:
 
 public:
     Parameter link;
-    bool axis;
+    int inAxis;
+    int outAxis;
 
     this() { }
     
@@ -36,8 +37,10 @@ public:
         auto state = serializer.objectBegin;
             serializer.putKey("linkUUID");
             serializer.putValue(link.uuid);
-            serializer.putKey("axis");
-            serializer.putValue(axis);
+            serializer.putKey("inAxis");
+            serializer.putValue(inAxis);
+            serializer.putKey("outAxis");
+            serializer.putValue(outAxis);
         serializer.objectEnd(state);
     }
 
@@ -46,7 +49,8 @@ public:
     */
     SerdeException deserializeFromFghj(Fghj data) {
         data["linkUUID"].deserializeValue(this.linkUUID);
-        data["axis"].deserializeValue(this.axis);
+        data["inAxis"].deserializeValue(this.inAxis);
+        data["outAxis"].deserializeValue(this.outAxis);
         return null;
     }
 
@@ -320,8 +324,17 @@ public:
 
         // Update links
         foreach(link; links) {
-            int axis = link.axis ? 1 : 0;
-            link.link.value.vector[axis] = link.link.unmapAxis(axis, this.mapAxis(axis, value.vector[axis]));
+            link.link.value.vector[link.outAxis] =
+                // Convert to target resolution
+                link.link.unmapAxis(
+
+                    // inAxis = this param's axis
+                    // outAxis = the target param's axis
+                    link.outAxis, 
+                    
+                    // We want a range from 0->1
+                    this.mapAxis(link.inAxis, value.vector[link.inAxis])
+            );
             link.link.update();
         }
 
