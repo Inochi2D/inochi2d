@@ -250,6 +250,15 @@ void inDrawScene(vec4 area) {
 }
 
 /**
+    Gets the Inochi2D framebuffer 
+
+    DO NOT MODIFY THIS IMAGE!
+*/
+GLuint inGetFramebuffer() {
+    return fBuffer;
+}
+
+/**
     Gets the Inochi2D framebuffer render image
 
     DO NOT MODIFY THIS IMAGE!
