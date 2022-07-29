@@ -19,6 +19,7 @@ public import inochi2d.core.nodes.pathdeform;
 public import inochi2d.core.nodes.drawable;
 public import inochi2d.core.nodes.composite;
 public import inochi2d.core.nodes.drivers;
+public import inochi2d.core.nodes.tmp;
 //public import inochi2d.core.nodes.shapes; // This isn't mainline yet!
 
 import std.exception;
@@ -30,6 +31,7 @@ private {
 package(inochi2d) {
     void inInitNodes() {
         inRegisterNodeType!Node;
+        inRegisterNodeType!TmpNode;
     }
 }
 
@@ -138,6 +140,11 @@ protected:
             serializer.putKey("children");
             auto childArray = serializer.arrayBegin();
             foreach(child; children) {
+
+                // Skip Temporary nodes
+                if (cast(TmpNode)child) continue;
+
+                // Serialize permanent nodes
                 serializer.elemBegin;
                 serializer.serializeValue(child);
             }
@@ -859,6 +866,25 @@ public:
         inDbgLineWidth(1);
     }
 }
+
+//
+//  TEMPORARY NODE
+//
+
+/**
+    A temporary node which will not be saved to file under any circumstances
+*/
+@TypeId("Tmp")
+class TmpNode : Node {
+protected:
+    override
+    string typeId() { return "Tmp"; }
+
+public:
+    this() { super(); }
+    this(Node parent) { super(parent); }
+}
+
 
 //
 //  SERIALIZATION SHENNANIGANS
