@@ -224,7 +224,7 @@ public:
     }
 
     ~this() {
-        glDeleteTextures(1, &id);
+        dispose();
     }
 
     /**
@@ -356,6 +356,14 @@ public:
     */
     GLuint getTextureId() {
         return id;
+    }
+
+    /**
+        Disposes texture from GL
+    */
+    void dispose() {
+        glDeleteTextures(1, &id);
+        id = 0;
     }
 }
 
