@@ -365,6 +365,16 @@ void inSetClearColor(float r, float g, float b, float a) {
 }
 
 /**
+
+*/
+void inGetClearColor(out float r, out float g, out float b, out float a) {
+    r = inClearColor.r;
+    g = inClearColor.g;
+    b = inClearColor.b;
+    a = inClearColor.a;
+}
+
+/**
     UDA for sub-classable parts of the spec
     eg. Nodes and Automation can be extended by
     adding new subclasses that aren't in the base spec.
