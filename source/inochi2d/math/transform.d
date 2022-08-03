@@ -77,7 +77,6 @@ public:
         // SCALE
         tnew.scale = this.scale*other.scale;
         tnew.trs = strs;
-        tnew.update();
         return tnew;
     }
 
