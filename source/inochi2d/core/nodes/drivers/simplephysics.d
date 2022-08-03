@@ -322,9 +322,6 @@ public:
     vec2 anchor = vec2(0, 0);
 
     @Ignore
-    vec2 rest;
-
-    @Ignore
     vec2 output;
 
     @Ignore
@@ -385,27 +382,33 @@ public:
     void updateInputs() {
         auto anchorPos = transform.matrix * vec4(0, 0, 0, 1);
         anchor = vec2(anchorPos.x, anchorPos.y);
-        auto restPos = transform.matrix * vec4(0, length, 0, 1);
-        rest = vec2(restPos.x, restPos.y);
     }
 
     void updateOutputs() {
         if (param is null) return;
 
+        // Okay, so this is confusing. We want to translate the angle back to local space,
+        // but not the coordinates.
+
+        // Transform the physics output back into local space.
+        // The origin here is the anchor. This gives us the local angle.
         auto localPos4 = transform.matrix.inverse * vec4(output.x, output.y, 0, 1);
-        vec2 localPos = vec2(localPos4.x, localPos4.y);
-        vec2 localPosNorm = localPos / length;
+        vec2 localAngle = vec2(localPos4.x, localPos4.y);
+        localAngle.normalize();
+
+        // Figure out the relative length. We can work this out directly in global space.
+        auto relLength = output.distance(anchor) / length;
 
         vec2 paramVal;
         switch (mapMode) {
             case ParamMapMode.XY:
+                auto localPosNorm = localAngle * relLength;
                 paramVal = localPosNorm - vec2(0, 1);
                 paramVal.y = -paramVal.y; // Y goes up for params
                 break;
             case ParamMapMode.AngleLength:
-                float a = atan2(-localPosNorm.x, localPosNorm.y) / PI;
-                float d = localPosNorm.distance(vec2(0, 0));
-                paramVal = vec2(a, d);
+                float a = atan2(-localAngle.x, localAngle.y) / PI;
+                paramVal = vec2(a, relLength);
                 break;
             default: assert(0);
         }
