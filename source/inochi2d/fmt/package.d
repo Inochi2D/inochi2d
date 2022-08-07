@@ -11,12 +11,12 @@ import inochi2d.fmt.binfmt;
 public import inochi2d.fmt.serialize;
 import inochi2d.integration;
 import inochi2d.core;
-import std.bitmanip;
+import std.bitmanip : nativeToBigEndian;
 import std.exception;
 import std.path;
-import std.file;
 import std.format;
 import imagefmt;
+import inochi2d.fmt.io;
 
 private bool isLoadingINP_ = false;
 
@@ -31,6 +31,7 @@ bool inIsINPMode() {
     Loads a puppet from a file
 */
 Puppet inLoadPuppet(string file) {
+    import std.file : read;
     ubyte[] buffer = cast(ubyte[])read(file);
 
     switch(extension(file)) {
@@ -159,9 +160,111 @@ Puppet inLoadINPPuppet(ubyte[] buffer) {
 }
 
 /**
+
+*/
+void inWriteINPExtensions(Puppet p, string file) {
+    import std.stdio : File;
+    import stdfile = std.file; 
+    size_t extSectionStart, extSectionEnd;
+    bool foundExtSection;
+    File f = File(file, "rb");
+
+    // Verify that we're in an INP file
+    enforce(inVerifyMagicBytes(f.read(MAGIC_BYTES.length)), "Invalid data format for INP puppet");
+
+    // Read puppet payload
+    uint puppetSectionLength = f.readValue!uint;
+    f.skip(puppetSectionLength);
+
+    // Verify texture section magic bytes
+    enforce(inVerifySection(f.read(TEX_SECTION.length), TEX_SECTION), "Expected Texture Blob section, got nothing!");
+
+    uint slotCount = f.readValue!uint;
+    foreach(slot; 0..slotCount) {
+        uint length = f.readValue!uint;
+        f.skip(length+1);
+    }
+
+    // Only do this if there is an extended section here
+    if (inVerifySection(f.peek(EXT_SECTION.length), EXT_SECTION)) {
+        foundExtSection = true;
+
+        extSectionStart = f.tell();
+        f.skip(EXT_SECTION.length);
+        
+        uint payloadCount = f.readValue!uint;
+        foreach(pc; 0..payloadCount) {
+
+            uint nameLength = f.readValue!uint;
+            f.skip(nameLength);
+
+            uint payloadLength = f.readValue!uint;
+            f.skip(payloadLength);
+        }
+        extSectionEnd = f.tell();
+        f.close();
+    }
+
+    ubyte[] fdata = cast(ubyte[])stdfile.read(file);
+    ubyte[] app = fdata;
+    if (foundExtSection) {
+        // If the extended section was found, reuse it.
+        app = fdata[0..extSectionStart];
+        ubyte[] end = fdata[extSectionEnd..$];
+
+        // Don't waste bytes on empty EXT data sections
+        if (p.extData.length > 0) {
+            // Begin extended section
+            app ~= EXT_SECTION;
+            app ~= nativeToBigEndian(cast(uint)p.extData.length)[0..4];
+
+            foreach(name, payload; p.extData) {
+                
+                // Write payload name and its length
+                app ~= nativeToBigEndian(cast(uint)name.length)[0..4];
+                app ~= cast(ubyte[])name;
+
+                // Write payload length and payload
+                app ~= nativeToBigEndian(cast(uint)payload.length)[0..4];
+                app ~= payload;
+
+            }
+        }
+
+        app ~= end;
+
+    } else {
+        // Otherwise, make a new one
+
+        // Don't waste bytes on empty EXT data sections
+        if (p.extData.length > 0) {
+            // Begin extended section
+            app ~= EXT_SECTION;
+            app ~= nativeToBigEndian(cast(uint)p.extData.length)[0..4];
+
+            foreach(name, payload; p.extData) {
+                
+                // Write payload name and its length
+                app ~= nativeToBigEndian(cast(uint)name.length)[0..4];
+                app ~= cast(ubyte[])name;
+
+                // Write payload length and payload
+                app ~= nativeToBigEndian(cast(uint)payload.length)[0..4];
+                app ~= payload;
+
+            }
+        }
+    }
+
+    // write our final file out
+    stdfile.write(file, app);
+}
+
+/**
     Writes Inochi2D puppet to file
 */
 void inWriteINPPuppet(Puppet p, string file) {
+    import std.file : write;
     import inochi2d.ver : IN_VERSION;
     import std.range : appender;
     import std.json : JSONValue;
@@ -219,6 +322,7 @@ enum IN_TEX_BC7 = 2u; /// BC7 encoded Inochi2D texture
     Writes a puppet to file
 */
 void inWriteJSONPuppet(Puppet p, string file) {
+    import std.file : write;
     isLoadingINP_ = false;
     write(file, inToJson(p));
 }
