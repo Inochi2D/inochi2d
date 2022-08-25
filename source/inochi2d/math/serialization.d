@@ -32,6 +32,9 @@ void serialize(T, S)(T matr, ref S serializer) if(isMatrix!T) {
 SerdeException deserialize(V)(ref V value, Fghj data) if (isVector!V) {
     int i = 0;
     foreach(val; data.byElement) {
+        
+        // Some exporters export too many values
+        if (i >= value.dimension) break;
         val.deserializeValue(value.vector[i++]);
     }
     return null;
