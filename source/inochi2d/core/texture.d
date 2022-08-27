@@ -149,6 +149,19 @@ public:
         this.channels = channels;
         this.convChannels = channels;
     }
+    
+    /**
+        Loads uncompressed texture from memory
+    */
+    this(ubyte[] buffer, int w, int h, int channels = 4, int convChannels = 4) {
+        this.data = buffer;
+
+        // Set the width/height data
+        this.width = w;
+        this.height = h;
+        this.channels = channels;
+        this.convChannels = channels;
+    }
 
     /**
         Saves image
@@ -384,16 +397,19 @@ public:
         Saves the texture to file
     */
     void save(string file) {
-        write_image(file, width, height, getTextureData(), channels_);
+        write_image(file, width, height, getTextureData(true), channels_);
     }
 
     /**
         Gets the texture data for the texture
     */
-    ubyte[] getTextureData() {
+    ubyte[] getTextureData(bool unmultiply=false) {
         ubyte[] buf = new ubyte[width*height*channels_];
         bind();
         glGetTexImage(GL_TEXTURE_2D, 0, outColorMode_, GL_UNSIGNED_BYTE, buf.ptr);
+        if (unmultiply && channels == 4) {
+            inTexUnPremuliply(buf);
+        }
         return buf;
     }
 

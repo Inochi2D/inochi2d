@@ -99,6 +99,10 @@ private:
         RENDERING
     */
     void drawSelf() {
+
+        // Optimization: Nothing to be drawn, skip context switching
+        if (subParts.length == 0) return;
+
         inBeginComposite();
 
             foreach(Part child; subParts) {

@@ -60,6 +60,9 @@ package(inochi2d) {
             gScreenColor = partShader.getUniformLocation("screenColor");
 
             partMaskShader.use();
+            partMaskShader.setUniform(partMaskShader.getUniformLocation("albedo"), 0);
+            partMaskShader.setUniform(partMaskShader.getUniformLocation("emissive"), 1);
+            partMaskShader.setUniform(partMaskShader.getUniformLocation("bumpmap"), 2);
             mmvp = partMaskShader.getUniformLocation("mvp");
             mthreshold = partMaskShader.getUniformLocation("threshold");
             
@@ -135,8 +138,7 @@ enum TextureUsage : size_t {
 */
 @TypeId("Part")
 class Part : Drawable {
-private:
-    
+private:    
     GLuint uvbo;
 
     void updateUVs() {
@@ -156,7 +158,6 @@ private:
 
         // Bind the vertex array
         incDrawableBindVAO();
-
         static if (isMask) {
             partMaskShader.use();
             partMaskShader.setUniform(offset, data.origin);
@@ -168,6 +169,10 @@ private:
             partShader.setUniform(offset, data.origin);
             partShader.setUniform(mvp, inGetCamera().matrix * transform.matrix());
             partShader.setUniform(gopacity, clamp(offsetOpacity * opacity, 0, 1));
+
+            partShader.setUniform(partShader.getUniformLocation("albedo"), 0);
+            partShader.setUniform(partShader.getUniformLocation("emissive"), 1);
+            partShader.setUniform(partShader.getUniformLocation("bumpmap"), 2);
             
             vec3 clampedColor = tint;
             if (!offsetTint.x.isNaN) clampedColor.x = clamp(tint.x*offsetTint.x, 0, 1);
@@ -195,6 +200,7 @@ private:
                 glBindTexture(GL_TEXTURE_2D, 0);
             }
         }
+        
 
         // Enable points array
         glEnableVertexAttribArray(0);
@@ -642,6 +648,7 @@ public:
     void rebuffer(ref MeshData data) {
         super.rebuffer(data);
         this.updateUVs();
+        this.updateTextureState();
     }
 
     override
@@ -698,6 +705,18 @@ public:
                 masks[i].maskSrc = nMask;
             }
         }
+        this.updateTextureState();
+    }
+
+    /**
+        Update texture state
+    */
+    void updateTextureState() {
+        // drawbuffers.length = 0;
+
+        // foreach(i, texture; textures) {
+        //     if (texture) drawbuffers ~= GL_COLOR_ATTACHMENT0+cast(uint)i;
+        // }
     }
 }
 

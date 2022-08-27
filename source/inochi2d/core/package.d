@@ -28,16 +28,47 @@ version(Windows) {
     export extern(C) int AmdPowerXpressRequestHighPerformance = 0x00000001;
 }
 
+struct PostProcessingShader {
+private:
+    GLint[string] uniformCache;
+
+public:
+    Shader shader;
+    this(Shader shader) {
+        this.shader = shader;
+
+        shader.use();
+        shader.setUniform(shader.getUniformLocation("albedo"), 0);
+        shader.setUniform(shader.getUniformLocation("emissive"), 1);
+        shader.setUniform(shader.getUniformLocation("bumpmap"), 2);
+    }
+
+    /**
+        Gets the location of the specified uniform
+    */
+    GLuint getUniform(string name) {
+        if (this.hasUniform(name)) return uniformCache[name];
+        GLint element = shader.getUniformLocation(name);
+        uniformCache[name] = element;
+        return element;
+    }
+
+    /**
+        Returns true if the uniform is present in the shader cache 
+    */
+    bool hasUniform(string name) {
+        return (name in uniformCache) !is null;
+    }
+}
+
 // Internal rendering constants
 private {
     // Viewport
     int inViewportWidth;
     int inViewportHeight;
 
-    Shader sceneShader;
     GLuint sceneVAO;
     GLuint sceneVBO;
-    GLint sceneMVP;
 
     GLuint fBuffer;
     GLuint fAlbedo;
@@ -53,13 +84,65 @@ private {
 
     vec4 inClearColor;
 
-
-    Shader[] blendingShaders;
+    PostProcessingShader basicSceneShader;
+    PostProcessingShader basicSceneLighting;
+    PostProcessingShader[] postProcessingStack;
 
     // Camera
     Camera inCamera;
 
     bool isCompositing;
+
+    void renderScene(vec4 area, PostProcessingShader shaderToUse, GLuint albedo, GLuint emissive, GLuint bump) {
+        glViewport(0, 0, cast(int)area.z, cast(int)area.w);
+
+        // Bind our vertex array
+        glBindVertexArray(sceneVAO);
+        
+        glDisable(GL_CULL_FACE);
+        glDisable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+
+        shaderToUse.shader.use();
+        shaderToUse.shader.setUniform(shaderToUse.getUniform("mvp"), 
+            mat4.orthographic(0, area.z, area.w, 0, 0, max(area.z, area.w)) * 
+            mat4.translation(area.x, area.y, 0)
+        );
+
+        // Ambient light
+        GLint ambientLightUniform = shaderToUse.getUniform("ambientLight");
+        if (ambientLightUniform != -1) shaderToUse.shader.setUniform(ambientLightUniform, inSceneAmbientLight);
+
+        // framebuffer size
+        GLint fbSizeUniform = shaderToUse.getUniform("fbSize");
+        if (fbSizeUniform != -1) shaderToUse.shader.setUniform(fbSizeUniform, vec2(inViewportWidth, inViewportHeight));
+
+        // Bind the texture
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, albedo);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, emissive);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, bump);
+
+        // Enable points array
+        glEnableVertexAttribArray(0); // verts
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4*float.sizeof, null);
+
+        // Enable UVs array
+        glEnableVertexAttribArray(1); // uvs
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4*float.sizeof, cast(float*)(2*float.sizeof));
+
+        // Draw
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        // Disable the vertex attribs after use
+        glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(1);
+
+        glDisable(GL_BLEND);
+    }
 }
 
 // Things only available internally for Inochi2D rendering
@@ -90,8 +173,7 @@ package(inochi2d) {
         version (InDoesRender) {
             
             // Shader for scene
-            sceneShader = new Shader(import("scene.vert"), import("scene.frag"));
-            sceneMVP = sceneShader.getUniformLocation("mvp");
+            basicSceneShader = PostProcessingShader(new Shader(import("scene.vert"), import("scene.frag")));
             glGenVertexArrays(1, &sceneVAO);
             glGenBuffers(1, &sceneVBO);
 
@@ -129,6 +211,8 @@ package(inochi2d) {
         }
     }
 }
+
+vec3 inSceneAmbientLight = vec3(1, 1, 1);
 
 /**
     Begins rendering to the framebuffer
@@ -192,9 +276,9 @@ void inEndComposite() {
     isCompositing = false;
 
     glBindFramebuffer(GL_FRAMEBUFFER, fBuffer);
+    glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
     glFlush();
 }
-
 
 /**
     Ends rendering to the framebuffer
@@ -208,6 +292,90 @@ void inEndScene() {
     glEnable(GL_DEPTH_TEST);
     glFlush();
     glDrawBuffers(1, [GL_COLOR_ATTACHMENT0].ptr);
+}
+
+/**
+    Runs post processing on the scene
+*/
+void inPostProcessScene() {
+    bool targetBuffer;
+
+    // Render area
+    vec4 area = vec4(
+        0, 0,
+        inViewportWidth, inViewportHeight
+    );
+
+    // Tell OpenGL the resolution to render at
+    float[] data = [
+        area.x,         area.y+area.w,          0, 0,
+        area.x,         area.y,                 0, 1,
+        area.x+area.z,  area.y+area.w,          1, 0,
+        
+        area.x+area.z,  area.y+area.w,          1, 0,
+        area.x,         area.y,                 0, 1,
+        area.x+area.z,  area.y,                 1, 1,
+    ];
+    glBindBuffer(GL_ARRAY_BUFFER, sceneVBO);
+    glBufferData(GL_ARRAY_BUFFER, 24*float.sizeof, data.ptr, GL_DYNAMIC_DRAW);
+
+    if (postProcessingStack.length > 0) {
+
+        // We want to be able to post process all the attachments
+        glBindFramebuffer(GL_FRAMEBUFFER, cfBuffer);
+        glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
+        glBindFramebuffer(GL_FRAMEBUFFER, fBuffer);
+        glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
+
+        foreach(shader; postProcessingStack) {
+            targetBuffer = !targetBuffer;
+
+            if (targetBuffer) {
+
+                // Main buffer -> Composite buffer
+                glBindFramebuffer(GL_FRAMEBUFFER, cfBuffer); // dst
+                renderScene(area, shader, fAlbedo, fEmissive, fBump); // src
+            } else {
+
+                // Composite buffer -> Main buffer 
+                glBindFramebuffer(GL_FRAMEBUFFER, fBuffer); // dst
+                glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
+                renderScene(area, shader, cfAlbedo, cfEmissive, cfBump); // src
+            }
+        }
+
+        if (targetBuffer) {
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, cfBuffer);
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fBuffer);
+            glBlitFramebuffer(
+                0, 0, inViewportWidth, inViewportHeight, // src rect
+                0, 0, inViewportWidth, inViewportHeight, // dst rect
+                GL_COLOR_BUFFER_BIT, // blit mask
+                GL_LINEAR // blit filter
+            );
+        }
+    }
+    
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+/**
+    Add basic lighting shader to processing stack
+*/
+void inPostProcessingAddBasicLighting() {
+    postProcessingStack ~= PostProcessingShader(
+        new Shader(
+            import("scene.vert"),
+            import("lighting.frag")
+        )
+    );
+}
+
+/**
+    Clears the post processing stack
+*/
+ref PostProcessingShader[] inGetPostProcessingStack() {
+    return postProcessingStack;
 }
 
 /**
@@ -229,32 +397,6 @@ void inSetCamera(Camera camera) {
 */
 void inDrawScene(vec4 area) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, cast(int)area.z, cast(int)area.w);
-
-    // Bind our vertex array
-    glBindVertexArray(sceneVAO);
-    
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-
-    sceneShader.use();
-    sceneShader.setUniform(sceneMVP, 
-        mat4.orthographic(0, area.z, area.w, 0, 0, max(area.z, area.w)) * 
-        mat4.translation(area.x, area.y, 0)
-    );
-
-    // Bind the texture
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, fAlbedo);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, fEmissive);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, fBump);
-
-    // Enable points array
-    glEnableVertexAttribArray(0); // verts
     float[] data = [
         area.x,         area.y+area.w,          0, 0,
         area.x,         area.y,                 0, 1,
@@ -267,20 +409,7 @@ void inDrawScene(vec4 area) {
 
     glBindBuffer(GL_ARRAY_BUFFER, sceneVBO);
     glBufferData(GL_ARRAY_BUFFER, 24*float.sizeof, data.ptr, GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4*float.sizeof, null);
-
-    // Enable UVs array
-    glEnableVertexAttribArray(1); // uvs
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4*float.sizeof, cast(float*)(2*float.sizeof));
-
-    // Draw
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    // Disable the vertex attribs after use
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
-
-    glDisable(GL_BLEND);
+    renderScene(area, basicSceneShader, fAlbedo, fEmissive, fBump);
 }
 
 void incCompositePrepareRender() {
