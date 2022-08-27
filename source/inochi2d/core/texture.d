@@ -82,14 +82,14 @@ public:
         * TGA 8-bit non-palleted
         * JPEG baseline
     */
-    this(string file) {
+    this(string file, int channels = 0) {
         import std.file : read;
 
         // Ensure we keep this ref alive until we're done with it
         ubyte[] fData = cast(ubyte[])read(file);
 
-        // Load image from disk, as RGBA 8-bit
-        IFImage image = read_image(fData, 0, 8);
+        // Load image from disk, as <channels> 8-bit
+        IFImage image = read_image(fData, channels, 8);
         enforce( image.e == 0, "%s: %s".format(IF_ERROR[image.e], file));
         scope(exit) image.free();
 
@@ -110,10 +110,12 @@ public:
         * BMP 8-bit
         * TGA 8-bit non-palleted
         * JPEG baseline
-    */
-    this(ubyte[] buffer) {
 
-        // Load image from disk, as RGBA 8-bit
+        By setting channels to a specific value you can force a specific color mode
+    */
+    this(ubyte[] buffer, int channels = 0) {
+
+        // Load image from disk, as <channels> 8-bit
         IFImage image = read_image(buffer, 0, 8);
         enforce( image.e == 0, "%s".format(IF_ERROR[image.e]));
         scope(exit) image.free();
