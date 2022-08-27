@@ -29,6 +29,14 @@ void main() {
     
     // Multiply color math + opacity application.
     outAlbedo = vec4(screenOut.xyz, texColor.a) * vec4(multColor.xyz, 1) * opacity;
-    outEmissive = texture(emissive, texUVs);
-    outBump = texture(bumpmap, texUVs);
+
+    // Emissive
+    outEmissive = vec4(texture(emissive, texUVs).xyz, 1) * outAlbedo.a;
+    float ee = clamp(outEmissive.r+outEmissive.g+outEmissive.b, 0, 1);
+    if (ee == 0) outEmissive = vec4(0, 0, 0, 0);
+
+    // Bumpmap
+    outBump = vec4(texture(bumpmap, texUVs).xyz, 1) * outAlbedo.a;
+    ee = clamp(outBump.r+outBump.g+outBump.b, 0, 1);
+    if (ee == 0) outBump = vec4(0, 0, 0, 0);
 }
