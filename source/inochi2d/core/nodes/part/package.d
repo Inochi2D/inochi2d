@@ -648,7 +648,6 @@ public:
     void rebuffer(ref MeshData data) {
         super.rebuffer(data);
         this.updateUVs();
-        this.updateTextureState();
     }
 
     override
@@ -705,18 +704,6 @@ public:
                 masks[i].maskSrc = nMask;
             }
         }
-        this.updateTextureState();
-    }
-
-    /**
-        Update texture state
-    */
-    void updateTextureState() {
-        // drawbuffers.length = 0;
-
-        // foreach(i, texture; textures) {
-        //     if (texture) drawbuffers ~= GL_COLOR_ATTACHMENT0+cast(uint)i;
-        // }
     }
 }
 
