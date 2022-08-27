@@ -173,13 +173,13 @@ void inBeginComposite() {
     isCompositing = true;
 
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, cfBuffer);
+    glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
     glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT);
 
     // Everything else is the actual texture used by the meshes at id 0
     glActiveTexture(GL_TEXTURE0);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-    glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
 }
 
 /**

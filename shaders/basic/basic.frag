@@ -7,6 +7,10 @@
 #version 330
 in vec2 texUVs;
 
+layout(location = 0) out vec4 outAlbedo;
+layout(location = 1) out vec4 outEmissive;
+layout(location = 2) out vec4 outBump;
+
 uniform sampler2D albedo;
 uniform sampler2D emissive;
 uniform sampler2D bumpmap;
@@ -14,10 +18,6 @@ uniform sampler2D bumpmap;
 uniform float opacity;
 uniform vec3 multColor;
 uniform vec3 screenColor;
-
-layout(location = 0) out vec4 outAlbedo;
-layout(location = 1) out vec4 outEmissive;
-layout(location = 2) out vec4 outBump;
 
 void main() {
     // Sample texture

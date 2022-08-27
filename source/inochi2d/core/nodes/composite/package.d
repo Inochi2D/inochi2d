@@ -39,8 +39,8 @@ package(inochi2d) {
                 import("basic/composite.vert"),
                 import("basic/composite.frag")
             );
-            cShader.use();
 
+            cShader.use();
             gopacity = cShader.getUniformLocation("opacity");
             gMultColor = cShader.getUniformLocation("multColor");
             gScreenColor = cShader.getUniformLocation("screenColor");
@@ -108,7 +108,10 @@ private:
         inEndComposite();
 
         glBindVertexArray(cVAO);
+
+        cShader.use();
         cShader.setUniform(gopacity, clamp(offsetOpacity * opacity, 0, 1));
+        incCompositePrepareRender();
         
         vec3 clampedColor = tint;
         if (!offsetTint.x.isNaN) clampedColor.x = clamp(tint.x*offsetTint.x, 0, 1);
@@ -131,8 +134,6 @@ private:
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, cast(void*)(12*float.sizeof));
 
         // Bind the texture
-        incCompositePrepareRender();
-        glBindTexture(GL_TEXTURE_2D, inGetCompositeImage());
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 
