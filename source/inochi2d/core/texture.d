@@ -167,7 +167,7 @@ private:
     int height_;
 
     GLuint colorMode_;
-    int channels;
+    int channels_;
 
 public:
 
@@ -224,12 +224,12 @@ public:
     this(ubyte[] data, int width, int height, int channels = 4) {
         this.width_ = width;
         this.height_ = height;
-        this.channels = channels;
+        this.channels_ = channels;
         this.colorMode_ = GL_RGBA;
-        if (channels == 1) this.colorMode_ = GL_RED;
-        if (channels == 2) this.colorMode_ = GL_RG;
-        if (channels == 3) this.colorMode_ = GL_RGB;
-        if (channels == 4) this.colorMode_ = GL_RGBA;
+        if (channels_ == 1) this.colorMode_ = GL_RED;
+        if (channels_ == 2) this.colorMode_ = GL_RG;
+        if (channels_ == 3) this.colorMode_ = GL_RGB;
+        if (channels_ == 4) this.colorMode_ = GL_RGBA;
 
         // Generate OpenGL texture
         glGenTextures(1, &id);
@@ -258,8 +258,18 @@ public:
         return height_;
     }
 
+    /**
+        Gets the OpenGL color mode
+    */
     GLuint colorMode() {
         return colorMode_;
+    }
+
+    /**
+        Gets the channel count
+    */
+    int channels() {
+        return channels_;
     }
 
     /**
@@ -311,7 +321,7 @@ public:
     */
     void setData(ubyte[] data) {
         this.bind();
-        glPixelStorei(GL_UNPACK_ALIGNMENT, channels);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, channels_);
         glTexImage2D(GL_TEXTURE_2D, 0, colorMode_, width_, height_, 0, colorMode_, GL_UNSIGNED_BYTE, data.ptr);
         
         this.genMipmap();
@@ -336,7 +346,7 @@ public:
         enforce( y >= 0 && y+height <= this.height_, "y offset is out of bounds (yoffset=%s, ybound=%s)".format(y+height, this.height_));
 
         // Update the texture
-        glPixelStorei(GL_UNPACK_ALIGNMENT, channels);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, channels_);
         glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, colorMode_, GL_UNSIGNED_BYTE, data.ptr);
 
         this.genMipmap();
@@ -359,14 +369,14 @@ public:
         Saves the texture to file
     */
     void save(string file) {
-        write_image(file, width, height, getTextureData(), channels);
+        write_image(file, width, height, getTextureData(), channels_);
     }
 
     /**
         Gets the texture data for the texture
     */
     ubyte[] getTextureData() {
-        ubyte[] buf = new ubyte[width*height*channels];
+        ubyte[] buf = new ubyte[width*height*channels_];
         bind();
         glGetTexImage(GL_TEXTURE_2D, 0, colorMode_, GL_UNSIGNED_BYTE, buf.ptr);
         return buf;

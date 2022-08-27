@@ -593,7 +593,7 @@ public:
         
         foreach(part; getAllParts) {
             foreach(texture; part.textures) {
-                this.addTextureToSlot(texture);
+                if (texture) this.addTextureToSlot(texture);
             }
         }
     }

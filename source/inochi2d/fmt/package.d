@@ -160,7 +160,7 @@ Puppet inLoadINPPuppet(ubyte[] buffer) {
 }
 
 /**
-
+    Only write changed EXT section portions to puppet file
 */
 void inWriteINPExtensions(Puppet p, string file) {
     import std.stdio : File;
@@ -285,7 +285,7 @@ void inWriteINPPuppet(Puppet p, string file) {
     app ~= nativeToBigEndian(cast(uint)p.textureSlots.length)[0..4];
     foreach(texture; p.textureSlots) {
         int e;
-        ubyte[] tex = write_image_mem(IF_TGA, texture.width, texture.height, texture.getTextureData(), 4, e);
+        ubyte[] tex = write_image_mem(IF_TGA, texture.width, texture.height, texture.getTextureData(), texture.channels, e);
         app ~= nativeToBigEndian(cast(uint)tex.length)[0..4];
         app ~= (cast(ubyte)IN_TEX_TGA);
         app ~= (tex);
