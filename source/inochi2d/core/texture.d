@@ -70,6 +70,11 @@ public:
     int height;
 
     /**
+        Amount of color channels
+    */
+    int channels;
+
+    /**
         Loads a shallow texture from image file
         Supported file types:
         * PNG 8-bit
@@ -84,7 +89,7 @@ public:
         ubyte[] fData = cast(ubyte[])read(file);
 
         // Load image from disk, as RGBA 8-bit
-        IFImage image = read_image(fData, 4, 8);
+        IFImage image = read_image(fData, 0, 8);
         enforce( image.e == 0, "%s: %s".format(IF_ERROR[image.e], file));
         scope(exit) image.free();
 
@@ -95,6 +100,7 @@ public:
         // Set the width/height data
         this.width = image.w;
         this.height = image.h;
+        this.channels = image.c;
     }
 
     /**
@@ -108,7 +114,7 @@ public:
     this(ubyte[] buffer) {
 
         // Load image from disk, as RGBA 8-bit
-        IFImage image = read_image(buffer, 4, 8);
+        IFImage image = read_image(buffer, 0, 8);
         enforce( image.e == 0, "%s".format(IF_ERROR[image.e]));
         scope(exit) image.free();
 
@@ -119,6 +125,7 @@ public:
         // Set the width/height data
         this.width = image.w;
         this.height = image.h;
+        this.channels = image.c;
     }
     
     /**
@@ -130,6 +137,7 @@ public:
         // Set the width/height data
         this.width = w;
         this.height = h;
+        this.channels = channels;
     }
 
     /**
@@ -139,7 +147,7 @@ public:
         import std.file : write;
         import core.stdc.stdlib : free;
         int e;
-        ubyte[] sData = write_image_mem(IF_PNG, this.width, this.height, this.data, 4, e);
+        ubyte[] sData = write_image_mem(IF_PNG, this.width, this.height, this.data, channels, e);
         enforce(!e, "%s".format(IF_ERROR[e]));
 
         write(file, sData);
@@ -159,7 +167,7 @@ private:
     int height_;
 
     GLuint colorMode_;
-    int alignment;
+    int channels;
 
 public:
 
@@ -178,41 +186,50 @@ public:
         ubyte[] fData = cast(ubyte[])read(file);
 
         // Load image from disk, as RGBA 8-bit
-        IFImage image = read_image(fData, 4, 8);
+        IFImage image = read_image(fData, 0, 8);
         enforce( image.e == 0, "%s: %s".format(IF_ERROR[image.e], file));
         scope(exit) image.free();
 
         // Load in image data to OpenGL
-        this(image.buf8, image.w, image.h);
+        GLuint channel = GL_RGBA;
+        if (image.c == 1) channel = GL_RED;
+        if (image.c == 2) channel = GL_RG;
+        if (image.c == 3) channel = GL_RGB;
+        if (image.c == 4) channel = GL_RGBA;
+        this(image.buf8, image.w, image.h, image.c);
     }
 
     /**
         Creates a texture from a ShallowTexture
     */
     this(ShallowTexture shallow) {
-        this(shallow.data, shallow.width, shallow.height);
+        this(shallow.data, shallow.width, shallow.height, shallow.channels);
     }
 
     /**
         Creates a new empty texture
     */
-    this(int width, int height, GLuint mode = GL_RGBA, int alignment = 4) {
+    this(int width, int height, int channels = 4) {
 
         // Create an empty texture array with no data
-        ubyte[] empty = new ubyte[width_*height_*alignment];
+        ubyte[] empty = new ubyte[width_*height_*channels];
 
         // Pass it on to the other texturing
-        this(empty, width, height, mode, alignment);
+        this(empty, width, height, channels);
     }
 
     /**
         Creates a new texture from specified data
     */
-    this(ubyte[] data, int width, int height, GLuint mode = GL_RGBA, int alignment = 4) {
-        this.colorMode_ = mode;
-        this.alignment = alignment;
+    this(ubyte[] data, int width, int height, int channels = 4) {
         this.width_ = width;
         this.height_ = height;
+        this.channels = channels;
+        this.colorMode_ = GL_RGBA;
+        if (channels == 1) this.colorMode_ = GL_RED;
+        if (channels == 2) this.colorMode_ = GL_RG;
+        if (channels == 3) this.colorMode_ = GL_RGB;
+        if (channels == 4) this.colorMode_ = GL_RGBA;
 
         // Generate OpenGL texture
         glGenTextures(1, &id);
@@ -294,8 +311,8 @@ public:
     */
     void setData(ubyte[] data) {
         this.bind();
-        glPixelStorei(GL_UNPACK_ALIGNMENT, alignment);
-        glTexImage2D(GL_TEXTURE_2D, 0, colorMode_, width_, height_, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.ptr);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, channels);
+        glTexImage2D(GL_TEXTURE_2D, 0, colorMode_, width_, height_, 0, colorMode_, GL_UNSIGNED_BYTE, data.ptr);
         
         this.genMipmap();
     }
@@ -319,7 +336,7 @@ public:
         enforce( y >= 0 && y+height <= this.height_, "y offset is out of bounds (yoffset=%s, ybound=%s)".format(y+height, this.height_));
 
         // Update the texture
-        glPixelStorei(GL_UNPACK_ALIGNMENT, alignment);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, channels);
         glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, colorMode_, GL_UNSIGNED_BYTE, data.ptr);
 
         this.genMipmap();
@@ -342,16 +359,16 @@ public:
         Saves the texture to file
     */
     void save(string file) {
-        write_image(file, width, height, getTextureData(), 4);
+        write_image(file, width, height, getTextureData(), channels);
     }
 
     /**
         Gets the texture data for the texture
     */
     ubyte[] getTextureData() {
-        ubyte[] buf = new ubyte[width*height*4];
+        ubyte[] buf = new ubyte[width*height*channels];
         bind();
-        glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf.ptr);
+        glGetTexImage(GL_TEXTURE_2D, 0, colorMode_, GL_UNSIGNED_BYTE, buf.ptr);
         return buf;
     }
 
