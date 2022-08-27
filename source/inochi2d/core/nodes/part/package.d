@@ -237,11 +237,16 @@ protected:
             if (inIsINPMode()) {
                 serializer.putKey("textures");
                 auto state = serializer.arrayBegin();
-                    foreach(texture; textures) {
-                        ptrdiff_t index = puppet.getTextureSlotIndexFor(texture);
-                        if (index >= 0) {
-                            serializer.elemBegin;
-                            serializer.putValue(cast(size_t)index);
+                    foreach(ref texture; textures) {
+                        if (texture) {
+                            ptrdiff_t index = puppet.getTextureSlotIndexFor(texture);
+                            if (index >= 0) {
+                                serializer.elemBegin;
+                                serializer.putValue(cast(size_t)index);
+                            } else {
+                                serializer.elemBegin;
+                                serializer.putValue(cast(size_t)NO_TEXTURE);
+                            }
                         } else {
                             serializer.elemBegin;
                             serializer.putValue(cast(size_t)NO_TEXTURE);
@@ -284,20 +289,27 @@ protected:
     void serializeSelf(ref InochiSerializerCompact serializer) {
         super.serializeSelf(serializer);
         
-        if (inIsINPMode()) {
-            serializer.putKey("textures");
-            auto state = serializer.arrayBegin();
-                foreach(texture; textures) {
-                    ptrdiff_t index = puppet.getTextureSlotIndexFor(texture);
-                    if (index >= 0) {
-                        serializer.elemBegin;
-                        serializer.putValue(cast(size_t)index);
-                    } else {
-                        serializer.elemBegin;
-                        serializer.putValue(cast(size_t)NO_TEXTURE);
+        version (InDoesRender) {
+            if (inIsINPMode()) {
+                serializer.putKey("textures");
+                auto state = serializer.arrayBegin();
+                    foreach(ref texture; textures) {
+                        if (texture) {
+                            ptrdiff_t index = puppet.getTextureSlotIndexFor(texture);
+                            if (index >= 0) {
+                                serializer.elemBegin;
+                                serializer.putValue(cast(size_t)index);
+                            } else {
+                                serializer.elemBegin;
+                                serializer.putValue(cast(size_t)NO_TEXTURE);
+                            }
+                        } else {
+                            serializer.elemBegin;
+                            serializer.putValue(cast(size_t)NO_TEXTURE);
+                        }
                     }
-                }
-            serializer.arrayEnd(state);
+                serializer.arrayEnd(state);
+            }
         }
 
         serializer.putKey("blend_mode");
