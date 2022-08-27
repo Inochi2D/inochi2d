@@ -116,6 +116,15 @@ Part inCreateSimplePart(Texture tex, Node parent = null, string name = "New Part
     return p;
 }
 
+enum NO_TEXTURE = uint.max;
+
+enum TextureUsage : size_t {
+    Albedo,
+    Emissive,
+    Bumpmap,
+    COUNT
+}
+
 /**
     Dynamic Mesh Part
 */
@@ -135,7 +144,6 @@ private:
     /*
         RENDERING
     */
-
     void drawSelf(bool isMask = false)() {
 
         // In some cases this may happen
@@ -234,14 +242,11 @@ protected:
                         if (index >= 0) {
                             serializer.elemBegin;
                             serializer.putValue(cast(size_t)index);
+                        } else {
+                            serializer.elemBegin;
+                            serializer.putValue(cast(size_t)NO_TEXTURE);
                         }
                     }
-                serializer.arrayEnd(state);
-            } else {
-                serializer.putKey("textures");
-                auto state = serializer.arrayBegin();
-                    serializer.elemBegin;
-                    serializer.putValue(name);
                 serializer.arrayEnd(state);
             }
         }
@@ -287,14 +292,11 @@ protected:
                     if (index >= 0) {
                         serializer.elemBegin;
                         serializer.putValue(cast(size_t)index);
+                    } else {
+                        serializer.elemBegin;
+                        serializer.putValue(cast(size_t)NO_TEXTURE);
                     }
                 }
-            serializer.arrayEnd(state);
-        } else {
-            serializer.putKey("textures");
-            auto state = serializer.arrayBegin();
-                serializer.elemBegin;
-                serializer.putValue(name);
             serializer.arrayEnd(state);
         }
 
@@ -336,6 +338,8 @@ protected:
                 foreach(texElement; data["textures"].byElement) {
                     uint textureId;
                     texElement.deserializeValue(textureId);
+                    if (textureId == NO_TEXTURE) continue;
+
                     textureIds ~= textureId;
                 }
             } else {
@@ -346,21 +350,19 @@ protected:
         } else {
             if (inIsINPMode()) {
 
+                size_t i;
                 foreach(texElement; data["textures"].byElement) {
                     uint textureId;
                     texElement.deserializeValue(textureId);
+
+                    // uint max = no texture set
+                    if (textureId == NO_TEXTURE) continue;
+
                     textureIds ~= textureId;
-                    this.textures ~= inGetTextureFromId(textureId);
+                    this.textures[i++] = inGetTextureFromId(textureId);
                 }
             } else {
-
-                // TODO: Index textures by ID
-                string texName;
-                auto elements = data["textures"].byElement;
-                if (!elements.empty) {
-                    if (auto exc = elements.front.deserializeValue(texName)) return exc;
-                    this.textures = [new Texture(texName)];
-                }
+                enforce(0, "Loading from texture path is deprecated.");
             }
         }
 
@@ -424,7 +426,7 @@ public:
 
         TODO: use more than texture 0
     */
-    Texture[] textures;
+    Texture[TextureUsage.COUNT] textures;
 
     /**
         List of texture IDs

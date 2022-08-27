@@ -158,7 +158,7 @@ private:
     int width_;
     int height_;
 
-    GLuint colorMode;
+    GLuint colorMode_;
     int alignment;
 
 public:
@@ -209,7 +209,7 @@ public:
         Creates a new texture from specified data
     */
     this(ubyte[] data, int width, int height, GLuint mode = GL_RGBA, int alignment = 4) {
-        this.colorMode = mode;
+        this.colorMode_ = mode;
         this.alignment = alignment;
         this.width_ = width;
         this.height_ = height;
@@ -239,6 +239,10 @@ public:
     */
     int height() {
         return height_;
+    }
+
+    GLuint colorMode() {
+        return colorMode_;
     }
 
     /**
@@ -291,7 +295,7 @@ public:
     void setData(ubyte[] data) {
         this.bind();
         glPixelStorei(GL_UNPACK_ALIGNMENT, alignment);
-        glTexImage2D(GL_TEXTURE_2D, 0, colorMode, width_, height_, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.ptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, colorMode_, width_, height_, 0, GL_RGBA, GL_UNSIGNED_BYTE, data.ptr);
         
         this.genMipmap();
     }
@@ -316,7 +320,7 @@ public:
 
         // Update the texture
         glPixelStorei(GL_UNPACK_ALIGNMENT, alignment);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, this.colorMode, GL_UNSIGNED_BYTE, data.ptr);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, colorMode_, GL_UNSIGNED_BYTE, data.ptr);
 
         this.genMipmap();
     }
