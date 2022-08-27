@@ -40,11 +40,15 @@ private {
     GLint sceneMVP;
 
     GLuint fBuffer;
-    GLuint fColor;
+    GLuint fAlbedo;
+    GLuint fEmissive;
+    GLuint fBump;
     GLuint fStencil;
 
     GLuint cfBuffer;
-    GLuint cfColor;
+    GLuint cfAlbedo;
+    GLuint cfEmissive;
+    GLuint cfBump;
     GLuint cfStencil;
 
     vec4 inClearColor;
@@ -97,17 +101,27 @@ package(inochi2d) {
             
             // Generate the color and stencil-depth textures needed
             // Note: we're not using the depth buffer but OpenGL 3.4 does not support stencil-only buffers
-            glGenTextures(1, &fColor);
+            glGenTextures(1, &fAlbedo);
+            glGenTextures(1, &fEmissive);
+            glGenTextures(1, &fBump);
             glGenTextures(1, &fStencil);
-            glGenTextures(1, &cfColor);
+
+            glGenTextures(1, &cfAlbedo);
+            glGenTextures(1, &cfEmissive);
+            glGenTextures(1, &cfBump);
             glGenTextures(1, &cfStencil);
 
             // Attach textures to framebuffer
             glBindFramebuffer(GL_FRAMEBUFFER, fBuffer);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fColor, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fAlbedo, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, fEmissive, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, fBump, 0);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, fStencil, 0);
+
             glBindFramebuffer(GL_FRAMEBUFFER, cfBuffer);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, cfColor, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, cfAlbedo, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, cfEmissive, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, cfBump, 0);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, cfStencil, 0);
 
             // go back to default fb
@@ -120,7 +134,9 @@ package(inochi2d) {
     Begins rendering to the framebuffer
 */
 void inBeginScene() {
-    glEnable(GL_BLEND);
+    glEnablei(GL_BLEND, 0);
+    glEnablei(GL_BLEND, 1);
+    glEnablei(GL_BLEND, 2);
     glDisable(GL_DEPTH_TEST);
 
     // Make sure to reset our viewport if someone has messed with it
@@ -128,13 +144,23 @@ void inBeginScene() {
 
     // Bind our framebuffer
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fBuffer);
+
+    // First clear buffer 1
+    glDrawBuffers(1, [GL_COLOR_ATTACHMENT0].ptr);
     glClearColor(inClearColor.r, inClearColor.g, inClearColor.b, inClearColor.a);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    // Then clear others with black
+    glDrawBuffers(2, [GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
+    glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
 
     // Everything else is the actual texture used by the meshes at id 0
     glActiveTexture(GL_TEXTURE0);
 
+    // Finally we render to all buffers
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
 }
 
 /**
@@ -153,6 +179,7 @@ void inBeginComposite() {
     // Everything else is the actual texture used by the meshes at id 0
     glActiveTexture(GL_TEXTURE0);
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
 }
 
 /**
@@ -175,9 +202,12 @@ void inEndComposite() {
 void inEndScene() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    glDisable(GL_BLEND);
+    glDisablei(GL_BLEND, 0);
+    glDisablei(GL_BLEND, 1);
+    glDisablei(GL_BLEND, 2);
     glEnable(GL_DEPTH_TEST);
     glFlush();
+    glDrawBuffers(1, [GL_COLOR_ATTACHMENT0].ptr);
 }
 
 /**
@@ -216,8 +246,12 @@ void inDrawScene(vec4 area) {
     );
 
     // Bind the texture
-    glBindTexture(GL_TEXTURE_2D, fColor);
     glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, fAlbedo);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, fEmissive);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, fBump);
 
     // Enable points array
     glEnableVertexAttribArray(0); // verts
@@ -249,6 +283,15 @@ void inDrawScene(vec4 area) {
     glDisable(GL_BLEND);
 }
 
+void incCompositePrepareRender() {
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, cfAlbedo);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, cfEmissive);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, cfBump);
+}
+
 /**
     Gets the Inochi2D framebuffer 
 
@@ -264,7 +307,7 @@ GLuint inGetFramebuffer() {
     DO NOT MODIFY THIS IMAGE!
 */
 GLuint inGetRenderImage() {
-    return fColor;
+    return fAlbedo;
 }
 
 /**
@@ -273,7 +316,7 @@ GLuint inGetRenderImage() {
     DO NOT MODIFY THIS IMAGE!
 */
 GLuint inGetCompositeImage() {
-    return cfColor;
+    return cfAlbedo;
 }
 
 /**
@@ -286,7 +329,17 @@ void inSetViewport(int width, int height) nothrow {
 
     version(InDoesRender) {
         // Render Framebuffer
-        glBindTexture(GL_TEXTURE_2D, fColor);
+        glBindTexture(GL_TEXTURE_2D, fAlbedo);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        
+        glBindTexture(GL_TEXTURE_2D, fEmissive);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        
+        glBindTexture(GL_TEXTURE_2D, fBump);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -295,12 +348,24 @@ void inSetViewport(int width, int height) nothrow {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, null);
 
         glBindFramebuffer(GL_FRAMEBUFFER, fBuffer);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fColor, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fAlbedo, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, fEmissive, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, fBump, 0);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, fStencil, 0);
         
 
         // Composite framebuffer
-        glBindTexture(GL_TEXTURE_2D, cfColor);
+        glBindTexture(GL_TEXTURE_2D, cfAlbedo);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        
+        glBindTexture(GL_TEXTURE_2D, cfEmissive);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        
+        glBindTexture(GL_TEXTURE_2D, cfBump);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -309,7 +374,9 @@ void inSetViewport(int width, int height) nothrow {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, null);
 
         glBindFramebuffer(GL_FRAMEBUFFER, cfBuffer);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, cfColor, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, cfAlbedo, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, cfEmissive, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, cfBump, 0);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, cfStencil, 0);
         
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -337,7 +404,7 @@ size_t inViewportDataLength() {
 void inDumpViewport(ref ubyte[] dumpTo) {
     import std.exception : enforce;
     enforce(dumpTo.length >= inViewportDataLength(), "Invalid data destination length for inDumpViewport");
-    glBindTexture(GL_TEXTURE_2D, fColor);
+    glBindTexture(GL_TEXTURE_2D, cfAlbedo);
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, dumpTo.ptr);
 
     // We need to flip it because OpenGL renders stuff with a different coordinate system

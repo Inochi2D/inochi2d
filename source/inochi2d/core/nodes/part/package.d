@@ -49,12 +49,17 @@ package(inochi2d) {
             partShader = new Shader(import("basic/basic.vert"), import("basic/basic.frag"));
             partMaskShader = new Shader(import("basic/basic.vert"), import("basic/basic-mask.frag"));
 
+            partShader.use();
+            partShader.setUniform(partShader.getUniformLocation("albedo"), 0);
+            partShader.setUniform(partShader.getUniformLocation("emissive"), 1);
+            partShader.setUniform(partShader.getUniformLocation("bumpmap"), 2);
             mvp = partShader.getUniformLocation("mvp");
             offset = partShader.getUniformLocation("offset");
             gopacity = partShader.getUniformLocation("opacity");
             gMultColor = partShader.getUniformLocation("multColor");
             gScreenColor = partShader.getUniformLocation("screenColor");
-            
+
+            partMaskShader.use();
             mmvp = partMaskShader.getUniformLocation("mvp");
             mthreshold = partMaskShader.getUniformLocation("threshold");
             
@@ -181,7 +186,15 @@ private:
         }
 
         // Bind the texture
-        textures[0].bind();
+        foreach(i, ref texture; textures) {
+            if (texture) texture.bind(cast(uint)i);
+            else {
+
+                // Disable texture when none is there.
+                glActiveTexture(GL_TEXTURE0+cast(uint)i);
+                glBindTexture(GL_TEXTURE_2D, 0);
+            }
+        }
 
         // Enable points array
         glEnableVertexAttribArray(0);

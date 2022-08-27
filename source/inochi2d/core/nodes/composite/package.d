@@ -39,14 +39,20 @@ package(inochi2d) {
                 import("basic/composite.vert"),
                 import("basic/composite.frag")
             );
+            cShader.use();
+
             gopacity = cShader.getUniformLocation("opacity");
             gMultColor = cShader.getUniformLocation("multColor");
             gScreenColor = cShader.getUniformLocation("screenColor");
+            cShader.setUniform(cShader.getUniformLocation("albedo"), 0);
+            cShader.setUniform(cShader.getUniformLocation("emissive"), 1);
+            cShader.setUniform(cShader.getUniformLocation("bumpmap"), 2);
 
             cShaderMask = new Shader(
                 import("basic/composite.vert"),
                 import("basic/composite-mask.frag")
             );
+            cShaderMask.use();
             mthreshold = cShader.getUniformLocation("threshold");
             mopacity = cShader.getUniformLocation("opacity");
 
@@ -102,7 +108,6 @@ private:
         inEndComposite();
 
         glBindVertexArray(cVAO);
-        cShader.use();
         cShader.setUniform(gopacity, clamp(offsetOpacity * opacity, 0, 1));
         
         vec3 clampedColor = tint;
@@ -125,7 +130,8 @@ private:
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, null);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, cast(void*)(12*float.sizeof));
 
-        glActiveTexture(GL_TEXTURE0);
+        // Bind the texture
+        incCompositePrepareRender();
         glBindTexture(GL_TEXTURE_2D, inGetCompositeImage());
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
