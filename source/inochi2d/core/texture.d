@@ -75,6 +75,11 @@ public:
     int channels;
 
     /**
+        Amount of channels to conver to when passed to OpenGL
+    */
+    int convChannels;
+
+    /**
         Loads a shallow texture from image file
         Supported file types:
         * PNG 8-bit
@@ -89,7 +94,7 @@ public:
         ubyte[] fData = cast(ubyte[])read(file);
 
         // Load image from disk, as <channels> 8-bit
-        IFImage image = read_image(fData, channels, 8);
+        IFImage image = read_image(fData, 0, 8);
         enforce( image.e == 0, "%s: %s".format(IF_ERROR[image.e], file));
         scope(exit) image.free();
 
@@ -101,6 +106,7 @@ public:
         this.width = image.w;
         this.height = image.h;
         this.channels = image.c;
+        this.convChannels = channels == 0 ? image.c : channels;
     }
 
     /**
@@ -128,6 +134,7 @@ public:
         this.width = image.w;
         this.height = image.h;
         this.channels = image.c;
+        this.convChannels = channels == 0 ? image.c : channels;
     }
     
     /**
@@ -140,6 +147,7 @@ public:
         this.width = w;
         this.height = h;
         this.channels = channels;
+        this.convChannels = channels;
     }
 
     /**
@@ -168,7 +176,8 @@ private:
     int width_;
     int height_;
 
-    GLuint colorMode_;
+    GLuint inColorMode_;
+    GLuint outColorMode_;
     int channels_;
 
 public:
@@ -181,7 +190,7 @@ public:
         * TGA 8-bit non-palleted
         * JPEG baseline
     */
-    this(string file) {
+    this(string file, int channels = 0) {
         import std.file : read;
 
         // Ensure we keep this ref alive until we're done with it
@@ -193,19 +202,14 @@ public:
         scope(exit) image.free();
 
         // Load in image data to OpenGL
-        GLuint channel = GL_RGBA;
-        if (image.c == 1) channel = GL_RED;
-        if (image.c == 2) channel = GL_RG;
-        if (image.c == 3) channel = GL_RGB;
-        if (image.c == 4) channel = GL_RGBA;
-        this(image.buf8, image.w, image.h, image.c);
+        this(image.buf8, image.w, image.h, image.c, channels == 0 ? image.c : channels);
     }
 
     /**
         Creates a texture from a ShallowTexture
     */
     this(ShallowTexture shallow) {
-        this(shallow.data, shallow.width, shallow.height, shallow.channels);
+        this(shallow.data, shallow.width, shallow.height, shallow.channels, shallow.convChannels);
     }
 
     /**
@@ -217,21 +221,25 @@ public:
         ubyte[] empty = new ubyte[width_*height_*channels];
 
         // Pass it on to the other texturing
-        this(empty, width, height, channels);
+        this(empty, width, height, channels, channels);
     }
 
     /**
         Creates a new texture from specified data
     */
-    this(ubyte[] data, int width, int height, int channels = 4) {
+    this(ubyte[] data, int width, int height, int inChannels = 4, int outChannels = 4) {
         this.width_ = width;
         this.height_ = height;
-        this.channels_ = channels;
-        this.colorMode_ = GL_RGBA;
-        if (channels_ == 1) this.colorMode_ = GL_RED;
-        if (channels_ == 2) this.colorMode_ = GL_RG;
-        if (channels_ == 3) this.colorMode_ = GL_RGB;
-        if (channels_ == 4) this.colorMode_ = GL_RGBA;
+        this.channels_ = outChannels;
+
+        this.inColorMode_ = GL_RGBA;
+        this.outColorMode_ = GL_RGBA;
+        if (inChannels == 1) this.inColorMode_ = GL_RED;
+        else if (inChannels == 2) this.inColorMode_ = GL_RG;
+        else if (inChannels == 3) this.inColorMode_ = GL_RGB;
+        if (outChannels == 1) this.outColorMode_ = GL_RED;
+        else if (outChannels == 2) this.outColorMode_ = GL_RG;
+        else if (outChannels == 3) this.outColorMode_ = GL_RGB;
 
         // Generate OpenGL texture
         glGenTextures(1, &id);
@@ -264,7 +272,7 @@ public:
         Gets the OpenGL color mode
     */
     GLuint colorMode() {
-        return colorMode_;
+        return outColorMode_;
     }
 
     /**
@@ -323,8 +331,9 @@ public:
     */
     void setData(ubyte[] data) {
         this.bind();
-        glPixelStorei(GL_UNPACK_ALIGNMENT, channels_);
-        glTexImage2D(GL_TEXTURE_2D, 0, colorMode_, width_, height_, 0, colorMode_, GL_UNSIGNED_BYTE, data.ptr);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        glTexImage2D(GL_TEXTURE_2D, 0, outColorMode_, width_, height_, 0, inColorMode_, GL_UNSIGNED_BYTE, data.ptr);
         
         this.genMipmap();
     }
@@ -340,16 +349,20 @@ public:
     /**
         Sets a region of a texture to new data
     */
-    void setDataRegion(ubyte[] data, int x, int y, int width, int height) {
+    void setDataRegion(ubyte[] data, int x, int y, int width, int height, int channels = 4) {
         this.bind();
 
         // Make sure we don't try to change the texture in an out of bounds area.
         enforce( x >= 0 && x+width <= this.width_, "x offset is out of bounds (xoffset=%s, xbound=%s)".format(x+width, this.width_));
         enforce( y >= 0 && y+height <= this.height_, "y offset is out of bounds (yoffset=%s, ybound=%s)".format(y+height, this.height_));
 
+        GLuint inChannelMode = GL_RGBA;
+        if (channels == 1) inChannelMode = GL_RED;
+        else if (channels == 2) inChannelMode = GL_RG;
+        else if (channels == 3) inChannelMode = GL_RGB;
+
         // Update the texture
-        glPixelStorei(GL_UNPACK_ALIGNMENT, channels_);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, colorMode_, GL_UNSIGNED_BYTE, data.ptr);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, inChannelMode, GL_UNSIGNED_BYTE, data.ptr);
 
         this.genMipmap();
     }
@@ -380,7 +393,7 @@ public:
     ubyte[] getTextureData() {
         ubyte[] buf = new ubyte[width*height*channels_];
         bind();
-        glGetTexImage(GL_TEXTURE_2D, 0, colorMode_, GL_UNSIGNED_BYTE, buf.ptr);
+        glGetTexImage(GL_TEXTURE_2D, 0, outColorMode_, GL_UNSIGNED_BYTE, buf.ptr);
         return buf;
     }
 
