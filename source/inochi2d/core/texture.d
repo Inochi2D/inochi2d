@@ -160,7 +160,7 @@ public:
         this.width = w;
         this.height = h;
         this.channels = channels;
-        this.convChannels = channels;
+        this.convChannels = convChannels;
     }
 
     /**
