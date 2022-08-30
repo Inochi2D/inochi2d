@@ -261,10 +261,9 @@ void inWriteINPExtensions(Puppet p, string file) {
 }
 
 /**
-    Writes Inochi2D puppet to file
+    Writes out a model to memory
 */
-void inWriteINPPuppet(Puppet p, string file) {
-    import std.file : write;
+ubyte[] inWriteINPPuppetMemory(Puppet p) {
     import inochi2d.ver : IN_VERSION;
     import std.range : appender;
     import std.json : JSONValue;
@@ -310,8 +309,17 @@ void inWriteINPPuppet(Puppet p, string file) {
         }
     }
 
+    return app.data;
+}
+
+/**
+    Writes Inochi2D puppet to file
+*/
+void inWriteINPPuppet(Puppet p, string file) {
+    import std.file : write;
+
     // Write it out to file
-    write(file, app.data);
+    write(file, inWriteINPPuppetMemory(p));
 }
 
 enum IN_TEX_PNG = 0u; /// PNG encoded Inochi2D texture
