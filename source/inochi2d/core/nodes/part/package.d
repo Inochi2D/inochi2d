@@ -23,6 +23,8 @@ public import inochi2d.core.meshdata;
 
 package(inochi2d) {
     private {
+        Texture boundAlbedo;
+
         Shader partShader;
         Shader partMaskShader;
 
@@ -190,14 +192,19 @@ private:
             // TODO: EXT MODE
         }
 
-        // Bind the texture
-        foreach(i, ref texture; textures) {
-            if (texture) texture.bind(cast(uint)i);
-            else {
+        // Make sure we check whether we're already bound
+        // Otherwise we're wasting GPU resources
+        if (boundAlbedo != textures[0]) {
 
-                // Disable texture when none is there.
-                glActiveTexture(GL_TEXTURE0+cast(uint)i);
-                glBindTexture(GL_TEXTURE_2D, 0);
+            // Bind the textures
+            foreach(i, ref texture; textures) {
+                if (texture) texture.bind(cast(uint)i);
+                else {
+
+                    // Disable texture when none is there.
+                    glActiveTexture(GL_TEXTURE0+cast(uint)i);
+                    glBindTexture(GL_TEXTURE_2D, 0);
+                }
             }
         }
         
@@ -522,7 +529,10 @@ public:
     */
     this(MeshData data, Texture[] textures, uint uuid, Node parent = null) {
         super(data, uuid, parent);
-        this.textures = textures;
+        foreach(i; 0..TextureUsage.COUNT) {
+            if (i >= textures.length) break;
+            this.textures[i] = textures[i];
+        }
 
         version(InDoesRender) {
             glGenBuffers(1, &uvbo);
