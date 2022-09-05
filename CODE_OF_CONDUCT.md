@@ -34,7 +34,7 @@ This Code of Conduct applies within all project spaces, and it also applies when
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting any member of the project leadership on Luna's Discord
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting members of the Development Team on the Discord Server or Luna via email ([cli-luna@protonmail.com](mailto:cli-luna@protonmail.com)).
 
 All complaints will be reviewed and investigated and will result in a response that is deemed necessary and appropriate to the circumstances. The project leadership is obligated to maintain confidentiality with regard to the reporter of an incident. Further details of specific enforcement policies may be posted separately.
 
