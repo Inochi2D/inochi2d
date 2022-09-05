@@ -580,3 +580,28 @@ void inGetClearColor(out float r, out float g, out float b, out float a) {
     adding new subclasses that aren't in the base spec.
 */
 struct TypeId { string id; }
+
+/**
+    Different modes of interpolation between values.
+*/
+enum InterpolateMode {
+    /**
+        Round to nearest
+    */
+    Nearest,
+    
+    /**
+        Linear interpolation
+    */
+    Linear,
+
+    /**
+        Cubic interpolation
+    */
+    Cubic,
+
+    /**
+        Cubic in-out interpolation
+    */
+    CubicInOut,
+}

@@ -32,31 +32,6 @@ struct BindTarget {
 }
 
 /**
-    Interpolation mode between keypoints
-*/
-enum InterpolateMode {
-    /**
-        Round to nearest
-    */
-    Nearest,
-    
-    /**
-        Linear interpolation
-    */
-    Linear,
-
-    /**
-        Cubic interpolation
-    */
-    Cubic,
-
-    /**
-        Cubic in-out interpolation
-    */
-    CubicInOut,
-}
-
-/**
     A binding to a parameter, of a given value type
 */
 abstract class ParameterBinding {
