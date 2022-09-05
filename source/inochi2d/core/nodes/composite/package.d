@@ -363,6 +363,20 @@ public:
             default: return false;
         }
     }
+    
+    override
+    float getValue(string key) {
+        switch(key) {
+            case "opacity":         return offsetOpacity;
+            case "tint.r":          return offsetTint.x;
+            case "tint.g":          return offsetTint.y;
+            case "tint.b":          return offsetTint.z;
+            case "screenTint.r":    return offsetScreenTint.x;
+            case "screenTint.g":    return offsetScreenTint.y;
+            case "screenTint.b":    return offsetScreenTint.z;
+            default:                return super.getValue(key);
+        }
+    }
 
     override
     void beginUpdate() {
