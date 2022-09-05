@@ -53,7 +53,7 @@
 
 暴言、嫌がらせ、またはそれ以外の受け入れられない行動は、
 [Discordサーバ](https://discord.com/invite/abnxwN6r9v)上での開発者チームへの連絡、
-もしくはルナ([cli-luna@protonmail.com](mailto:cli-luna@protonmail.com))へのメールでの連絡によって、
+もしくはプロジェクト管理者のルナ([cli-luna@protonmail.com](mailto:cli-luna@protonmail.com))へのメールでの連絡によって、
 プロジェクトチームに報告される可能性があります。すべての苦情は、
 レビュー、調査され、必要かつ適切と判断された対応がとられます。
 プロジェクトチームは、事象の報告者に関する守秘義務があります。
