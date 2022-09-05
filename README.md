@@ -2,7 +2,7 @@
   <img width="256" height="256" src="https://raw.githubusercontent.com/Inochi2D/branding/main/logo/logo_transparent_256.png">
 </p>
 
-[日本語](https://github.com/Inochi2D/inochi2d/blob/main/README.jp.md)
+[日本語](https://github.com/Inochi2D/inochi2d/blob/main/README.ja.md)
 
 # Inochi2D
 [![Support me on Patreon](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3Dclipsey%26type%3Dpatrons&style=for-the-badge)](https://patreon.com/clipsey)
