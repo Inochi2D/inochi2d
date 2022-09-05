@@ -158,7 +158,6 @@ package(inochi2d) {
         
         // Initialize dynamic meshes
         inInitNodes();
-        inInitPathDeform();
         inInitDrawable();
         inInitPart();
         inInitMask();
