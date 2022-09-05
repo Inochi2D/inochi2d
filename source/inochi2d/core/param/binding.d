@@ -43,7 +43,17 @@ enum InterpolateMode {
     /**
         Linear interpolation
     */
-    Linear
+    Linear,
+
+    /**
+        Cubic interpolation
+    */
+    Cubic,
+
+    /**
+        Cubic in-out interpolation
+    */
+    CubicInOut,
 }
 
 /**
