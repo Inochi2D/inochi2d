@@ -143,7 +143,6 @@ protected:
     void onUpdate() { }
 
     void serializeSelf(ref InochiSerializer serializer) { }
-    void serializeSelf(ref InochiSerializerCompact serializer) { }
     void deserializeSelf(Fghj data) { }
 
 public:

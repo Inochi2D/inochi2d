@@ -236,32 +236,6 @@ protected:
         outputScale.serialize(serializer);
     }
 
-    /**
-        Allows serializing self data (with compact serializer)
-    */
-    override
-    void serializeSelf(ref InochiSerializerCompact serializer) {
-        super.serializeSelf(serializer);
-        serializer.putKey("param");
-        serializer.serializeValue(paramRef);
-        serializer.putKey("model_type");
-        serializer.serializeValue(modelType_);
-        serializer.putKey("map_mode");
-        serializer.serializeValue(mapMode);
-        serializer.putKey("gravity");
-        serializer.serializeValue(gravity);
-        serializer.putKey("length");
-        serializer.serializeValue(length);
-        serializer.putKey("frequency");
-        serializer.serializeValue(frequency);
-        serializer.putKey("angle_damping");
-        serializer.serializeValue(angleDamping);
-        serializer.putKey("length_damping");
-        serializer.serializeValue(lengthDamping);
-        serializer.putKey("output_scale");
-        outputScale.serialize(serializer);
-    }
-
     override
     SerdeException deserializeFromFghj(Fghj data) {
         super.deserializeFromFghj(data);

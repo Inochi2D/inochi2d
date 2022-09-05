@@ -230,26 +230,6 @@ protected:
     }
 
     override
-    void serializeSelf(ref InochiSerializerCompact serializer) {
-        super.serializeSelf(serializer);
-
-        serializer.putKey("blend_mode");
-        serializer.serializeValue(blendingMode);
-
-        serializer.putKey("tint");
-        tint.serialize(serializer);
-
-        serializer.putKey("screenTint");
-        screenTint.serialize(serializer);
-
-        serializer.putKey("mask_threshold");
-        serializer.putValue(threshold);
-
-        serializer.putKey("opacity");
-        serializer.putValue(opacity);
-    }
-
-    override
     SerdeException deserializeFromFghj(Fghj data) {
 
         // Older models may not have these tags

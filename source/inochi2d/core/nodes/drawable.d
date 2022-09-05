@@ -140,16 +140,6 @@ protected:
         serializer.serializeValue(data);
     }
 
-    /**
-        Allows serializing self data (with compact serializer)
-    */
-    override
-    void serializeSelf(ref InochiSerializerCompact serializer) {
-        super.serializeSelf(serializer);
-        serializer.putKey("mesh");
-        serializer.serializeValue(data);
-    }
-
     override
     SerdeException deserializeFromFghj(Fghj data) {
         import std.stdio : writeln;

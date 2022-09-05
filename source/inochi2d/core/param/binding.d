@@ -179,11 +179,6 @@ abstract class ParameterBinding {
     /**
         Serialize
     */
-    void serializeSelf(ref InochiSerializerCompact serializer);
-
-    /**
-        Serialize
-    */
     void serializeSelf(ref InochiSerializer serializer);
 
     /**
@@ -296,25 +291,6 @@ public:
     */
     override
     void serializeSelf(ref InochiSerializer serializer) {
-        auto state = serializer.objectBegin();
-            serializer.putKey("node");
-            serializer.putValue(target.node.uuid);
-            serializer.putKey("param_name");
-            serializer.putValue(target.paramName);
-            serializer.putKey("values");
-            serializer.serializeValue(values);
-            serializer.putKey("isSet");
-            serializer.serializeValue(isSet_);
-            serializer.putKey("interpolate_mode");
-            serializer.serializeValue(interpolateMode_);
-        serializer.objectEnd(state);
-    }
-
-    /**
-        Serializes a binding
-    */
-    override
-    void serializeSelf(ref InochiSerializerCompact serializer) {
         auto state = serializer.objectBegin();
             serializer.putKey("node");
             serializer.putValue(target.node.uuid);

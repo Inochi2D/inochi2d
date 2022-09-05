@@ -126,18 +126,6 @@ protected:
     }
 
     override
-    void serializeSelf(ref InochiSerializerCompact serializer) {
-        serializer.putKey("nodes");
-        serializer.serializeValue(nodes);
-        serializer.putKey("damping");
-        serializer.putValue(damping);
-        serializer.putKey("bounciness");
-        serializer.putValue(bounciness);
-        serializer.putKey("gravity");
-        serializer.putValue(gravity);
-    }
-
-    override
     void deserializeSelf(Fghj data) {
         data["nodes"].deserializeValue(nodes);
         data["damping"].deserializeValue(damping);

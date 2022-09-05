@@ -308,64 +308,6 @@ protected:
         serializer.putValue(opacity);
     }
 
-    /**
-        Allows serializing self data (with compact serializer)
-    */
-    override
-    void serializeSelf(ref InochiSerializerCompact serializer) {
-        super.serializeSelf(serializer);
-        
-        version (InDoesRender) {
-            if (inIsINPMode()) {
-                serializer.putKey("textures");
-                auto state = serializer.arrayBegin();
-                    foreach(ref texture; textures) {
-                        if (texture) {
-                            ptrdiff_t index = puppet.getTextureSlotIndexFor(texture);
-                            if (index >= 0) {
-                                serializer.elemBegin;
-                                serializer.putValue(cast(size_t)index);
-                            } else {
-                                serializer.elemBegin;
-                                serializer.putValue(cast(size_t)NO_TEXTURE);
-                            }
-                        } else {
-                            serializer.elemBegin;
-                            serializer.putValue(cast(size_t)NO_TEXTURE);
-                        }
-                    }
-                serializer.arrayEnd(state);
-            }
-        }
-
-        serializer.putKey("blend_mode");
-        serializer.serializeValue(blendingMode);
-
-        serializer.putKey("tint");
-        tint.serialize(serializer);
-
-        serializer.putKey("screenTint");
-        screenTint.serialize(serializer);
-
-        if (masks.length > 0) {
-            serializer.putKey("masks");
-            auto state = serializer.arrayBegin();
-                foreach(m; masks) {
-                    serializer.elemBegin;
-                    serializer.serializeValue(m);
-                }
-            serializer.arrayEnd(state);
-        }
-
-
-        serializer.putKey("mask_threshold");
-        serializer.putValue(maskAlphaThreshold);
-
-        serializer.putKey("opacity");
-        serializer.putValue(opacity);
-
-    }
-
     override
     SerdeException deserializeFromFghj(Fghj data) {
         super.deserializeFromFghj(data);
@@ -620,6 +562,21 @@ public:
                 offsetScreenTint.z = value;
                 return true;
             default: return false;
+        }
+    }
+    
+    override
+    float getValue(string key) {
+        switch(key) {
+            case "alphaThreshold":  return offsetMaskThreshold;
+            case "opacity":         return offsetOpacity;
+            case "tint.r":          return offsetTint.x;
+            case "tint.g":          return offsetTint.y;
+            case "tint.b":          return offsetTint.z;
+            case "screenTint.r":    return offsetScreenTint.x;
+            case "screenTint.g":    return offsetScreenTint.y;
+            case "screenTint.b":    return offsetScreenTint.z;
+            default:                return super.getValue(key);
         }
     }
 

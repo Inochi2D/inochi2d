@@ -66,7 +66,7 @@ T inLoadJsonDataFromMemory(T)(string data) {
 */
 string inToJson(T)(T item) {
     auto app = appender!(char[]);
-    auto serializer = inCreateCompactSerializer(app);
+    auto serializer = inCreateSerializer(app);
     serializer.serializeValue(item);
     serializer.flush();
     return cast(string)app.data;
@@ -83,25 +83,17 @@ string inToJsonPretty(T)(T item) {
     return cast(string)app.data;
 }
 
+alias InochiSerializer = JsonSerializer!("", void delegate(const(char)[]) pure nothrow @safe);
+
 /**
     Creates a pretty-serializer
 */
-InochiSerializer inCreatePrettySerializer(Appender!(char[]) app) {
+InochiSerializer inCreateSerializer(Appender!(char[]) app) {
     return InochiSerializer((const(char)[] chars) => put(app, chars));
 }
 
-/**
-    Creates a pretty-serializer
-*/
-InochiSerializerCompact inCreateCompactSerializer(Appender!(char[]) app) {
-    return InochiSerializerCompact((const(char)[] chars) => put(app, chars));
-}
-
-alias InochiSerializer = JsonSerializer!("\t", void delegate(const(char)[]) pure nothrow @safe);
-alias InochiSerializerCompact = JsonSerializer!("", void delegate(const(char)[]) pure nothrow @safe);
 
 string getString(Fghj data) {
-
     auto app = appender!(char[]);
     data.toString((const(char)[] chars) => put(app, chars));
     return cast(string)app.data;

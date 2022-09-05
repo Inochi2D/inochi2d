@@ -48,14 +48,6 @@ protected:
     }
 
     override
-    void serializeSelf(ref InochiSerializerCompact serializer) {
-        serializer.putKey("speed");
-        serializer.putValue(speed);
-        serializer.putKey("sine_type");
-        serializer.putValue(cast(int)sineType);
-    }
-
-    override
     void deserializeSelf(Fghj data) {
         data["speed"].deserializeValue(speed);
         data["sine_type"].deserializeValue(sineType);

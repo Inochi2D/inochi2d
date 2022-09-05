@@ -150,39 +150,6 @@ protected:
         }
     }
 
-    void serializeSelf(ref InochiSerializerCompact serializer) {
-        serializer.putKey("uuid");
-        serializer.putValue(uuid);
-        
-        serializer.putKey("name");
-        serializer.putValue(name);
-        
-        serializer.putKey("type");
-        serializer.putValue(typeId);
-        
-        serializer.putKey("enabled");
-        serializer.putValue(enabled);
-        
-        serializer.putKey("zsort");
-        serializer.putValue(zsort_);
-        
-        serializer.putKey("transform");
-        serializer.serializeValue(this.localTransform);
-        
-        serializer.putKey("lockToRoot");
-        serializer.serializeValue(this.lockToRoot_);
-        
-        if (children.length > 0) {
-            serializer.putKey("children");
-            auto childArray = serializer.arrayBegin();
-            foreach(child; children) {
-                serializer.elemBegin;
-                serializer.serializeValue(child);
-            }
-            serializer.arrayEnd(childArray);
-        }
-    }
-
 package(inochi2d):
 
     /**
