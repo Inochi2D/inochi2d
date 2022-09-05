@@ -356,6 +356,7 @@ public:
     */
     void setRelativeTo(mat4 to) {
         this.localTransform.translation = getRelativePosition(to, this.transformNoLock.matrix);
+        this.localTransform.update();
     }
 
     /**
@@ -363,8 +364,19 @@ public:
     */
     static
     vec3 getRelativePosition(mat4 m1, mat4 m2) {
-        auto cm = (m1.inverse * m2).translation;
-        return vec3(cm * vec4(0, 0, 0, 1));
+        mat4 cm = (m1.inverse * m2).translation;
+        return vec3(cm.matrix[0][3], cm.matrix[1][3], cm.matrix[2][3]);
+    }
+
+    /**
+        Gets a relative position for 2 matrices
+
+        Inverse order of getRelativePosition
+    */
+    static
+    vec3 getRelativePositionInv(mat4 m1, mat4 m2) {
+        mat4 cm = (m2 * m1.inverse).translation;
+        return vec3(cm.matrix[0][3], cm.matrix[1][3], cm.matrix[2][3]);
     }
 
     /**
@@ -611,6 +623,21 @@ public:
                 break;
         }
         return newVal;
+    }
+
+    float getValue(string key) {
+        switch(key) {
+            case "zSort":           return offsetSort;
+            case "transform.t.x":   return offsetTransform.translation.x;
+            case "transform.t.y":   return offsetTransform.translation.y;
+            case "transform.t.z":   return offsetTransform.translation.z;
+            case "transform.r.x":   return offsetTransform.rotation.x;
+            case "transform.r.y":   return offsetTransform.rotation.y;
+            case "transform.r.z":   return offsetTransform.rotation.z;
+            case "transform.s.x":   return offsetTransform.scale.x;
+            case "transform.s.y":   return offsetTransform.scale.y;
+            default:                return 0;
+        }
     }
 
     /**
