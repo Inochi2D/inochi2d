@@ -210,30 +210,42 @@ public:
                     
                         // Main case: We have a leadout, use that to fade out first
                         float loopEndLength = loopEnd-currAnimation.animation.length;
-                        foreach(ref AnimationLane lane; currAnimation.animation.lanes) {
-                    
-                            // Interpolation iterator from loop end to actual end 0..1
-                            float t = (currFrame-loopEnd)/loopEndLength;
 
-                            switch(lane.target) {
-                                case AnimationLaneTarget.Parameter:
+                        // Interpolation iterator from loop end to actual end 0..1
+                        float t = (currFrame-loopEnd)/loopEndLength;
 
-                                    lane.paramRef.targetParam.value.vector[lane.paramRef.targetAxis] = lerp(
-                                        lane.get(currFrame),
-                                        lane.paramRef.targetParam.defaults.vector[lane.paramRef.targetAxis],
-                                        t
-                                    );
-                                    break;
+                        if (t >= 1) {
+                            
+                            // We're done fading, yeet!
+                            prevAnimation = null;
+                            currAnimation = null;
 
-                                case AnimationLaneTarget.Node:
-                                    lane.nodeRef.targetNode.setValue(lane.nodeRef.targetName, lerp(
-                                        lane.get(currFrame),
-                                        lane.nodeRef.targetNode.getDefaultValue(lane.nodeRef.targetName),
-                                        t
-                                    ));
-                                    break;
+                        } else {
 
-                                default: assert(0);
+                            // Fading logic
+                            foreach(ref AnimationLane lane; currAnimation.animation.lanes) {
+
+                                // TODO: Allow user to set fade out interpolation?
+                                switch(lane.target) {
+                                    case AnimationLaneTarget.Parameter:
+
+                                        lane.paramRef.targetParam.value.vector[lane.paramRef.targetAxis] = lerp(
+                                            lane.get(currFrame),
+                                            lane.paramRef.targetParam.defaults.vector[lane.paramRef.targetAxis],
+                                            t
+                                        );
+                                        break;
+
+                                    case AnimationLaneTarget.Node:
+                                        lane.nodeRef.targetNode.setValue(lane.nodeRef.targetName, lerp(
+                                            lane.get(currFrame),
+                                            lane.nodeRef.targetNode.getDefaultValue(lane.nodeRef.targetName),
+                                            t
+                                        ));
+                                        break;
+
+                                    default: assert(0);
+                                }
                             }
                         }
                     }
