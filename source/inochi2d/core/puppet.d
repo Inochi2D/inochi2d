@@ -227,6 +227,11 @@ private:
     */
     Driver[Parameter] drivenParameters;
 
+    /**
+        A dictionary of named animations
+    */
+    Animation[string] animations;
+
     void scanPartsRecurse(ref Node node, bool driversOnly = false) {
 
         // Don't need to scan null nodes
@@ -376,6 +381,9 @@ public:
     */
     @Ignore
     bool enableDrivers = true;
+    
+    @Ignore
+    AnimationPlayer player;
 
     /**
         Creates a new puppet from nothing ()
@@ -384,6 +392,7 @@ public:
         this.puppetRootNode = new Node(this); 
         this.meta = new PuppetMeta();
         this.physics = new PuppetPhysics();
+        this.player = new AnimationPlayer(this);
         root = new Node(this.puppetRootNode); 
         root.name = "Root";
     }
@@ -394,6 +403,7 @@ public:
     this(Node root) {
         this.meta = new PuppetMeta();
         this.physics = new PuppetPhysics();
+        this.player = new AnimationPlayer(this);
         this.root = root;
         this.puppetRootNode = new Node(this);
         this.root.name = "Root";
@@ -412,11 +422,14 @@ public:
         }
 
         // Update Automators
-        foreach(auto_; this.automation) {
+        foreach(auto_; automation) {
             auto_.update();
         }
 
         root.beginUpdate();
+
+        // Step the animations
+        player.step();
 
         if (renderParameters) {
 
@@ -691,6 +704,8 @@ public:
             serializer.serializeValue(parameters);
             serializer.putKey("automation");
             serializer.serializeValue(automation);
+            serializer.putKey("animations");
+            serializer.serializeValue(animations);
         serializer.objectEnd(state);
     }
 
@@ -715,6 +730,7 @@ public:
                 this.automation ~= auto_;
             }
         }
+        if (!data["animation"].isEmpty) data["animation"].deserializeValue(animations);
         this.finalizeDeserialization(data);
 
         return null;
@@ -733,6 +749,9 @@ public:
         }
         foreach(automation_; automation) {
             automation_.finalize(this);
+        }
+        foreach(ref animation; animations) {
+            animation.finalize(this);
         }
         this.scanParts!true(this.root);
         this.selfSort();
@@ -754,5 +773,13 @@ public:
     final
     ref Driver[] getDrivers() {
         return drivers;
+    }
+
+    /**
+        Gets the animation dictionary
+    */
+    final
+    ref Animation[string] getAnimations() {
+        return animations;
     }
 }
