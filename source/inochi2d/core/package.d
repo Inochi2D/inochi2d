@@ -586,6 +586,7 @@ struct TypeId { string id; }
     Different modes of interpolation between values.
 */
 enum InterpolateMode {
+
     /**
         Round to nearest
     */
@@ -597,12 +598,17 @@ enum InterpolateMode {
     Linear,
 
     /**
+        Round to nearest
+    */
+    Stepped,
+
+    /**
         Cubic interpolation
     */
     Cubic,
 
     /**
-        Cubic in-out interpolation
+        Interpolation using beziér splines
     */
-    CubicInOut,
+    Bezier,
 }

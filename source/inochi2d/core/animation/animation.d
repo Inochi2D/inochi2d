@@ -181,8 +181,12 @@ public:
         Gets the interpolated state of a frame of animation 
         for this lane
     */
-    float get(float frame) {
+    float get(float frame, bool snapSubframes=false) {
         if (frames.length > 0) {
+
+            // If subframe snapping is turned on then we'll only run at the framerate
+            // of the animation, without any smooth interpolation on faster app rates.
+            if (snapSubframes) frame = floor(frame);
 
             // Fallback if there's only 1 frame
             if (frames.length == 1) return frames[0].value;
@@ -208,34 +212,23 @@ public:
                         case InterpolateMode.Nearest:
                             return t > 0.5 ? frames[i].value : frames[i-1].value;
 
+                        // Stepped - Snap to the current active keyframe
+                        case InterpolateMode.Stepped:
+                            return frames[i].value;
+
                         // Linear - Linearly interpolate between frame A and B
                         case InterpolateMode.Linear:
                             return lerp(frames[i-1].value, frames[i].value, t);
 
-                        // Cubic - Smoothly in a user defined curve interpolate between frame A and B
+                        // Cubic - Smoothly in a curve between frame A and B
                         case InterpolateMode.Cubic:
-                        
-                            // Set up the start/end and tension
-                            vec2 src = vec2(0, 0);
-                            vec2 dst = vec2(1, 1);
-                            vec2 srcDir = lerp(vec2(0, 1), vec2(1, 0), tension);
-                            vec2 dstDir = lerp(vec2(1, 0), vec2(0, 1), tension);
+                            // TODO: Switch formulae, catmullrom interpolation
+                            return lerp(frames[i-1].value, frames[i].value, clamp(hermite(0, 2*(1-tension), 1, 2*tension, t), 0, 1));
                             
-                            // Intepolate between Y point of that tensioned spline
-                            return lerp(frames[i-1].value, frames[i].value, hermite(src, srcDir, dst, dstDir, t).y);
-                            
-                        // Cubic In/Out - Smoothly in a user defined curve interpolate between frame A and B
-                        // Do this in a smooth-in, smooth-out manner with a user defined sharpness to the smoothing.
-                        case InterpolateMode.CubicInOut:
-
-                            // Set up the start/end and tension
-                            vec2 src = vec2(0, 0);
-                            vec2 dst = vec2(1, 1);
-                            vec2 srcDir = lerp(vec2(0, 1), vec2(1, 0), tension);
-                            vec2 dstDir = lerp(vec2(0, 1), vec2(1, 0), tension);
-
-                            // Intepolate between Y point of that tensioned spline
-                            return lerp(frames[i-1].value, frames[i].value, hermite(src, srcDir, dst, dstDir, t).y);
+                        // Bezier - Allows the user to specify beziér curves.
+                        case InterpolateMode.Bezier:
+                            // TODO: Switch formulae, Beziér curve
+                            return lerp(frames[i-1].value, frames[i].value, clamp(hermite(0, 2*tension, 1, 2*tension, t), 0, 1));
 
                         default: assert(0);
                     }

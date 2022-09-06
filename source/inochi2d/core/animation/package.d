@@ -25,14 +25,34 @@ private:
         /// Animation
         Animation* animation;
 
-        /// When it started
-        float startTime;
+        /// The playhead (time in ms since start)
+        float time = 0;
 
         /// Whether it loops
-        bool looping;
+        bool looping = false;
 
         /// Whether the animation is running
-        bool running;
+        bool running = true;
+
+        /// Whether the animation is paused
+        bool paused = false;
+
+        /**
+            Advances time for the animation
+        */
+        void advance(float delta) {
+            if (!paused) {
+                time += delta;
+            
+                // Animations needs to be both looping AND running before they'll loop
+                // Eg. if an animation ends then it should play the lead out if possible.
+                if (looping && running) {
+                    float loopStart = (animation.leadIn == -1 ? 0 : animation.leadIn)*animation.timestep;
+                    float loopEnd = (animation.leadOut == -1 ? animation.length : animation.leadOut)*animation.timestep;
+                    time = loopStart+mod(time-loopStart, loopEnd-loopStart);
+                }
+            }
+        }
     }
 
     Puppet parent;
@@ -60,6 +80,39 @@ public:
     }
 
     /**
+        Sets or pushes an animation either as a main or additive animation
+
+        This does not respect the animation mode set for the animation.
+
+        Animations are added in a paused state, use play to play them.
+    */
+    void set(string animation, bool asMain) {
+        Animation[string] anims = parent.getAnimations();
+
+        // Early out if the animation doesn't exist.
+        if (animation !in anims) return;
+
+        if (asMain) {
+            currAnimation = new PlayingAnimation;
+            currAnimation.name = animation;
+            currAnimation.animation = &anims[animation];
+            currAnimation.time = 0;
+            currAnimation.paused = true;
+
+        } else {
+            
+            // If the current additive animations contain the animation then
+            // don'tdo anything.
+            foreach(ref additive; additiveAnimations) {
+                if (additive.name == animation) return;   
+            }
+
+            PlayingAnimation anim = { name: animation, animation: &anims[animation], time: 0, paused: true };
+            additiveAnimations ~= anim; 
+        }
+    }
+
+    /**
         Play an animation
     */
     void play(string animation, bool looping=false, bool blend=false) {
@@ -68,32 +121,75 @@ public:
         // Early out if the animation doesn't exist.
         if (animation !in anims) return;
 
-        if (anims[animation].additive) {
-            
-            // Restart the animation if we already have it around.
-            foreach(ref additive; additiveAnimations) {
-                if (additive.name == animation) {
-                    additive.startTime = currentTime();
-                    return;
-                }
-            }
 
-            additiveAnimations ~= PlayingAnimation(animation, &anims[animation], currentTime());
+        // Attempt to restart main animations
+        if (currAnimation && currAnimation.name == animation) {
+            if (prevAnimation) prevAnimation.paused = false;
+            currAnimation.paused = false;
+            return;
+        }
+        
+        // Attempt to restart additive animations
+        foreach(ref additive; additiveAnimations) {
+            if (additive.name == animation) {
+                if (additive.paused) additive.paused = false;
+                else additive.time = 0;
+                return;
+            }
+        }
+
+        
+        if (anims[animation].additive) {
+
+            // Add new animation to list
+            // As above will escape out early it's safe to not return here.
+            PlayingAnimation anim = { name: animation, animation: &anims[animation], time: 0, looping: looping };
+            additiveAnimations ~= anim; 
+
         } else {
 
-            // Set previous animation if we should blend between them
+            // Handle setting up crossfade if it is enabled.
             if (blend) {
                 prevAnimation = currAnimation;
                 prevAnimation.running = false;
+
+                // NOTE: We set this even if we might not use it
                 crossfadeStart = currentTime();
             } else {
                 prevAnimation = null;
             }
 
-            currAnimation = new PlayingAnimation(animation, &anims[animation], currentTime());
-            currAnimation.running = true;
+            // Add our new animation as the current animation
+            currAnimation = new PlayingAnimation;
+            currAnimation.name = animation;
+            currAnimation.animation = &anims[animation];
+            currAnimation.time = 0;
+            currAnimation.looping = looping;
         }
+    }
 
+    /**
+        Pause a currently playing animation
+    */
+    void pause(string animation) {
+        Animation[string] anims = parent.getAnimations();
+
+        // Early out if the animation doesn't exist.
+        if (animation !in anims) return;
+
+        if (anims[animation].additive) {
+
+            // Restart the animation if we already have it around.
+            foreach(ref additive; additiveAnimations) {
+                if (additive.name == animation) {
+                    additive.paused = true;
+                    return;
+                }
+            }
+        } else {
+            if (prevAnimation) prevAnimation.paused = true;
+            if (currAnimation) currAnimation.paused = true;
+        }
     }
 
     /**
@@ -131,6 +227,66 @@ public:
         }
     }
 
+    /**
+        Seek the specified animation to the specified frame
+    */
+    void seek(string animation, float frame) {
+        Animation[string] anims = parent.getAnimations();
+
+        // Early out if the animation doesn't exist.
+        if (animation !in anims) return;
+
+        if (anims[animation].additive) {
+
+            // Seek additive animation
+            foreach(ref additive; additiveAnimations) {
+                if (additive.name == animation) {
+                    additive.time = frame*additive.animation.timestep;
+                    this.stepOther(0);
+                    return;
+                }
+            }
+        } else {
+
+            // Seek main animation
+            if (currAnimation) {
+                currAnimation.time = frame*currAnimation.animation.timestep;
+                this.stepMain(0);
+            }
+        }
+
+    }
+
+    /**
+        Gets the currently playing frame and subframe for the specified animation.
+    */
+    float tell(string animation) {
+        Animation[string] anims = parent.getAnimations();
+
+        // Early out if the animation doesn't exist.
+        if (animation !in anims) return 0;
+
+        if (anims[animation].additive) {
+
+            // Seek additive animation
+            foreach(ref additive; additiveAnimations) {
+                if (additive.name == animation) {
+                    return additive.time/additive.animation.timestep;
+                }
+            }
+        } else {
+
+            // Seek main animation
+            if (currAnimation) return currAnimation.time/currAnimation.animation.timestep;
+        }
+
+        // Fallback: If there's no animation with that name then it's just stuck at frame 0
+        return 0;
+    }
+
+    /**
+        Stop all animations
+    */
     void stopAll(bool immediately=false) {
         if (immediately) {
 
@@ -150,28 +306,17 @@ public:
     }
 
     /**
-        Run an animation step
+        Step through the main animation
     */
-    void step() {
-        float currTime = currentTime();
-
-        // If we have any animation to step through
+    void stepMain(float delta) {
         if (currAnimation) {
-            float mainAnimTime = currTime-currAnimation.startTime;
+
+            // Advance time for the animations
+            if (prevAnimation) prevAnimation.advance(delta);
+            currAnimation.advance(delta);
 
             // Frame is stored as a float so that we can have half-frames for higher refresh rate monitors.
-            float currFrame = mainAnimTime/currAnimation.animation.timestep;
-
-            float loopStart = currAnimation.animation.leadIn < 0 ?                                        0.0 : cast(float)currAnimation.animation.leadIn;
-            float loopEnd = currAnimation.animation.leadOut < 0 ?   cast(float)currAnimation.animation.length : cast(float)currAnimation.animation.leadOut;
-            float loopLength = loopEnd-loopStart;
-
-            // Handle looping.
-            // If we are running, looping, past our loop starting point AND past the loop ending point
-            // Then we loop.
-            if (currAnimation.running && currAnimation.looping && currFrame > loopStart && currFrame > loopEnd) {
-                currFrame = loopStart+(mod(currFrame-loopStart, loopLength));
-            }
+            float currFrame = currAnimation.time/currAnimation.animation.timestep;
 
             // Iterate and step all the lanes in the current animation
             foreach(ref AnimationLane lane; currAnimation.animation.lanes) {
@@ -191,9 +336,10 @@ public:
             }
 
             // Crossfade T
+            // TODO: Adjust ct based on in/out of animation?
             float ct;
             if (crossfadeFrames <= 0) ct = 1;
-            else ct = ((currTime-crossfadeStart)/currAnimation.animation.timestep)/crossfadeFrames;
+            else ct = ((currentTime()-crossfadeStart)/currAnimation.animation.timestep)/crossfadeFrames;
 
             // If current animation is stopping
             if (!currAnimation.running) {
@@ -234,12 +380,15 @@ public:
                 }
 
             } else {
+                float prevCurrFrame = prevAnimation.time/prevAnimation.animation.timestep;
+
+                if (prevAnimation.animation.leadOut < prevAnimation.animation.length) {
+                    ct = (prevCurrFrame-prevAnimation.animation.leadOut)/prevAnimation.animation.length;
+                }
 
                 if (ct >= 1) {
                     prevAnimation = null;
                 } else {
-                    float prevAnimTime = currTime-prevAnimation.startTime;
-                    float prevCurrFrame = prevAnimTime/prevAnimation.animation.timestep;
 
                     // Crossfade logic
                     foreach(ref AnimationLane lane; currAnimation.animation.lanes) {
@@ -269,10 +418,27 @@ public:
                 }
             }
         }
-
-        // TODO: Additive animations
-        foreach(ref anim; additiveAnimations) { }
     }
 
+    /**
+        Step through the additive animations
+    */
+    void stepOther(float delta) {
+        foreach(ref anim; additiveAnimations) {
+            anim.advance(delta);
+        }
+    }
 
+    /**
+        Run an animation step
+
+        Paused animations will automatically be skipped to save processing resources
+    */
+    void step() {
+        float delta = deltaTime();
+
+        // Handle main animation
+        if (currAnimation && !currAnimation.paused) this.stepMain(delta);
+        this.stepOther(delta); 
+    }
 }
