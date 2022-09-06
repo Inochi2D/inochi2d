@@ -36,7 +36,8 @@ private:
     }
 
     Puppet parent;
-    
+
+    float crossfadeStart;
     PlayingAnimation* prevAnimation;
     PlayingAnimation* currAnimation;
 
@@ -45,6 +46,11 @@ private:
 
 
 public:
+
+    /**
+        How many frames of crossfade
+    */
+    float crossfadeFrames = 300;
 
     /**
         Constructs a new AnimationPlayer
@@ -79,7 +85,10 @@ public:
             if (blend) {
                 prevAnimation = currAnimation;
                 prevAnimation.running = false;
-            } else prevAnimation = null;
+                crossfadeStart = currentTime();
+            } else {
+                prevAnimation = null;
+            }
 
             currAnimation = new PlayingAnimation(animation, &anims[animation], currentTime());
             currAnimation.running = true;
@@ -181,92 +190,77 @@ public:
                 }
             }
 
+            // Crossfade T
+            float ct;
+            if (crossfadeFrames <= 0) ct = 1;
+            else ct = ((currTime-crossfadeStart)/currAnimation.animation.timestep)/crossfadeFrames;
+
             // If current animation is stopping
             if (!currAnimation.running) {
 
-                // And we're at the point where we'd need to start to "fade out"
-                if (currFrame >= loopEnd) {
-                    if (loopEnd == cast(float)currAnimation.animation.length) {
-
-                        // Edgecase: we have no leadout, in which case we just stop instantly
-                        foreach(ref AnimationLane lane; currAnimation.animation.lanes) {
-                            switch(lane.target) {
-                                case AnimationLaneTarget.Parameter:
-                                    lane.paramRef.targetParam.value.vector[lane.paramRef.targetAxis] = lane.paramRef.targetParam.defaults.vector[lane.paramRef.targetAxis];
-                                    break;
-
-                                case AnimationLaneTarget.Node:
-                                    lane.nodeRef.targetNode.setValue(lane.nodeRef.targetName, lane.nodeRef.targetNode.getDefaultValue(lane.nodeRef.targetName));
-                                    break;
-
-                                default: assert(0);
-                            }
-                        }
-
-                        prevAnimation = null;
-                        currAnimation = null;
-
-                    } else {
+                if (ct >= 1) {
                     
-                        // Main case: We have a leadout, use that to fade out first
-                        float loopEndLength = loopEnd-currAnimation.animation.length;
+                    // We're done fading, yeet!
+                    prevAnimation = null;
+                    currAnimation = null;
 
-                        // Interpolation iterator from loop end to actual end 0..1
-                        float t = (currFrame-loopEnd)/loopEndLength;
+                } else {
 
-                        if (t >= 1) {
-                            
-                            // We're done fading, yeet!
-                            prevAnimation = null;
-                            currAnimation = null;
+                    // Fading logic
+                    foreach(ref AnimationLane lane; currAnimation.animation.lanes) {
 
-                        } else {
+                        // TODO: Allow user to set fade out interpolation?
+                        switch(lane.target) {
+                            case AnimationLaneTarget.Parameter:
 
-                            // Fading logic
-                            foreach(ref AnimationLane lane; currAnimation.animation.lanes) {
+                                lane.paramRef.targetParam.value.vector[lane.paramRef.targetAxis] = lerp(
+                                    lane.get(currFrame),
+                                    lane.paramRef.targetParam.defaults.vector[lane.paramRef.targetAxis],
+                                    ct
+                                );
+                                break;
 
-                                // TODO: Allow user to set fade out interpolation?
-                                switch(lane.target) {
-                                    case AnimationLaneTarget.Parameter:
+                            case AnimationLaneTarget.Node:
+                                lane.nodeRef.targetNode.setValue(lane.nodeRef.targetName, lerp(
+                                    lane.get(currFrame),
+                                    lane.nodeRef.targetNode.getDefaultValue(lane.nodeRef.targetName),
+                                    ct
+                                ));
+                                break;
 
-                                        lane.paramRef.targetParam.value.vector[lane.paramRef.targetAxis] = lerp(
-                                            lane.get(currFrame),
-                                            lane.paramRef.targetParam.defaults.vector[lane.paramRef.targetAxis],
-                                            t
-                                        );
-                                        break;
-
-                                    case AnimationLaneTarget.Node:
-                                        lane.nodeRef.targetNode.setValue(lane.nodeRef.targetName, lerp(
-                                            lane.get(currFrame),
-                                            lane.nodeRef.targetNode.getDefaultValue(lane.nodeRef.targetName),
-                                            t
-                                        ));
-                                        break;
-
-                                    default: assert(0);
-                                }
-                            }
+                            default: assert(0);
                         }
                     }
                 }
 
             } else {
 
-                // Iterate and step all the lanes in the previous animation
-                if (prevAnimation && !prevAnimation.running) {
-                    float animBlendWeight = 1;
+                if (ct >= 1) {
+                    prevAnimation = null;
+                } else {
+                    float prevAnimTime = currTime-prevAnimation.startTime;
+                    float prevCurrFrame = prevAnimTime/prevAnimation.animation.timestep;
 
+                    // Crossfade logic
                     foreach(ref AnimationLane lane; currAnimation.animation.lanes) {
-                        float value = lane.get(currFrame)*animBlendWeight;
-                        
+
+                        // TODO: Allow user to set fade out interpolation?
                         switch(lane.target) {
                             case AnimationLaneTarget.Parameter:
-                                lane.paramRef.targetParam.value.vector[lane.paramRef.targetAxis] = value;
+
+                                lane.paramRef.targetParam.value.vector[lane.paramRef.targetAxis] = lerp(
+                                    lane.get(prevCurrFrame),
+                                    lane.paramRef.targetParam.value.vector[lane.paramRef.targetAxis],
+                                    ct
+                                );
                                 break;
 
                             case AnimationLaneTarget.Node:
-                                lane.nodeRef.targetNode.setValue(lane.nodeRef.targetName, value);
+                                lane.nodeRef.targetNode.setValue(lane.nodeRef.targetName, lerp(
+                                    lane.get(prevCurrFrame),
+                                    lane.paramRef.targetParam.value.vector[lane.paramRef.targetAxis],
+                                    ct
+                                ));
                                 break;
 
                             default: assert(0);
