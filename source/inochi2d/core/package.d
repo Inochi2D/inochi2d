@@ -545,7 +545,7 @@ size_t inViewportDataLength() {
 void inDumpViewport(ref ubyte[] dumpTo) {
     import std.exception : enforce;
     enforce(dumpTo.length >= inViewportDataLength(), "Invalid data destination length for inDumpViewport");
-    glBindTexture(GL_TEXTURE_2D, cfAlbedo);
+    glBindTexture(GL_TEXTURE_2D, fAlbedo);
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, dumpTo.ptr);
 
     // We need to flip it because OpenGL renders stuff with a different coordinate system
