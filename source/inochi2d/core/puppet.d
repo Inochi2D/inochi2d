@@ -717,7 +717,11 @@ public:
         if (!data["physics"].isEmpty)
             if (auto exc = data["physics"].deserializeValue(this.physics)) return exc;
         if (auto exc = data["nodes"].deserializeValue(this.root)) return exc;
-        if (auto exc = data["param"].deserializeValue(this.parameters)) return exc;
+
+        // Allow parameter loading to be overridden (for Inochi Creator)
+        foreach(key; data["param"].byElement) {
+            this.parameters ~= inParameterCreate(key);
+        }
 
         // Deserialize automation
         foreach(key; data["automation"].byElement) {

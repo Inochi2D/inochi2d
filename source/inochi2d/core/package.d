@@ -165,6 +165,13 @@ package(inochi2d) {
         inInitComposite();
         version(InDoesRender) inInitDebug();
 
+        inParameterSetFactory((data) {
+            import fghj : deserializeValue;
+            Parameter param = new Parameter;
+            data.deserializeValue(param);
+            return param;
+        });
+
         // Some defaults that should be changed by app writer
         inCamera = new Camera;
 

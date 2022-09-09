@@ -18,47 +18,6 @@ import std.stdio;
 
 public import inochi2d.core.param.binding;
 
-class ParamLink {
-private:
-    uint linkUUID;
-
-public:
-    Parameter link;
-    int inAxis;
-    int outAxis;
-
-    this() { }
-    
-
-    /**
-        Serializes a param link
-    */
-    void serialize(S)(ref S serializer) {
-        auto state = serializer.objectBegin;
-            serializer.putKey("linkUUID");
-            serializer.putValue(link.uuid);
-            serializer.putKey("inAxis");
-            serializer.putValue(inAxis);
-            serializer.putKey("outAxis");
-            serializer.putValue(outAxis);
-        serializer.objectEnd(state);
-    }
-
-    /**
-        Deserializes a param link
-    */
-    SerdeException deserializeFromFghj(Fghj data) {
-        data["linkUUID"].deserializeValue(this.linkUUID);
-        data["inAxis"].deserializeValue(this.inAxis);
-        data["outAxis"].deserializeValue(this.outAxis);
-        return null;
-    }
-
-    void finalize(Puppet parent) {
-        link = parent.findParameter(linkUUID);
-    }
-}
-
 /**
     A parameter
 */
@@ -125,11 +84,6 @@ public:
         Binding to targets
     */
     ParameterBinding[] bindings;
-
-    /**
-        Links to other parameters
-    */
-    ParamLink[] links;
 
     /**
         Gets the value normalized to the internal range (0.0->1.0)
@@ -205,7 +159,7 @@ public:
     /**
         Serializes a parameter
     */
-    void serialize(S)(ref S serializer) {
+    void serialize(ref InochiSerializer serializer) {
         auto state = serializer.objectBegin;
             serializer.putKey("uuid");
             serializer.putValue(uuid);
@@ -242,10 +196,6 @@ public:
         if (!data["max"].isEmpty) max.deserialize(data["max"]);
         if (!data["axis_points"].isEmpty) data["axis_points"].deserializeValue(this.axisPoints);
         if (!data["defaults"].isEmpty) defaults.deserialize(data["defaults"]);
-
-        if (!data["links"].isEmpty) {
-            data["links"].deserializeValue(links);
-        }
 
         if (!data["bindings"].isEmpty) {
             foreach(Fghj child; data["bindings"].byElement) {
@@ -287,11 +237,6 @@ public:
         }
         
         bindings = validBindingList;
-
-        // Finalize links
-        foreach(link; links) {
-            link.finalize(puppet);
-        }
     }
 
     void findOffset(vec2 offset, out vec2u index, out vec2 outOffset) {
@@ -321,22 +266,6 @@ public:
 
         if (!active)
             return;
-
-        // Update links
-        foreach(link; links) {
-            link.link.value.vector[link.outAxis] =
-                // Convert to target resolution
-                link.link.unmapAxis(
-
-                    // inAxis = this param's axis
-                    // outAxis = the target param's axis
-                    link.outAxis, 
-                    
-                    // We want a range from 0->1
-                    this.mapAxis(link.inAxis, value.vector[link.inAxis])
-            );
-            link.link.update();
-        }
 
         findOffset(this.mapValue(value + offset), index, offset_);
         foreach(binding; bindings) {
@@ -644,4 +573,16 @@ public:
         import std.uni : toLower;
         indexableName = name.toLower;
     }
+}
+
+private {
+    Parameter delegate(Fghj) createFunc;
+}
+
+Parameter inParameterCreate(Fghj data) {
+    return createFunc(data);
+}
+
+void inParameterSetFactory(Parameter delegate(Fghj) createFunc_) {
+    createFunc = createFunc_;
 }
