@@ -772,12 +772,16 @@ public:
         );
     }
 
+    vec4 getInitialBoundsSize() {
+        auto tr = transform;
+        return vec4(tr.translation.x, tr.translation.y, tr.translation.x, tr.translation.y);
+    }
+
     /**
         Gets the combined bounds of the node
     */
     vec4 getCombinedBounds(bool reupdate = false)() {
-        auto tr = transform;
-        vec4 combined = vec4(tr.translation.x, tr.translation.y, tr.translation.x, tr.translation.y);
+        vec4 combined = getInitialBoundsSize();
         
         // Get Bounds as drawable
         if (Drawable drawable = cast(Drawable)this) {
