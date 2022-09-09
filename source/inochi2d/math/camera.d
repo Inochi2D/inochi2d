@@ -25,6 +25,11 @@ public:
     vec2 position = vec2(0, 0);
 
     /**
+        Rotation of the camera
+    */
+    float rotation = 0f;
+
+    /**
         Size of the camera
     */
     vec2 scale = vec2(1, 1);
@@ -54,8 +59,13 @@ public:
         vec2 realSize = getRealSize();
         if(!realSize.isFinite) return mat4.identity;
         
+        vec2 origin = vec2(realSize.x/2, realSize.y/2);
+        vec3 position = vec3(position.x, position.y, -(ushort.max/2));
+
         return 
             mat4.orthographic(0f, realSize.x, realSize.y, 0, 0, ushort.max) * 
-            mat4.translation(position.x+(realSize.x/2), position.y+(realSize.y/2), -(ushort.max/2));
+            mat4.translation(origin.x, origin.y, 0) *
+            mat4.zRotation(rotation) *
+            mat4.translation(position);
     }
 }
