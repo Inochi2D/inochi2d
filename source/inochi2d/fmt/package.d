@@ -30,23 +30,19 @@ bool inIsINPMode() {
 /**
     Loads a puppet from a file
 */
-Puppet inLoadPuppet(string file) {
+T inLoadPuppet(T = Puppet)(string file) if (is(T : Puppet)) {
     import std.file : read;
     ubyte[] buffer = cast(ubyte[])read(file);
 
     switch(extension(file)) {
 
-        case ".json":
-            enforce(!inVerifyMagicBytes(buffer), "Tried loading INP format as JSON format, rename file to .inp extension");
-            return inLoadJSONPuppet(cast(string)buffer);
-
         case ".inp":
             enforce(inVerifyMagicBytes(buffer), "Invalid data format for INP puppet");
-            return inLoadINPPuppet(buffer);
+            return inLoadINPPuppet!T(buffer);
 
         case ".inx":
             enforce(inVerifyMagicBytes(buffer), "Invalid data format for Inochi Creator INX");
-            return inLoadINPPuppet(buffer);
+            return inLoadINPPuppet!T(buffer);
 
         default:
             throw new Exception("Invalid file format of %s at path %s".format(extension(file), file));
@@ -71,7 +67,7 @@ Puppet inLoadJSONPuppet(string data) {
 /**
     Loads a INP based puppet
 */
-Puppet inLoadINPPuppet(ubyte[] buffer) {
+T inLoadINPPuppet(T = Puppet)(ubyte[] buffer) if (is(T : Puppet)) {
     size_t bufferOffset = 0;
     isLoadingINP_ = true;
 
@@ -109,7 +105,7 @@ Puppet inLoadINPPuppet(ubyte[] buffer) {
             slots ~= inGetLatestTexture();
         }
 
-        Puppet puppet = inLoadJsonDataFromMemory!Puppet(puppetData);
+        T puppet = inLoadJsonDataFromMemory!T(puppetData);
         puppet.textureSlots = slots;
         puppet.updateTextureState();
         inEndTextureLoading();
@@ -130,7 +126,7 @@ Puppet inLoadINPPuppet(ubyte[] buffer) {
             } else inCurrentPuppetTextureSlots ~= TextureBlob(textureType, buffer[bufferOffset..bufferOffset+=textureLength]);
         }
 
-        Puppet puppet = inLoadJsonDataFromMemory!Puppet(puppetData);
+        Puppet puppet = inLoadJsonDataFromMemory!T(puppetData);
     }
 
     if (buffer.length >= bufferOffset + 8 && inVerifySection(buffer[bufferOffset..bufferOffset+=8], EXT_SECTION)) {
