@@ -247,6 +247,15 @@ public:
         if (nodeRef) nodeRef.targetNode = puppet.find(refuuid);
         if (paramRef) paramRef.targetParam = puppet.findParameter(refuuid);
     }
+
+    /**
+        Updates the order of the keyframes
+    */
+    void updateFrames() {
+        import std.algorithm.sorting : sort;
+        import std.algorithm.mutation : SwapStrategy;
+        sort!((a, b) => a.frame < b.frame, SwapStrategy.stable)(frames);
+    }
 }
 
 /**
