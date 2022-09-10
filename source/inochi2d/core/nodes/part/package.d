@@ -51,6 +51,8 @@ package(inochi2d) {
             partShader = new Shader(import("basic/basic.vert"), import("basic/basic.frag"));
             partMaskShader = new Shader(import("basic/basic.vert"), import("basic/basic-mask.frag"));
 
+            incDrawableBindVAO();
+
             partShader.use();
             partShader.setUniform(partShader.getUniformLocation("albedo"), 0);
             partShader.setUniform(partShader.getUniformLocation("emissive"), 1);
@@ -792,19 +794,21 @@ void inDrawTextureAtPosition(Texture texture, vec2 position, float opacity = 1, 
 /**
     Draws a texture at the transform of the specified part
 */
-void inDrawTextureAtRect(Texture texture, rect area, rect uvs = rect(0, 0, 1, 1), float opacity = 1, vec3 color = vec3(1, 1, 1), vec3 screenColor = vec3(0, 0, 0)) {
+void inDrawTextureAtRect(Texture texture, rect area, rect uvs = rect(0, 0, 1, 1), float opacity = 1, vec3 color = vec3(1, 1, 1), vec3 screenColor = vec3(0, 0, 0), Shader s = null, Camera cam = null) {
 
     // Bind the vertex array
     incDrawableBindVAO();
 
-    partShader.use();
-    partShader.setUniform(mvp, 
-        inGetCamera().matrix * 
+    if (!s) s = partShader;
+    if (!cam) cam = inGetCamera();
+    s.use();
+    s.setUniform(s.getUniformLocation("mvp"), 
+        cam.matrix * 
         mat4.scaling(1, 1, 1)
     );
-    partShader.setUniform(gopacity, opacity);
-    partShader.setUniform(gMultColor, color);
-    partShader.setUniform(gScreenColor, screenColor);
+    s.setUniform(s.getUniformLocation("opacity"), opacity);
+    s.setUniform(s.getUniformLocation("multColor"), color);
+    s.setUniform(s.getUniformLocation("screenColor"), screenColor);
     
     // Bind the texture
     texture.bind();

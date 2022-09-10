@@ -9,6 +9,7 @@
 module inochi2d.math.camera;
 import inochi2d.math;
 import inochi2d;
+import std.math : isFinite;
 
 /**
     An orthographic camera
@@ -55,17 +56,18 @@ public:
     mat4 matrix() {
         if(!position.isFinite) position = vec2(0);
         if(!scale.isFinite) scale = vec2(1);
+        if(!rotation.isFinite) rotation = 0;
 
         vec2 realSize = getRealSize();
         if(!realSize.isFinite) return mat4.identity;
         
         vec2 origin = vec2(realSize.x/2, realSize.y/2);
-        vec3 position = vec3(position.x, position.y, -(ushort.max/2));
+        vec3 pos = vec3(position.x, position.y, -(ushort.max/2));
 
         return 
             mat4.orthographic(0f, realSize.x, realSize.y, 0, 0, ushort.max) * 
             mat4.translation(origin.x, origin.y, 0) *
             mat4.zRotation(rotation) *
-            mat4.translation(position);
+            mat4.translation(pos);
     }
 }
