@@ -512,7 +512,7 @@ public:
     /**
         Removes a parameter from this puppet
     */
-    final void removeParameter(Parameter param) {
+    void removeParameter(Parameter param) {
         import std.algorithm.searching : countUntil;
         import std.algorithm.mutation : remove;
         ptrdiff_t idx = parameters.countUntil(param);
