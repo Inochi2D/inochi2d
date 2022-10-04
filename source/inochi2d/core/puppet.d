@@ -779,6 +779,14 @@ public:
         return drivers;
     }
 
+   /**
+        Gets a mapping from parameters to their drivers
+    */
+    final
+    ref Driver[Parameter] getParameterDrivers() {
+        return drivenParameters;
+    }
+
     /**
         Gets the animation dictionary
     */
