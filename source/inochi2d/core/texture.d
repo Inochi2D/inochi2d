@@ -261,6 +261,7 @@ public:
         // Set default filtering and wrapping
         this.setFiltering(Filtering.Linear);
         this.setWrapping(Wrapping.Clamp);
+        this.setAnisotropy(incGetMaxAnisotropy()/2.0f);
     }
 
     ~this() {
@@ -319,14 +320,21 @@ public:
             GL_TEXTURE_MIN_FILTER, 
             filtering == Filtering.Linear ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST
         );
+
         glTexParameteri(
             GL_TEXTURE_2D, 
             GL_TEXTURE_MAG_FILTER, 
             filtering == Filtering.Linear ? GL_LINEAR : GL_NEAREST
         );
+    }
 
-        glBindTexture(GL_TEXTURE_2D, id);
-        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, 16);
+    void setAnisotropy(float value) {
+        this.bind();
+        glTexParameterf(
+            GL_TEXTURE_2D,
+            GL_TEXTURE_MAX_ANISOTROPY,
+            clamp(value, 1, incGetMaxAnisotropy())
+        );
     }
 
     /**
@@ -432,6 +440,15 @@ public:
 private {
     Texture[] textureBindings;
     bool started = false;
+}
+
+/**
+    Gets the maximum level of anisotropy
+*/
+float incGetMaxAnisotropy() {
+    float max;
+    glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &max);
+    return max;
 }
 
 /**
