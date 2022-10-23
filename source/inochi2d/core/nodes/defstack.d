@@ -18,45 +18,155 @@ struct Deformation {
         vertexOffsets = points.dup;
     }
 
-    this(this) {
+    this(this) pure @safe nothrow {
         vertexOffsets = vertexOffsets.dup;
     }
 
-    Deformation opBinary(string op : "*")(float other) {
+    Deformation opUnary(string op : "-")() @safe pure nothrow {
         Deformation new_;
 
         new_.vertexOffsets.length = vertexOffsets.length;
-
         foreach(i; 0..vertexOffsets.length) {
-            new_.vertexOffsets[i] = vertexOffsets[i] * other;
+            new_.vertexOffsets[i] = -vertexOffsets[i];
         }
 
         return new_;
     }
 
-    Deformation opBinary(string op : "*")(vec2 scale) {
-        Deformation new_;
+    Deformation opBinary(string op : "*", T)(T other) @safe pure nothrow {
+        static if (is(T == Deformation)) {
+            Deformation new_;
 
-        new_.vertexOffsets.length = vertexOffsets.length;
+            new_.vertexOffsets.length = vertexOffsets.length;
 
-        foreach(i; 0..vertexOffsets.length) {
-            new_.vertexOffsets[i] = vec2(vertexOffsets[i].x * scale.x, vertexOffsets[i].y * scale.y);
+            foreach(i; 0..vertexOffsets.length) {
+                new_.vertexOffsets[i] = vertexOffsets[i] * other.vertexOffsets[i];
+            }
+
+            return new_;
+        } else static if (is(T == vec2)) {
+            Deformation new_;
+
+            new_.vertexOffsets.length = vertexOffsets.length;
+
+            foreach(i; 0..vertexOffsets.length) {
+                new_.vertexOffsets[i] = vec2(vertexOffsets[i].x * other.x, vertexOffsets[i].y * other.y);
+            }
+
+            return new_;
+        } else {
+            Deformation new_;
+
+            new_.vertexOffsets.length = vertexOffsets.length;
+
+            foreach(i; 0..vertexOffsets.length) {
+                new_.vertexOffsets[i] = vertexOffsets[i] * other;
+            }
+
+            return new_;
         }
-
-        return new_;
     }
 
-    Deformation opBinary(string op : "+")(Deformation other) {
-        assert(vertexOffsets.length == other.vertexOffsets.length);
+    Deformation opBinaryRight(string op : "*", T)(T other) @safe pure nothrow {
+        static if (is(T == Deformation)) {
+            Deformation new_;
 
-        Deformation new_;
-        new_.vertexOffsets.length = vertexOffsets.length;
+            new_.vertexOffsets.length = vertexOffsets.length;
 
-        foreach(i; 0..vertexOffsets.length) {
-            new_.vertexOffsets[i] = vertexOffsets[i] + other.vertexOffsets[i];
+            foreach(i; 0..vertexOffsets.length) {
+                new_.vertexOffsets[i] = other.vertexOffsets[i] * vertexOffsets[i];
+            }
+
+            return new_;
+        } else static if (is(T == vec2)) {
+            Deformation new_;
+
+            new_.vertexOffsets.length = vertexOffsets.length;
+
+            foreach(i; 0..vertexOffsets.length) {
+                new_.vertexOffsets[i] = vec2(other.x * vertexOffsets[i].x, other.y * vertexOffsets[i].y);
+            }
+
+            return new_;
+        } else {
+            Deformation new_;
+
+            new_.vertexOffsets.length = vertexOffsets.length;
+
+            foreach(i; 0..vertexOffsets.length) {
+                new_.vertexOffsets[i] = other * vertexOffsets[i];
+            }
+
+            return new_;
         }
+    }
 
-        return new_;
+    Deformation opBinary(string op : "+", T)(T other) @safe pure nothrow {
+        static if (is(T == Deformation)) {
+            Deformation new_;
+
+            new_.vertexOffsets.length = vertexOffsets.length;
+
+            foreach(i; 0..vertexOffsets.length) {
+                new_.vertexOffsets[i] = vertexOffsets[i] + other.vertexOffsets[i];
+            }
+
+            return new_;
+        } else static if (is(T == vec2)) {
+            Deformation new_;
+
+            new_.vertexOffsets.length = vertexOffsets.length;
+
+            foreach(i; 0..vertexOffsets.length) {
+                new_.vertexOffsets[i] = vec2(vertexOffsets[i].x + other.x, vertexOffsets[i].y + other.y);
+            }
+
+            return new_;
+        } else {
+            Deformation new_;
+
+            new_.vertexOffsets.length = vertexOffsets.length;
+
+            foreach(i; 0..vertexOffsets.length) {
+                new_.vertexOffsets[i] = vertexOffsets[i] + other;
+            }
+
+            return new_;
+        }
+    }
+
+    Deformation opBinary(string op : "-", T)(T other) @safe pure nothrow {
+        static if (is(T == Deformation)) {
+            Deformation new_;
+
+            new_.vertexOffsets.length = vertexOffsets.length;
+
+            foreach(i; 0..vertexOffsets.length) {
+                new_.vertexOffsets[i] = vertexOffsets[i] - other.vertexOffsets[i];
+            }
+
+            return new_;
+        } else static if (is(T == vec2)) {
+            Deformation new_;
+
+            new_.vertexOffsets.length = vertexOffsets.length;
+
+            foreach(i; 0..vertexOffsets.length) {
+                new_.vertexOffsets[i] = vec2(vertexOffsets[i].x - other.x, vertexOffsets[i].y - other.y);
+            }
+
+            return new_;
+        } else {
+            Deformation new_;
+
+            new_.vertexOffsets.length = vertexOffsets.length;
+
+            foreach(i; 0..vertexOffsets.length) {
+                new_.vertexOffsets[i] = vertexOffsets[i] - other;
+            }
+
+            return new_;
+        }
     }
 
     void serialize(S)(ref S serializer) {
