@@ -718,6 +718,8 @@ public:
                 return interpolateNearest(leftKeypoint, offset);
             case InterpolateMode.Linear:
                 return interpolateLinear(leftKeypoint, offset);
+            case InterpolateMode.Cubic:
+                return interpolateCubic(leftKeypoint, offset);
             default: assert(0);
         }
     }
@@ -748,6 +750,45 @@ public:
         }
 
         return p0.lerp(p1, offset.x);
+    }
+
+    T interpolateCubic(vec2u leftKeypoint, vec2 offset) {
+        T p0, p1, p2, p3;
+
+        T bicubicInterp(vec2u left, float xt, float yt) {
+            T p01, p02, p03, p04;
+            T[4] pOut;
+
+            size_t xlen = values.length-1;
+            size_t ylen = values[0].length-1;
+            ptrdiff_t xkp = cast(ptrdiff_t)leftKeypoint.x;
+            ptrdiff_t ykp = cast(ptrdiff_t)leftKeypoint.y;
+
+            foreach(y; 0..4) {
+                size_t yp = clamp(ykp+y-1, 0, ylen);
+
+                p01 = values[max(xkp-1, 0)][yp];
+                p02 = values[xkp][yp];
+                p03 = values[xkp+1][yp];  
+                p04 = values[min(xkp+2, xlen)][yp];
+                pOut[y] = cubic(p01, p02, p03, p04, xt);
+            }
+
+            return cubic(pOut[0], pOut[1], pOut[2], pOut[3], yt);
+        }
+
+        if (parameter.isVec2) {
+            return bicubicInterp(leftKeypoint, offset.x, offset.y);
+        } else {
+            ptrdiff_t xkp = cast(ptrdiff_t)leftKeypoint.x;
+            size_t xlen = values.length-1;
+
+            p0 = values[max(xkp - 1, 0)][0];
+            p1 = values[xkp][0];
+            p2 = values[xkp + 1][0];     
+            p3 = values[min(xkp + 2, xlen)][0];
+            return cubic(p0, p1, p2, p3, offset.x);
+        }
     }
 
     override
