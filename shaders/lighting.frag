@@ -18,10 +18,10 @@ uniform sampler2D albedo;
 uniform sampler2D emissive;
 uniform sampler2D bumpmap;
 uniform int LOD = 2;
-uniform int samples = 35;
+uniform int samples = 25;
 
 // Gaussian
-float gaussian(vec2 i) {
+float gaussian(vec2 i, float sigma) {
     return exp(-0.5*dot(i /= sigma, i)) / (6.28*sigma*sigma);
 }
 
@@ -34,7 +34,7 @@ vec4 bloom(sampler2D sp, vec2 uv, vec2 scale) {
     
     for ( int i = 0; i < s*s; i++ ) {
         vec2 d = vec2(i%s, i/s)*float(sLOD) - float(samples)/2.0;
-        out_ += gaussian(d) * textureLod( sp, uv + scale * d, LOD);
+        out_ += gaussian(d, sigma) * textureLod( sp, uv + scale * d, LOD);
     }
     
     return out_ / out_.a;
@@ -43,14 +43,10 @@ vec4 bloom(sampler2D sp, vec2 uv, vec2 scale) {
 void main() {
 
     // Bloom
-    outEmissive = texture(emissive, texUVs) + bloom(emissive, texUVs, 1.0/fbSize);
+    outEmissive = bloom(emissive, texUVs, 1.0/fbSize); //texture(emissive, texUVs) + bloom(emissive, texUVs, 1.0/fbSize);
 
     // Set color to the corrosponding pixel in the FBO
-    vec4 light = clamp(
-        vec4(ambientLight, 1) + 
-        outEmissive,
-        0, 1
-    );
+    vec4 light = vec4(ambientLight, 1) + outEmissive;
 
     outAlbedo = (texture(albedo, texUVs)*light);
     outBump = texture(bumpmap, texUVs);

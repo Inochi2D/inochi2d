@@ -18,6 +18,7 @@ uniform sampler2D bumpmap;
 uniform float opacity;
 uniform vec3 multColor;
 uniform vec3 screenColor;
+uniform float emissionStrength = 1;
 
 void main() {
     // Sample texture
@@ -30,7 +31,7 @@ void main() {
     outAlbedo = vec4(screenOut.xyz, texColor.a) * vec4(multColor.xyz, 1) * opacity;
 
     // Emissive
-    outEmissive = vec4(texture(emissive, texUVs).xyz, 1) * outAlbedo.a;
+    outEmissive = vec4(texture(emissive, texUVs).xyz*emissionStrength, 1) * outAlbedo.a;
 
     // Bumpmap
     outBump = vec4(texture(bumpmap, texUVs).xyz, 1) * outAlbedo.a;

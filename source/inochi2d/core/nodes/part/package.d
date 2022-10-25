@@ -34,6 +34,7 @@ package(inochi2d) {
         GLint gopacity;
         GLint gMultColor;
         GLint gScreenColor;
+        GLint gEmissionStrength;
 
         /* GLSL Uniforms (Masks) */
         GLint mmvp;
@@ -62,6 +63,7 @@ package(inochi2d) {
             gopacity = partShader.getUniformLocation("opacity");
             gMultColor = partShader.getUniformLocation("multColor");
             gScreenColor = partShader.getUniformLocation("screenColor");
+            gEmissionStrength = partShader.getUniformLocation("emissionStrength");
 
             partMaskShader.use();
             partMaskShader.setUniform(partMaskShader.getUniformLocation("albedo"), 0);
@@ -173,6 +175,7 @@ private:
             partShader.setUniform(offset, data.origin);
             partShader.setUniform(mvp, inGetCamera().matrix * transform.matrix());
             partShader.setUniform(gopacity, clamp(offsetOpacity * opacity, 0, 1));
+            partShader.setUniform(gEmissionStrength, emissionStrength*offsetEmissionStrength);
 
             partShader.setUniform(partShader.getUniformLocation("albedo"), 0);
             partShader.setUniform(partShader.getUniformLocation("emissive"), 1);
@@ -293,6 +296,9 @@ protected:
         serializer.putKey("screenTint");
         screenTint.serialize(serializer);
 
+        serializer.putKey("emissionStrength");
+        serializer.serializeValue(emissionStrength);
+
         if (masks.length > 0) {
             serializer.putKey("masks");
             auto state = serializer.arrayBegin();
@@ -357,6 +363,9 @@ protected:
         // Older models may not have screen tint
         if (!data["screenTint"].isEmpty) deserialize(screenTint, data["screenTint"]);
 
+        // Older models may not have emission
+        if (!data["emissionStrength"].isEmpty) deserialize(tint, data["emissionStrength"]);
+
         // Older models may not have blend mode
         if (!data["blend_mode"].isEmpty) data["blend_mode"].deserializeValue(this.blendingMode);
 
@@ -386,6 +395,7 @@ protected:
     //
     float offsetMaskThreshold = 0;
     float offsetOpacity = 1;
+    float offsetEmissionStrength = 1;
     vec3 offsetTint = vec3(0);
     vec3 offsetScreenTint = vec3(0);
 
@@ -434,6 +444,11 @@ public:
         Opacity of the mesh
     */
     float opacity = 1;
+
+    /**
+        Strength of emission
+    */
+    float emissionStrength = 1;
 
     /**
         Multiplicative tint color
@@ -504,6 +519,7 @@ public:
             case "screenTint.r":
             case "screenTint.g":
             case "screenTint.b":
+            case "emissionStrength":
                 return true;
             default:
                 return false;
@@ -528,6 +544,8 @@ public:
             case "screenTint.g":
             case "screenTint.b":
                 return 0;
+            case "emissionStrength":
+                return 1;
             default: return float();
         }
     }
@@ -563,6 +581,9 @@ public:
             case "screenTint.b":
                 offsetScreenTint.z = value;
                 return true;
+            case "emissionStrength":
+                offsetEmissionStrength = value;
+                return true;
             default: return false;
         }
     }
@@ -578,6 +599,7 @@ public:
             case "screenTint.r":    return offsetScreenTint.x;
             case "screenTint.g":    return offsetScreenTint.y;
             case "screenTint.b":    return offsetScreenTint.z;
+            case "emissionStrength":    return offsetEmissionStrength;
             default:                return super.getValue(key);
         }
     }
