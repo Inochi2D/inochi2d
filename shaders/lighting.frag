@@ -17,9 +17,8 @@ uniform vec2 fbSize;
 uniform sampler2D albedo;
 uniform sampler2D emissive;
 uniform sampler2D bumpmap;
-
-const int samples = 35;
-const float sigma = float(samples) * 0.25;
+uniform int LOD = 2;
+uniform int samples = 35;
 
 // Gaussian
 float gaussian(vec2 i) {
@@ -28,12 +27,14 @@ float gaussian(vec2 i) {
 
 // Bloom texture by blurring it
 vec4 bloom(sampler2D sp, vec2 uv, vec2 scale) {
+    float sigma = float(samples) * 0.25;
     vec4 out_ = vec4(0);
-    int s = samples/2;
+    int sLOD = 1 << LOD;
+    int s = samples/sLOD;
     
     for ( int i = 0; i < s*s; i++ ) {
-        vec2 d = vec2(i%s, i/s)*4.0 - float(samples)/2.0;
-        out_ += gaussian(d) * texture( sp, uv + scale * d);
+        vec2 d = vec2(i%s, i/s)*float(sLOD) - float(samples)/2.0;
+        out_ += gaussian(d) * textureLod( sp, uv + scale * d, LOD);
     }
     
     return out_ / out_.a;

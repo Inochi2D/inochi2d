@@ -331,7 +331,11 @@ void inPostProcessScene() {
     glBindBuffer(GL_ARRAY_BUFFER, sceneVBO);
     glBufferData(GL_ARRAY_BUFFER, 24*float.sizeof, data.ptr, GL_DYNAMIC_DRAW);
 
+
     if (postProcessingStack.length > 0) {
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, fEmissive);
+        glGenerateMipmap(GL_TEXTURE_2D);
 
         // We want to be able to post process all the attachments
         glBindFramebuffer(GL_FRAMEBUFFER, cfBuffer);
