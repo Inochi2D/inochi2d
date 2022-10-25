@@ -43,7 +43,7 @@ vec4 bloom(sampler2D sp, vec2 uv, vec2 scale) {
 void main() {
 
     // Bloom
-    outEmissive = bloom(emissive, texUVs, 1.0/fbSize); //texture(emissive, texUVs) + bloom(emissive, texUVs, 1.0/fbSize);
+    outEmissive = bloom(emissive, texUVs, 1.0/fbSize);
 
     // Set color to the corrosponding pixel in the FBO
     vec4 light = vec4(ambientLight, 1) + outEmissive;
