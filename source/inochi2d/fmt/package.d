@@ -198,8 +198,8 @@ void inWriteINPExtensions(Puppet p, string file) {
             f.skip(payloadLength);
         }
         extSectionEnd = f.tell();
-        f.close();
     }
+    f.close();
 
     ubyte[] fdata = cast(ubyte[])stdfile.read(file);
     ubyte[] app = fdata;
