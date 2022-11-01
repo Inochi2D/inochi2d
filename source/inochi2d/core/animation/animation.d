@@ -58,11 +58,6 @@ public:
     }
 }
 
-enum AnimationLaneTarget {
-    Parameter,
-    Node
-}
-
 struct AnimationParameterRef {
 
     /**
@@ -77,20 +72,6 @@ struct AnimationParameterRef {
 
 }
 
-struct AnimationNodeRef {
-
-    /**
-        A node to target
-    */
-    Node targetNode;
-
-    /**
-        Name of target setter for node
-    */
-    string targetName;
-
-}
-
 /**
     Animation Lane
 */
@@ -99,10 +80,6 @@ private:
     uint refuuid;
 
 public:
-    /**
-        The type of target the lane applies to
-    */
-    AnimationLaneTarget target;
 
     /**
         Reference to parameter if any
@@ -110,16 +87,9 @@ public:
     AnimationParameterRef* paramRef;
 
     /**
-        Reference to node if any
-    */
-    AnimationNodeRef* nodeRef;
-
-    /**
         Serialization function
     */
     void serialize(ref InochiSerializer serializer) {
-        serializer.putKey("type");
-        serializer.serializeValue(target);
         
         serializer.putKey("interpolation");
         serializer.serializeValue(interpolation);
@@ -130,13 +100,6 @@ public:
             serializer.putKey("target");
             serializer.putValue(paramRef.targetAxis);
         }
-    
-        if (nodeRef) {
-            serializer.putKey("uuid");
-            serializer.putValue(nodeRef.targetNode.uuid);
-            serializer.putKey("target");
-            serializer.putValue(nodeRef.targetName);
-        }
 
         serializer.putKey("keyframes");
         serializer.serializeValue(frames);
@@ -146,22 +109,11 @@ public:
         Deserialization function
     */
     SerdeException deserializeFromFghj(Fghj data) {
-        data["type"].deserializeValue(this.target);
         data["interpolation"].deserializeValue(this.interpolation);
-        
         data["uuid"].deserializeValue(refuuid);
 
-        switch(target) {
-            case AnimationLaneTarget.Node:
-                this.nodeRef = new AnimationNodeRef(null, null);
-                data["target"].deserializeValue(this.nodeRef.targetName);
-                break;
-            case AnimationLaneTarget.Parameter:
-                this.paramRef = new AnimationParameterRef(null, 0);
-                data["target"].deserializeValue(this.paramRef.targetAxis);
-                break;
-            default: assert(0);
-        }
+        this.paramRef = new AnimationParameterRef(null, 0);
+        data["target"].deserializeValue(this.paramRef.targetAxis);
 
         data["keyframes"].deserializeValue(this.frames);
         return null;
@@ -201,7 +153,9 @@ public:
                     // Note we use floats here in case you're running the
                     // update step faster than the timestep of the animation
                     // This way it won't look choppy
-                    float t = (frame-cast(float)frames[i-1].frame);
+                    float tonext = cast(float)frames[i].frame-frame;
+                    float ilen = (cast(float)frames[i].frame-cast(float)frames[i-1].frame);
+                    float t = 1-(tonext/ilen);
 
                     // Interpolation tension 0->1
                     float tension = frames[i].tension;
@@ -222,8 +176,13 @@ public:
 
                         // Cubic - Smoothly in a curve between frame A and B
                         case InterpolateMode.Cubic:
+                            float prev = frames[max(i-1, 0)].value;
+                            float curr = frames[i].value;
+                            float next1 = frames[min(i+1, frames.length-1)].value;
+                            float next2 = frames[min(i+2, frames.length-1)].value;
+
                             // TODO: Switch formulae, catmullrom interpolation
-                            return lerp(frames[i-1].value, frames[i].value, clamp(hermite(0, 2*(1-tension), 1, 2*tension, t), 0, 1));
+                            return cubic(prev, curr, next1, next2, t);
                             
                         // Bezier - Allows the user to specify beziér curves.
                         case InterpolateMode.Bezier:
@@ -244,7 +203,6 @@ public:
     }
 
     void finalize(Puppet puppet) {
-        if (nodeRef) nodeRef.targetNode = puppet.find(refuuid);
         if (paramRef) paramRef.targetParam = puppet.findParameter(refuuid);
     }
 

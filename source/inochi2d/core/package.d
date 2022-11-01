@@ -622,4 +622,6 @@ enum InterpolateMode {
         Interpolation using beziér splines
     */
     Bezier,
+
+    COUNT
 }

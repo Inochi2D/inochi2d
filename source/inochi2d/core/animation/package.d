@@ -47,9 +47,9 @@ private:
                 // Animations needs to be both looping AND running before they'll loop
                 // Eg. if an animation ends then it should play the lead out if possible.
                 if (looping && running) {
-                    float loopStart = (animation.leadIn == -1 ? 0 : animation.leadIn)*animation.timestep;
-                    float loopEnd = (animation.leadOut == -1 ? animation.length : animation.leadOut)*animation.timestep;
-                    time = loopStart+mod(time-loopStart, loopEnd-loopStart);
+                    float loopStart = (animation.leadIn <= 0 ? 0 : animation.leadIn)*animation.timestep;
+                    float loopEnd = (animation.leadOut <= 0 ? animation.length : animation.leadOut)*animation.timestep;
+                    time = loopStart+fmodf(time-loopStart, loopEnd-loopStart);
                 }
             }
         }
@@ -98,6 +98,7 @@ public:
             currAnimation.animation = &anims[animation];
             currAnimation.time = 0;
             currAnimation.paused = true;
+            currAnimation.running = true;
 
         } else {
             
@@ -107,7 +108,7 @@ public:
                 if (additive.name == animation) return;   
             }
 
-            PlayingAnimation anim = { name: animation, animation: &anims[animation], time: 0, paused: true };
+            PlayingAnimation anim = { name: animation, animation: &anims[animation], time: 0, paused: true, running: true };
             additiveAnimations ~= anim; 
         }
     }
@@ -126,6 +127,8 @@ public:
         if (currAnimation && currAnimation.name == animation) {
             if (prevAnimation) prevAnimation.paused = false;
             currAnimation.paused = false;
+            currAnimation.running = true;
+            currAnimation.looping = looping;
             return;
         }
         
@@ -292,6 +295,18 @@ public:
 
             // Immediately destroy the animations, 
             // ending them instantaneously.
+            if (currAnimation) {
+                currAnimation.time = 0;
+                currAnimation.running = false;
+                currAnimation.looping = false;
+            }
+            
+            if (prevAnimation) {
+                prevAnimation.time = 0;
+                prevAnimation.running = false;
+                prevAnimation.looping = false;
+            }
+
             currAnimation = null;
             prevAnimation = null;
             additiveAnimations.length = 0;
@@ -321,18 +336,8 @@ public:
             // Iterate and step all the lanes in the current animation
             foreach(ref AnimationLane lane; currAnimation.animation.lanes) {
                 float value = lane.get(currFrame);
-                
-                switch(lane.target) {
-                    case AnimationLaneTarget.Parameter:
-                        lane.paramRef.targetParam.value.vector[lane.paramRef.targetAxis] = value;
-                        break;
-
-                    case AnimationLaneTarget.Node:
-                        lane.nodeRef.targetNode.setValue(lane.nodeRef.targetName, value);
-                        break;
-
-                    default: assert(0);
-                }
+                lane.paramRef.targetParam.value.vector[lane.paramRef.targetAxis] = 
+                    lane.paramRef.targetParam.unmapAxis(lane.paramRef.targetAxis, value);
             }
 
             // Crossfade T
@@ -354,65 +359,39 @@ public:
 
                     // Fading logic
                     foreach(ref AnimationLane lane; currAnimation.animation.lanes) {
+                        float value = lerp(
+                            lane.get(currFrame),
+                            lane.paramRef.targetParam.defaults.vector[lane.paramRef.targetAxis],
+                            ct
+                        );
 
-                        // TODO: Allow user to set fade out interpolation?
-                        switch(lane.target) {
-                            case AnimationLaneTarget.Parameter:
-
-                                lane.paramRef.targetParam.value.vector[lane.paramRef.targetAxis] = lerp(
-                                    lane.get(currFrame),
-                                    lane.paramRef.targetParam.defaults.vector[lane.paramRef.targetAxis],
-                                    ct
-                                );
-                                break;
-
-                            case AnimationLaneTarget.Node:
-                                lane.nodeRef.targetNode.setValue(lane.nodeRef.targetName, lerp(
-                                    lane.get(currFrame),
-                                    lane.nodeRef.targetNode.getDefaultValue(lane.nodeRef.targetName),
-                                    ct
-                                ));
-                                break;
-
-                            default: assert(0);
-                        }
+                        lane.paramRef.targetParam.value.vector[lane.paramRef.targetAxis] = 
+                            lane.paramRef.targetParam.unmapAxis(lane.paramRef.targetAxis, value);
                     }
                 }
 
             } else {
-                float prevCurrFrame = prevAnimation.time/prevAnimation.animation.timestep;
+                if (prevAnimation) {
+                    float prevCurrFrame = prevAnimation.time/prevAnimation.animation.timestep;
 
-                if (prevAnimation.animation.leadOut < prevAnimation.animation.length) {
-                    ct = (prevCurrFrame-prevAnimation.animation.leadOut)/prevAnimation.animation.length;
-                }
+                    if (prevAnimation.animation.leadOut < prevAnimation.animation.length) {
+                        ct = (prevCurrFrame-prevAnimation.animation.leadOut)/prevAnimation.animation.length;
+                    }
 
-                if (ct >= 1) {
-                    prevAnimation = null;
-                } else {
+                    if (ct >= 1) {
+                        prevAnimation = null;
+                    } else {
 
-                    // Crossfade logic
-                    foreach(ref AnimationLane lane; currAnimation.animation.lanes) {
+                        // Crossfade logic
+                        foreach(ref AnimationLane lane; currAnimation.animation.lanes) {
 
-                        // TODO: Allow user to set fade out interpolation?
-                        switch(lane.target) {
-                            case AnimationLaneTarget.Parameter:
+                            float value = lerp(
+                                lane.get(prevCurrFrame),
+                                lane.paramRef.targetParam.value.vector[lane.paramRef.targetAxis],
+                                ct
+                            );
 
-                                lane.paramRef.targetParam.value.vector[lane.paramRef.targetAxis] = lerp(
-                                    lane.get(prevCurrFrame),
-                                    lane.paramRef.targetParam.value.vector[lane.paramRef.targetAxis],
-                                    ct
-                                );
-                                break;
-
-                            case AnimationLaneTarget.Node:
-                                lane.nodeRef.targetNode.setValue(lane.nodeRef.targetName, lerp(
-                                    lane.get(prevCurrFrame),
-                                    lane.paramRef.targetParam.value.vector[lane.paramRef.targetAxis],
-                                    ct
-                                ));
-                                break;
-
-                            default: assert(0);
+                            lane.paramRef.targetParam.value.vector[lane.paramRef.targetAxis] = lane.paramRef.targetParam.unmapAxis(lane.paramRef.targetAxis, value);
                         }
                     }
                 }
@@ -440,5 +419,9 @@ public:
         // Handle main animation
         if (currAnimation && !currAnimation.paused) this.stepMain(delta);
         this.stepOther(delta); 
+    }
+
+    float getAnimTime() {
+        return currAnimation ? currAnimation.time : 0;
     }
 }
