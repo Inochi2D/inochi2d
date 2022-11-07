@@ -690,11 +690,17 @@ public:
     override
     void finalize() {
         super.finalize();
+        
+        MaskBinding[] validMasks;
         foreach(i; 0..masks.length) {
             if (Drawable nMask = puppet.find!Drawable(masks[i].maskSrcUUID)) {
                 masks[i].maskSrc = nMask;
+                validMasks ~= masks[i];
             }
         }
+
+        // Remove invalid masks
+        masks = validMasks;
     }
 }
 
