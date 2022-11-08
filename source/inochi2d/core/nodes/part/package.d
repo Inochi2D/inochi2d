@@ -167,13 +167,19 @@ private:
         static if (isMask) {
             partMaskShader.use();
             partMaskShader.setUniform(offset, data.origin);
-            partMaskShader.setUniform(mmvp, inGetCamera().matrix * transform.matrix());
+            if (oneTimeTransform !is null)
+                partMaskShader.setUniform(mmvp, inGetCamera().matrix * (*oneTimeTransform).matrix() * transform.matrix());
+            else
+                partMaskShader.setUniform(mmvp, inGetCamera().matrix * transform.matrix());
             partMaskShader.setUniform(mthreshold, clamp(offsetMaskThreshold + maskAlphaThreshold, 0, 1));
             glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         } else {
             partShader.use();
             partShader.setUniform(offset, data.origin);
-            partShader.setUniform(mvp, inGetCamera().matrix * transform.matrix());
+            if (oneTimeTransform !is null)
+                partShader.setUniform(mvp, inGetCamera().matrix * (*oneTimeTransform).matrix() * transform.matrix());
+            else
+                partShader.setUniform(mvp, inGetCamera().matrix * transform.matrix());
             partShader.setUniform(gopacity, clamp(offsetOpacity * opacity, 0, 1));
             partShader.setUniform(gEmissionStrength, emissionStrength*offsetEmissionStrength);
 

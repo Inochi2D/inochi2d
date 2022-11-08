@@ -54,6 +54,7 @@ void inSetUpdateBounds(bool state) {
 @TypeId("Drawable")
 abstract class Drawable : Node {
 private:
+
     void updateIndices() {
         version (InDoesRender) {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
@@ -116,6 +117,9 @@ protected:
         The data in here is only to be used for reference.
     */
     MeshData data;
+
+    @Ignore
+    Transform* oneTimeTransform = null;
 
     /**
         Binds Index Buffer for rendering
@@ -394,6 +398,19 @@ public:
     */
     final void reset() {
         vertices[] = data.vertices;
+    }
+
+    void setOneTimeTransform(Transform* transform) {
+        oneTimeTransform = transform;
+
+        foreach (c; children) {
+            if (Drawable d = cast(Drawable)c)
+                d.setOneTimeTransform(transform);
+        }
+    }
+
+    Transform* getOneTimeTransform() {
+        return oneTimeTransform;
     }
 }
 
