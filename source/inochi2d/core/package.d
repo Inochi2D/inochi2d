@@ -163,6 +163,7 @@ package(inochi2d) {
         inInitPart();
         inInitMask();
         inInitComposite();
+        inInitMeshGroup();
         version(InDoesRender) inInitDebug();
 
         inParameterSetFactory((data) {

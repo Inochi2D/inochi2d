@@ -17,7 +17,8 @@ public import inochi2d.core.nodes.part;
 public import inochi2d.core.nodes.mask;
 public import inochi2d.core.nodes.drawable;
 public import inochi2d.core.nodes.composite;
-public import inochi2d.core.nodes.drivers;
+public import inochi2d.core.nodes.meshgroup;
+public import inochi2d.core.nodes.drivers; 
 //public import inochi2d.core.nodes.shapes; // This isn't mainline yet!
 
 import std.exception;
@@ -861,6 +862,16 @@ public:
         inDbgDrawLines(vec4(.5, .5, .5, 1));
         inDbgLineWidth(1);
     }
+
+    /** 
+     *  Pre-calculate
+     */
+    void precalculate() {}
+
+    /** 
+     * postProcessing for vertices
+     */
+    void postProcessVertex() {}
 }
 
 //
