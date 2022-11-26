@@ -212,6 +212,7 @@ public:
         foreach(i; 0..this.parent.deformation.length) {
             this.parent.deformation[i] += deformation.vertexOffsets[i];
         }
+        this.parent.notifyDeformPushed(deformation);
     }
     
     void preUpdate() {

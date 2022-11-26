@@ -154,6 +154,13 @@ protected:
         return null;
     }
 
+    void onDeformPushed(ref Deformation deform) { }
+
+package(inochi2d):
+    final void notifyDeformPushed(ref Deformation deform) {
+        onDeformPushed(deform);
+    }
+
 public:
 
     /**
