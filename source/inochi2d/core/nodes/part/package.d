@@ -558,31 +558,31 @@ public:
 
         switch(key) {
             case "alphaThreshold":
-                offsetMaskThreshold = value;
+                offsetMaskThreshold *= value;
                 return true;
             case "opacity":
-                offsetOpacity = value;
+                offsetOpacity *= value;
                 return true;
             case "tint.r":
-                offsetTint.x = value;
+                offsetTint.x *= value;
                 return true;
             case "tint.g":
-                offsetTint.y = value;
+                offsetTint.y *= value;
                 return true;
             case "tint.b":
-                offsetTint.z = value;
+                offsetTint.z *= value;
                 return true;
             case "screenTint.r":
-                offsetScreenTint.x = value;
+                offsetScreenTint.x *= value;
                 return true;
             case "screenTint.g":
-                offsetScreenTint.y = value;
+                offsetScreenTint.y *= value;
                 return true;
             case "screenTint.b":
-                offsetScreenTint.z = value;
+                offsetScreenTint.z *= value;
                 return true;
             case "emissionStrength":
-                offsetEmissionStrength = value;
+                offsetEmissionStrength += value;
                 return true;
             default: return false;
         }
@@ -632,6 +632,7 @@ public:
         offsetOpacity = 1;
         offsetTint = vec3(1, 1, 1);
         offsetScreenTint = vec3(0, 0, 0);
+        offsetEmissionStrength = 0;
         super.beginUpdate();
     }
     
