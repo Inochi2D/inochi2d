@@ -164,22 +164,25 @@ private:
 
         // Bind the vertex array
         incDrawableBindVAO();
+        mat4 matrix = transform.matrix();
+        if (overrideTransformMatrix)
+            matrix = *overrideTransformMatrix;
         static if (isMask) {
             partMaskShader.use();
             partMaskShader.setUniform(offset, data.origin);
             if (oneTimeTransform !is null)
-                partMaskShader.setUniform(mmvp, inGetCamera().matrix * (*oneTimeTransform).matrix() * transform.matrix());
+                partMaskShader.setUniform(mmvp, inGetCamera().matrix * (*oneTimeTransform).matrix() * matrix);
             else
-                partMaskShader.setUniform(mmvp, inGetCamera().matrix * transform.matrix());
+                partMaskShader.setUniform(mmvp, inGetCamera().matrix * matrix);
             partMaskShader.setUniform(mthreshold, clamp(offsetMaskThreshold + maskAlphaThreshold, 0, 1));
             glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         } else {
             partShader.use();
             partShader.setUniform(offset, data.origin);
             if (oneTimeTransform !is null)
-                partShader.setUniform(mvp, inGetCamera().matrix * (*oneTimeTransform).matrix() * transform.matrix());
+                partShader.setUniform(mvp, inGetCamera().matrix * (*oneTimeTransform).matrix() * matrix);
             else
-                partShader.setUniform(mvp, inGetCamera().matrix * transform.matrix());
+                partShader.setUniform(mvp, inGetCamera().matrix * matrix);
             partShader.setUniform(gopacity, clamp(offsetOpacity * opacity, 0, 1));
             partShader.setUniform(gEmissionStrength, emissionStrength*offsetEmissionStrength);
 

@@ -15,7 +15,7 @@ import inochi2d.math.triangle;
 import std.exception;
 import inochi2d.core.dbg;
 import inochi2d.core;
-
+import std.typecons: tuple, Tuple;
 
 package(inochi2d) {
     void inInitMeshGroup() {
@@ -43,9 +43,12 @@ protected:
     ushort[] bitMask;
     vec4 bounds;
     Triangle[] triangles;
+    vec2[] transformedVertices = [];
 
     override
     string typeId() { return "MeshGroup"; }
+
+    bool precalculated = false;
     
 public:
     /**
@@ -53,16 +56,121 @@ public:
     */
     this(Node parent = null) {
         super(parent);
+        precalculate();
+    }
+
+    Tuple!(vec2[], mat4*) filterChildren(vec2[] origVertices, vec2[] origDeformation, mat4* origTransform) {
+        import std.stdio;
+
+        vec2[] cDeformation = [];
+//        mat4  cTransform = this.transform.matrix;
+        mat4  cTransform = *origTransform;
+        mat4  origTranslation = *origTransform;
+        origTranslation[0][0] = 1;
+        origTranslation[0][1] = 0;
+        origTranslation[0][2] = 0;
+        origTranslation[1][0] = 0;
+        origTranslation[1][1] = 1;
+        origTranslation[1][2] = 0;
+        origTranslation[2][0] = 0;
+        origTranslation[2][1] = 0;
+        origTranslation[1][2] = 1;
+
+        mat4 inverseMatrix = globalTransform.matrix.inverse;
+        mat4 centerMatrix = inverseMatrix * (*origTransform);
+        mat4 translationMatrix = inverseMatrix * origTranslation;
+
+
+        cDeformation.length  = origDeformation.length;
+        vec2[] cVertices = [];
+        cVertices.length = origVertices.length;
+
+        foreach(i, vertex; origVertices) {
+            cVertices[i] = vec2(centerMatrix * vec4(vertex+origDeformation[i], 0, 1));
+        }
+
+        int findSurroundingTriangle(vec2 pt) {
+            if (pt.x >= bounds.x && pt.x < bounds.z && pt.y >= bounds.y && pt.y < bounds.w) {
+                int width  = cast(int)(ceil(bounds.z) - floor(bounds.x) + 1);
+                ushort bit = bitMask[cast(int)(pt.y - bounds.y) * width + cast(int)(pt.x - bounds.x)];
+                return (bit >> 3) - 1;
+            } else {
+                return -1;
+            }
+        }
+        vec2 calcOffsetInTriangleCoords(vec2 pt, int index) {
+            Triangle t = triangles[index];
+            mat3 H = t.offsetMatrices[0];
+            return (H * vec3(pt.x, pt.y, 1)).xy;
+        }
+        // Calculate position of the vertex using coordinates of the triangle.      
+        vec2 transformPointInTriangleCoords(vec2 pt, vec2 offset, int index) {
+            auto p1 = transformedVertices[data.indices[index * 3]];
+            auto p2 = transformedVertices[data.indices[index * 3 + 1]];
+            auto p3 = transformedVertices[data.indices[index * 3 + 2]];
+            vec2 axis0 = p2 - p1;
+            axis0 /= axis0.length;
+            vec2 axis1 = p3 - p1;
+            axis1 /= axis1.length;
+            return p1 + axis0 * offset.x + axis1 * offset.y;
+        }
+
+//        writefln("Length: vertices=%d, deform=%d", cVertices.length, cDeformation.length);
+        foreach (i, v; cVertices) {
+//            writefln("pt=%s, mat=%s / %s, origV=%s, deform=%s", v, centerMatrix, *origTransform, origVertices[i], origDeformation[i]);
+            int index = findSurroundingTriangle(v);
+            /*
+            if (index >= 0) {
+                writefln("%s [%s]", v, v-bounds.xy, bounds.zw - bounds.xy);
+                writefln("index=%d / %d", index, triangles.length);
+            }
+            */
+            if (index < 0) {
+                cDeformation[i] = origDeformation[i];
+                continue;
+            }
+            vec2 ofs = calcOffsetInTriangleCoords(v, index);
+            vec2 newPos = transformPointInTriangleCoords(v, ofs, index);
+            cDeformation[i] = newPos - (translationMatrix * vec4(origVertices[i], 0, 1)).xy;
+//            writefln("v=%s, p1=%s, ofs=%s, newP1=%s, newPos=%s, deform=%s", v, triangles[index].vertices[0], ofs, transformedVertices[data.indices[3*index]], newPos, cDeformation[i]);
+        }
+
+        return tuple(cDeformation, &cTransform);
     }
 
     /**
         A list of the shape offsets to apply per part
     */
 
-
     override
     void update() {
-        super.update();
+        if (!precalculated) {
+            precalculate();
+            precalculated = true;
+        }
+        transformedVertices.length = vertices.length;
+        foreach(i, vertex; vertices) {
+            transformedVertices[i] = vec2(this.localTransform.matrix * vec4(vertex+this.deformation[i], 0, 1));
+        }
+       super.update();
+ 
+        void setGroup(Drawable drawable) {
+            drawable.filter = &filterChildren;
+            auto group = cast(MeshGroup)drawable;
+            if (group is null) {
+                foreach (child; drawable.children) {
+                    auto childDrawable = cast(Drawable)child;
+                    if (childDrawable !is null)
+                        setGroup(childDrawable);
+                }
+            }
+        }
+        foreach (child; children) {
+            auto drawable = cast(Drawable)child;
+            if (drawable !is null) {
+                setGroup(drawable);
+            }
+        }
     }
 
     override
@@ -73,11 +181,16 @@ public:
 
     override
     void precalculate() {
+//        import std.stdio;
         vec4 getBounds(T)(ref T vertices) {
             vec4 bounds = vec4(float.max, float.max, float.min_normal, float.min_normal);
             foreach (v; vertices) {
                 bounds = vec4(min(bounds.x, v.x), min(bounds.y, v.y), max(bounds.z, v.x), max(bounds.w, v.y));
             }
+            bounds.x = floor(bounds.x);
+            bounds.y = floor(bounds.y);
+            bounds.z = ceil(bounds.z);
+            bounds.w = ceil(bounds.w);
             return bounds;
         }
 
@@ -144,26 +257,21 @@ public:
                     if (isPointInTriangle(pt, t.vertices)) {
                         int vindex = 0;
                         ushort id = cast(ushort)((i + 1) << 3 | vindex);
+                        pt-= bounds.xy;
+//                        writefln("%d: (%f, %f)", id, pt.x, pt.y);
                         bitMask[cast(int)(pt.y * width + pt.x)] = id;
                     } else {
+                        pt-= bounds.xy;
                         bitMask[cast(int)(pt.y * width + pt.x)] = 0;
                     }
                 }
             }
 
         }
+//        writefln("%d x %d", width, height);
+
 
     }
-
-
-    override
-    void postProcessVertex() {
-        foreach (c; children) {
-            c.postProcessVertex();
-        }
-
-    }
-
 
     override
     void renderMask(bool dodge = false) {

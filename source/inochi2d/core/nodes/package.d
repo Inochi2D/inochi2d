@@ -868,10 +868,6 @@ public:
      */
     void precalculate() {}
 
-    /** 
-     * postProcessing for vertices
-     */
-    void postProcessVertex() {}
 }
 
 //

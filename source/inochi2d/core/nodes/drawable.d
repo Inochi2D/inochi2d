@@ -15,6 +15,7 @@ import bindbc.opengl;
 import std.exception;
 import inochi2d.core.dbg;
 import inochi2d.core;
+import std.typecons: tuple, Tuple;
 
 private GLuint drawableVAO;
 
@@ -85,10 +86,27 @@ private:
             "Data length mismatch, if you want to change the mesh you need to change its data with Part.rebuffer."
         );
 
-        version (InDoesRender) {
+        vec2[] finalDeformation = deformation;
+        overrideTransformMatrix = null;
+        if (filter !is null) {
+            mat4 matrix = this.transform.matrix;
+            auto filterResult = filter(vertices, deformation, &matrix);
+            if (filterResult[0] !is null) {
+                finalDeformation = filterResult[0];
+//                import std.stdio;
+//                writefln("deform=%s", finalDeformation);
+            }
+            /*
+            if (filterResult[1] !is null) {
+                // should replace transform with filterResult[2]
+                overrideTransformMatrix = filterResult[1];
+            }
+            */
+        }
 
+        version (InDoesRender) {
             glBindBuffer(GL_ARRAY_BUFFER, dbo);
-            glBufferData(GL_ARRAY_BUFFER, this.deformation.length*vec2.sizeof, this.deformation.ptr, GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, finalDeformation.length*vec2.sizeof, finalDeformation.ptr, GL_DYNAMIC_DRAW);
         }
 
         this.updateBounds();
@@ -120,6 +138,11 @@ protected:
 
     @Ignore
     Transform* oneTimeTransform = null;
+
+    @Ignore
+    mat4* overrideTransformMatrix = null;
+
+    Tuple!(vec2[], mat4*) delegate(vec2[], vec2[], mat4*) filter = null;
 
     /**
         Binds Index Buffer for rendering
@@ -412,6 +435,7 @@ public:
     Transform* getOneTimeTransform() {
         return oneTimeTransform;
     }
+    
 }
 
 version (InDoesRender) {
