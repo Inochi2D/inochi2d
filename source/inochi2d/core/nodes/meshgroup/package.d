@@ -103,7 +103,7 @@ public:
         foreach (i, v; cVertices) {
             int index = findSurroundingTriangle(v);
             if (index < 0) {
-                cDeformation[i] = origDeformation[i];
+                cDeformation[i] = v - origVertices[i];
                 continue;
             }
             vec2 ofs = calcOffsetInTriangleCoords(v, index);
@@ -145,7 +145,7 @@ public:
                 setGroup(drawable);
             }
         }
-        
+
        super.update(); 
     }
 
