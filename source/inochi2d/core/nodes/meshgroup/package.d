@@ -109,9 +109,9 @@ public:
             auto p2 = transformedVertices[data.indices[index * 3 + 1]];
             auto p3 = transformedVertices[data.indices[index * 3 + 2]];
             vec2 axis0 = p2 - p1;
-            axis0 /= axis0.length;
+//            axis0 /= axis0.length;
             vec2 axis1 = p3 - p1;
-            axis1 /= axis1.length;
+//            axis1 /= axis1.length;
             return p1 + axis0 * offset.x + axis1 * offset.y;
         }
 
@@ -183,7 +183,7 @@ public:
     void precalculate() {
 //        import std.stdio;
         vec4 getBounds(T)(ref T vertices) {
-            vec4 bounds = vec4(float.max, float.max, float.min_normal, float.min_normal);
+            vec4 bounds = vec4(float.max, float.max, -float.max, -float.max);
             foreach (v; vertices) {
                 bounds = vec4(min(bounds.x, v.x), min(bounds.y, v.y), max(bounds.z, v.x), max(bounds.w, v.y));
             }
@@ -225,6 +225,9 @@ public:
                     float cosA = raxis1.x;
                     float sinA = raxis1.y;
                     t.offsetMatrices[vindex] = 
+                        mat3([t.axeslen[0] > 0? 1/t.axeslen[0]: 0, 0, 0,
+                              0, t.axeslen[1] > 0? 1/t.axeslen[1]: 0, 0,
+                              0, 0, 1]) * 
                         mat3([1, -cosA/sinA, 0, 
                               0, 1/sinA, 0, 
                               0, 0, 1]) * 
@@ -245,6 +248,7 @@ public:
         int width  = cast(int)(ceil(bounds.z) - floor(bounds.x) + 1);
         int height = cast(int)(ceil(bounds.w) - floor(bounds.y) + 1);
         bitMask.length = width * height;
+        bitMask[] = 0;
         foreach (size_t i, t; triangles) {
             vec4 tbounds = getBounds(t.vertices);
             int bwidth  = cast(int)(ceil(tbounds.z) - floor(tbounds.x) + 1);
@@ -261,16 +265,26 @@ public:
 //                        writefln("%d: (%f, %f)", id, pt.x, pt.y);
                         bitMask[cast(int)(pt.y * width + pt.x)] = id;
                     } else {
-                        pt-= bounds.xy;
-                        bitMask[cast(int)(pt.y * width + pt.x)] = 0;
+//                        pt-= bounds.xy;
+//                        bitMask[cast(int)(pt.y * width + pt.x)] = 0;
                     }
                 }
             }
 
         }
+        
 //        writefln("%d x %d", width, height);
-
-
+/*
+        {
+            import std.stdio;
+            import std.string;
+            auto f = File(format("prepared-%s.bin", name), "wb");
+            f.rawWrite([width]);
+            f.rawWrite([height]);
+            f.rawWrite(bitMask);
+            f.close();
+        }
+*/
     }
 
     override
