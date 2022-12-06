@@ -93,15 +93,10 @@ private:
             auto filterResult = filter(vertices, deformation, &matrix);
             if (filterResult[0] !is null) {
                 finalDeformation = filterResult[0];
-//                import std.stdio;
-//                writefln("deform=%s", finalDeformation);
+            } if (filterResult[1] !is null) {
+                overrideTransformMatrix = new MatrixHolder(*filterResult[1]);
+
             }
-            /*
-            if (filterResult[1] !is null) {
-                // should replace transform with filterResult[2]
-                overrideTransformMatrix = filterResult[1];
-            }
-            */
         }
 
         version (InDoesRender) {
@@ -140,7 +135,14 @@ protected:
     Transform* oneTimeTransform = null;
 
     @Ignore
-    mat4* overrideTransformMatrix = null;
+    class MatrixHolder {
+    public:
+        this(mat4 matrix) {
+            this.matrix = matrix;
+        }
+        mat4 matrix;
+    }
+    MatrixHolder overrideTransformMatrix = null;
 
     Tuple!(vec2[], mat4*) delegate(vec2[], vec2[], mat4*) filter = null;
 
@@ -261,7 +263,7 @@ public:
     /**
         Refreshes the drawable, updating its vertices
     */
-    final void refresh() {
+    void refresh() {
         this.updateVertices();
     }
     

@@ -63,23 +63,10 @@ public:
         import std.stdio;
 
         vec2[] cDeformation = [];
-//        mat4  cTransform = this.transform.matrix;
-        mat4  cTransform = *origTransform;
-        mat4  origTranslation = *origTransform;
-        origTranslation[0][0] = 1;
-        origTranslation[0][1] = 0;
-        origTranslation[0][2] = 0;
-        origTranslation[1][0] = 0;
-        origTranslation[1][1] = 1;
-        origTranslation[1][2] = 0;
-        origTranslation[2][0] = 0;
-        origTranslation[2][1] = 0;
-        origTranslation[1][2] = 1;
+        mat4  cTransform = transform.matrix;
 
         mat4 inverseMatrix = globalTransform.matrix.inverse;
         mat4 centerMatrix = inverseMatrix * (*origTransform);
-        mat4 translationMatrix = inverseMatrix * origTranslation;
-
 
         cDeformation.length  = origDeformation.length;
         vec2[] cVertices = [];
@@ -109,30 +96,19 @@ public:
             auto p2 = transformedVertices[data.indices[index * 3 + 1]];
             auto p3 = transformedVertices[data.indices[index * 3 + 2]];
             vec2 axis0 = p2 - p1;
-//            axis0 /= axis0.length;
             vec2 axis1 = p3 - p1;
-//            axis1 /= axis1.length;
             return p1 + axis0 * offset.x + axis1 * offset.y;
         }
 
-//        writefln("Length: vertices=%d, deform=%d", cVertices.length, cDeformation.length);
         foreach (i, v; cVertices) {
-//            writefln("pt=%s, mat=%s / %s, origV=%s, deform=%s", v, centerMatrix, *origTransform, origVertices[i], origDeformation[i]);
             int index = findSurroundingTriangle(v);
-            /*
-            if (index >= 0) {
-                writefln("%s [%s]", v, v-bounds.xy, bounds.zw - bounds.xy);
-                writefln("index=%d / %d", index, triangles.length);
-            }
-            */
             if (index < 0) {
                 cDeformation[i] = origDeformation[i];
                 continue;
             }
             vec2 ofs = calcOffsetInTriangleCoords(v, index);
             vec2 newPos = transformPointInTriangleCoords(v, ofs, index);
-            cDeformation[i] = newPos - (translationMatrix * vec4(origVertices[i], 0, 1)).xy;
-//            writefln("v=%s, p1=%s, ofs=%s, newP1=%s, newPos=%s, deform=%s", v, triangles[index].vertices[0], ofs, transformedVertices[data.indices[3*index]], newPos, cDeformation[i]);
+            cDeformation[i] = newPos - origVertices[i];
         }
 
         return tuple(cDeformation, &cTransform);
@@ -152,8 +128,6 @@ public:
         foreach(i, vertex; vertices) {
             transformedVertices[i] = vec2(this.localTransform.matrix * vec4(vertex+this.deformation[i], 0, 1));
         }
-       super.update();
- 
         void setGroup(Drawable drawable) {
             drawable.filter = &filterChildren;
             auto group = cast(MeshGroup)drawable;
@@ -171,6 +145,8 @@ public:
                 setGroup(drawable);
             }
         }
+        
+       super.update(); 
     }
 
     override
@@ -181,7 +157,6 @@ public:
 
     override
     void precalculate() {
-//        import std.stdio;
         vec4 getBounds(T)(ref T vertices) {
             vec4 bounds = vec4(float.max, float.max, -float.max, -float.max);
             foreach (v; vertices) {
@@ -262,29 +237,12 @@ public:
                         int vindex = 0;
                         ushort id = cast(ushort)((i + 1) << 3 | vindex);
                         pt-= bounds.xy;
-//                        writefln("%d: (%f, %f)", id, pt.x, pt.y);
                         bitMask[cast(int)(pt.y * width + pt.x)] = id;
-                    } else {
-//                        pt-= bounds.xy;
-//                        bitMask[cast(int)(pt.y * width + pt.x)] = 0;
                     }
                 }
             }
 
         }
-        
-//        writefln("%d x %d", width, height);
-/*
-        {
-            import std.stdio;
-            import std.string;
-            auto f = File(format("prepared-%s.bin", name), "wb");
-            f.rawWrite([width]);
-            f.rawWrite([height]);
-            f.rawWrite(bitMask);
-            f.close();
-        }
-*/
     }
 
     override
@@ -292,6 +250,11 @@ public:
 
     }
 
+    override
+    void refresh() {
+        precalculated = false;
+        super.refresh();
+    }
 
     override
     void serializeSelf(ref InochiSerializer serializer) {

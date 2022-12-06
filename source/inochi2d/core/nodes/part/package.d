@@ -165,8 +165,9 @@ private:
         // Bind the vertex array
         incDrawableBindVAO();
         mat4 matrix = transform.matrix();
-        if (overrideTransformMatrix)
-            matrix = *overrideTransformMatrix;
+        if (overrideTransformMatrix !is null) {
+            matrix = overrideTransformMatrix.matrix;
+        }
         static if (isMask) {
             partMaskShader.use();
             partMaskShader.setUniform(offset, data.origin);
