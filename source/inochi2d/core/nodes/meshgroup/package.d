@@ -60,9 +60,9 @@ public:
         precalculate();
     }
 
-    bool filterChildren(vec2[] origVertices, ref vec2[] origDeformation, mat4* origTransform) {
+    Tuple!(vec2[], mat4*) filterChildren(vec2[] origVertices, vec2[] origDeformation, mat4* origTransform) {
         if (!precalculated)
-            return false;
+            return Tuple!(vec2[], mat4*)(null, null);
 
         int findSurroundingTriangle(vec2 pt) {
             if (pt.x >= bounds.x && pt.x < bounds.z && pt.y >= bounds.y && pt.y < bounds.w) {
@@ -83,9 +83,8 @@ public:
             vec2 newPos = (index < 0)? cVertex: (triangles[index].transformMatrix * vec3(cVertex, 1)).xy;
             origDeformation[i] = newPos - origVertices[i];
         }
-        *origTransform = forwardMatrix;
 
-        return true;
+        return tuple(origDeformation, &forwardMatrix);
     }
 
     /**
