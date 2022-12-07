@@ -161,7 +161,6 @@ public:
     }
 
 
-    override
     void precalculate() {
         vec4 getBounds(T)(ref T vertices) {
             vec4 bounds = vec4(float.max, float.max, -float.max, -float.max);

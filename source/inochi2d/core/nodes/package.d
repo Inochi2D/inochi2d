@@ -864,10 +864,12 @@ public:
     }
 
     /** 
-     *  Pre-calculate
+     * set new Parent
      */
-    void precalculate() {}
-
+    void reparent(Node parent, ulong pOffset) {
+        setRelativeTo(parent);
+        insertInto(parent, pOffset);
+    }
 }
 
 //

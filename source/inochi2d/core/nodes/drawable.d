@@ -437,6 +437,29 @@ public:
     Transform* getOneTimeTransform() {
         return oneTimeTransform;
     }
+
+    override
+    void reparent(Node parent, ulong pOffset) {
+        super.reparent(parent, pOffset);
+        filter = null;
+        void unsetGroup(Drawable drawable) {
+            drawable.filter = null;
+            auto group = cast(MeshGroup)drawable;
+            if (group is null) {
+                foreach (child; drawable.children) {
+                    auto childDrawable = cast(Drawable)child;
+                    if (childDrawable !is null)
+                        unsetGroup(childDrawable);
+                }
+            }
+        }
+        foreach (child; children) {
+            auto drawable = cast(Drawable)child;
+            if (drawable !is null) {
+                unsetGroup(drawable);
+            }
+        }
+    }
     
 }
 
