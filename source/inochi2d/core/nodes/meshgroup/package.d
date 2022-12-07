@@ -62,6 +62,9 @@ public:
     Tuple!(vec2[], mat4*) filterChildren(vec2[] origVertices, vec2[] origDeformation, mat4* origTransform) {
         import std.stdio;
 
+        if (!precalculated)
+            return Tuple!(vec2[], mat4*)(null, null);
+
         vec2[] cDeformation = [];
         mat4  cTransform = transform.matrix;
 
@@ -92,6 +95,9 @@ public:
         }
         // Calculate position of the vertex using coordinates of the triangle.      
         vec2 transformPointInTriangleCoords(vec2 pt, vec2 offset, int index) {
+            if (index * 3 > data.indices.length || data.indices[index * 3] >= transformedVertices.length) {
+                writefln("triangles.length=%d, indices.length=%d", triangles.length, data.indices.length);
+            }
             auto p1 = transformedVertices[data.indices[index * 3]];
             auto p2 = transformedVertices[data.indices[index * 3 + 1]];
             auto p3 = transformedVertices[data.indices[index * 3 + 2]];
@@ -171,6 +177,7 @@ public:
 
         // Calculating conversion matrix for triangles
         bounds = getBounds(data.vertices);
+        triangles.length = 0;
         foreach (i; 0..data.indices.length / 3) {
             Triangle t;
             t.vertices = [
@@ -251,9 +258,9 @@ public:
     }
 
     override
-    void refresh() {
+    void rebuffer(ref MeshData data) {
+        super.rebuffer(data);
         precalculated = false;
-        super.refresh();
     }
 
     override
