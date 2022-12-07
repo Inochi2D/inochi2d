@@ -44,6 +44,8 @@ protected:
     vec4 bounds;
     Triangle[] triangles;
     vec2[] transformedVertices = [];
+    mat4 forwardMatrix;
+    mat4 inverseMatrix;
 
     override
     string typeId() { return "MeshGroup"; }
@@ -60,24 +62,8 @@ public:
     }
 
     Tuple!(vec2[], mat4*) filterChildren(vec2[] origVertices, vec2[] origDeformation, mat4* origTransform) {
-        import std.stdio;
-
         if (!precalculated)
             return Tuple!(vec2[], mat4*)(null, null);
-
-        vec2[] cDeformation = [];
-        mat4  cTransform = transform.matrix;
-
-        mat4 inverseMatrix = globalTransform.matrix.inverse;
-        mat4 centerMatrix = inverseMatrix * (*origTransform);
-
-        cDeformation.length  = origDeformation.length;
-        vec2[] cVertices = [];
-        cVertices.length = origVertices.length;
-
-        foreach(i, vertex; origVertices) {
-            cVertices[i] = vec2(centerMatrix * vec4(vertex+origDeformation[i], 0, 1));
-        }
 
         int findSurroundingTriangle(vec2 pt) {
             if (pt.x >= bounds.x && pt.x < bounds.z && pt.y >= bounds.y && pt.y < bounds.w) {
@@ -95,15 +81,25 @@ public:
         }
         // Calculate position of the vertex using coordinates of the triangle.      
         vec2 transformPointInTriangleCoords(vec2 pt, vec2 offset, int index) {
-            if (index * 3 > data.indices.length || data.indices[index * 3] >= transformedVertices.length) {
-                writefln("triangles.length=%d, indices.length=%d", triangles.length, data.indices.length);
-            }
             auto p1 = transformedVertices[data.indices[index * 3]];
             auto p2 = transformedVertices[data.indices[index * 3 + 1]];
             auto p3 = transformedVertices[data.indices[index * 3 + 2]];
             vec2 axis0 = p2 - p1;
             vec2 axis1 = p3 - p1;
             return p1 + axis0 * offset.x + axis1 * offset.y;
+        }
+
+        vec2[] cDeformation = [];
+        cDeformation.length  = origDeformation.length;
+
+        vec2[] cVertices = [];
+        cVertices.length = origVertices.length;
+
+        mat4 centerMatrix = inverseMatrix * (*origTransform);
+
+        // Transform children vertices in MeshGroup coordinates.
+        foreach(i, vertex; origVertices) {
+            cVertices[i] = vec2(centerMatrix * vec4(vertex+origDeformation[i], 0, 1));
         }
 
         foreach (i, v; cVertices) {
@@ -117,7 +113,7 @@ public:
             cDeformation[i] = newPos - origVertices[i];
         }
 
-        return tuple(cDeformation, &cTransform);
+        return tuple(cDeformation, &forwardMatrix);
     }
 
     /**
@@ -134,6 +130,8 @@ public:
         foreach(i, vertex; vertices) {
             transformedVertices[i] = vec2(this.localTransform.matrix * vec4(vertex+this.deformation[i], 0, 1));
         }
+        forwardMatrix = transform.matrix;
+        inverseMatrix = globalTransform.matrix.inverse;
         void setGroup(Drawable drawable) {
             drawable.filter = &filterChildren;
             auto group = cast(MeshGroup)drawable;
