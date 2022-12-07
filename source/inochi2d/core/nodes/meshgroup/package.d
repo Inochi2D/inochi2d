@@ -74,42 +74,32 @@ public:
                 return -1;
             }
         }
-        vec2 calcOffsetInTriangleCoords(vec2 pt, int index) {
+        vec2 transformInTriangleCoords(vec2 pt, int index) {
             Triangle t = triangles[index];
             mat3 H = t.offsetMatrices[0];
-            return (H * vec3(pt.x, pt.y, 1)).xy;
-        }
-        // Calculate position of the vertex using coordinates of the triangle.      
-        vec2 transformPointInTriangleCoords(vec2 pt, vec2 offset, int index) {
             auto p1 = transformedVertices[data.indices[index * 3]];
             auto p2 = transformedVertices[data.indices[index * 3 + 1]];
             auto p3 = transformedVertices[data.indices[index * 3 + 2]];
-            vec2 axis0 = p2 - p1;
-            vec2 axis1 = p3 - p1;
-            return p1 + axis0 * offset.x + axis1 * offset.y;
+            mat3 I = mat3([p2.x - p1.x, p3.x - p1.x, p1.x,
+                           p2.y - p1.y, p3.y - p1.y, p1.y,
+                           0, 0, 1]);
+            return (I * H * vec3(pt.x, pt.y, 1)).xy;
         }
 
         vec2[] cDeformation = [];
         cDeformation.length  = origDeformation.length;
 
-        vec2[] cVertices = [];
-        cVertices.length = origVertices.length;
-
         mat4 centerMatrix = inverseMatrix * (*origTransform);
 
         // Transform children vertices in MeshGroup coordinates.
         foreach(i, vertex; origVertices) {
-            cVertices[i] = vec2(centerMatrix * vec4(vertex+origDeformation[i], 0, 1));
-        }
-
-        foreach (i, v; cVertices) {
-            int index = findSurroundingTriangle(v);
+            auto cVertex = vec2(centerMatrix * vec4(vertex+origDeformation[i], 0, 1));
+            int index = findSurroundingTriangle(cVertex);
             if (index < 0) {
-                cDeformation[i] = v - origVertices[i];
+                cDeformation[i] = cVertex - origVertices[i];
                 continue;
             }
-            vec2 ofs = calcOffsetInTriangleCoords(v, index);
-            vec2 newPos = transformPointInTriangleCoords(v, ofs, index);
+            vec2 newPos = transformInTriangleCoords(cVertex, index);
             cDeformation[i] = newPos - origVertices[i];
         }
 
@@ -132,23 +122,6 @@ public:
         }
         forwardMatrix = transform.matrix;
         inverseMatrix = globalTransform.matrix.inverse;
-        void setGroup(Drawable drawable) {
-            drawable.filter = &filterChildren;
-            auto group = cast(MeshGroup)drawable;
-            if (group is null) {
-                foreach (child; drawable.children) {
-                    auto childDrawable = cast(Drawable)child;
-                    if (childDrawable !is null)
-                        setGroup(childDrawable);
-                }
-            }
-        }
-        foreach (child; children) {
-            auto drawable = cast(Drawable)child;
-            if (drawable !is null) {
-                setGroup(drawable);
-            }
-        }
 
        super.update(); 
     }
@@ -245,7 +218,10 @@ public:
                     }
                 }
             }
+        }
 
+        foreach (child; children) {
+            setupChild(child);
         }
     }
 
@@ -270,5 +246,24 @@ public:
         return super.deserializeFromFghj(data);
     }
 
+    override
+    void setupChild(Node child) {
+        void setGroup(Drawable drawable) {
+            drawable.filter = &filterChildren;
+            auto group = cast(MeshGroup)drawable;
+            if (group is null) {
+                foreach (child; drawable.children) {
+                    auto childDrawable = cast(Drawable)child;
+                    if (childDrawable !is null)
+                        setGroup(childDrawable);
+                }
+            }
+        } 
+        auto drawable = cast(Drawable)child;
+        if (drawable !is null) {
+            setGroup(drawable);
+        }
+
+    }
 
 }

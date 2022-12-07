@@ -440,7 +440,6 @@ public:
 
     override
     void reparent(Node parent, ulong pOffset) {
-        super.reparent(parent, pOffset);
         filter = null;
         void unsetGroup(Drawable drawable) {
             drawable.filter = null;
@@ -453,12 +452,15 @@ public:
                 }
             }
         }
+
         foreach (child; children) {
             auto drawable = cast(Drawable)child;
             if (drawable !is null) {
                 unsetGroup(drawable);
             }
         }
+
+        super.reparent(parent, pOffset);
     }
     
 }
