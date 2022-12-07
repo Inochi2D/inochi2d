@@ -29,8 +29,6 @@ struct Triangle{
     vec2[3] vertices;
     mat3[6] offsetMatrices;
     mat3 transformMatrix;
-//    vec2[2][6] axes;
-//    float[2] axeslen;
 }
 }
 
@@ -62,9 +60,9 @@ public:
         precalculate();
     }
 
-    Tuple!(vec2[], mat4*) filterChildren(vec2[] origVertices, vec2[] origDeformation, mat4* origTransform) {
+    bool filterChildren(vec2[] origVertices, ref vec2[] origDeformation, mat4* origTransform) {
         if (!precalculated)
-            return Tuple!(vec2[], mat4*)(null, null);
+            return false;
 
         int findSurroundingTriangle(vec2 pt) {
             if (pt.x >= bounds.x && pt.x < bounds.z && pt.y >= bounds.y && pt.y < bounds.w) {
@@ -75,12 +73,6 @@ public:
                 return -1;
             }
         }
-        vec2 transformInTriangleCoords(vec2 pt, int index) {
-            return (triangles[index].transformMatrix * vec3(pt.x, pt.y, 1)).xy;
-        }
-
-        vec2[] cDeformation = [];
-        cDeformation.length  = origDeformation.length;
 
         mat4 centerMatrix = inverseMatrix * (*origTransform);
 
@@ -88,15 +80,12 @@ public:
         foreach(i, vertex; origVertices) {
             auto cVertex = vec2(centerMatrix * vec4(vertex+origDeformation[i], 0, 1));
             int index = findSurroundingTriangle(cVertex);
-            if (index < 0) {
-                cDeformation[i] = cVertex - origVertices[i];
-                continue;
-            }
-            vec2 newPos = transformInTriangleCoords(cVertex, index);
-            cDeformation[i] = newPos - origVertices[i];
+            vec2 newPos = (index < 0)? cVertex: (triangles[index].transformMatrix * vec3(cVertex, 1)).xy;
+            origDeformation[i] = newPos - origVertices[i];
         }
+        *origTransform = forwardMatrix;
 
-        return tuple(cDeformation, &forwardMatrix);
+        return true;
     }
 
     /**
@@ -118,8 +107,8 @@ public:
             auto p2 = transformedVertices[data.indices[index * 3 + 1]];
             auto p3 = transformedVertices[data.indices[index * 3 + 2]];
             triangles[index].transformMatrix = mat3([p2.x - p1.x, p3.x - p1.x, p1.x,
-                                      p2.y - p1.y, p3.y - p1.y, p1.y,
-                                      0, 0, 1]) * triangles[index].offsetMatrices[0];
+                                                     p2.y - p1.y, p3.y - p1.y, p1.y,
+                                                     0, 0, 1]) * triangles[index].offsetMatrices[0];
         }
         forwardMatrix = transform.matrix;
         inverseMatrix = globalTransform.matrix.inverse;

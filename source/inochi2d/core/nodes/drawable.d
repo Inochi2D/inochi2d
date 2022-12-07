@@ -86,22 +86,9 @@ private:
             "Data length mismatch, if you want to change the mesh you need to change its data with Part.rebuffer."
         );
 
-        vec2[] finalDeformation = deformation;
-        overrideTransformMatrix = null;
-        if (filter !is null) {
-            mat4 matrix = this.transform.matrix;
-            auto filterResult = filter(vertices, deformation, &matrix);
-            if (filterResult[0] !is null) {
-                finalDeformation = filterResult[0];
-            } if (filterResult[1] !is null) {
-                overrideTransformMatrix = new MatrixHolder(*filterResult[1]);
-
-            }
-        }
-
         version (InDoesRender) {
             glBindBuffer(GL_ARRAY_BUFFER, dbo);
-            glBufferData(GL_ARRAY_BUFFER, finalDeformation.length*vec2.sizeof, finalDeformation.ptr, GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, deformation.length*vec2.sizeof, deformation.ptr, GL_DYNAMIC_DRAW);
         }
 
         this.updateBounds();
@@ -144,7 +131,7 @@ protected:
     }
     MatrixHolder overrideTransformMatrix = null;
 
-    Tuple!(vec2[], mat4*) delegate(vec2[], vec2[], mat4*) filter = null;
+    bool delegate(vec2[], ref vec2[], mat4*) filter = null;
 
     /**
         Binds Index Buffer for rendering
@@ -287,6 +274,17 @@ public:
     void update() {
         super.update();
         deformStack.update();
+
+        overrideTransformMatrix = null;
+        if (filter !is null) {
+            mat4 matrix = this.transform.matrix;
+            auto result = filter(vertices, deformation, &matrix);
+            if (result) {
+                overrideTransformMatrix = new MatrixHolder(matrix);
+
+            }
+        }
+
         this.updateDeform();
     }
 
