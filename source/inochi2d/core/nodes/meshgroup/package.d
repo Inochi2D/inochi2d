@@ -28,8 +28,9 @@ private {
 struct Triangle{
     vec2[3] vertices;
     mat3[6] offsetMatrices;
-    vec2[2][6] axes;
-    float[2] axeslen;
+    mat3 transformMatrix;
+//    vec2[2][6] axes;
+//    float[2] axeslen;
 }
 }
 
@@ -75,15 +76,7 @@ public:
             }
         }
         vec2 transformInTriangleCoords(vec2 pt, int index) {
-            Triangle t = triangles[index];
-            mat3 H = t.offsetMatrices[0];
-            auto p1 = transformedVertices[data.indices[index * 3]];
-            auto p2 = transformedVertices[data.indices[index * 3 + 1]];
-            auto p3 = transformedVertices[data.indices[index * 3 + 2]];
-            mat3 I = mat3([p2.x - p1.x, p3.x - p1.x, p1.x,
-                           p2.y - p1.y, p3.y - p1.y, p1.y,
-                           0, 0, 1]);
-            return (I * H * vec3(pt.x, pt.y, 1)).xy;
+            return (triangles[index].transformMatrix * vec3(pt.x, pt.y, 1)).xy;
         }
 
         vec2[] cDeformation = [];
@@ -119,6 +112,14 @@ public:
         transformedVertices.length = vertices.length;
         foreach(i, vertex; vertices) {
             transformedVertices[i] = vec2(this.localTransform.matrix * vec4(vertex+this.deformation[i], 0, 1));
+        }
+        foreach (index; 0..triangles.length) {
+            auto p1 = transformedVertices[data.indices[index * 3]];
+            auto p2 = transformedVertices[data.indices[index * 3 + 1]];
+            auto p3 = transformedVertices[data.indices[index * 3 + 2]];
+            triangles[index].transformMatrix = mat3([p2.x - p1.x, p3.x - p1.x, p1.x,
+                                      p2.y - p1.y, p3.y - p1.y, p1.y,
+                                      0, 0, 1]) * triangles[index].offsetMatrices[0];
         }
         forwardMatrix = transform.matrix;
         inverseMatrix = globalTransform.matrix.inverse;
@@ -167,18 +168,18 @@ public:
                     vec2* p3 = &t.vertices[i3];
 
                     vec2 axis0 = *p2 - *p1;
-                    t.axeslen[0] = axis0.length;
-                    axis0 /= t.axeslen[0];
+                    float axis0len = axis0.length;
+                    axis0 /= axis0len;
                     vec2 axis1 = *p3 - *p1;
-                    t.axeslen[1] = axis1.length;
-                    axis1 /= t.axeslen[1];
+                    float axis1len = axis1.length;
+                    axis1 /= axis1len;
 
                     vec3 raxis1 = mat3([axis0.x, axis0.y, 0, -axis0.y, axis0.x, 0, 0, 0, 1]) * vec3(axis1, 1);
                     float cosA = raxis1.x;
                     float sinA = raxis1.y;
                     t.offsetMatrices[vindex] = 
-                        mat3([t.axeslen[0] > 0? 1/t.axeslen[0]: 0, 0, 0,
-                              0, t.axeslen[1] > 0? 1/t.axeslen[1]: 0, 0,
+                        mat3([axis0len > 0? 1/axis0len: 0, 0, 0,
+                              0, axis1len > 0? 1/axis1len: 0, 0,
                               0, 0, 1]) * 
                         mat3([1, -cosA/sinA, 0, 
                               0, 1/sinA, 0, 
@@ -189,8 +190,6 @@ public:
                         mat3([1, 0, -(p1).x, 
                               0, 1, -(p1).y, 
                               0, 0, 1]);
-                    t.axes[vindex][0] = axis0;
-                    t.axes[vindex][1] = axis1;
                 }
             }
             triangles ~= t;
