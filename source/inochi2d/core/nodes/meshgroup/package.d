@@ -26,8 +26,7 @@ package(inochi2d) {
 
 private {
 struct Triangle{
-    vec2[3] vertices;
-    mat3[6] offsetMatrices;
+    mat3 offsetMatrices;
     mat3 transformMatrix;
 }
 }
@@ -64,22 +63,17 @@ public:
         if (!precalculated)
             return Tuple!(vec2[], mat4*)(null, null);
 
-        int findSurroundingTriangle(vec2 pt) {
-            if (pt.x >= bounds.x && pt.x < bounds.z && pt.y >= bounds.y && pt.y < bounds.w) {
-                int width  = cast(int)(ceil(bounds.z) - floor(bounds.x) + 1);
-                ushort bit = bitMask[cast(int)(pt.y - bounds.y) * width + cast(int)(pt.x - bounds.x)];
-                return (bit >> 3) - 1;
-            } else {
-                return -1;
-            }
-        }
-
         mat4 centerMatrix = inverseMatrix * (*origTransform);
 
         // Transform children vertices in MeshGroup coordinates.
+        auto r = rect(bounds.x, bounds.y, (ceil(bounds.z) - floor(bounds.x) + 1), (ceil(bounds.w) - floor(bounds.y) + 1));
         foreach(i, vertex; origVertices) {
             auto cVertex = vec2(centerMatrix * vec4(vertex+origDeformation[i], 0, 1));
-            int index = findSurroundingTriangle(cVertex);
+            int index = -1;
+            if (r.intersects(cVertex)) {
+                ushort bit = bitMask[cast(int)(cVertex.y - bounds.y) * cast(int)r.width + cast(int)(cVertex.x - bounds.x)];
+                index = bit - 1;
+            }
             vec2 newPos = (index < 0)? cVertex: (triangles[index].transformMatrix * vec3(cVertex, 1)).xy;
             origDeformation[i] = newPos - origVertices[i];
         }
@@ -107,7 +101,7 @@ public:
             auto p3 = transformedVertices[data.indices[index * 3 + 2]];
             triangles[index].transformMatrix = mat3([p2.x - p1.x, p3.x - p1.x, p1.x,
                                                      p2.y - p1.y, p3.y - p1.y, p1.y,
-                                                     0, 0, 1]) * triangles[index].offsetMatrices[0];
+                                                     0, 0, 1]) * triangles[index].offsetMatrices;
         }
         forwardMatrix = transform.matrix;
         inverseMatrix = globalTransform.matrix.inverse;
@@ -139,47 +133,43 @@ public:
         triangles.length = 0;
         foreach (i; 0..data.indices.length / 3) {
             Triangle t;
-            t.vertices = [
+            vec2[3] tvertices = [
                 data.vertices[data.indices[3*i]],
                 data.vertices[data.indices[3*i+1]],
                 data.vertices[data.indices[3*i+2]]
             ];
             
-            foreach (a; 0..3) {
-                foreach (b; 1..3) {
-                    int i1 = a;
-                    int i2 = (a + b) % 3;
-                    int i3 = (a + 3 - b) % 3;
-                    int vindex = 2 * a + (b - 1);
-                    vec2* p1 = &t.vertices[i1];
-                    vec2* p2 = &t.vertices[i2];
-                    vec2* p3 = &t.vertices[i3];
+            int i1 = 0;
+            int i2 = (1) % 3;
+            int i3 = (2) % 3;
+            int vindex = 0;
+            vec2* p1 = &tvertices[0];
+            vec2* p2 = &tvertices[1];
+            vec2* p3 = &tvertices[2];
 
-                    vec2 axis0 = *p2 - *p1;
-                    float axis0len = axis0.length;
-                    axis0 /= axis0len;
-                    vec2 axis1 = *p3 - *p1;
-                    float axis1len = axis1.length;
-                    axis1 /= axis1len;
+            vec2 axis0 = *p2 - *p1;
+            float axis0len = axis0.length;
+            axis0 /= axis0len;
+            vec2 axis1 = *p3 - *p1;
+            float axis1len = axis1.length;
+            axis1 /= axis1len;
 
-                    vec3 raxis1 = mat3([axis0.x, axis0.y, 0, -axis0.y, axis0.x, 0, 0, 0, 1]) * vec3(axis1, 1);
-                    float cosA = raxis1.x;
-                    float sinA = raxis1.y;
-                    t.offsetMatrices[vindex] = 
-                        mat3([axis0len > 0? 1/axis0len: 0, 0, 0,
-                              0, axis1len > 0? 1/axis1len: 0, 0,
-                              0, 0, 1]) * 
-                        mat3([1, -cosA/sinA, 0, 
-                              0, 1/sinA, 0, 
-                              0, 0, 1]) * 
-                        mat3([axis0.x, axis0.y, 0, 
-                              -axis0.y, axis0.x, 0, 
-                              0, 0, 1]) * 
-                        mat3([1, 0, -(p1).x, 
-                              0, 1, -(p1).y, 
-                              0, 0, 1]);
-                }
-            }
+            vec3 raxis1 = mat3([axis0.x, axis0.y, 0, -axis0.y, axis0.x, 0, 0, 0, 1]) * vec3(axis1, 1);
+            float cosA = raxis1.x;
+            float sinA = raxis1.y;
+            t.offsetMatrices = 
+                mat3([axis0len > 0? 1/axis0len: 0, 0, 0,
+                        0, axis1len > 0? 1/axis1len: 0, 0,
+                        0, 0, 1]) * 
+                mat3([1, -cosA/sinA, 0, 
+                        0, 1/sinA, 0, 
+                        0, 0, 1]) * 
+                mat3([axis0.x, axis0.y, 0, 
+                        -axis0.y, axis0.x, 0, 
+                        0, 0, 1]) * 
+                mat3([1, 0, -(p1).x, 
+                        0, 1, -(p1).y, 
+                        0, 0, 1]);
             triangles ~= t;
         }
 
@@ -189,7 +179,13 @@ public:
         bitMask.length = width * height;
         bitMask[] = 0;
         foreach (size_t i, t; triangles) {
-            vec4 tbounds = getBounds(t.vertices);
+            vec2[3] tvertices = [
+                data.vertices[data.indices[3*i]],
+                data.vertices[data.indices[3*i+1]],
+                data.vertices[data.indices[3*i+2]]
+            ];
+
+            vec4 tbounds = getBounds(tvertices);
             int bwidth  = cast(int)(ceil(tbounds.z) - floor(tbounds.x) + 1);
             int bheight = cast(int)(ceil(tbounds.w) - floor(tbounds.y) + 1);
             int top  = cast(int)floor(tbounds.y);
@@ -197,9 +193,8 @@ public:
             foreach (y; 0..bheight) {
                 foreach (x; 0..bwidth) {
                     vec2 pt = vec2(left + x, top + y);
-                    if (isPointInTriangle(pt, t.vertices)) {
-                        int vindex = 0;
-                        ushort id = cast(ushort)((i + 1) << 3 | vindex);
+                    if (isPointInTriangle(pt, tvertices)) {
+                        ushort id = cast(ushort)(i + 1);
                         pt-= bounds.xy;
                         bitMask[cast(int)(pt.y * width + pt.x)] = id;
                     }
