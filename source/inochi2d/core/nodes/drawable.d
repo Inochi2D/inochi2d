@@ -322,8 +322,9 @@ public:
         // Calculate bounds
         Transform wtransform = transform;
         bounds = vec4(wtransform.translation.xyxy);
+        mat4 matrix = overrideTransformMatrix? overrideTransformMatrix.matrix: transform.matrix;
         foreach(i, vertex; vertices) {
-            vec2 vertOriented = vec2(transform.matrix * vec4(vertex+deformation[i], 0, 1));
+            vec2 vertOriented = vec2(matrix * vec4(vertex+deformation[i], 0, 1));
             if (vertOriented.x < bounds.x) bounds.x = vertOriented.x;
             if (vertOriented.y < bounds.y) bounds.y = vertOriented.y;
             if (vertOriented.x > bounds.z) bounds.z = vertOriented.x;
@@ -366,7 +367,8 @@ public:
         void drawMeshLines() {
             if (vertices.length == 0) return;
 
-            auto trans = transform.matrix();
+            auto trans = overrideTransformMatrix? overrideTransformMatrix.matrix: transform.matrix;
+
             ushort[] indices = data.indices;
 
             vec3[] points = new vec3[indices.length*2];
@@ -395,7 +397,7 @@ public:
         void drawMeshPoints() {
             if (vertices.length == 0) return;
 
-            auto trans = transform.matrix();
+            auto trans = overrideTransformMatrix? overrideTransformMatrix.matrix: transform.matrix;
             vec3[] points = new vec3[vertices.length];
             foreach(i, point; vertices) {
                 points[i] = vec3(point-data.origin+deformation[i], 0);
