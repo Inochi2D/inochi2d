@@ -70,7 +70,7 @@ public:
         foreach(i, vertex; origVertices) {
             auto cVertex = vec2(centerMatrix * vec4(vertex+origDeformation[i], 0, 1));
             int index = -1;
-            if (r.intersects(cVertex)) {
+            if (bounds.x <= cVertex.x && cVertex.x < bounds.z && bounds.y <= cVertex.y && cVertex.y < bounds.w) {
                 ushort bit = bitMask[cast(int)(cVertex.y - bounds.y) * cast(int)r.width + cast(int)(cVertex.x - bounds.x)];
                 index = bit - 1;
             }
