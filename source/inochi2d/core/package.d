@@ -470,6 +470,9 @@ GLuint inGetCompositeImage() {
 */
 void inSetViewport(int width, int height) nothrow {
 
+    // Skip resizing when not needed.
+    if (width == inViewportWidth && height == inViewportHeight) return;
+
     inViewportWidth = width;
     inViewportHeight = height;
 
@@ -526,6 +529,8 @@ void inSetViewport(int width, int height) nothrow {
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, cfStencil, 0);
         
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        glViewport(0, 0, width, height);
     }
 }
 

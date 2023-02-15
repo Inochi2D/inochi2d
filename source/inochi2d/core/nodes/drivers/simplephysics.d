@@ -337,7 +337,9 @@ public:
     override
     void updateDriver() {
         
-        float h = deltaTime();
+        // Timestep is limited to 10 seconds, as if you
+        // Are getting 0.1 FPS, you have bigger issues to deal with.
+        float h = min(deltaTime(), 10);
 
         updateInputs();
 
