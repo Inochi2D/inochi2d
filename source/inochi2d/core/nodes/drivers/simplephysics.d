@@ -234,6 +234,8 @@ protected:
         serializer.serializeValue(lengthDamping);
         serializer.putKey("output_scale");
         outputScale.serialize(serializer);
+        serializer.putKey("local_only");
+        serializer.serializeValue(localOnly);
     }
 
     override
@@ -258,6 +260,8 @@ protected:
             if (auto exc = data["length_damping"].deserializeValue(this.lengthDamping)) return exc;
         if (!data["output_scale"].isEmpty)
             if (auto exc = outputScale.deserialize(data["output_scale"])) return exc;
+        if (!data["local_only"].isEmpty)
+            if (auto exc = data["local_only"].deserializeValue(this.localOnly)) return exc;
 
         return null;
     }
@@ -265,6 +269,11 @@ protected:
 public:
     PhysicsModel modelType_ = PhysicsModel.Pendulum;
     ParamMapMode mapMode = ParamMapMode.AngleLength;
+
+    /**
+        Whether physics system listens to local transform only.
+    */
+    bool localOnly = false;
 
     /**
         Gravity scale (1.0 = puppet gravity)
@@ -356,7 +365,10 @@ public:
     }
 
     void updateInputs() {
-        auto anchorPos = transform.matrix * vec4(0, 0, 0, 1);
+
+        auto anchorPos = localOnly ? 
+            (vec4(transformLocal.translation, 1)) : 
+            (transform.matrix * vec4(0, 0, 0, 1));
         anchor = vec2(anchorPos.x, anchorPos.y);
     }
 
@@ -368,7 +380,9 @@ public:
 
         // Transform the physics output back into local space.
         // The origin here is the anchor. This gives us the local angle.
-        auto localPos4 = transform.matrix.inverse * vec4(output.x, output.y, 0, 1);
+        auto localPos4 = localOnly ? 
+            vec4(output.x, output.y, 0, 1) : 
+            (transform.matrix.inverse * vec4(output.x, output.y, 0, 1));
         vec2 localAngle = vec2(localPos4.x, localPos4.y);
         localAngle.normalize();
 
