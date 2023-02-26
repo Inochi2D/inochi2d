@@ -335,6 +335,16 @@ public:
         The transform in world space without locking
     */
     @Ignore
+    Transform transformLocal() {
+        localTransform.update();
+        
+        return localTransform.calcOffset(offsetTransform);
+    }
+
+    /**
+        The transform in world space without locking
+    */
+    @Ignore
     Transform transformNoLock() {
         localTransform.update();
         
