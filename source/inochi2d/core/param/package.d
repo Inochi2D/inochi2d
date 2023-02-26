@@ -28,7 +28,17 @@ enum ParamMergeMode {
     /**
         Parameters are merged multiplicatively
     */
-    multiplicative
+    multiplicative,
+
+    /**
+        Forces parameter to be given value
+    */
+    forced,
+
+    /**
+        Merge mode is passthrough
+    */
+    passthrough
 }
 
 /**
@@ -303,26 +313,36 @@ public:
         }
     }
 
-    void pushIOffset(vec2 offset) {
-        switch(mergeMode) {
+    void pushIOffset(vec2 offset, ParamMergeMode mode = ParamMergeMode.passthrough) {
+        if (mode == ParamMergeMode.passthrough) mode = mergeMode;
+
+        switch(mode) {
             case ParamMergeMode.additive:
                 this.ivalue += offset;
                 return;
             case ParamMergeMode.multiplicative:
                 this.ivalue = this.ivalue*offset;
                 return;
+            case ParamMergeMode.forced:
+                this.value = offset;
+                return;
 
             default: assert(0);
         }
     }
 
-    void pushIOffsetAxis(int axis, float offset) {
-        switch(mergeMode) {
+    void pushIOffsetAxis(int axis, float offset, ParamMergeMode mode = ParamMergeMode.passthrough) {
+        if (mode == ParamMergeMode.passthrough) mode = mergeMode;
+
+        switch(mode) {
             case ParamMergeMode.additive:
                 this.ivalue.vector[axis] += offset;
                 return;
             case ParamMergeMode.multiplicative:
                 this.ivalue.vector[axis] *= offset;
+                return;
+            case ParamMergeMode.forced:
+                this.value.vector[axis] = offset;
                 return;
 
             default: assert(0);
