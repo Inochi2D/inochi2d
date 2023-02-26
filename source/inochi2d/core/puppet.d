@@ -381,9 +381,6 @@ public:
     */
     @Ignore
     bool enableDrivers = true;
-    
-    @Ignore
-    AnimationPlayer player;
 
     /**
         Creates a new puppet from nothing ()
@@ -392,7 +389,6 @@ public:
         this.puppetRootNode = new Node(this); 
         this.meta = new PuppetMeta();
         this.physics = new PuppetPhysics();
-        this.player = new AnimationPlayer(this);
         root = new Node(this.puppetRootNode); 
         root.name = "Root";
     }
@@ -403,7 +399,6 @@ public:
     this(Node root) {
         this.meta = new PuppetMeta();
         this.physics = new PuppetPhysics();
-        this.player = new AnimationPlayer(this);
         this.root = root;
         this.puppetRootNode = new Node(this);
         this.root.name = "Root";
@@ -427,9 +422,6 @@ public:
         }
 
         root.beginUpdate();
-
-        // Step the animations
-        player.step();
 
         if (renderParameters) {
 
