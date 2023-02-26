@@ -18,6 +18,19 @@ import std.stdio;
 
 public import inochi2d.core.param.binding;
 
+enum ParamMergeMode {
+
+    /**
+        Parameters are merged additively
+    */
+    additive,
+
+    /**
+        Parameters are merged multiplicatively
+    */
+    multiplicative
+}
+
 /**
     A parameter
 */
@@ -46,14 +59,19 @@ public:
     bool active = true;
 
     /**
-        Automator calculated offset to apply 
-    */
-    vec2 offset = vec2(0);
-
-    /**
         The current parameter value
     */
     vec2 value = vec2(0);
+
+    /**
+        Internally driven value
+    */
+    vec2 ivalue = vec2(0);
+
+    /**
+        Parameter merge mode
+    */
+    ParamMergeMode mergeMode;
 
     /**
         The default value
@@ -175,6 +193,8 @@ public:
             defaults.serialize(serializer);
             serializer.putKey("axis_points");
             serializer.serializeValue(axisPoints);
+            serializer.putKey("merge_mode");
+            serializer.serializeValue(mergeMode);
             serializer.putKey("bindings");
             auto arrstate = serializer.arrayBegin();
                 foreach(binding; bindings) {
@@ -196,6 +216,7 @@ public:
         if (!data["max"].isEmpty) max.deserialize(data["max"]);
         if (!data["axis_points"].isEmpty) data["axis_points"].deserializeValue(this.axisPoints);
         if (!data["defaults"].isEmpty) defaults.deserialize(data["defaults"]);
+        if (!data["merge_mode"].isEmpty)  data["merge_mode"].deserializeValue(this.mergeMode);
 
         if (!data["bindings"].isEmpty) {
             foreach(Fghj child; data["bindings"].byElement) {
@@ -257,7 +278,16 @@ public:
     }
 
     void preUpdate() {
-        offset = vec2(0);
+        switch(mergeMode) {
+            case ParamMergeMode.additive:
+                this.ivalue = vec2(0);
+                return;
+            case ParamMergeMode.multiplicative:
+                this.ivalue = vec2(1);
+                return;
+
+            default: assert(0);
+        }
     }
 
     void update() {
@@ -267,9 +297,35 @@ public:
         if (!active)
             return;
 
-        findOffset(this.mapValue(value + offset), index, offset_);
+        findOffset(this.mapValue(value + ivalue), index, offset_);
         foreach(binding; bindings) {
             binding.apply(index, offset_);
+        }
+    }
+
+    void pushIOffset(vec2 offset) {
+        switch(mergeMode) {
+            case ParamMergeMode.additive:
+                this.ivalue += offset;
+                return;
+            case ParamMergeMode.multiplicative:
+                this.ivalue = this.ivalue*offset;
+                return;
+
+            default: assert(0);
+        }
+    }
+
+    void pushIOffsetAxis(int axis, float offset) {
+        switch(mergeMode) {
+            case ParamMergeMode.additive:
+                this.ivalue.vector[axis] += offset;
+                return;
+            case ParamMergeMode.multiplicative:
+                this.ivalue.vector[axis] *= offset;
+                return;
+
+            default: assert(0);
         }
     }
 
