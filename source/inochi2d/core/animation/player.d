@@ -121,15 +121,15 @@ private:
         // Time step
         _time += delta;
 
-        render();
-    }
-
-    void render() {
-
         // Handle looping
         if (!isPlayingLeadOut && looping && frame >= loopPointEnd) {
             _time = cast(float)loopPointBegin*anim.timestep;
         }
+
+        render();
+    }
+
+    void render() {
 
         // Apply lanes
         float realStrength = clamp(_strength, 0, 1);
@@ -198,10 +198,10 @@ public:
     int loopPointBegin() { return hasLeadIn ? anim.leadIn : 0; }
 
     /// Gets whether the animation has lead-in
-    bool hasLeadIn() { return anim.leadIn > 0; }
+    bool hasLeadIn() { return anim.leadIn > 0 && anim.leadIn+1 < anim.length; }
 
     /// Gets whether the animation has lead-out
-    bool hasLeadOut() { return anim.leadOut < anim.length; }
+    bool hasLeadOut() { return anim.leadOut > 0 && anim.leadOut+1 < anim.length; }
 
     /// Gets whether the animation is playing the leadout
     bool isPlayingLeadOut() { return ((_playing && !_looping) || _stopping) && _playLeadOut && frame < anim.length; }
@@ -269,7 +269,7 @@ public:
         Stops the animation
     */
     void stop(bool immediate=false) {
-        bool shouldStopImmediate = immediate || frame == 0 || _paused;
+        bool shouldStopImmediate = immediate || frame == 0 || _paused || !hasLeadOut;
         _stopping = !shouldStopImmediate;
         _looping = false;
         _paused = false;
