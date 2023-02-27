@@ -96,6 +96,7 @@ private:
     bool    _paused = false;
     bool    _playing = false;
     bool    _looping = false;
+    bool    _stopping = false;
     float   _time = 0;
     float   _strength = 1;
     float   _speed = 1;
@@ -147,7 +148,8 @@ private:
             if (frame+1 >= anim.length) {
                 _playing = false;
                 _playLeadOut = false;
-                _time = clamp(_time, 0, cast(float)anim.length*anim.timestep);
+                _stopping = false;
+                _time = 0;
             }
         }
     }
@@ -164,6 +166,9 @@ public:
 
     /// Gets whether this instance is currently playing
     bool playing() { return _playing; }
+
+    /// Gets whether this instance is currently stopping
+    bool stopping() { return _stopping; }
 
     /// Gets whether this instance is currently paused
     bool paused() { return _paused; }
@@ -199,7 +204,7 @@ public:
     bool hasLeadOut() { return anim.leadOut < anim.length; }
 
     /// Gets whether the animation is playing the leadout
-    bool isPlayingLeadOut() { return _playLeadOut && frame < anim.length; }
+    bool isPlayingLeadOut() { return ((_playing && !_looping) || _stopping) && _playLeadOut && frame < anim.length; }
 
     /// Gets whether the animation is playing the main part or lead out
     bool isRunning() { return _playing || isPlayingLeadOut; }
@@ -246,6 +251,7 @@ public:
         if (_paused) _paused = false;
         else {
             _time = 0;
+            _stopping = false;
             _playing = true;
             _looping = loop;
             _playLeadOut = playLeadOut;
@@ -263,11 +269,13 @@ public:
         Stops the animation
     */
     void stop(bool immediate=false) {
+        bool shouldStopImmediate = immediate || frame == 0 || _paused;
+        _stopping = !shouldStopImmediate;
         _looping = false;
         _paused = false;
-        _playLeadOut = !immediate;
-        _playing = !immediate;
-        if (immediate) _time = 0;
+        _playing = false;
+        _playLeadOut = !shouldStopImmediate;
+        if (shouldStopImmediate) _time = 0;
         this.render();
     }
 
