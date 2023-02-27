@@ -90,19 +90,20 @@ public:
         Serialization function
     */
     void serialize(ref InochiSerializer serializer) {
-        
-        serializer.putKey("interpolation");
-        serializer.serializeValue(interpolation);
+        auto obj = serializer.objectBegin();
+            serializer.putKey("interpolation");
+            serializer.serializeValue(interpolation);
 
-        if (paramRef) {
-            serializer.putKey("uuid");
-            serializer.putValue(paramRef.targetParam.uuid);
-            serializer.putKey("target");
-            serializer.putValue(paramRef.targetAxis);
-        }
+            if (paramRef) {
+                serializer.putKey("uuid");
+                serializer.putValue(paramRef.targetParam.uuid);
+                serializer.putKey("target");
+                serializer.putValue(paramRef.targetAxis);
+            }
 
-        serializer.putKey("keyframes");
-        serializer.serializeValue(frames);
+            serializer.putKey("keyframes");
+            serializer.serializeValue(frames);
+        serializer.objectEnd(obj);
     }
 
     /**

@@ -726,7 +726,7 @@ public:
                 this.automation ~= auto_;
             }
         }
-        if (!data["animation"].isEmpty) data["animation"].deserializeValue(animations);
+        if (!data["animations"].isEmpty) data["animations"].deserializeValue(animations);
         this.finalizeDeserialization(data);
 
         return null;
