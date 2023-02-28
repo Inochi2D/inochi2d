@@ -49,8 +49,10 @@ protected:
     string typeId() { return "MeshGroup"; }
 
     bool precalculated = false;
-    
+
 public:
+    bool dynamic = true;
+
     /**
         Constructs a new MeshGroup node
     */
@@ -87,24 +89,26 @@ public:
 
     override
     void update() {
-        if (!precalculated) {
-            precalculate();
-            precalculated = true;
+        if (dynamic) {
+            if (!precalculated) {
+                precalculate();
+                precalculated = true;
+            }
+            transformedVertices.length = vertices.length;
+            foreach(i, vertex; vertices) {
+                transformedVertices[i] = vec2(this.localTransform.matrix * vec4(vertex+this.deformation[i], 0, 1));
+            }
+            foreach (index; 0..triangles.length) {
+                auto p1 = transformedVertices[data.indices[index * 3]];
+                auto p2 = transformedVertices[data.indices[index * 3 + 1]];
+                auto p3 = transformedVertices[data.indices[index * 3 + 2]];
+                triangles[index].transformMatrix = mat3([p2.x - p1.x, p3.x - p1.x, p1.x,
+                                                        p2.y - p1.y, p3.y - p1.y, p1.y,
+                                                        0, 0, 1]) * triangles[index].offsetMatrices;
+            }
+            forwardMatrix = transform.matrix;
+            inverseMatrix = globalTransform.matrix.inverse;
         }
-        transformedVertices.length = vertices.length;
-        foreach(i, vertex; vertices) {
-            transformedVertices[i] = vec2(this.localTransform.matrix * vec4(vertex+this.deformation[i], 0, 1));
-        }
-        foreach (index; 0..triangles.length) {
-            auto p1 = transformedVertices[data.indices[index * 3]];
-            auto p2 = transformedVertices[data.indices[index * 3 + 1]];
-            auto p3 = transformedVertices[data.indices[index * 3 + 2]];
-            triangles[index].transformMatrix = mat3([p2.x - p1.x, p3.x - p1.x, p1.x,
-                                                     p2.y - p1.y, p3.y - p1.y, p1.y,
-                                                     0, 0, 1]) * triangles[index].offsetMatrices;
-        }
-        forwardMatrix = transform.matrix;
-        inverseMatrix = globalTransform.matrix.inverse;
 
        super.update(); 
     }
@@ -116,6 +120,9 @@ public:
 
 
     void precalculate() {
+        if (!dynamic)
+            return;
+
         vec4 getBounds(T)(ref T vertices) {
             vec4 bounds = vec4(float.max, float.max, -float.max, -float.max);
             foreach (v; vertices) {
@@ -139,10 +146,6 @@ public:
                 data.vertices[data.indices[3*i+2]]
             ];
             
-            int i1 = 0;
-            int i2 = (1) % 3;
-            int i3 = (2) % 3;
-            int vindex = 0;
             vec2* p1 = &tvertices[0];
             vec2* p2 = &tvertices[1];
             vec2* p3 = &tvertices[2];
@@ -215,21 +218,32 @@ public:
     override
     void rebuffer(ref MeshData data) {
         super.rebuffer(data);
-        precalculated = false;
+        if (dynamic) {
+            precalculated = false;
+        }
     }
 
     override
     void serializeSelf(ref InochiSerializer serializer) {
         super.serializeSelf(serializer);
+
+        serializer.putKey("dynamic_deformation");
+        serializer.serializeValue(dynamic);
+
     }
 
     override
     SerdeException deserializeFromFghj(Fghj data) {
-        return super.deserializeFromFghj(data);
+        super.deserializeFromFghj(data);
+
+        if (!data["dynamic_deformation"].isEmpty) 
+            data["dynamic_deformation"].deserializeValue(dynamic);
+        return null;
     }
 
     override
     void setupChild(Node child) {
+
         void setGroup(Drawable drawable) {
             drawable.filter = &filterChildren;
             auto group = cast(MeshGroup)drawable;
@@ -240,11 +254,14 @@ public:
                         setGroup(childDrawable);
                 }
             }
-        } 
-        auto drawable = cast(Drawable)child;
-        if (drawable !is null) {
-            setGroup(drawable);
         }
+
+        if (dynamic) {
+            auto drawable = cast(Drawable)child;
+            if (drawable !is null) {
+                setGroup(drawable);
+            }
+        } 
 
     }
 
