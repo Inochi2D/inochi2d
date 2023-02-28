@@ -64,6 +64,15 @@ public:
     }
 
     /**
+        pre-render one frame of all animations
+    */
+    void prerenderAll() {
+        foreach(anim; playingAnimations) {
+            anim.render();
+        }
+    }
+
+    /**
         Stop all animations
     */
     void stopAll(bool immediate=false) {
