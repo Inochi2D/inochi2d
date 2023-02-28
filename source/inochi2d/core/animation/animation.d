@@ -90,19 +90,20 @@ public:
         Serialization function
     */
     void serialize(ref InochiSerializer serializer) {
-        
-        serializer.putKey("interpolation");
-        serializer.serializeValue(interpolation);
+        auto obj = serializer.objectBegin();
+            serializer.putKey("interpolation");
+            serializer.serializeValue(interpolation);
 
-        if (paramRef) {
-            serializer.putKey("uuid");
-            serializer.putValue(paramRef.targetParam.uuid);
-            serializer.putKey("target");
-            serializer.putValue(paramRef.targetAxis);
-        }
+            if (paramRef) {
+                serializer.putKey("uuid");
+                serializer.putValue(paramRef.targetParam.uuid);
+                serializer.putKey("target");
+                serializer.putValue(paramRef.targetAxis);
+            }
 
-        serializer.putKey("keyframes");
-        serializer.serializeValue(frames);
+            serializer.putKey("keyframes");
+            serializer.serializeValue(frames);
+        serializer.objectEnd(obj);
     }
 
     /**
@@ -144,53 +145,52 @@ public:
             if (frames.length == 1) return frames[0].value;
 
             foreach(i; 0..frames.length) {
-                if (frames[i].frame > frame) {
+                if (frames[i].frame < frame) continue;
 
-                    // Fallback to not try to index frame -1
-                    if (i == 0) return frames[0].value;
+                // Fallback to not try to index frame -1
+                if (i == 0) return frames[0].value;
 
-                    // Interpolation "time" 0->1
-                    // Note we use floats here in case you're running the
-                    // update step faster than the timestep of the animation
-                    // This way it won't look choppy
-                    float tonext = cast(float)frames[i].frame-frame;
-                    float ilen = (cast(float)frames[i].frame-cast(float)frames[i-1].frame);
-                    float t = 1-(tonext/ilen);
+                // Interpolation "time" 0->1
+                // Note we use floats here in case you're running the
+                // update step faster than the timestep of the animation
+                // This way it won't look choppy
+                float tonext = cast(float)frames[i].frame-frame;
+                float ilen = (cast(float)frames[i].frame-cast(float)frames[i-1].frame);
+                float t = 1-(tonext/ilen);
 
-                    // Interpolation tension 0->1
-                    float tension = frames[i].tension;
+                // Interpolation tension 0->1
+                float tension = frames[i].tension;
 
-                    switch(interpolation) {
+                switch(interpolation) {
+                    
+                    // Nearest - Snap to the closest frame
+                    case InterpolateMode.Nearest:
+                        return t > 0.5 ? frames[i].value : frames[i-1].value;
+
+                    // Stepped - Snap to the current active keyframe
+                    case InterpolateMode.Stepped:
+                        return frames[i-1].value;
+
+                    // Linear - Linearly interpolate between frame A and B
+                    case InterpolateMode.Linear:
+                        return lerp(frames[i-1].value, frames[i].value, t);
+
+                    // Cubic - Smoothly in a curve between frame A and B
+                    case InterpolateMode.Cubic:
+                        float prev = frames[max(i-1, 0)].value;
+                        float curr = frames[i].value;
+                        float next1 = frames[min(i+1, frames.length-1)].value;
+                        float next2 = frames[min(i+2, frames.length-1)].value;
+
+                        // TODO: Switch formulae, catmullrom interpolation
+                        return cubic(prev, curr, next1, next2, t);
                         
-                        // Nearest - Snap to the closest frame
-                        case InterpolateMode.Nearest:
-                            return t > 0.5 ? frames[i].value : frames[i-1].value;
+                    // Bezier - Allows the user to specify beziér curves.
+                    case InterpolateMode.Bezier:
+                        // TODO: Switch formulae, Beziér curve
+                        return lerp(frames[i-1].value, frames[i].value, clamp(hermite(0, 2*tension, 1, 2*tension, t), 0, 1));
 
-                        // Stepped - Snap to the current active keyframe
-                        case InterpolateMode.Stepped:
-                            return frames[i].value;
-
-                        // Linear - Linearly interpolate between frame A and B
-                        case InterpolateMode.Linear:
-                            return lerp(frames[i-1].value, frames[i].value, t);
-
-                        // Cubic - Smoothly in a curve between frame A and B
-                        case InterpolateMode.Cubic:
-                            float prev = frames[max(i-1, 0)].value;
-                            float curr = frames[i].value;
-                            float next1 = frames[min(i+1, frames.length-1)].value;
-                            float next2 = frames[min(i+2, frames.length-1)].value;
-
-                            // TODO: Switch formulae, catmullrom interpolation
-                            return cubic(prev, curr, next1, next2, t);
-                            
-                        // Bezier - Allows the user to specify beziér curves.
-                        case InterpolateMode.Bezier:
-                            // TODO: Switch formulae, Beziér curve
-                            return lerp(frames[i-1].value, frames[i].value, clamp(hermite(0, 2*tension, 1, 2*tension, t), 0, 1));
-
-                        default: assert(0);
-                    }
+                    default: assert(0);
                 }
             }
             return frames[$-1].value;

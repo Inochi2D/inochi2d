@@ -405,7 +405,7 @@ public:
             default: assert(0);
         }
 
-        param.value = vec2(paramVal.x * outputScale.x, paramVal.y * outputScale.y);
+        param.pushIOffset(vec2(paramVal.x * outputScale.x, paramVal.y * outputScale.y), ParamMergeMode.forced);
         param.update();
     }
 
