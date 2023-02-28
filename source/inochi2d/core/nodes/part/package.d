@@ -632,7 +632,7 @@ public:
         offsetOpacity = 1;
         offsetTint = vec3(1, 1, 1);
         offsetScreenTint = vec3(0, 0, 0);
-        offsetEmissionStrength = 0;
+        offsetEmissionStrength = 1;
         super.beginUpdate();
     }
     
