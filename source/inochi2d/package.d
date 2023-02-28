@@ -26,6 +26,10 @@ void inInit(double function() timeFunc) {
     tfunc_ = timeFunc;
 }
 
+void inSetTimingFunc(double function() timeFunc) {
+    tfunc_ = timeFunc;
+}
+
 /**
     Run this at the start of your render/game loop
 */
