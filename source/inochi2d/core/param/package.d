@@ -23,28 +23,96 @@ enum ParamMergeMode {
     /**
         Parameters are merged additively
     */
-    additive,
+    @serdeFlexible
+    @serdeKeys("Additive", "additive")
+    Additive,
+
+    /**
+        Parameters are merged with a weighted average
+    */
+    @serdeFlexible
+    @serdeKeys("Weighted", "weighted")
+    Weighted,
 
     /**
         Parameters are merged multiplicatively
     */
-    multiplicative,
+    @serdeFlexible
+    @serdeKeys("Multiplicative", "multiplicative")
+    Multiplicative,
 
     /**
         Forces parameter to be given value
     */
-    forced,
+    @serdeFlexible
+    @serdeKeys("Forced", "forced")
+    Forced,
 
     /**
         Merge mode is passthrough
     */
-    passthrough
+    @serdeFlexible
+    @serdeKeys("Passthrough", "passthrough")
+    Passthrough,
 }
 
 /**
     A parameter
 */
 class Parameter {
+private:
+    struct Combinator {
+        vec2[] ivalues;
+        float[] iweights;
+        int isum;
+
+        void clear() {
+            isum = 0;
+        }
+
+        void resize(int reqLength) {
+            ivalues.length = reqLength;
+            iweights.length = reqLength;
+        }
+
+        void add(vec2 value, float weight) {
+            if (isum >= ivalues.length) resize(isum+8);
+
+            ivalues[isum] = value;
+            iweights[isum] = weight;
+            isum++;
+        }
+
+        void add(int axis, float value, float weight) {
+            if (isum >= ivalues.length) resize(isum+8);
+
+            ivalues[isum] = vec2(axis == 0 ? value : 1, axis == 1 ? value : 1);
+            iweights[isum] = weight;
+            isum++;
+        }
+        
+        vec2 csum() {
+            vec2 val = vec2(0, 0);
+            foreach(i; 0..isum) {
+                val += ivalues[i];
+            }
+            return val;
+        }
+
+        vec2 avg() {
+            if (isum == 0) return vec2(1, 1);
+
+            vec2 val = vec2(0, 0);
+            foreach(i; 0..isum) {
+                val += ivalues[i]*iweights[i];
+            }
+            return val/isum;
+        }
+    }
+
+    Combinator iadd;
+    Combinator imul;
+
 public:
     /**
         Unique ID of parameter
@@ -74,9 +142,9 @@ public:
     vec2 value = vec2(0);
 
     /**
-        Internally driven value
+        The previous internal value offset
     */
-    vec2 ivalue = vec2(0);
+    vec2 lastInternal = vec2(0);
 
     /**
         Parameter merge mode
@@ -226,7 +294,7 @@ public:
         if (!data["max"].isEmpty) max.deserialize(data["max"]);
         if (!data["axis_points"].isEmpty) data["axis_points"].deserializeValue(this.axisPoints);
         if (!data["defaults"].isEmpty) defaults.deserialize(data["defaults"]);
-        if (!data["merge_mode"].isEmpty)  data["merge_mode"].deserializeValue(this.mergeMode);
+        if (!data["merge_mode"].isEmpty) data["merge_mode"].deserializeValue(this.mergeMode);
 
         if (!data["bindings"].isEmpty) {
             foreach(Fghj child; data["bindings"].byElement) {
@@ -287,19 +355,6 @@ public:
         if (isVec2) interpAxis(1, offset.y, index.y, outOffset.y);
     }
 
-    void preUpdate() {
-        switch(mergeMode) {
-            case ParamMergeMode.additive:
-                this.ivalue = vec2(0);
-                return;
-            case ParamMergeMode.multiplicative:
-                this.ivalue = vec2(1);
-                return;
-
-            default: assert(0);
-        }
-    }
-
     void update() {
         vec2u index;
         vec2 offset_;
@@ -307,45 +362,53 @@ public:
         if (!active)
             return;
 
-        findOffset(this.mapValue(value + ivalue), index, offset_);
+        lastInternal = (value + iadd.csum()) * imul.avg();
+
+        findOffset(this.mapValue(lastInternal), index, offset_);
         foreach(binding; bindings) {
             binding.apply(index, offset_);
         }
+
+        // Reset combinatorics
+        iadd.clear();
+        imul.clear();
     }
 
-    void pushIOffset(vec2 offset, ParamMergeMode mode = ParamMergeMode.passthrough) {
-        if (mode == ParamMergeMode.passthrough) mode = mergeMode;
-
+    void pushIOffset(vec2 offset, ParamMergeMode mode = ParamMergeMode.Passthrough, float weight=1) {
+        if (mode == ParamMergeMode.Passthrough) mode = mergeMode;
         switch(mode) {
-            case ParamMergeMode.additive:
-                this.ivalue += offset;
-                return;
-            case ParamMergeMode.multiplicative:
-                this.ivalue = this.ivalue*offset;
-                return;
-            case ParamMergeMode.forced:
+            case ParamMergeMode.Forced:
                 this.value = offset;
-                return;
-
-            default: assert(0);
+                break;
+            case ParamMergeMode.Additive:
+                iadd.add(offset, 1);
+                break;
+            case ParamMergeMode.Multiplicative:
+                imul.add(offset, 1);
+                break;
+            case ParamMergeMode.Weighted:
+                imul.add(offset, weight);
+                break;
+            default: break;
         }
     }
 
-    void pushIOffsetAxis(int axis, float offset, ParamMergeMode mode = ParamMergeMode.passthrough) {
-        if (mode == ParamMergeMode.passthrough) mode = mergeMode;
-
+    void pushIOffsetAxis(int axis, float offset, ParamMergeMode mode = ParamMergeMode.Passthrough, float weight=1) {
+        if (mode == ParamMergeMode.Passthrough) mode = mergeMode;
         switch(mode) {
-            case ParamMergeMode.additive:
-                this.ivalue.vector[axis] += offset;
-                return;
-            case ParamMergeMode.multiplicative:
-                this.ivalue.vector[axis] *= offset;
-                return;
-            case ParamMergeMode.forced:
+            case ParamMergeMode.Forced:
                 this.value.vector[axis] = offset;
-                return;
-
-            default: assert(0);
+                break;
+            case ParamMergeMode.Additive:
+                iadd.add(axis, offset, 1);
+                break;
+            case ParamMergeMode.Multiplicative:
+                imul.add(axis, offset, 1);
+                break;
+            case ParamMergeMode.Weighted:
+                imul.add(axis, offset, weight);
+                break;
+            default: break;
         }
     }
 

@@ -109,6 +109,7 @@ private:
     float   _time = 0;
     float   _strength = 1;
     float   _speed = 1;
+    int     _looped = 0;
 
     ref Puppet getPuppet() { return player.puppet; }
 
@@ -125,7 +126,11 @@ private:
     // Internal functions
 
     void update(float delta) {
-        if (valid && (!isRunning || _paused)) return;
+        if (!valid || !isRunning) return;
+        if (_paused) {
+            render();
+            return;
+        }
 
         // Time step
         _time += delta;
@@ -133,24 +138,10 @@ private:
         // Handle looping
         if (!isPlayingLeadOut && looping && frame >= loopPointEnd) {
             _time = cast(float)loopPointBegin*anim.timestep;
+            _looped++;
         }
 
         render();
-    }
-
-    void render() {
-
-        // Apply lanes
-        float realStrength = clamp(_strength, 0, 1);
-        if (realStrength > 0) {
-            foreach(lane; anim.lanes) {
-                lane.paramRef.targetParam.pushIOffsetAxis(
-                    lane.paramRef.targetAxis, 
-                    lane.get(hframe, player.snapToFramerate)*realStrength,
-                    anim.additive ? ParamMergeMode.additive : ParamMergeMode.forced
-                );
-            }
-        }
 
         // Handle stopping animation completely on lead-out end
         if (!_looping && isPlayingLeadOut()) {
@@ -159,6 +150,7 @@ private:
                 _playLeadOut = false;
                 _stopping = false;
                 _time = 0;
+                _looped = 0;
             }
         }
     }
@@ -185,14 +177,17 @@ public:
     /// Gets or sets whether this instance is looping
     bool looping() { return _looping; }
     bool looping(bool value) { _looping = value; return value; }
+    
+    /// Gets how many times the animation has looped
+    int looped() { return _looped; }
 
     /// Gets or sets the speed multiplier for the animation
     float speed() { return _speed; }
-    float speed(bool value) { _speed = clamp(_speed, 1, 10); return value; }
+    float speed(bool value) { _speed = clamp(value, 1, 10); return value; }
 
     /// Gets or sets the strength multiplier (0..1) for the animation
     float strength() { return _strength; }
-    float strength(bool value) { _strength = clamp(_strength, 0, 1); return value; }
+    float strength(float value) { _strength = clamp(value, 0, 1); return value; }
 
     /// Gets the current frame of animation
     int frame() { return cast(int)round(_time / anim.timestep); }
@@ -259,6 +254,7 @@ public:
     void play(bool loop=false, bool playLeadOut=true) {
         if (_paused) _paused = false;
         else {
+            _looped = 0;
             _time = 0;
             _stopping = false;
             _playing = true;
@@ -278,14 +274,18 @@ public:
         Stops the animation
     */
     void stop(bool immediate=false) {
+        if (_stopping) return;
+
         bool shouldStopImmediate = immediate || frame == 0 || _paused || !hasLeadOut;
         _stopping = !shouldStopImmediate;
         _looping = false;
         _paused = false;
         _playing = false;
         _playLeadOut = !shouldStopImmediate;
-        if (shouldStopImmediate) _time = 0;
-        this.render();
+        if (shouldStopImmediate) {
+            _time = 0;
+            _looped = 0;
+        }
     }
 
     /**
@@ -294,7 +294,25 @@ public:
     void seek(int frame) {
         float frameTime = clamp(frame, 0, frames);
         _time = frameTime*anim.timestep;
-        this.render();
+        _looped = 0;
+    }
+    
+    /**
+        Renders the current frame of animation
+
+        Called internally automatically by the animation player
+    */
+    void render() {
+
+        // Apply lanes
+        float realStrength = clamp(_strength, 0, 1);
+        foreach(lane; anim.lanes) {
+            lane.paramRef.targetParam.pushIOffsetAxis(
+                lane.paramRef.targetAxis, 
+                lane.get(hframe, player.snapToFramerate)*realStrength,
+                lane.mergeMode
+            );
+        }
     }
 
 }
