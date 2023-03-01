@@ -109,6 +109,7 @@ private:
     float   _time = 0;
     float   _strength = 1;
     float   _speed = 1;
+    int     _looped = 0;
 
     ref Puppet getPuppet() { return player.puppet; }
 
@@ -133,6 +134,7 @@ private:
         // Handle looping
         if (!isPlayingLeadOut && looping && frame >= loopPointEnd) {
             _time = cast(float)loopPointBegin*anim.timestep;
+            _looped++;
         }
 
         render();
@@ -185,6 +187,9 @@ public:
     /// Gets or sets whether this instance is looping
     bool looping() { return _looping; }
     bool looping(bool value) { _looping = value; return value; }
+    
+    /// Gets how many times the animation has looped
+    int looped() { return _looped; }
 
     /// Gets or sets the speed multiplier for the animation
     float speed() { return _speed; }
@@ -259,6 +264,7 @@ public:
     void play(bool loop=false, bool playLeadOut=true) {
         if (_paused) _paused = false;
         else {
+            _looped = 0;
             _time = 0;
             _stopping = false;
             _playing = true;
@@ -284,6 +290,7 @@ public:
         _paused = false;
         _playing = false;
         _playLeadOut = !shouldStopImmediate;
+        _looped = 0;
         if (shouldStopImmediate) _time = 0;
         this.render();
     }
@@ -294,6 +301,7 @@ public:
     void seek(int frame) {
         float frameTime = clamp(frame, 0, frames);
         _time = frameTime*anim.timestep;
+        _looped = 0;
         this.render();
     }
 
