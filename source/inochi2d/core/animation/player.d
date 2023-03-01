@@ -126,7 +126,11 @@ private:
     // Internal functions
 
     void update(float delta) {
-        if (valid && (!isRunning || _paused)) return;
+        if (!valid || !isRunning) return;
+        if (_paused) {
+            render();
+            return;
+        }
 
         // Time step
         _time += delta;
@@ -138,21 +142,6 @@ private:
         }
 
         render();
-    }
-
-    void render() {
-
-        // Apply lanes
-        float realStrength = clamp(_strength, 0, 1);
-        if (realStrength > 0) {
-            foreach(lane; anim.lanes) {
-                lane.paramRef.targetParam.pushIOffsetAxis(
-                    lane.paramRef.targetAxis, 
-                    lane.get(hframe, player.snapToFramerate)*realStrength,
-                    anim.additive ? ParamMergeMode.additive : ParamMergeMode.forced
-                );
-            }
-        }
 
         // Handle stopping animation completely on lead-out end
         if (!_looping && isPlayingLeadOut()) {
@@ -161,6 +150,7 @@ private:
                 _playLeadOut = false;
                 _stopping = false;
                 _time = 0;
+                _looped = 0;
             }
         }
     }
@@ -193,11 +183,11 @@ public:
 
     /// Gets or sets the speed multiplier for the animation
     float speed() { return _speed; }
-    float speed(bool value) { _speed = clamp(_speed, 1, 10); return value; }
+    float speed(bool value) { _speed = clamp(value, 1, 10); return value; }
 
     /// Gets or sets the strength multiplier (0..1) for the animation
     float strength() { return _strength; }
-    float strength(bool value) { _strength = clamp(_strength, 0, 1); return value; }
+    float strength(float value) { _strength = clamp(value, 0, 1); return value; }
 
     /// Gets the current frame of animation
     int frame() { return cast(int)round(_time / anim.timestep); }
@@ -284,15 +274,18 @@ public:
         Stops the animation
     */
     void stop(bool immediate=false) {
+        if (_stopping) return;
+
         bool shouldStopImmediate = immediate || frame == 0 || _paused || !hasLeadOut;
         _stopping = !shouldStopImmediate;
         _looping = false;
         _paused = false;
         _playing = false;
         _playLeadOut = !shouldStopImmediate;
-        _looped = 0;
-        if (shouldStopImmediate) _time = 0;
-        this.render();
+        if (shouldStopImmediate) {
+            _time = 0;
+            _looped = 0;
+        }
     }
 
     /**
@@ -302,7 +295,24 @@ public:
         float frameTime = clamp(frame, 0, frames);
         _time = frameTime*anim.timestep;
         _looped = 0;
-        this.render();
+    }
+    
+    /**
+        Renders the current frame of animation
+
+        Called internally automatically by the animation player
+    */
+    void render() {
+
+        // Apply lanes
+        float realStrength = clamp(_strength, 0, 1);
+        foreach(lane; anim.lanes) {
+            lane.paramRef.targetParam.pushIOffsetAxis(
+                lane.paramRef.targetAxis, 
+                lane.get(hframe, player.snapToFramerate)*realStrength,
+                lane.mergeMode
+            );
+        }
     }
 
 }

@@ -103,6 +103,9 @@ public:
 
             serializer.putKey("keyframes");
             serializer.serializeValue(frames);
+
+            serializer.putKey("merge_mode");
+            serializer.serializeValue(mergeMode);
         serializer.objectEnd(obj);
     }
 
@@ -117,6 +120,7 @@ public:
         data["target"].deserializeValue(this.paramRef.targetAxis);
 
         data["keyframes"].deserializeValue(this.frames);
+        if (!data["merge_mode"].isEmpty) data["merge_mode"].deserializeValue(this.mergeMode);
         return null;
     }
 
@@ -129,6 +133,11 @@ public:
         The interpolation between each frame in the lane
     */
     InterpolateMode interpolation;
+
+    /**
+        Merging mode of the lane
+    */
+    ParamMergeMode mergeMode;
 
     /**
         Gets the interpolated state of a frame of animation 

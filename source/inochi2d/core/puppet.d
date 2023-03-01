@@ -411,11 +411,6 @@ public:
     */
     final void update() {
 
-        // Rest additive offsets
-        foreach(parameter; parameters) {
-            parameter.preUpdate();
-        }
-
         // Update Automators
         foreach(auto_; automation) {
             auto_.update();
@@ -427,6 +422,7 @@ public:
 
             // Update parameters
             foreach(parameter; parameters) {
+
                 if (!enableDrivers || parameter !in drivenParameters)
                     parameter.update();
             }
