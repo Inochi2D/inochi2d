@@ -55,6 +55,7 @@ void inSetUpdateBounds(bool state) {
 @TypeId("Drawable")
 abstract class Drawable : Node {
 private:
+    bool preProcessed  = false;
     bool postProcessed = false;
 
     void updateIndices() {
@@ -80,19 +81,36 @@ private:
         this.updateDeform();
     }
 
+    void preProcess() {
+        if (preProcessed)
+            return;
+        preProcessed = true;
+        overrideTransformMatrix = null;
+        if (preProcessFilter !is null) {
+            mat4 matrix = this.transform.matrix;
+            auto filterResult = preProcessFilter(vertices, deformation, &matrix);
+            if (filterResult[0] !is null) {
+                deformation = filterResult[0];
+            } 
+            if (filterResult[1] !is null) {
+                overrideTransformMatrix = new MatrixHolder(*filterResult[1]);
+            }
+        }
+    }
+
     void postProcess() {
         if (postProcessed)
             return;
         postProcessed = true;
         overrideTransformMatrix = null;
-        if (filter !is null) {
+        if (postProcessFilter !is null) {
             mat4 matrix = this.transform.matrix;
-            auto filterResult = filter(vertices, deformation, &matrix);
+            auto filterResult = postProcessFilter(vertices, deformation, &matrix);
             if (filterResult[0] !is null) {
                 deformation = filterResult[0];
-            } if (filterResult[1] !is null) {
+            } 
+            if (filterResult[1] !is null) {
                 overrideTransformMatrix = new MatrixHolder(*filterResult[1]);
-
             }
         }
     }
@@ -150,7 +168,8 @@ protected:
     }
     MatrixHolder overrideTransformMatrix = null;
 
-    Tuple!(vec2[], mat4*) delegate(vec2[], vec2[], mat4*) filter = null;
+    Tuple!(vec2[], mat4*) delegate(vec2[], vec2[], mat4*) preProcessFilter  = null;
+    Tuple!(vec2[], mat4*) delegate(vec2[], vec2[], mat4*) postProcessFilter = null;
 
     /**
         Binds Index Buffer for rendering
@@ -283,6 +302,7 @@ public:
     override
     void beginUpdate() {
         deformStack.preUpdate();
+        preProcessed  = false;
         postProcessed = false;
         super.beginUpdate();
     }
@@ -292,8 +312,9 @@ public:
     */
     override
     void update() {
-        super.update();
+        preProcess();
         deformStack.update();
+        super.update();
         this.updateDeform();
     }
 
@@ -449,9 +470,11 @@ public:
 
     override
     void reparent(Node parent, ulong pOffset) {
-        filter = null;
+        postProcessFilter = null;
+        preProcessFilter  = null;
         void unsetGroup(Drawable drawable) {
-            drawable.filter = null;
+            drawable.postProcessFilter = null;
+            drawable.preProcessFilter  = null;
             auto group = cast(MeshGroup)drawable;
             if (group is null) {
                 foreach (child; drawable.children) {

@@ -16,6 +16,7 @@ import std.exception;
 import inochi2d.core.dbg;
 import inochi2d.core;
 import std.typecons: tuple, Tuple;
+import std.stdio;
 
 package(inochi2d) {
     void inInitMeshGroup() {
@@ -51,14 +52,13 @@ protected:
     bool precalculated = false;
 
 public:
-    bool dynamic = true;
+    bool dynamic = false;
 
     /**
         Constructs a new MeshGroup node
     */
     this(Node parent = null) {
         super(parent);
-        precalculate();
     }
 
     Tuple!(vec2[], mat4*) filterChildren(vec2[] origVertices, vec2[] origDeformation, mat4* origTransform) {
@@ -66,37 +66,49 @@ public:
             return Tuple!(vec2[], mat4*)(null, null);
 
         mat4 centerMatrix = inverseMatrix * (*origTransform);
+        writefln("dynamic=%d", dynamic);
 
         // Transform children vertices in MeshGroup coordinates.
         auto r = rect(bounds.x, bounds.y, (ceil(bounds.z) - floor(bounds.x) + 1), (ceil(bounds.w) - floor(bounds.y) + 1));
         foreach(i, vertex; origVertices) {
-            auto cVertex = vec2(centerMatrix * vec4(vertex+origDeformation[i], 0, 1));
+            vec2 cVertex;
+            if (dynamic)
+                cVertex = vec2(centerMatrix * vec4(vertex+origDeformation[i], 0, 1));
+            else
+                cVertex = vec2(centerMatrix * vec4(vertex, 0, 1));
             int index = -1;
             if (bounds.x <= cVertex.x && cVertex.x < bounds.z && bounds.y <= cVertex.y && cVertex.y < bounds.w) {
                 ushort bit = bitMask[cast(int)(cVertex.y - bounds.y) * cast(int)r.width + cast(int)(cVertex.x - bounds.x)];
                 index = bit - 1;
             }
             vec2 newPos = (index < 0)? cVertex: (triangles[index].transformMatrix * vec3(cVertex, 1)).xy;
-            origDeformation[i] = newPos - origVertices[i];
+            if (dynamic)
+                origDeformation[i] = newPos - origVertices[i];
+            else
+                origDeformation[i] += newPos - cVertex;
         }
 
-        return tuple(origDeformation, &forwardMatrix);
+        if (dynamic)
+            return tuple(origDeformation, &forwardMatrix);
+        else
+            return tuple(origDeformation, cast(mat4*)null);
     }
 
     /**
         A list of the shape offsets to apply per part
     */
-
     override
     void update() {
-        if (dynamic) {
+        if (data.indices.length > 0) {
             if (!precalculated) {
                 precalculate();
-                precalculated = true;
             }
             transformedVertices.length = vertices.length;
             foreach(i, vertex; vertices) {
-                transformedVertices[i] = vec2(this.localTransform.matrix * vec4(vertex+this.deformation[i], 0, 1));
+                if (dynamic)
+                    transformedVertices[i] = vec2(this.localTransform.matrix * vec4(vertex+this.deformation[i], 0, 1));
+                else
+                    transformedVertices[i] = vec2(vec4(vertex+this.deformation[i], 0, 1));
             }
             foreach (index; 0..triangles.length) {
                 auto p1 = transformedVertices[data.indices[index * 3]];
@@ -120,7 +132,7 @@ public:
 
 
     void precalculate() {
-        if (!dynamic)
+        if (data.indices.length == 0)
             return;
 
         vec4 getBounds(T)(ref T vertices) {
@@ -205,6 +217,7 @@ public:
             }
         }
 
+        precalculated = true;
         foreach (child; children) {
             setupChild(child);
         }
@@ -243,9 +256,12 @@ public:
 
     override
     void setupChild(Node child) {
-
+ 
         void setGroup(Drawable drawable) {
-            drawable.filter = &filterChildren;
+            if (dynamic)
+                drawable.postProcessFilter = &filterChildren;
+            else
+                drawable.preProcessFilter  = &filterChildren;
             auto group = cast(MeshGroup)drawable;
             if (group is null) {
                 foreach (child; drawable.children) {
@@ -256,7 +272,7 @@ public:
             }
         }
 
-        if (dynamic) {
+        if (data.indices.length > 0) {
             auto drawable = cast(Drawable)child;
             if (drawable !is null) {
                 setGroup(drawable);
