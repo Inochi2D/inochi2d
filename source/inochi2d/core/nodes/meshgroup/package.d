@@ -260,10 +260,13 @@ public:
     void setupChild(Node child) {
  
         void setGroup(Drawable drawable) {
-            if (dynamic)
+            if (dynamic) {
+                drawable.preProcessFilter  = null;
                 drawable.postProcessFilter = &filterChildren;
-            else
+            } else {
                 drawable.preProcessFilter  = &filterChildren;
+                drawable.postProcessFilter = null;
+            }
             auto group = cast(MeshGroup)drawable;
             if (group is null) {
                 foreach (child; drawable.children) {
