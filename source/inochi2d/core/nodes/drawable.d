@@ -16,6 +16,7 @@ import std.exception;
 import inochi2d.core.dbg;
 import inochi2d.core;
 import std.typecons: tuple, Tuple;
+import std.string;
 
 private GLuint drawableVAO;
 
@@ -119,7 +120,7 @@ private:
         // Important check since the user can change this every frame
         enforce(
             deformation.length == vertices.length, 
-            "Data length mismatch, if you want to change the mesh you need to change its data with Part.rebuffer."
+            "Data length mismatch for %s, deformation length=%d whereas vertices.length=%d, if you want to change the mesh you need to change its data with Part.rebuffer.".format(name, deformation.length, vertices.length)
         );
         postProcess();
 
