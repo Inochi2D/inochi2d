@@ -66,7 +66,6 @@ public:
             return Tuple!(vec2[], mat4*)(null, null);
 
         mat4 centerMatrix = inverseMatrix * (*origTransform);
-        writefln("dynamic=%d", dynamic);
 
         // Transform children vertices in MeshGroup coordinates.
         auto r = rect(bounds.x, bounds.y, (ceil(bounds.z) - floor(bounds.x) + 1), (ceil(bounds.w) - floor(bounds.y) + 1));
@@ -243,8 +242,8 @@ public:
     void serializeSelf(ref InochiSerializer serializer) {
         super.serializeSelf(serializer);
 
-//        serializer.putKey("dynamic_deformation");
-//        serializer.serializeValue(dynamic);
+        serializer.putKey("dynamic_deformation");
+        serializer.serializeValue(dynamic);
 
     }
 
@@ -252,8 +251,8 @@ public:
     SerdeException deserializeFromFghj(Fghj data) {
         super.deserializeFromFghj(data);
 
-//        if (!data["dynamic_deformation"].isEmpty) 
-//            data["dynamic_deformation"].deserializeValue(dynamic);
+        if (!data["dynamic_deformation"].isEmpty) 
+            data["dynamic_deformation"].deserializeValue(dynamic);
         return null;
     }
 
@@ -294,8 +293,6 @@ public:
         forwardMatrix = transform.matrix;
         inverseMatrix = globalTransform.matrix.inverse;
 
-        writefln("transfer: %s", name);
-
         foreach (param; params) {
             void transferChildren(Node node, int x, int y) {
                 auto drawable = cast(Drawable)node;
@@ -305,12 +302,9 @@ public:
                 mat4 matrix = drawable.transform.matrix;
                 auto nodeBinding = cast(DeformationParameterBinding)param.getOrAddBinding(node, "deform");
                 auto nodeDeform = nodeBinding.values[x][y].vertexOffsets.dup;
-                writefln("%s: vertices = %d", drawable.name, drawable.data.vertices.length);
-                writefln("%s: nodeDeform: length =%d", drawable.name, nodeDeform.length);
                 Tuple!(vec2[], mat4*) filterResult = filterChildren(vertices, nodeDeform, &matrix);
                 if (filterResult[0] !is null) {
                     nodeBinding.values[x][y].vertexOffsets = filterResult[0];
-                    writefln("new nodeDeform: length =%d", nodeBinding.values[x][y].vertexOffsets.length);
                 }
 
                 foreach (child; node.children) {
@@ -324,7 +318,6 @@ public:
                 assert(deformBinding !is null);
                 Node target = binding.getTarget().node;
 
-                writefln("transfer.binding: %s", binding.getName());
                 for (int x = 0; x < param.axisPoints[0].length; x ++) {
                     for (int y = 0; y < param.axisPoints[1].length; y ++) {
 
@@ -332,8 +325,6 @@ public:
                         if (deformBinding.isSet_[x][y])
                             deformation = deformBinding.values[x][y].vertexOffsets;
                         else {
-                            writef("x=%d, y=%d, index_x=%d", x, y, deformBinding.values.length);
-                            writefln(", index_y=%d",deformBinding.values[x].length);
                             bool rightMost  = x == param.axisPoints[0].length - 1;
                             bool bottomMost = y == param.axisPoints[1].length - 1;
                             deformation = deformBinding.interpolate(vec2u(rightMost? x - 1: x, bottomMost? y - 1: y), vec2(rightMost? 1: 0, bottomMost? 1:0)).vertexOffsets;
@@ -358,7 +349,6 @@ public:
                     }
                 }
                 param.removeBinding(binding);
-                writefln("remove param for parameter %s, binding %s", param.name, binding.getName());
             }
 
         }
