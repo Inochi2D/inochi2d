@@ -8,7 +8,7 @@
 */
 module inochi2d.core.nodes.drivers;
 import inochi2d.core.nodes.common;
-import inochi2d.core.nodes;
+//import inochi2d.core.nodes;
 import inochi2d.core;
 public import inochi2d.core.nodes.drivers.simplephysics;
 

@@ -15,6 +15,8 @@ import bindbc.opengl;
 import std.exception;
 import inochi2d.core.dbg;
 import inochi2d.core;
+import std.typecons: tuple, Tuple;
+import std.string;
 
 private GLuint drawableVAO;
 
@@ -54,6 +56,9 @@ void inSetUpdateBounds(bool state) {
 @TypeId("Drawable")
 abstract class Drawable : Node {
 private:
+    bool preProcessed  = false;
+    bool postProcessed = false;
+
     void updateIndices() {
         version (InDoesRender) {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
@@ -77,17 +82,51 @@ private:
         this.updateDeform();
     }
 
+    void preProcess() {
+        if (preProcessed)
+            return;
+        preProcessed = true;
+        overrideTransformMatrix = null;
+        if (preProcessFilter !is null) {
+            mat4 matrix = this.transform.matrix;
+            auto filterResult = preProcessFilter(vertices, deformation, &matrix);
+            if (filterResult[0] !is null) {
+                deformation = filterResult[0];
+            } 
+            if (filterResult[1] !is null) {
+                overrideTransformMatrix = new MatrixHolder(*filterResult[1]);
+            }
+        }
+    }
+
+    void postProcess() {
+        if (postProcessed)
+            return;
+        postProcessed = true;
+        overrideTransformMatrix = null;
+        if (postProcessFilter !is null) {
+            mat4 matrix = this.transform.matrix;
+            auto filterResult = postProcessFilter(vertices, deformation, &matrix);
+            if (filterResult[0] !is null) {
+                deformation = filterResult[0];
+            } 
+            if (filterResult[1] !is null) {
+                overrideTransformMatrix = new MatrixHolder(*filterResult[1]);
+            }
+        }
+    }
+
     void updateDeform() {
         // Important check since the user can change this every frame
         enforce(
             deformation.length == vertices.length, 
-            "Data length mismatch, if you want to change the mesh you need to change its data with Part.rebuffer."
+            "Data length mismatch for %s, deformation length=%d whereas vertices.length=%d, if you want to change the mesh you need to change its data with Part.rebuffer.".format(name, deformation.length, vertices.length)
         );
+        postProcess();
 
         version (InDoesRender) {
-
             glBindBuffer(GL_ARRAY_BUFFER, dbo);
-            glBufferData(GL_ARRAY_BUFFER, this.deformation.length*vec2.sizeof, this.deformation.ptr, GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, deformation.length*vec2.sizeof, deformation.ptr, GL_DYNAMIC_DRAW);
         }
 
         this.updateBounds();
@@ -116,6 +155,22 @@ protected:
         The data in here is only to be used for reference.
     */
     MeshData data;
+
+    @Ignore
+    Transform* oneTimeTransform = null;
+
+    @Ignore
+    class MatrixHolder {
+    public:
+        this(mat4 matrix) {
+            this.matrix = matrix;
+        }
+        mat4 matrix;
+    }
+    MatrixHolder overrideTransformMatrix = null;
+
+    Tuple!(vec2[], mat4*) delegate(vec2[], vec2[], mat4*) preProcessFilter  = null;
+    Tuple!(vec2[], mat4*) delegate(vec2[], vec2[], mat4*) postProcessFilter = null;
 
     /**
         Binds Index Buffer for rendering
@@ -248,6 +303,8 @@ public:
     override
     void beginUpdate() {
         deformStack.preUpdate();
+        preProcessed  = false;
+        postProcessed = false;
         super.beginUpdate();
     }
 
@@ -256,8 +313,9 @@ public:
     */
     override
     void update() {
-        super.update();
+        preProcess();
         deformStack.update();
+        super.update();
         this.updateDeform();
     }
 
@@ -286,8 +344,9 @@ public:
         // Calculate bounds
         Transform wtransform = transform;
         bounds = vec4(wtransform.translation.xyxy);
+        mat4 matrix = overrideTransformMatrix? overrideTransformMatrix.matrix: transform.matrix;
         foreach(i, vertex; vertices) {
-            vec2 vertOriented = vec2(transform.matrix * vec4(vertex+deformation[i], 0, 1));
+            vec2 vertOriented = vec2(matrix * vec4(vertex+deformation[i], 0, 1));
             if (vertOriented.x < bounds.x) bounds.x = vertOriented.x;
             if (vertOriented.y < bounds.y) bounds.y = vertOriented.y;
             if (vertOriented.x > bounds.z) bounds.z = vertOriented.x;
@@ -330,7 +389,8 @@ public:
         void drawMeshLines() {
             if (vertices.length == 0) return;
 
-            auto trans = transform.matrix();
+            auto trans = overrideTransformMatrix? overrideTransformMatrix.matrix: transform.matrix;
+
             ushort[] indices = data.indices;
 
             vec3[] points = new vec3[indices.length*2];
@@ -359,7 +419,7 @@ public:
         void drawMeshPoints() {
             if (vertices.length == 0) return;
 
-            auto trans = transform.matrix();
+            auto trans = overrideTransformMatrix? overrideTransformMatrix.matrix: transform.matrix;
             vec3[] points = new vec3[vertices.length];
             foreach(i, point; vertices) {
                 points[i] = vec3(point-data.origin+deformation[i], 0);
@@ -395,6 +455,47 @@ public:
     final void reset() {
         vertices[] = data.vertices;
     }
+
+    void setOneTimeTransform(Transform* transform) {
+        oneTimeTransform = transform;
+
+        foreach (c; children) {
+            if (Drawable d = cast(Drawable)c)
+                d.setOneTimeTransform(transform);
+        }
+    }
+
+    Transform* getOneTimeTransform() {
+        return oneTimeTransform;
+    }
+
+    override
+    void reparent(Node parent, ulong pOffset) {
+        postProcessFilter = null;
+        preProcessFilter  = null;
+        void unsetGroup(Drawable drawable) {
+            drawable.postProcessFilter = null;
+            drawable.preProcessFilter  = null;
+            auto group = cast(MeshGroup)drawable;
+            if (group is null) {
+                foreach (child; drawable.children) {
+                    auto childDrawable = cast(Drawable)child;
+                    if (childDrawable !is null)
+                        unsetGroup(childDrawable);
+                }
+            }
+        }
+
+        foreach (child; children) {
+            auto drawable = cast(Drawable)child;
+            if (drawable !is null) {
+                unsetGroup(drawable);
+            }
+        }
+
+        super.reparent(parent, pOffset);
+    }
+    
 }
 
 version (InDoesRender) {

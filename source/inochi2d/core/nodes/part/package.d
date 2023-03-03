@@ -164,16 +164,21 @@ private:
 
         // Bind the vertex array
         incDrawableBindVAO();
+        mat4 matrix = transform.matrix();
+        if (overrideTransformMatrix !is null)
+            matrix = overrideTransformMatrix.matrix;
+        if (oneTimeTransform !is null)
+            matrix = (*oneTimeTransform).matrix * matrix;
         static if (isMask) {
             partMaskShader.use();
             partMaskShader.setUniform(offset, data.origin);
-            partMaskShader.setUniform(mmvp, inGetCamera().matrix * transform.matrix());
+            partMaskShader.setUniform(mmvp, inGetCamera().matrix * matrix);
             partMaskShader.setUniform(mthreshold, clamp(offsetMaskThreshold + maskAlphaThreshold, 0, 1));
             glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         } else {
             partShader.use();
             partShader.setUniform(offset, data.origin);
-            partShader.setUniform(mvp, inGetCamera().matrix * transform.matrix());
+            partShader.setUniform(mvp, inGetCamera().matrix * matrix);
             partShader.setUniform(gopacity, clamp(offsetOpacity * opacity, 0, 1));
             partShader.setUniform(gEmissionStrength, emissionStrength*offsetEmissionStrength);
 
@@ -703,6 +708,16 @@ public:
         // Remove invalid masks
         masks = validMasks;
     }
+
+
+    override
+    void setOneTimeTransform(Transform* transform) {
+        super.setOneTimeTransform(transform);
+        foreach (m; masks) {
+            m.maskSrc.oneTimeTransform = transform;
+        }
+    }
+
 }
 
 /**

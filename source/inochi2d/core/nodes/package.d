@@ -17,7 +17,8 @@ public import inochi2d.core.nodes.part;
 public import inochi2d.core.nodes.mask;
 public import inochi2d.core.nodes.drawable;
 public import inochi2d.core.nodes.composite;
-public import inochi2d.core.nodes.drivers;
+public import inochi2d.core.nodes.meshgroup;
+public import inochi2d.core.nodes.drivers; 
 //public import inochi2d.core.nodes.shapes; // This isn't mainline yet!
 
 import std.exception;
@@ -870,6 +871,20 @@ public:
         inDbgLineWidth(3);
         inDbgDrawLines(vec4(.5, .5, .5, 1));
         inDbgLineWidth(1);
+    }
+
+    /** 
+     * set new Parent
+     */
+    void reparent(Node parent, ulong pOffset) {
+        setRelativeTo(parent);
+        insertInto(parent, pOffset);
+        if (parent !is null) {
+            parent.setupChild(this);
+        }
+    }
+
+    void setupChild(Node child) {
     }
 }
 

@@ -782,4 +782,11 @@ public:
     ref Animation[string] getAnimations() {
         return animations;
     }
+
+    void applyDeformToChildren() {
+        auto nodes = findNodesType!MeshGroup(root);
+        foreach (node; nodes) {
+            node.applyDeformToChildren(parameters);
+        }
+    }
 }
