@@ -283,7 +283,7 @@ public:
 
     }
 
-    void transfer(Parameter[] params) {
+    void applyDeformToChildren(Parameter[] params) {
         if (dynamic || data.indices.length == 0)
             return;
 

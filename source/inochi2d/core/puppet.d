@@ -783,10 +783,10 @@ public:
         return animations;
     }
 
-    void transferDeform() {
+    void applyDeformToChildren() {
         auto nodes = findNodesType!MeshGroup(root);
         foreach (node; nodes) {
-            node.transfer(parameters);
+            node.applyDeformToChildren(parameters);
         }
     }
 }
