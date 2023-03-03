@@ -358,4 +358,11 @@ public:
         rebuffer(data);
         precalculated = false;
     }
+
+    void switchMode(bool dynamic) {
+        if (this.dynamic != dynamic) {
+            this.dynamic = dynamic;
+            precalculated = false;
+        }
+    }
 }
