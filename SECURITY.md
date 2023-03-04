@@ -2,8 +2,8 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+Inochi2D versions are supported with updates from the current stable version, and the in-production next version (nightly builds and such)  
+If a vulnerability is sufficiently severe we may backport fixes to earlier versions on request.
 
 | Version | Supported          |
 | ------- | ------------------ |
