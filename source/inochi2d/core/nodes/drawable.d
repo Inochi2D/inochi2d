@@ -86,8 +86,8 @@ private:
         if (preProcessed)
             return;
         preProcessed = true;
-        overrideTransformMatrix = null;
         if (preProcessFilter !is null) {
+            overrideTransformMatrix = null;
             mat4 matrix = this.transform.matrix;
             auto filterResult = preProcessFilter(vertices, deformation, &matrix);
             if (filterResult[0] !is null) {
@@ -103,8 +103,8 @@ private:
         if (postProcessed)
             return;
         postProcessed = true;
-        overrideTransformMatrix = null;
         if (postProcessFilter !is null) {
+            overrideTransformMatrix = null;
             mat4 matrix = this.transform.matrix;
             auto filterResult = postProcessFilter(vertices, deformation, &matrix);
             if (filterResult[0] !is null) {

@@ -81,16 +81,10 @@ public:
                 index = bit - 1;
             }
             vec2 newPos = (index < 0)? cVertex: (triangles[index].transformMatrix * vec3(cVertex, 1)).xy;
-            if (dynamic)
-                origDeformation[i] = newPos - origVertices[i];
-            else
-                origDeformation[i] += newPos - cVertex;
+            origDeformation[i] += newPos - cVertex;
         }
 
-        if (dynamic)
-            return tuple(origDeformation, &forwardMatrix);
-        else
-            return tuple(origDeformation, cast(mat4*)null);
+        return tuple(origDeformation, cast(mat4*)null);
     }
 
     /**
@@ -104,10 +98,7 @@ public:
             }
             transformedVertices.length = vertices.length;
             foreach(i, vertex; vertices) {
-                if (dynamic)
-                    transformedVertices[i] = vec2(this.localTransform.matrix * vec4(vertex+this.deformation[i], 0, 1));
-                else
-                    transformedVertices[i] = vec2(vec4(vertex+this.deformation[i], 0, 1));
+                transformedVertices[i] = vertex+this.deformation[i];
             }
             foreach (index; 0..triangles.length) {
                 auto p1 = transformedVertices[data.indices[index * 3]];
