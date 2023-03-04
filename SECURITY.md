@@ -34,3 +34,5 @@ YTGSGInbgh4rQnXle4M/nQw=
 =xGFO
 -----END PGP PUBLIC KEY BLOCK-----
 ```
+
+You may also report vulnerabilties via the [Security Advisories](https://github.com/Inochi2D/inochi2d/security/advisories/new) feature, note that this feature may not be used indefinitely and we would highly prefer an email!
