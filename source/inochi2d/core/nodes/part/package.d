@@ -168,7 +168,7 @@ private:
         if (overrideTransformMatrix !is null)
             matrix = overrideTransformMatrix.matrix;
         if (oneTimeTransform !is null)
-            matrix = (*oneTimeTransform).matrix * matrix;
+            matrix = (*oneTimeTransform) * matrix;
         static if (isMask) {
             partMaskShader.use();
             partMaskShader.setUniform(offset, data.origin);
@@ -711,7 +711,7 @@ public:
 
 
     override
-    void setOneTimeTransform(Transform* transform) {
+    void setOneTimeTransform(mat4* transform) {
         super.setOneTimeTransform(transform);
         foreach (m; masks) {
             m.maskSrc.oneTimeTransform = transform;
