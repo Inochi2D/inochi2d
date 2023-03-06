@@ -292,6 +292,9 @@ public:
                 auto drawable = cast(Drawable)node;
                 if (!drawable)
                     return;
+                auto group = cast(MeshGroup)node;
+                if (group)
+                    return;
                 auto vertices = drawable.vertices;
                 mat4 matrix = drawable.transform.matrix;
                 auto nodeBinding = cast(DeformationParameterBinding)param.getOrAddBinding(node, "deform");
