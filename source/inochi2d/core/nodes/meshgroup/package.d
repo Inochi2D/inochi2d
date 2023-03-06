@@ -362,4 +362,10 @@ public:
             precalculated = false;
         }
     }
+
+    void clearCache() {
+        precalculated = false;
+        bitMask.length = 0;
+        triangles.length = 0;
+    }
 }
