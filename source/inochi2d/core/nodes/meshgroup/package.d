@@ -292,6 +292,9 @@ public:
                 auto drawable = cast(Drawable)node;
                 if (!drawable)
                     return;
+                auto group = cast(MeshGroup)node;
+                if (group)
+                    return;
                 auto vertices = drawable.vertices;
                 mat4 matrix = drawable.transform.matrix;
                 auto nodeBinding = cast(DeformationParameterBinding)param.getOrAddBinding(node, "deform");
@@ -325,7 +328,7 @@ public:
                         }
                         transformedVertices.length = vertices.length;
                         foreach(i, vertex; vertices) {
-                            transformedVertices[i] = vec2(vec4(vertex+deformation[i], 0, 1));
+                            transformedVertices[i] = vertex + deformation[i];
                         }
                         foreach (index; 0..triangles.length) {
                             auto p1 = transformedVertices[data.indices[index * 3]];
@@ -358,5 +361,11 @@ public:
             this.dynamic = dynamic;
             precalculated = false;
         }
+    }
+
+    void clearCache() {
+        precalculated = false;
+        bitMask.length = 0;
+        triangles.length = 0;
     }
 }
