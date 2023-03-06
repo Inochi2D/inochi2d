@@ -223,9 +223,7 @@ struct MeshData {
 
         gridAxes.length = 0;
         if (!data["grid_axes"].isEmpty) {
-            try {
-                data["gird_axes"].deserializeValue(gridAxes);
-            } catch (EmptyFghjException e) {}
+            data["grid_axes"].deserializeValue(gridAxes);
         }
 
         foreach(indiceData; data["indices"].byElement) {
