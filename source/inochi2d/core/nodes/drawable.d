@@ -157,7 +157,7 @@ protected:
     MeshData data;
 
     @Ignore
-    Transform* oneTimeTransform = null;
+    mat4* oneTimeTransform = null;
 
     @Ignore
     class MatrixHolder {
@@ -456,7 +456,7 @@ public:
         vertices[] = data.vertices;
     }
 
-    void setOneTimeTransform(Transform* transform) {
+    void setOneTimeTransform(mat4* transform) {
         oneTimeTransform = transform;
 
         foreach (c; children) {
@@ -465,7 +465,7 @@ public:
         }
     }
 
-    Transform* getOneTimeTransform() {
+    mat4* getOneTimeTransform() {
         return oneTimeTransform;
     }
 
