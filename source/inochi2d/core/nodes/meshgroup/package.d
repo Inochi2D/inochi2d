@@ -328,7 +328,7 @@ public:
                         }
                         transformedVertices.length = vertices.length;
                         foreach(i, vertex; vertices) {
-                            transformedVertices[i] = vec2(vec4(vertex+deformation[i], 0, 1));
+                            transformedVertices[i] = vertex + deformation[i];
                         }
                         foreach (index; 0..triangles.length) {
                             auto p1 = transformedVertices[data.indices[index * 3]];
