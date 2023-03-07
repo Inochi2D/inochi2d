@@ -37,6 +37,9 @@ struct MeshData {
     @Optional
     vec2 origin = vec2(0, 0);
 
+    @Optional
+    float[][] gridAxes;
+
     /**
         Adds a new vertex
     */
@@ -141,6 +144,9 @@ struct MeshData {
         newData.indices.length = indices.length;
         newData.indices[] = indices[];
 
+        // Copy axes
+        newData.gridAxes = gridAxes[];
+
         newData.origin = vec2(origin.x, origin.y);
 
         return newData;
@@ -175,6 +181,10 @@ struct MeshData {
 
             serializer.putKey("origin");
             origin.serialize(serializer);
+            if (isGrid()) {
+                serializer.putKey("grid_axes");
+                serializer.serializeValue(gridAxes);
+            }
         serializer.objectEnd(state);
     }
 
@@ -209,6 +219,11 @@ struct MeshData {
 
         if (!data["origin"].isEmpty) {
             origin.deserialize(data["origin"]);
+        }
+
+        gridAxes.length = 0;
+        if (!data["grid_axes"].isEmpty) {
+            data["grid_axes"].deserializeValue(gridAxes);
         }
 
         foreach(indiceData; data["indices"].byElement) {
@@ -247,7 +262,9 @@ struct MeshData {
 
         // Generate vertices and UVs
         foreach(y; 0..cuts.y+1) {
+            data.gridAxes[0] ~= y*sh - origin.y;
             foreach(x; 0..cuts.x+1) {
+                data.gridAxes[1] ~= x*sw - origin.x;
                 data.vertices ~= vec2(
                     (x*sw)-origin.x, 
                     (y*sh)-origin.y
@@ -294,8 +311,99 @@ struct MeshData {
             }
         }
 
-
         return data;
+    }
+
+    bool isGrid() {
+        return gridAxes.length == 2 && gridAxes[0].length > 2 && gridAxes[1].length > 2;
+    }
+
+    bool clearGridIsDirty() {
+        if (gridAxes.length < 2 || gridAxes[0].length == 0 || gridAxes[1].length == 0)
+            return false;
+
+        bool clearGrid() {
+            gridAxes[0].length = 0;
+            gridAxes[1].length = 0;
+            return true;
+        }
+
+        if (vertices.length != gridAxes[0].length * gridAxes[1].length) {
+            return clearGrid();
+        }
+
+        int index = 0;
+        foreach (y; gridAxes[0]) {
+            foreach (x; gridAxes[1]) {
+                vec2 vert = vec2(x, y);
+                if (vert != vertices[index]) {
+                    return clearGrid();
+                }
+                index += 1;
+            }
+        }
+        return false;
+    }
+
+    bool regenerateGrid() {
+        if (gridAxes[0].length < 2 || gridAxes[1].length < 2)
+            return false;
+
+        vertices.length = 0;
+        uvs.length = 0;
+        indices.length = 0;
+
+        ushort[int[2]] m;
+
+        float minY = gridAxes[0][0], maxY = gridAxes[0][$-1];
+        float minX = gridAxes[1][0], maxX = gridAxes[1][$-1];
+        float width = maxY - minY;
+        float height = maxX - minX;
+        foreach (i, y; gridAxes[0]) {
+            foreach (j, x; gridAxes[1]) {
+                vertices ~= vec2(x, y);
+                uvs ~= vec2((x - minX) / width, (y - minY) / height);
+                m[[cast(int)j, cast(int)i]] = cast(ushort)(vertices.length - 1);
+            }
+        }
+
+        vec2 center = vec2(minX + width / 2, minY + height / 2);
+        foreach(i; 0..gridAxes[0].length - 1) {
+            auto yValue = gridAxes[0][i];
+            foreach(j; 0..gridAxes[1].length - 1) {
+
+                auto xValue = gridAxes[1][j];
+                int x = cast(int)j, y = cast(int)i;
+
+                // Indices
+                int[2] indice0 = [x  , y  ];
+                int[2] indice1 = [x  , y+1];
+                int[2] indice2 = [x+1, y  ];
+                int[2] indice3 = [x+1, y+1];
+
+                // We want the verticies to generate in an X pattern so that we won't have too many distortion problems
+                if ((xValue < center.x && yValue < center.y) || (xValue >= center.x && yValue >= center.y)) {
+                    indices ~= [
+                        m[indice0],
+                        m[indice2],
+                        m[indice3],
+                        m[indice0],
+                        m[indice3],
+                        m[indice1],
+                    ];
+                } else {
+                    indices ~= [
+                        m[indice0],
+                        m[indice1],
+                        m[indice2],
+                        m[indice1],
+                        m[indice2],
+                        m[indice3],
+                    ];
+                }
+            }
+        }
+        return true;
     }
 
     void dbg() {
