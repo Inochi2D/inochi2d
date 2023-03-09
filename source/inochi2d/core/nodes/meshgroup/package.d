@@ -81,10 +81,19 @@ public:
                 index = bit - 1;
             }
             vec2 newPos = (index < 0)? cVertex: (triangles[index].transformMatrix * vec3(cVertex, 1)).xy;
-            origDeformation[i] += newPos - cVertex;
+            if (!dynamic) {
+                mat4 inv = centerMatrix.inverse;
+                inv[0][3] = 0;
+                inv[1][3] = 0;
+                inv[2][3] = 0;
+                origDeformation[i] += (inv * vec4(newPos - cVertex, 0, 1)).xy;
+            } else
+                origDeformation[i] = newPos - origVertices[i];
         }
 
-        return tuple(origDeformation, cast(mat4*)null);
+        if (!dynamic)
+            return tuple(origDeformation, cast(mat4*)null);
+        return tuple(origDeformation, &forwardMatrix);
     }
 
     /**
@@ -297,6 +306,7 @@ public:
                     return;
                 auto vertices = drawable.vertices;
                 mat4 matrix = drawable.transform.matrix;
+
                 auto nodeBinding = cast(DeformationParameterBinding)param.getOrAddBinding(node, "deform");
                 auto nodeDeform = nodeBinding.values[x][y].vertexOffsets.dup;
                 Tuple!(vec2[], mat4*) filterResult = filterChildren(vertices, nodeDeform, &matrix);
