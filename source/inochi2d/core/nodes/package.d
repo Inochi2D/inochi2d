@@ -44,7 +44,7 @@ uint inCreateUUID() {
     import std.random : uniform;
 
     uint id = uniform(uint.min, InInvalidUUID);
-    while (takenUUIDs.canFind(id)) { id = uniform!uint(); } // Make sure the ID is actually unique in the current context
+    while (takenUUIDs.canFind(id)) { id = uniform(uint.min, InInvalidUUID); } // Make sure the ID is actually unique in the current context
 
     return id;
 }
@@ -791,7 +791,7 @@ public:
     /**
         Gets the combined bounds of the node
     */
-    vec4 getCombinedBounds(bool reupdate = false)() {
+    vec4 getCombinedBounds(bool reupdate = false, bool countPuppet=false)() {
         vec4 combined = getInitialBoundsSize();
         
         // Get Bounds as drawable
@@ -808,7 +808,14 @@ public:
             if (cbounds.w > combined.w) combined.w = cbounds.w;
         }
 
-        return combined;
+        static if (countPuppet) {
+            return vec4(
+                (puppet.transform.matrix*vec4(combined.xy, 0, 1)).xy,
+                (puppet.transform.matrix*vec4(combined.zw, 0, 1)).xy,
+            );
+        } else {
+            return combined;
+        }
     }
 
     /**
