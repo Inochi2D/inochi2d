@@ -189,8 +189,8 @@ protected:
         Allows serializing self data (with pretty serializer)
     */
     override
-    void serializeSelf(ref InochiSerializer serializer) {
-        super.serializeSelf(serializer);
+    void serializeSelfImpl(ref InochiSerializer serializer, bool recursive=true) {
+        super.serializeSelfImpl(serializer, recursive);
         serializer.putKey("mesh");
         serializer.serializeValue(data);
     }

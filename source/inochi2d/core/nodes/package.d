@@ -112,7 +112,7 @@ protected:
         if (parent !is null) parent.resetMask();
     }
 
-    void serializeSelf(ref InochiSerializer serializer) {
+    void serializeSelfImpl(ref InochiSerializer serializer, bool recursive=true) {
         
         serializer.putKey("uuid");
         serializer.putValue(uuid);
@@ -135,7 +135,7 @@ protected:
         serializer.putKey("lockToRoot");
         serializer.serializeValue(this.lockToRoot_);
         
-        if (children.length > 0) {
+        if (recursive && children.length > 0) {
             serializer.putKey("children");
             auto childArray = serializer.arrayBegin();
             foreach(child; children) {
@@ -150,6 +150,11 @@ protected:
             serializer.arrayEnd(childArray);
         }
     }
+
+    void serializeSelf(ref InochiSerializer serializer) {
+        serializeSelfImpl(serializer, true);
+    }
+
 
 package(inochi2d):
 
@@ -762,6 +767,10 @@ public:
 
 
         return null;
+    }
+
+    void serializePartial(ref InochiSerializer serializer, bool recursive = true) {
+        serializeSelfImpl(serializer, recursive);
     }
 
     /**

@@ -267,8 +267,8 @@ protected:
         Allows serializing self data (with pretty serializer)
     */
     override
-    void serializeSelf(ref InochiSerializer serializer) {
-        super.serializeSelf(serializer);
+    void serializeSelfImpl(ref InochiSerializer serializer, bool recursive = true) {
+        super.serializeSelfImpl(serializer, recursive);
         version (InDoesRender) {
             if (inIsINPMode()) {
                 serializer.putKey("textures");
@@ -393,6 +393,24 @@ protected:
         // Update indices and vertices
         this.updateUVs();
         return null;
+    }
+
+    override
+    void serializePartial(ref InochiSerializer serializer, bool recursive=true) {
+        super.serializePartial(serializer, recursive);
+        serializer.putKey("textureUUIDs");
+        auto state = serializer.arrayBegin();
+            foreach(ref texture; textures) {
+                uint uuid;
+                if (texture !is null) {
+                    uuid = texture.getRuntimeUUID();                                    
+                } else {
+                    uuid = InInvalidUUID;
+                }
+                serializer.elemBegin;
+                serializer.putValue(cast(size_t)uuid);
+            }
+        serializer.arrayEnd(state);
     }
 
     //
