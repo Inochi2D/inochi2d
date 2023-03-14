@@ -603,6 +603,17 @@ public:
     }
 
     /**
+        Finds a texture by its runtime UUID
+    */
+    final Texture findTextureByRuntimeUUID(uint uuid) {
+        foreach(ref slot; textureSlots) {
+            if (slot.getRuntimeUUID())
+                return slot;
+        }
+        return null;
+    }
+
+    /**
         Sets thumbnail of this puppet
     */
     final void setThumbnail(Texture texture) {

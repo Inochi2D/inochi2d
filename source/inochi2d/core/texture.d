@@ -11,6 +11,7 @@ import std.format;
 import bindbc.opengl;
 import imagefmt;
 import std.stdio;
+import inochi2d.core.nodes : inCreateUUID;
 
 /**
     Filtering mode for texture
@@ -193,6 +194,8 @@ private:
     GLuint outColorMode_;
     int channels_;
 
+    uint uuid;
+
 public:
 
     /**
@@ -216,6 +219,7 @@ public:
 
         // Load in image data to OpenGL
         this(image.buf8, image.w, image.h, image.c, channels == 0 ? image.c : channels);
+        uuid = inCreateUUID();
     }
 
     /**
@@ -262,6 +266,7 @@ public:
         this.setFiltering(Filtering.Linear);
         this.setWrapping(Wrapping.Clamp);
         this.setAnisotropy(incGetMaxAnisotropy()/2.0f);
+        uuid = inCreateUUID();
     }
 
     ~this() {
@@ -308,6 +313,13 @@ public:
     */
     vec2i size() {
         return vec2i(width_, height_);
+    }
+
+    /**
+        Returns runtime UUID for texture
+    */
+    uint getRuntimeUUID() {
+        return uuid;
     }
 
     /**
