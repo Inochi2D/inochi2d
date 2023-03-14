@@ -210,8 +210,8 @@ protected:
     }
 
     override
-    void serializeSelf(ref InochiSerializer serializer) {
-        super.serializeSelf(serializer);
+    void serializeSelfImpl(ref InochiSerializer serializer, bool recursive=true) {
+        super.serializeSelfImpl(serializer, recursive);
 
         serializer.putKey("blend_mode");
         serializer.serializeValue(blendingMode);
