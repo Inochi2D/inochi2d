@@ -383,6 +383,13 @@ public:
     bool enableDrivers = true;
 
     /**
+        Puppet render transform
+
+        This transform does not affect physics
+    */
+    Transform transform;
+
+    /**
         Creates a new puppet from nothing ()
     */
     this() { 
@@ -391,6 +398,7 @@ public:
         this.physics = new PuppetPhysics();
         root = new Node(this.puppetRootNode); 
         root.name = "Root";
+        transform = Transform(vec3(0, 0, 0));
     }
 
     /**
@@ -403,6 +411,7 @@ public:
         this.puppetRootNode = new Node(this);
         this.root.name = "Root";
         this.scanParts!true(this.root);
+        transform = Transform(vec3(0, 0, 0));
         this.selfSort();
     }
 
@@ -410,6 +419,7 @@ public:
         Updates the nodes
     */
     final void update() {
+        transform.update();
 
         // Update Automators
         foreach(auto_; automation) {
@@ -507,13 +517,6 @@ public:
         if (idx >= 0) {
             parameters = parameters.remove(idx);
         }
-    }
-
-    /**
-        Gets this puppet's root transform
-    */
-    final Transform transform() {
-        return puppetRootNode.transform;
     }
 
     /**
@@ -788,5 +791,12 @@ public:
         foreach (node; nodes) {
             node.applyDeformToChildren(parameters);
         }
+    }
+
+    /**
+        Gets the combined bounds of the puppet
+    */
+    vec4 getCombinedBounds(bool reupdate=false)() {
+        return root.getCombinedBounds!(reupdate, true);
     }
 }

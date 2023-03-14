@@ -448,8 +448,7 @@ public:
     }
 
     float getScale() {
-        vec2 scale = (transform.matrix.scale * vec4(1, 1, 1, 1)).xy;
-        return puppet.physics.pixelsPerMeter * (scale.x+scale.y/2);
+        return puppet.physics.pixelsPerMeter;
     }
 
     float getGravity() {
