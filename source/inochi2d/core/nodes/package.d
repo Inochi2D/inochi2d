@@ -673,9 +673,9 @@ public:
     void drawOne() { }
 
 
-    void restructure() {
+    void restruct() {
         foreach(child; children.dup) {
-            child.restructure();
+            child.restruct();
         }
     }
 
