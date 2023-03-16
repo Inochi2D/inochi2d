@@ -324,6 +324,12 @@ public:
         return null;
     }
 
+    void restructure(Puppet puppet) {
+        foreach(i, binding; bindings) {
+            binding.restructure(puppet);
+        }
+    }
+
     /**
         Finalize loading of parameter
     */

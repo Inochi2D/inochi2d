@@ -50,6 +50,11 @@ public:
     */
     int leadOut = -1;
 
+
+    void restructure(Puppet puppet) {
+        foreach(ref lane; lanes.dup) lane.restructure(puppet);
+    }
+
     /**
         Finalizes the animation
     */
@@ -211,6 +216,9 @@ public:
         return 0;
     }
 
+    void restructure(Puppet puppet) {
+    }
+    
     void finalize(Puppet puppet) {
         if (paramRef) paramRef.targetParam = puppet.findParameter(refuuid);
     }

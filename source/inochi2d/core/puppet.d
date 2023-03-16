@@ -691,23 +691,28 @@ public:
         return toStringBranch(root, 0);
     }
 
+
+    void serializeSelf(ref InochiSerializer serializer) {
+        serializer.putKey("meta");
+        serializer.serializeValue(meta);
+        serializer.putKey("physics");
+        serializer.serializeValue(physics);
+        serializer.putKey("nodes");
+        serializer.serializeValue(root);
+        serializer.putKey("param");
+        serializer.serializeValue(parameters);
+        serializer.putKey("automation");
+        serializer.serializeValue(automation);
+        serializer.putKey("animations");
+        serializer.serializeValue(animations);
+    }
+
     /**
         Serializes a puppet
     */
-    void serialize(S)(ref S serializer) {
+    void serialize(ref InochiSerializer serializer) {
         auto state = serializer.objectBegin;
-            serializer.putKey("meta");
-            serializer.serializeValue(meta);
-            serializer.putKey("physics");
-            serializer.serializeValue(physics);
-            serializer.putKey("nodes");
-            serializer.serializeValue(root);
-            serializer.putKey("param");
-            serializer.serializeValue(parameters);
-            serializer.putKey("automation");
-            serializer.serializeValue(automation);
-            serializer.putKey("animations");
-            serializer.serializeValue(animations);
+        serializeSelf(serializer);
         serializer.objectEnd(state);
     }
 
@@ -742,13 +747,26 @@ public:
         return null;
     }
 
-    /**
-        Finalizer
-    */
-    void finalizeDeserialization(Fghj data) {
+
+    void restructure() {
+        this.root.restructure();
+        foreach(parameter; parameters.dup) {
+            parameter.restructure(this);
+        }
+        foreach(automation_; automation.dup) {
+            automation_.restructure(this);
+        }
+        foreach(ref animation; animations.dup) {
+            animation.restructure(this);
+        }
+    }
+
+    void finalize() {
         this.root.setPuppet(this);
         this.root.name = "Root";
         this.puppetRootNode = new Node(this);
+
+        // Finally update link etc.
         this.root.finalize();
         foreach(parameter; parameters) {
             parameter.finalize(this);
@@ -761,6 +779,14 @@ public:
         }
         this.scanParts!true(this.root);
         this.selfSort();
+    }
+    /**
+        Finalizer
+    */
+    void finalizeDeserialization(Fghj data) {
+        // restructure object path so that object is located at final position
+        restructure();
+        finalize();
     }
 
     /**
