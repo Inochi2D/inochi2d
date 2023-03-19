@@ -496,6 +496,13 @@ public:
         super.reparent(parent, pOffset);
     }
     
+    mat4 getDynamicMatrix() {
+        if (overrideTransformMatrix !is null) {
+            return overrideTransformMatrix.matrix;
+        } else {
+            return transform.matrix;
+        }
+    }
 }
 
 version (InDoesRender) {
