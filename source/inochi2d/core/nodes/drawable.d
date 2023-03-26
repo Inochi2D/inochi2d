@@ -183,8 +183,6 @@ protected:
         }
     }
 
-    abstract void renderMask(bool dodge = false);
-
     /**
         Allows serializing self data (with pretty serializer)
     */
@@ -217,6 +215,8 @@ package(inochi2d):
     }
 
 public:
+
+    abstract void renderMask(bool dodge = false);
 
     /**
         Constructs a new drawable surface
