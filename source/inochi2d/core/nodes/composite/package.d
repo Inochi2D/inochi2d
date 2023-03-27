@@ -95,10 +95,7 @@ private:
 
     this() { }
 
-    /*
-        RENDERING
-    */
-    void drawSelf() {
+    void drawContents() {
 
         // Optimization: Nothing to be drawn, skip context switching
         if (subParts.length == 0) return;
@@ -110,7 +107,12 @@ private:
             }
 
         inEndComposite();
+    }
 
+    /*
+        RENDERING
+    */
+    void drawSelf() {
         glBindVertexArray(cVAO);
 
         cShader.use();
@@ -227,6 +229,16 @@ protected:
 
         serializer.putKey("opacity");
         serializer.putValue(opacity);
+
+        if (masks.length > 0) {
+            serializer.putKey("masks");
+            auto state = serializer.arrayBegin();
+                foreach(m; masks) {
+                    serializer.elemBegin;
+                    serializer.serializeValue(m);
+                }
+            serializer.arrayEnd(state);
+        }
     }
 
     override
@@ -238,7 +250,8 @@ protected:
         if (!data["tint"].isEmpty) deserialize(this.tint, data["tint"]);
         if (!data["screenTint"].isEmpty) deserialize(this.screenTint, data["screenTint"]);
         if (!data["blend_mode"].isEmpty) data["blend_mode"].deserializeValue(this.blendingMode);
-        
+        if (!data["masks"].isEmpty) data["masks"].deserializeValue(this.masks);
+
         return super.deserializeFromFghj(data);
     }
 
@@ -251,6 +264,19 @@ protected:
 
     override
     string typeId() { return "Composite"; }
+
+    // TODO: Cache this
+    size_t maskCount() {
+        size_t c;
+        foreach(m; masks) if (m.mode == MaskingMode.Mask) c++;
+        return c;
+    }
+
+    size_t dodgeCount() {
+        size_t c;
+        foreach(m; masks) if (m.mode == MaskingMode.DodgeMask) c++;
+        return c;
+    }
 
 public:
 
@@ -278,6 +304,11 @@ public:
         Screen tint color
     */
     vec3 screenTint = vec3(0, 0, 0);
+
+    /**
+        List of masks to apply
+    */
+    MaskBinding[] masks;
 
 
     /**
@@ -378,6 +409,28 @@ public:
         }
     }
 
+    bool isMaskedBy(Drawable drawable) {
+        foreach(mask; masks) {
+            if (mask.maskSrc.uuid == drawable.uuid) return true;
+        }
+        return false;
+    }
+
+    ptrdiff_t getMaskIdx(Drawable drawable) {
+        if (drawable is null) return -1;
+        foreach(i, ref mask; masks) {
+            if (mask.maskSrc.uuid == drawable.uuid) return i;
+        }
+        return -1;
+    }
+
+    ptrdiff_t getMaskIdx(uint uuid) {
+        foreach(i, ref mask; masks) {
+            if (mask.maskSrc.uuid == uuid) return i;
+        }
+        return -1;
+    }
+
     override
     void beginUpdate() {
         offsetOpacity = 1;
@@ -388,9 +441,31 @@ public:
 
     override
     void drawOne() {
-        super.drawOne();
-
+        if (!enabled) return;
+        
         this.selfSort();
+        this.drawContents();
+
+        size_t cMasks = maskCount;
+
+        if (masks.length > 0) {
+            inBeginMask(cMasks > 0);
+
+            foreach(ref mask; masks) {
+                mask.maskSrc.renderMask(mask.mode == MaskingMode.DodgeMask);
+            }
+
+            inBeginMaskContent();
+
+            // We are the content
+            this.drawSelf();
+
+            inEndMask();
+            return;
+        }
+
+        // No masks, draw normally
+        super.drawOne();
         this.drawSelf();
     }
 
@@ -398,6 +473,22 @@ public:
     void draw() {
         if (!enabled) return;
         this.drawOne();
+    }
+
+    override
+    void finalize() {
+        super.finalize();
+        
+        MaskBinding[] validMasks;
+        foreach(i; 0..masks.length) {
+            if (Drawable nMask = puppet.find!Drawable(masks[i].maskSrcUUID)) {
+                masks[i].maskSrc = nMask;
+                validMasks ~= masks[i];
+            }
+        }
+
+        // Remove invalid masks
+        masks = validMasks;
     }
 
     /**

@@ -61,6 +61,36 @@ public:
     void finalize(Puppet puppet) {
         foreach(ref lane; lanes) lane.finalize(puppet);
     }
+
+    /**
+        Serialization function
+    */
+    void serialize(ref InochiSerializer serializer) {
+        auto obj = serializer.objectBegin();
+            serializer.putKey("timestep");
+            serializer.serializeValue(timestep);
+            serializer.putKey("additive");
+            serializer.serializeValue(additive);
+            serializer.putKey("length");
+            serializer.serializeValue(length);
+            serializer.putKey("timestep");
+            serializer.serializeValue(timestep);
+            serializer.putKey("leadIn");
+            serializer.serializeValue(leadIn);
+            serializer.putKey("leadOut");
+            serializer.serializeValue(leadOut);
+
+            serializer.putKey("lanes");
+            auto state = serializer.arrayBegin;
+            foreach(lane; lanes) {
+                if (lane.paramRef.targetParam) {
+                    serializer.elemBegin;
+                    serializer.serializeValue(lane);
+                }
+            }
+            serializer.arrayEnd(state);
+        serializer.objectEnd(obj);
+    }
 }
 
 struct AnimationParameterRef {
