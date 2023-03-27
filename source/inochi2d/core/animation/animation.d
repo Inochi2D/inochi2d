@@ -51,8 +51,8 @@ public:
     int leadOut = -1;
 
 
-    void restruct(Puppet puppet) {
-        foreach(ref lane; lanes.dup) lane.restruct(puppet);
+    void reconstruct(Puppet puppet) {
+        foreach(ref lane; lanes.dup) lane.reconstruct(puppet);
     }
 
     /**
@@ -246,7 +246,7 @@ public:
         return 0;
     }
 
-    void restruct(Puppet puppet) {
+    void reconstruct(Puppet puppet) {
     }
     
     void finalize(Puppet puppet) {

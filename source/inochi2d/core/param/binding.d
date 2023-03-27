@@ -39,7 +39,7 @@ abstract class ParameterBinding {
     /**
         Restructure object before finalization
     */
-    abstract void restruct(Puppet puppet);
+    abstract void reconstruct(Puppet puppet);
 
     /**
         Finalize loading of parameter
@@ -328,7 +328,7 @@ public:
     }
 
     override
-    void restruct(Puppet puppet) {
+    void reconstruct(Puppet puppet) {
     }
 
     /**

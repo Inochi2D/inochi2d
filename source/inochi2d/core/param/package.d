@@ -324,9 +324,9 @@ public:
         return null;
     }
 
-    void restruct(Puppet puppet) {
+    void reconstruct(Puppet puppet) {
         foreach(i, binding; bindings) {
-            binding.restruct(puppet);
+            binding.reconstruct(puppet);
         }
     }
 

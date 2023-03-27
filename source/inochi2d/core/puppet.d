@@ -748,16 +748,16 @@ public:
     }
 
 
-    void restruct() {
-        this.root.restruct();
+    void reconstruct() {
+        this.root.reconstruct();
         foreach(parameter; parameters.dup) {
-            parameter.restruct(this);
+            parameter.reconstruct(this);
         }
         foreach(automation_; automation.dup) {
-            automation_.restruct(this);
+            automation_.reconstruct(this);
         }
         foreach(ref animation; animations.dup) {
-            animation.restruct(this);
+            animation.reconstruct(this);
         }
     }
 
@@ -784,8 +784,8 @@ public:
         Finalizer
     */
     void finalizeDeserialization(Fghj data) {
-        // restruct object path so that object is located at final position
-        restruct();
+        // reconstruct object path so that object is located at final position
+        reconstruct();
         finalize();
     }
 

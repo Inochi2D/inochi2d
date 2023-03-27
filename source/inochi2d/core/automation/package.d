@@ -95,7 +95,7 @@ struct AutomationBinding {
         return null;
     }
 
-    void restruct(Puppet puppet) {
+    void reconstruct(Puppet puppet) {
     }
 
     void finalize(Puppet puppet) {
@@ -171,9 +171,9 @@ public:
     }
 
 
-    void restruct(Puppet puppet) {
+    void reconstruct(Puppet puppet) {
         foreach(ref binding; bindings.dup) {
-            binding.restruct(parent);
+            binding.reconstruct(parent);
         }
     }
 
