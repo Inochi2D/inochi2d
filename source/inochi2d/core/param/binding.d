@@ -37,6 +37,11 @@ struct BindTarget {
 abstract class ParameterBinding {
 
     /**
+        Restructure object before finalization
+    */
+    abstract void reconstruct(Puppet puppet);
+
+    /**
         Finalize loading of parameter
     */
     abstract void finalize(Puppet puppet);
@@ -322,12 +327,18 @@ public:
         return null;
     }
 
+    override
+    void reconstruct(Puppet puppet) { }
+
     /**
         Finalize loading of parameter
     */
     override
     void finalize(Puppet puppet) {
+//        writefln("finalize binding %s", this.getName());
+
         this.target.node = puppet.find(nodeRef);
+//        writefln("node for %d = %x", nodeRef, &(target.node));
     }
 
     /**

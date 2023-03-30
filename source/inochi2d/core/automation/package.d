@@ -95,6 +95,8 @@ struct AutomationBinding {
         return null;
     }
 
+    void reconstruct(Puppet puppet) { }
+
     void finalize(Puppet puppet) {
         foreach(ref parameter; puppet.parameters) {
             if (parameter.name == paramId) {
@@ -165,6 +167,13 @@ public:
     */
     void bind(AutomationBinding binding) {
         this.bindings ~= binding;
+    }
+
+
+    void reconstruct(Puppet puppet) {
+        foreach(ref binding; bindings.dup) {
+            binding.reconstruct(parent);
+        }
     }
 
     /**

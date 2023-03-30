@@ -673,6 +673,12 @@ public:
     void drawOne() { }
 
 
+    void reconstruct() {
+        foreach(child; children.dup) {
+            child.reconstruct();
+        }
+    }
+
     /**
         Finalizes this node and any children
     */

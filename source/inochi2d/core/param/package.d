@@ -112,6 +112,32 @@ private:
 
     Combinator iadd;
     Combinator imul;
+protected:
+    void serializeSelf(ref InochiSerializer serializer) {
+        serializer.putKey("uuid");
+        serializer.putValue(uuid);
+        serializer.putKey("name");
+        serializer.putValue(name);
+        serializer.putKey("is_vec2");
+        serializer.putValue(isVec2);
+        serializer.putKey("min");
+        min.serialize(serializer);
+        serializer.putKey("max");
+        max.serialize(serializer);
+        serializer.putKey("defaults");
+        defaults.serialize(serializer);
+        serializer.putKey("axis_points");
+        serializer.serializeValue(axisPoints);
+        serializer.putKey("merge_mode");
+        serializer.serializeValue(mergeMode);
+        serializer.putKey("bindings");
+        auto arrstate = serializer.arrayBegin();
+            foreach(binding; bindings) {
+                serializer.elemBegin();
+                binding.serializeSelf(serializer);
+            }
+        serializer.arrayEnd(arrstate);
+    }
 
 public:
     /**
@@ -257,29 +283,7 @@ public:
     */
     void serialize(ref InochiSerializer serializer) {
         auto state = serializer.objectBegin;
-            serializer.putKey("uuid");
-            serializer.putValue(uuid);
-            serializer.putKey("name");
-            serializer.putValue(name);
-            serializer.putKey("is_vec2");
-            serializer.putValue(isVec2);
-            serializer.putKey("min");
-            min.serialize(serializer);
-            serializer.putKey("max");
-            max.serialize(serializer);
-            serializer.putKey("defaults");
-            defaults.serialize(serializer);
-            serializer.putKey("axis_points");
-            serializer.serializeValue(axisPoints);
-            serializer.putKey("merge_mode");
-            serializer.serializeValue(mergeMode);
-            serializer.putKey("bindings");
-            auto arrstate = serializer.arrayBegin();
-                foreach(binding; bindings) {
-                    serializer.elemBegin();
-                    binding.serializeSelf(serializer);
-                }
-            serializer.arrayEnd(arrstate);
+        serializeSelf(serializer);
         serializer.objectEnd(state);
     }
 
@@ -318,6 +322,12 @@ public:
         }
 
         return null;
+    }
+
+    void reconstruct(Puppet puppet) {
+        foreach(i, binding; bindings) {
+            binding.reconstruct(puppet);
+        }
     }
 
     /**
