@@ -246,8 +246,7 @@ public:
         return 0;
     }
 
-    void reconstruct(Puppet puppet) {
-    }
+    void reconstruct(Puppet puppet) { }
     
     void finalize(Puppet puppet) {
         if (paramRef) paramRef.targetParam = puppet.findParameter(refuuid);

@@ -95,8 +95,7 @@ struct AutomationBinding {
         return null;
     }
 
-    void reconstruct(Puppet puppet) {
-    }
+    void reconstruct(Puppet puppet) { }
 
     void finalize(Puppet puppet) {
         foreach(ref parameter; puppet.parameters) {

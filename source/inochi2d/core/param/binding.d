@@ -328,8 +328,7 @@ public:
     }
 
     override
-    void reconstruct(Puppet puppet) {
-    }
+    void reconstruct(Puppet puppet) { }
 
     /**
         Finalize loading of parameter
