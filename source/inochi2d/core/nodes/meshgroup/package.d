@@ -45,11 +45,22 @@ protected:
     vec2[] transformedVertices = [];
     mat4 forwardMatrix;
     mat4 inverseMatrix;
+    bool translateChildren = true;
 
     override
     string typeId() { return "MeshGroup"; }
 
     bool precalculated = false;
+
+    override
+    void preProcess() {
+        Node.preProcess();
+    }
+
+    override
+    void postProcess() {
+        Node.postProcess();
+    }
 
 public:
     bool dynamic = false;
@@ -245,6 +256,8 @@ public:
         serializer.putKey("dynamic_deformation");
         serializer.serializeValue(dynamic);
 
+        serializer.putKey("translate_children");
+        serializer.serializeValue(translateChildren);
     }
 
     override
@@ -253,35 +266,46 @@ public:
 
         if (!data["dynamic_deformation"].isEmpty) 
             data["dynamic_deformation"].deserializeValue(dynamic);
+
+        translateChildren = false;
+        if (!data["translate_children"].isEmpty)
+            data["translate_children"].deserializeValue(translateChildren);
+
         return null;
     }
 
     override
     void setupChild(Node child) {
  
-        void setGroup(Drawable drawable) {
-            auto group = cast(MeshGroup)drawable;
-            if (group is null) {
+        void setGroup(Node node) {
+            auto drawable = cast(Drawable)node;
+            auto group    = cast(MeshGroup)node;
+            writefln("traverse: %s", node.name);
+            if (translateChildren || (group is null && drawable !is null)) {
                 if (dynamic) {
-                    drawable.preProcessFilter  = null;
-                    drawable.postProcessFilter = &filterChildren;
+                    writefln("set post filter: %s-%s(%s)", name, node.name, node.typeId());
+                    node.preProcessFilter  = null;
+                    node.postProcessFilter = &filterChildren;
                 } else {
-                    drawable.preProcessFilter  = &filterChildren;
-                    drawable.postProcessFilter = null;
+                    writefln("set pre filter: %s-%s(%s)", name, node.name, node.typeId());
+                    node.preProcessFilter  = &filterChildren;
+                    node.postProcessFilter = null;
                 }
-                foreach (child; drawable.children) {
-                    auto childDrawable = cast(Drawable)child;
-                    if (childDrawable !is null)
-                        setGroup(childDrawable);
+            } else {
+                writefln("clear filter: %s-%s(%s)", name, node.name, node.typeId());
+                node.preProcessFilter  = null;
+                node.postProcessFilter = null;
+            }
+            // traverse children if node is Drawable and is not MeshGroup instance.
+            if (group is null && drawable !is null) {
+                foreach (child; node.children) {
+                    setGroup(child);
                 }
             }
         }
 
         if (data.indices.length > 0) {
-            auto drawable = cast(Drawable)child;
-            if (drawable !is null) {
-                setGroup(drawable);
-            }
+            setGroup(child);
         } 
 
     }
@@ -371,6 +395,14 @@ public:
             this.dynamic = dynamic;
             precalculated = false;
         }
+    }
+
+    bool getTranslateChildren() { return translateChildren; }
+
+    void setTranslateChildren(bool value) {
+        translateChildren = value;
+        foreach (child; children)
+            setupChild(child);
     }
 
     void clearCache() {
