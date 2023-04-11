@@ -332,7 +332,7 @@ public:
                     if (filterResult[0] !is null) {
                         nodeBinding.values[x][y].vertexOffsets = filterResult[0];
                     }
-                } else {
+                } else if (translateChildren) {
                     auto vertices = [node.localTransform.translation.xy];
                     mat4 matrix = node.parent? node.parent.transform.matrix: mat4.identity;
 
