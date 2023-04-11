@@ -280,19 +280,15 @@ public:
         void setGroup(Node node) {
             auto drawable = cast(Drawable)node;
             auto group    = cast(MeshGroup)node;
-            writefln("traverse: %s", node.name);
             if (translateChildren || (group is null && drawable !is null)) {
                 if (dynamic) {
-                    writefln("set post filter: %s-%s(%s)", name, node.name, node.typeId());
                     node.preProcessFilter  = null;
                     node.postProcessFilter = &filterChildren;
                 } else {
-                    writefln("set pre filter: %s-%s(%s)", name, node.name, node.typeId());
                     node.preProcessFilter  = &filterChildren;
                     node.postProcessFilter = null;
                 }
             } else {
-                writefln("clear filter: %s-%s(%s)", name, node.name, node.typeId());
                 node.preProcessFilter  = null;
                 node.postProcessFilter = null;
             }

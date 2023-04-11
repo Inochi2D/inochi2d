@@ -972,8 +972,10 @@ public:
     void reparent(Node parent, ulong pOffset) {
         setRelativeTo(parent);
         insertInto(parent, pOffset);
-        if (parent !is null) {
-            parent.setupChild(this);
+        auto p = parent;
+        while (p !is null) {
+            p.setupChild(this);
+            p = p.parent;
         }
     }
 
