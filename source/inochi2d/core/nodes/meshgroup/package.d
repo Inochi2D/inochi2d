@@ -280,8 +280,9 @@ public:
         void setGroup(Node node) {
             auto drawable = cast(Drawable)node;
             auto group    = cast(MeshGroup)node;
-            if (translateChildren || (group is null && drawable !is null)) {
-                if (dynamic) {
+            bool isDrawable = drawable !is null && group is null;
+            if (translateChildren || isDrawable) {
+                if (isDrawable && dynamic) {
                     node.preProcessFilter  = null;
                     node.postProcessFilter = &filterChildren;
                 } else {
@@ -293,7 +294,7 @@ public:
                 node.postProcessFilter = null;
             }
             // traverse children if node is Drawable and is not MeshGroup instance.
-            if (group is null && drawable !is null) {
+            if (isDrawable) {
                 foreach (child; node.children) {
                     setGroup(child);
                 }
@@ -319,23 +320,36 @@ public:
         foreach (param; params) {
             void transferChildren(Node node, int x, int y) {
                 auto drawable = cast(Drawable)node;
-                if (!drawable)
-                    return;
                 auto group = cast(MeshGroup)node;
-                if (group)
-                    return;
-                auto vertices = drawable.vertices;
-                mat4 matrix = drawable.transform.matrix;
+                bool isDrawable = drawable !is null && group is null;
+                if (isDrawable) {
+                    auto vertices = drawable.vertices;
+                    mat4 matrix = drawable.transform.matrix;
 
-                auto nodeBinding = cast(DeformationParameterBinding)param.getOrAddBinding(node, "deform");
-                auto nodeDeform = nodeBinding.values[x][y].vertexOffsets.dup;
-                Tuple!(vec2[], mat4*) filterResult = filterChildren(vertices, nodeDeform, &matrix);
-                if (filterResult[0] !is null) {
-                    nodeBinding.values[x][y].vertexOffsets = filterResult[0];
+                    auto nodeBinding = cast(DeformationParameterBinding)param.getOrAddBinding(node, "deform");
+                    auto nodeDeform = nodeBinding.values[x][y].vertexOffsets.dup;
+                    Tuple!(vec2[], mat4*) filterResult = filterChildren(vertices, nodeDeform, &matrix);
+                    if (filterResult[0] !is null) {
+                        nodeBinding.values[x][y].vertexOffsets = filterResult[0];
+                    }
+                } else {
+                    auto vertices = [node.localTransform.translation.xy];
+                    mat4 matrix = node.parent? node.parent.transform.matrix: mat4.identity;
+
+                    auto nodeBindingX = cast(ValueParameterBinding)param.getOrAddBinding(node, "transform.t.x");
+                    auto nodeBindingY = cast(ValueParameterBinding)param.getOrAddBinding(node, "transform.t.y");
+                    auto nodeDeform = [node.offsetTransform.translation.xy];
+                    Tuple!(vec2[], mat4*) filterResult = filterChildren(vertices, nodeDeform, &matrix);
+                    if (filterResult[0] !is null) {
+                        nodeBindingX.values[x][y] += filterResult[0][0].x;
+                        nodeBindingY.values[x][y] += filterResult[0][0].y;
+                    }
+
                 }
-
-                foreach (child; node.children) {
-                    transferChildren(child, x, y);
+                if (isDrawable) {
+                    foreach (child; node.children) {
+                        transferChildren(child, x, y);
+                    }
                 }
             }
 
@@ -375,6 +389,7 @@ public:
 
                     }
                 }
+                translateChildren = false;
                 param.removeBinding(binding);
             }
 
