@@ -19,6 +19,8 @@ public import inochi2d.core.nodes.drawable;
 public import inochi2d.core.nodes.composite;
 public import inochi2d.core.nodes.meshgroup;
 public import inochi2d.core.nodes.drivers; 
+import std.typecons: tuple, Tuple;
+
 //public import inochi2d.core.nodes.shapes; // This isn't mainline yet!
 
 import std.exception;
@@ -96,6 +98,8 @@ private:
     string nodePath_;
 
 protected:
+    bool preProcessed  = false;
+    bool postProcessed = false;
 
     /**
         The offset to the transform to apply
@@ -155,6 +159,53 @@ protected:
         serializeSelfImpl(serializer, true);
     }
 
+    @Ignore
+    mat4* oneTimeTransform = null;
+
+    @Ignore
+    class MatrixHolder {
+    public:
+        this(mat4 matrix) {
+            this.matrix = matrix;
+        }
+        mat4 matrix;
+    }
+    MatrixHolder overrideTransformMatrix = null;
+
+    Tuple!(vec2[], mat4*) delegate(vec2[], vec2[], mat4*) preProcessFilter  = null;
+    Tuple!(vec2[], mat4*) delegate(vec2[], vec2[], mat4*) postProcessFilter = null;
+
+    import std.stdio;
+    void preProcess() {
+        if (preProcessed)
+            return;
+        preProcessed = true;
+        if (preProcessFilter !is null) {
+            overrideTransformMatrix = null;
+            mat4 matrix = this.parent? this.parent.transform.matrix: mat4.identity;
+            auto filterResult = preProcessFilter([localTransform.translation.xy], [offsetTransform.translation.xy], &matrix);
+            if (filterResult[0] !is null && filterResult[0].length > 0) {
+                offsetTransform.translation = vec3(filterResult[0][0], offsetTransform.translation.z);
+                transformChanged();
+            } 
+        }
+    }
+
+    void postProcess() {
+        if (postProcessed)
+            return;
+        postProcessed = true;
+        if (postProcessFilter !is null) {
+            overrideTransformMatrix = null;
+            mat4 matrix = this.parent? this.parent.transform.matrix: mat4.identity;
+            auto filterResult = postProcessFilter([localTransform.translation.xy], [offsetTransform.translation.xy], &matrix);
+            if (filterResult[0] !is null && filterResult[0].length > 0) {
+                offsetTransform.translation = vec3(filterResult[0][0], offsetTransform.translation.z);
+                transformChanged();
+                overrideTransformMatrix = new MatrixHolder(transform.matrix);
+            } 
+        }
+    }
 
 package(inochi2d):
 
@@ -689,6 +740,9 @@ public:
     }
 
     void beginUpdate() {
+        preProcessed  = false;
+        postProcessed = false;
+
         offsetSort = 0;
         offsetTransform.clear();
 
@@ -702,11 +756,14 @@ public:
         Updates the node
     */
     void update() {
+        preProcess();
+
         if (!enabled) return;
 
         foreach(child; children) {
             child.update();
         }
+        postProcess();
     }
 
     /**
@@ -895,18 +952,42 @@ public:
         inDbgLineWidth(1);
     }
 
+
+    void setOneTimeTransform(mat4* transform) {
+        oneTimeTransform = transform;
+
+        foreach (c; children) {
+            if (Drawable d = cast(Drawable)c)
+                d.setOneTimeTransform(transform);
+        }
+    }
+
+    mat4* getOneTimeTransform() {
+        return oneTimeTransform;
+    }
+
     /** 
      * set new Parent
      */
     void reparent(Node parent, ulong pOffset) {
         setRelativeTo(parent);
         insertInto(parent, pOffset);
-        if (parent !is null) {
-            parent.setupChild(this);
+        auto p = parent;
+        while (p !is null) {
+            p.setupChild(this);
+            p = p.parent;
         }
     }
 
     void setupChild(Node child) {
+    }
+
+    mat4 getDynamicMatrix() {
+        if (overrideTransformMatrix !is null) {
+            return overrideTransformMatrix.matrix;
+        } else {
+            return transform.matrix;
+        }
     }
 }
 

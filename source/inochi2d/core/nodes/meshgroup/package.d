@@ -45,11 +45,22 @@ protected:
     vec2[] transformedVertices = [];
     mat4 forwardMatrix;
     mat4 inverseMatrix;
+    bool translateChildren = true;
 
     override
     string typeId() { return "MeshGroup"; }
 
     bool precalculated = false;
+
+    override
+    void preProcess() {
+        Node.preProcess();
+    }
+
+    override
+    void postProcess() {
+        Node.postProcess();
+    }
 
 public:
     bool dynamic = false;
@@ -245,6 +256,8 @@ public:
         serializer.putKey("dynamic_deformation");
         serializer.serializeValue(dynamic);
 
+        serializer.putKey("translate_children");
+        serializer.serializeValue(translateChildren);
     }
 
     override
@@ -253,35 +266,43 @@ public:
 
         if (!data["dynamic_deformation"].isEmpty) 
             data["dynamic_deformation"].deserializeValue(dynamic);
+
+        translateChildren = false;
+        if (!data["translate_children"].isEmpty)
+            data["translate_children"].deserializeValue(translateChildren);
+
         return null;
     }
 
     override
     void setupChild(Node child) {
  
-        void setGroup(Drawable drawable) {
-            auto group = cast(MeshGroup)drawable;
-            if (group is null) {
-                if (dynamic) {
-                    drawable.preProcessFilter  = null;
-                    drawable.postProcessFilter = &filterChildren;
+        void setGroup(Node node) {
+            auto drawable = cast(Drawable)node;
+            auto group    = cast(MeshGroup)node;
+            bool isDrawable = drawable !is null && group is null;
+            if (translateChildren || isDrawable) {
+                if (isDrawable && dynamic) {
+                    node.preProcessFilter  = null;
+                    node.postProcessFilter = &filterChildren;
                 } else {
-                    drawable.preProcessFilter  = &filterChildren;
-                    drawable.postProcessFilter = null;
+                    node.preProcessFilter  = &filterChildren;
+                    node.postProcessFilter = null;
                 }
-                foreach (child; drawable.children) {
-                    auto childDrawable = cast(Drawable)child;
-                    if (childDrawable !is null)
-                        setGroup(childDrawable);
+            } else {
+                node.preProcessFilter  = null;
+                node.postProcessFilter = null;
+            }
+            // traverse children if node is Drawable and is not MeshGroup instance.
+            if (isDrawable) {
+                foreach (child; node.children) {
+                    setGroup(child);
                 }
             }
         }
 
         if (data.indices.length > 0) {
-            auto drawable = cast(Drawable)child;
-            if (drawable !is null) {
-                setGroup(drawable);
-            }
+            setGroup(child);
         } 
 
     }
@@ -299,23 +320,36 @@ public:
         foreach (param; params) {
             void transferChildren(Node node, int x, int y) {
                 auto drawable = cast(Drawable)node;
-                if (!drawable)
-                    return;
                 auto group = cast(MeshGroup)node;
-                if (group)
-                    return;
-                auto vertices = drawable.vertices;
-                mat4 matrix = drawable.transform.matrix;
+                bool isDrawable = drawable !is null && group is null;
+                if (isDrawable) {
+                    auto vertices = drawable.vertices;
+                    mat4 matrix = drawable.transform.matrix;
 
-                auto nodeBinding = cast(DeformationParameterBinding)param.getOrAddBinding(node, "deform");
-                auto nodeDeform = nodeBinding.values[x][y].vertexOffsets.dup;
-                Tuple!(vec2[], mat4*) filterResult = filterChildren(vertices, nodeDeform, &matrix);
-                if (filterResult[0] !is null) {
-                    nodeBinding.values[x][y].vertexOffsets = filterResult[0];
+                    auto nodeBinding = cast(DeformationParameterBinding)param.getOrAddBinding(node, "deform");
+                    auto nodeDeform = nodeBinding.values[x][y].vertexOffsets.dup;
+                    Tuple!(vec2[], mat4*) filterResult = filterChildren(vertices, nodeDeform, &matrix);
+                    if (filterResult[0] !is null) {
+                        nodeBinding.values[x][y].vertexOffsets = filterResult[0];
+                    }
+                } else if (translateChildren) {
+                    auto vertices = [node.localTransform.translation.xy];
+                    mat4 matrix = node.parent? node.parent.transform.matrix: mat4.identity;
+
+                    auto nodeBindingX = cast(ValueParameterBinding)param.getOrAddBinding(node, "transform.t.x");
+                    auto nodeBindingY = cast(ValueParameterBinding)param.getOrAddBinding(node, "transform.t.y");
+                    auto nodeDeform = [node.offsetTransform.translation.xy];
+                    Tuple!(vec2[], mat4*) filterResult = filterChildren(vertices, nodeDeform, &matrix);
+                    if (filterResult[0] !is null) {
+                        nodeBindingX.values[x][y] += filterResult[0][0].x;
+                        nodeBindingY.values[x][y] += filterResult[0][0].y;
+                    }
+
                 }
-
-                foreach (child; node.children) {
-                    transferChildren(child, x, y);
+                if (isDrawable) {
+                    foreach (child; node.children) {
+                        transferChildren(child, x, y);
+                    }
                 }
             }
 
@@ -355,6 +389,7 @@ public:
 
                     }
                 }
+                translateChildren = false;
                 param.removeBinding(binding);
             }
 
@@ -371,6 +406,14 @@ public:
             this.dynamic = dynamic;
             precalculated = false;
         }
+    }
+
+    bool getTranslateChildren() { return translateChildren; }
+
+    void setTranslateChildren(bool value) {
+        translateChildren = value;
+        foreach (child; children)
+            setupChild(child);
     }
 
     void clearCache() {

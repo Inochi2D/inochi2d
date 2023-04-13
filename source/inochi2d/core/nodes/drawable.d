@@ -15,7 +15,6 @@ import bindbc.opengl;
 import std.exception;
 import inochi2d.core.dbg;
 import inochi2d.core;
-import std.typecons: tuple, Tuple;
 import std.string;
 
 private GLuint drawableVAO;
@@ -56,8 +55,6 @@ void inSetUpdateBounds(bool state) {
 @TypeId("Drawable")
 abstract class Drawable : Node {
 private:
-    bool preProcessed  = false;
-    bool postProcessed = false;
 
     void updateIndices() {
         version (InDoesRender) {
@@ -80,40 +77,6 @@ private:
             this.deformation[i] = vec2(0, 0);
         }
         this.updateDeform();
-    }
-
-    void preProcess() {
-        if (preProcessed)
-            return;
-        preProcessed = true;
-        if (preProcessFilter !is null) {
-            overrideTransformMatrix = null;
-            mat4 matrix = this.transform.matrix;
-            auto filterResult = preProcessFilter(vertices, deformation, &matrix);
-            if (filterResult[0] !is null) {
-                deformation = filterResult[0];
-            } 
-            if (filterResult[1] !is null) {
-                overrideTransformMatrix = new MatrixHolder(*filterResult[1]);
-            }
-        }
-    }
-
-    void postProcess() {
-        if (postProcessed)
-            return;
-        postProcessed = true;
-        if (postProcessFilter !is null) {
-            overrideTransformMatrix = null;
-            mat4 matrix = this.transform.matrix;
-            auto filterResult = postProcessFilter(vertices, deformation, &matrix);
-            if (filterResult[0] !is null) {
-                deformation = filterResult[0];
-            } 
-            if (filterResult[1] !is null) {
-                overrideTransformMatrix = new MatrixHolder(*filterResult[1]);
-            }
-        }
     }
 
     void updateDeform() {
@@ -156,22 +119,6 @@ protected:
     */
     MeshData data;
 
-    @Ignore
-    mat4* oneTimeTransform = null;
-
-    @Ignore
-    class MatrixHolder {
-    public:
-        this(mat4 matrix) {
-            this.matrix = matrix;
-        }
-        mat4 matrix;
-    }
-    MatrixHolder overrideTransformMatrix = null;
-
-    Tuple!(vec2[], mat4*) delegate(vec2[], vec2[], mat4*) preProcessFilter  = null;
-    Tuple!(vec2[], mat4*) delegate(vec2[], vec2[], mat4*) postProcessFilter = null;
-
     /**
         Binds Index Buffer for rendering
     */
@@ -208,6 +155,42 @@ protected:
     }
 
     void onDeformPushed(ref Deformation deform) { }
+
+    override
+    void preProcess() {
+        if (preProcessed)
+            return;
+        preProcessed = true;
+        if (preProcessFilter !is null) {
+            overrideTransformMatrix = null;
+            mat4 matrix = this.transform.matrix;
+            auto filterResult = preProcessFilter(vertices, deformation, &matrix);
+            if (filterResult[0] !is null) {
+                deformation = filterResult[0];
+            } 
+            if (filterResult[1] !is null) {
+                overrideTransformMatrix = new MatrixHolder(*filterResult[1]);
+            }
+        }
+    }
+
+    override
+    void postProcess() {
+        if (postProcessed)
+            return;
+        postProcessed = true;
+        if (postProcessFilter !is null) {
+            overrideTransformMatrix = null;
+            mat4 matrix = this.transform.matrix;
+            auto filterResult = postProcessFilter(vertices, deformation, &matrix);
+            if (filterResult[0] !is null) {
+                deformation = filterResult[0];
+            } 
+            if (filterResult[1] !is null) {
+                overrideTransformMatrix = new MatrixHolder(*filterResult[1]);
+            }
+        }
+    }
 
 package(inochi2d):
     final void notifyDeformPushed(ref Deformation deform) {
@@ -303,8 +286,6 @@ public:
     override
     void beginUpdate() {
         deformStack.preUpdate();
-        preProcessed  = false;
-        postProcessed = false;
         super.beginUpdate();
     }
 
@@ -344,7 +325,7 @@ public:
         // Calculate bounds
         Transform wtransform = transform;
         bounds = vec4(wtransform.translation.xyxy);
-        mat4 matrix = overrideTransformMatrix? overrideTransformMatrix.matrix: transform.matrix;
+        mat4 matrix = getDynamicMatrix();
         foreach(i, vertex; vertices) {
             vec2 vertOriented = vec2(matrix * vec4(vertex+deformation[i], 0, 1));
             if (vertOriented.x < bounds.x) bounds.x = vertOriented.x;
@@ -389,7 +370,7 @@ public:
         void drawMeshLines() {
             if (vertices.length == 0) return;
 
-            auto trans = overrideTransformMatrix? overrideTransformMatrix.matrix: transform.matrix;
+            auto trans = getDynamicMatrix();
 
             ushort[] indices = data.indices;
 
@@ -419,7 +400,7 @@ public:
         void drawMeshPoints() {
             if (vertices.length == 0) return;
 
-            auto trans = overrideTransformMatrix? overrideTransformMatrix.matrix: transform.matrix;
+            auto trans = getDynamicMatrix();
             vec3[] points = new vec3[vertices.length];
             foreach(i, point; vertices) {
                 points[i] = vec3(point-data.origin+deformation[i], 0);
@@ -456,19 +437,6 @@ public:
         vertices[] = data.vertices;
     }
 
-    void setOneTimeTransform(mat4* transform) {
-        oneTimeTransform = transform;
-
-        foreach (c; children) {
-            if (Drawable d = cast(Drawable)c)
-                d.setOneTimeTransform(transform);
-        }
-    }
-
-    mat4* getOneTimeTransform() {
-        return oneTimeTransform;
-    }
-
     override
     void reparent(Node parent, ulong pOffset) {
         postProcessFilter = null;
@@ -494,14 +462,6 @@ public:
         }
 
         super.reparent(parent, pOffset);
-    }
-    
-    mat4 getDynamicMatrix() {
-        if (overrideTransformMatrix !is null) {
-            return overrideTransformMatrix.matrix;
-        } else {
-            return transform.matrix;
-        }
     }
 }
 
