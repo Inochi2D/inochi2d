@@ -1000,14 +1000,6 @@ public:
             return transform.matrix;
         }
     }
-
-    mat4 getDynamicMatrix() {
-        if (overrideTransformMatrix !is null) {
-            return overrideTransformMatrix.matrix;
-        } else {
-            return transform.matrix;
-        }
-    }
 }
 
 //
