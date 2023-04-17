@@ -8,13 +8,9 @@
 [![Support me on Patreon](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3Dclipsey%26type%3Dpatrons&style=for-the-badge)](https://patreon.com/clipsey)
 [![Discord](https://img.shields.io/discord/855173611409506334?label=Community&logo=discord&logoColor=FFFFFF&style=for-the-badge)](https://discord.com/invite/abnxwN6r9v)
 
-Inochi2D is a library for realtime 2D puppet animation and the reference implementation of the Inochi2D Puppet standard.
-
-**Currently this library and the standard is in the prototype stage and is not recommended for production use.**  
-If you want to try it out anyways you can clone this repo and run `dub add-local (inochi2d folder) "1.0.0"` then manually add it as a dependency in to dub.sdl/json.
+Inochi2D is a library for realtime 2D puppet animation and the reference implementation of the Inochi2D Puppet standard. Inochi2D works by deforming 2D meshes created from layered art at runtime based on parameters, this deformation tricks the viewer in to seeing 3D depth and movement in the 2D art.
 
 &nbsp;
-
 
 
 https://user-images.githubusercontent.com/7032834/166389697-02eeeedb-6a44-4570-9254-f6aa4f095300.mp4
@@ -23,128 +19,25 @@ https://user-images.githubusercontent.com/7032834/166389697-02eeeedb-6a44-4570-9
 
 &nbsp;
 
-# Rigging
-If you're a model rigger you may want to check out [Inochi Creator](https://github.com/Inochi2D/inochi-creator), the official Inochi2D rigging app in development.  
+# For Riggers and VTubers
+If you're a model rigger you may want to check out [Inochi Creator](https://github.com/Inochi2D/inochi-creator), the official Inochi2D rigging app in development.
+If you're a VTuber you may want to check out [Inochi Session](https://github.com/Inochi2D/inochi-session).
 This repository is purely for the standard and is not useful if you're an end user.
 
 &nbsp;
 
+# Documentation
+Documentation is currently in the process of being written for the spec and the official tools. You can find the official documentation page [here](https://docs.inochi2d.com).
+
+&nbsp;
+
 # Supported platforms
-The reference library requires at least OpenGL 4.2 or above, as well support for the SPIR-V ARB extension for per-part shaders.  
-*Inochi2D will disable custom shaders if SPIR-V is not found.* 
+The reference implementation available here currently requires a OpenGL 3.1 context to function, `inInit` should be called *after* a OpenGL 3.1 (or higher) context has been established.
 
-Implementors are free to implement Inochi2D over other graphics APIs and abstractions and should work on most modern graphics APIs (newer than OpenGL 2)
-
-An official Unity implementation will be provided once 1.0 is complete.
+We will be working on splitting the rendering out from the frontend, so that developers can plug their own backend in. We provide [inochi2d-c](https://github.com/Inochi2D/inochi2d-c) as a way to use this library from non-D languages, additionally a second workgroup is making a pure Rust implementation of the Inochi2D specification over at [Inox2D](https://github.com/Inochi2D/inox2d).
 
 &nbsp;
 
-# How does Inochi2D work?
-
-Inochi2D contains all your parts (textures) in a tree of Node objects.  
-Nodes have their own individual purpose.
-
-### Parts
-Parts contain the actual textures and vertex information of your model.  
-Each part is an individual texture and set of vertices.
-
-### PathDeforms
-PathDeforms deform its child Drawables based on its handles.  
-PathDeforms can deform multiple Drawables at once.
-
-### Masks
-Masks are a Drawable which allow you to specify a shape.  
-That shape is used to mask Parts without being a texture itself.
-
-&nbsp;  
-*More Node types to come...*
-
-### Do Note
-_The spec is still work in progress and is subject to change.  
-More details will be revealed once 1.0 of the spec is released._
-
-&nbsp;
-
-# Bootstrapping Inochi2D
-
-Bootstrapping Inochi2D depends on the backing window managment library you are using.
-
-Inochi2D can be boostrapped in GLFW (bindbc) with the following code
-```d
-// Loads GLFW
-loadGLFW();
-glfwInit();
-
-// Create Window and initialize OpenGL 4.2 with compat profile
-glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
-glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-window = glfwCreateWindow(1024, 1024, "Inochi2D App".toStringz, null, null);
-
-// Make OpenGL current and load its functions.
-glfwMakeContextCurrent(window);
-loadOpenGL();
-
-// A timing function that returns the current applications runtime in seconds and milliseconds is needed
-inInit(cast(double function())glfwGetTime);
-
-// Get the viewport size, which is the size of the scene
-int sceneWidth, sceneHeight;
-
-// It is highly recommended to change the viewport with
-// inSetViewport to match the viewport you want, otherwise it'll be 640x480
-inSetViewport(1024, 1024);
-inGetViewport(sceneWidth, sceneHeight);
-
-// Also many vtuber textures are pretty big so let's zoom out a bit.
-inGetCamera().scale = vec2(0.5);
-
-// NOTE: If you want to implement camera switching (for eg camera presets) use
-// inSetCamera
-
-// NOTE: Loading API WIP, subject to change
-Puppet myPuppet = inLoadPuppet("myPuppet.inp");
-
-while(!glfwWindowShouldClose(window)) {
-    // NOTE: Inochi2D does not itself clear the main framebuffer
-    // you have to do that your self.
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    // Run inUpdate first
-    // This updates various submodules and time managment for animation
-    inUpdate();
-
-    // Imagine there's a lot of rendering code here
-    // Maybe even some game logic or something
-
-    // Begins drawing in to the Inochi2D scene
-    // NOTE: You *need* to do this otherwise rendering may break
-    inBeginScene();
-
-        // Draw and update myPuppet.
-        // Convention for using Inochi2D in D is to put everything
-        // in a scene block one indent in.
-        myPuppet.update();
-        myPuppet.draw();
-
-    // Ends drawing in to the Inochi2D scene.
-    inEndScene();
-
-    // Draw the scene, background is transparent
-    inSceneDraw(vec4i(0, 0, sceneWidth, sceneHeight));
-
-    // Do the buffer swapping and event polling last
-    glfwSwapBuffers(window);
-    glfwPollEvents();
-}
-```
-
-### NOTE
-The version on dub is not always up to date with the newest features, to use inochi2d from the repo either:
- * Add `~master` as your version in your `dub.selections.json` file after having added inochi2d as a dependency.
- * Clone this repo and run `dub add-local (inochi2d folder) "1.0.0"` to add inochi2d as a local package. You can then add `inochi2d` as a dependency.
-
-&nbsp;
 
 ---
 
