@@ -970,17 +970,28 @@ public:
      * set new Parent
      */
     void reparent(Node parent, ulong pOffset) {
+        void unsetGroup(Node node) {
+            node.postProcessFilter = null;
+            node.preProcessFilter  = null;
+            auto group = cast(MeshGroup)node;
+            if (group is null) {
+                foreach (child; node.children) {
+                    unsetGroup(child);
+                }
+            }
+        }
+
+        unsetGroup(this);
+
         setRelativeTo(parent);
         insertInto(parent, pOffset);
-        auto p = parent;
-        while (p !is null) {
-            p.setupChild(this);
-            p = p.parent;
+        auto c = this;
+        for (auto p = parent; p !is null; p = p.parent, c = c.parent) {
+            p.setupChild(c);
         }
     }
 
-    void setupChild(Node child) {
-    }
+    void setupChild(Node child) { }
 
     mat4 getDynamicMatrix() {
         if (overrideTransformMatrix !is null) {
