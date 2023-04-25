@@ -79,6 +79,8 @@ public:
             serializer.serializeValue(leadIn);
             serializer.putKey("leadOut");
             serializer.serializeValue(leadOut);
+            serializer.putKey("animationWeight");
+            serializer.serializeValue(animationWeight);
 
             serializer.putKey("lanes");
             auto state = serializer.arrayBegin;
@@ -90,6 +92,20 @@ public:
             }
             serializer.arrayEnd(state);
         serializer.objectEnd(obj);
+    }
+
+    /**
+        Deserialization function
+    */
+    SerdeException deserializeFromFghj(Fghj data) {
+        data["timestep"].deserializeValue(this.timestep);
+        data["additive"].deserializeValue(this.additive);
+        if (!data["animationWeight"].isEmpty) data["animationWeight"].deserializeValue(this.animationWeight);
+        data["length"].deserializeValue(this.length);
+        data["leadIn"].deserializeValue(this.leadIn);
+        data["leadOut"].deserializeValue(this.leadOut);
+        data["lanes"].deserializeValue(this.lanes);
+        return null;
     }
 }
 
