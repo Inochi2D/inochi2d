@@ -237,10 +237,10 @@ public:
 
                     // Cubic - Smoothly in a curve between frame A and B
                     case InterpolateMode.Cubic:
-                        float prev = frames[max(i-1, 0)].value;
-                        float curr = frames[i].value;
-                        float next1 = frames[min(i+1, frames.length-1)].value;
-                        float next2 = frames[min(i+2, frames.length-1)].value;
+                        float prev = frames[max(cast(ptrdiff_t)i-2, 0)].value;
+                        float curr = frames[max(cast(ptrdiff_t)i-1, 0)].value;
+                        float next1 = frames[min(cast(ptrdiff_t)i, frames.length-1)].value;
+                        float next2 = frames[min(cast(ptrdiff_t)i+1, frames.length-1)].value;
 
                         // TODO: Switch formulae, catmullrom interpolation
                         return cubic(prev, curr, next1, next2, t);
