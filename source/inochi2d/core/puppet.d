@@ -459,6 +459,10 @@ public:
         foreach(driver; drivers) {
             driver.reset();
         }
+
+        // Update so that the timestep gets reset.
+        import inochi2d : inUpdate;
+        inUpdate();
     }
 
     /**
