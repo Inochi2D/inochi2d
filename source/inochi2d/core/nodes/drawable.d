@@ -436,33 +436,6 @@ public:
     final void reset() {
         vertices[] = data.vertices;
     }
-
-    override
-    void reparent(Node parent, ulong pOffset) {
-        postProcessFilter = null;
-        preProcessFilter  = null;
-        void unsetGroup(Drawable drawable) {
-            drawable.postProcessFilter = null;
-            drawable.preProcessFilter  = null;
-            auto group = cast(MeshGroup)drawable;
-            if (group is null) {
-                foreach (child; drawable.children) {
-                    auto childDrawable = cast(Drawable)child;
-                    if (childDrawable !is null)
-                        unsetGroup(childDrawable);
-                }
-            }
-        }
-
-        foreach (child; children) {
-            auto drawable = cast(Drawable)child;
-            if (drawable !is null) {
-                unsetGroup(drawable);
-            }
-        }
-
-        super.reparent(parent, pOffset);
-    }
 }
 
 version (InDoesRender) {
