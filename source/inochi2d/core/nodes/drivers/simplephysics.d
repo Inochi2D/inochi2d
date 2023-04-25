@@ -54,10 +54,10 @@ protected:
     override
     void eval(float t) {
         setD(angle, dAngle);
-        float lengthRatio = driver.getGravity() / driver.length;
+        float lengthRatio = driver.getGravity() / driver.getLength();
         float critDamp = 2 * sqrt(lengthRatio);
         float dd = -lengthRatio * sin(angle);
-        dd -= dAngle * driver.angleDamping * critDamp;
+        dd -= dAngle * driver.getAngleDamping() * critDamp;
         setD(dAngle, dd);
     }
 
@@ -66,7 +66,7 @@ public:
     this(SimplePhysics driver) {
         this.driver = driver;
 
-        bob = driver.anchor + vec2(0, driver.length);
+        bob = driver.anchor + vec2(0, driver.getLength());
 
         addVariable(&angle);
         addVariable(&dAngle);
@@ -83,7 +83,7 @@ public:
 
         // Update the bob position at the new angle
         dBob = vec2(-sin(angle), cos(angle));
-        bob = driver.anchor + dBob * driver.length;
+        bob = driver.anchor + dBob * driver.getLength();
 
         driver.output = bob;
     }
@@ -102,7 +102,7 @@ public:
 
     override
     void updateAnchor() {
-        bob = driver.anchor + vec2(0, driver.length);
+        bob = driver.anchor + vec2(0, driver.getLength());
     }
 }
 
@@ -119,16 +119,16 @@ protected:
         setD(bob, dBob);
 
         // These are normalized vs. mass
-        float springKsqrt = driver.frequency * 2 * PI;
+        float springKsqrt = driver.getFrequency() * 2 * PI;
         float springK = springKsqrt ^^ 2;
 
         float g = driver.getGravity();
-        float restLength = driver.length - g / springK;
+        float restLength = driver.getLength() - g / springK;
 
         vec2 offPos = bob - driver.anchor;
         vec2 offPosNorm = offPos.normalized;
 
-        float lengthRatio = driver.getGravity() / driver.length;
+        float lengthRatio = driver.getGravity() / driver.getLength();
         float critDampAngle = 2 * sqrt(lengthRatio);
         float critDampLength = 2 * springKsqrt;
 
@@ -143,8 +143,8 @@ protected:
         );
 
         vec2 ddBobRot = -vec2(
-            dBobRot.x * driver.angleDamping * critDampAngle,
-            dBobRot.y * driver.lengthDamping * critDampLength,
+            dBobRot.x * driver.getAngleDamping() * critDampAngle,
+            dBobRot.y * driver.getLengthDamping() * critDampLength,
         );
 
         vec2 ddBobDamping = vec2(
@@ -162,7 +162,7 @@ public:
     this(SimplePhysics driver) {
         this.driver = driver;
 
-        bob = driver.anchor + vec2(0, driver.length);
+        bob = driver.anchor + vec2(0, driver.getLength());
 
         addVariable(&bob);
         addVariable(&dBob);
@@ -190,7 +190,7 @@ public:
 
     override
     void updateAnchor() {
-        bob = driver.anchor + vec2(0, driver.length);
+        bob = driver.anchor + vec2(0, driver.getLength());
     }
 }
 
@@ -207,6 +207,24 @@ private:
 
     @Ignore
     Parameter param_;
+
+    @Ignore
+    float offsetGravity = 1.0;
+
+    @Ignore
+    float offsetLength = 0;
+
+    @Ignore
+    float offsetFrequency = 1;
+
+    @Ignore
+    float offsetAngleDamping = 0.5;
+
+    @Ignore
+    float offsetLengthDamping = 0.5;
+
+    @Ignore
+    vec2 offsetOutputScale = vec2(1, 1);
 
 protected:
     override
@@ -330,6 +348,13 @@ public:
     override
     void beginUpdate() {
         super.beginUpdate();
+
+        offsetGravity = 1;
+        offsetLength = 0;
+        offsetFrequency = 1;
+        offsetAngleDamping = 1;
+        offsetLengthDamping = 1;
+        offsetOutputScale = vec2(1, 1);
     }
 
     override
@@ -377,6 +402,8 @@ public:
     void updateOutputs() {
         if (param is null) return;
 
+        vec2 oscale = getOutputScale();
+
         // Okay, so this is confusing. We want to translate the angle back to local space,
         // but not the coordinates.
 
@@ -389,7 +416,7 @@ public:
         localAngle.normalize();
 
         // Figure out the relative length. We can work this out directly in global space.
-        auto relLength = output.distance(anchor) / length;
+        auto relLength = output.distance(anchor) / getLength();
 
         vec2 paramVal;
         switch (mapMode) {
@@ -405,7 +432,7 @@ public:
             default: assert(0);
         }
 
-        param.pushIOffset(vec2(paramVal.x * outputScale.x, paramVal.y * outputScale.y), ParamMergeMode.Forced);
+        param.pushIOffset(vec2(paramVal.x * oscale.x, paramVal.y * oscale.y), ParamMergeMode.Forced);
         param.update();
     }
 
@@ -451,10 +478,6 @@ public:
         return puppet.physics.pixelsPerMeter;
     }
 
-    float getGravity() {
-        return gravity * puppet.physics.gravity * getScale();
-    }
-
     PhysicsModel modelType() {
         return modelType_;
     }
@@ -463,6 +486,108 @@ public:
         modelType_ = t;
         reset();
     }
+
+       override
+    bool hasParam(string key) {
+        if (super.hasParam(key)) return true;
+
+        switch(key) {
+            case "gravity":
+            case "length":
+            case "frequency":
+            case "angleDamping":
+            case "lengthDamping":
+            case "outputScale.x":
+            case "outputScale.y":
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    override
+    float getDefaultValue(string key) {
+        // Skip our list of our parent already handled it
+        float def = super.getDefaultValue(key);
+        if (!isNaN(def)) return def;
+
+        switch(key) {
+            case "gravity":
+            case "frequency":
+            case "angleDamping":
+            case "lengthDamping":
+            case "outputScale.x":
+            case "outputScale.y":
+                return 1;
+            case "length":
+                return 0;
+            default: return float();
+        }
+    }
+
+    override
+    bool setValue(string key, float value) {
+        
+        // Skip our list of our parent already handled it
+        if (super.setValue(key, value)) return true;
+
+        switch(key) {
+            case "gravity":
+                offsetGravity *= value;
+                return true;
+            case "length":
+                offsetLength += value;
+                return true;
+            case "frequency":
+                offsetFrequency *= value;
+                return true;
+            case "angleDamping":
+                offsetAngleDamping *= value;
+                return true;
+            case "lengthDamping":
+                offsetLengthDamping *= value;
+                return true;
+            case "outputScale.x":
+                offsetOutputScale.x *= value;
+                return true;
+            case "outputScale.y":
+                offsetOutputScale.y *= value;
+                return true;
+            default: return false;
+        }
+    }
+    
+    override
+    float getValue(string key) {
+        switch(key) {
+            case "gravity":         return offsetGravity;
+            case "length":          return offsetLength;
+            case "frequency":       return offsetFrequency;
+            case "angleDamping":    return offsetAngleDamping;
+            case "lengthDamping":   return offsetLengthDamping;
+            case "outputScale.x":   return offsetOutputScale.x;
+            case "outputScale.y":   return offsetOutputScale.y;
+            default:                return super.getValue(key);
+        }
+    }
+
+    /// Gets the final gravity
+    float getGravity() { return (gravity * offsetGravity) * puppet.physics.gravity * getScale(); }
+
+    /// Gets the final length
+    float getLength() { return length + offsetLength; }
+
+    /// Gets the final frequency
+    float getFrequency() { return frequency * offsetFrequency; }
+
+    /// Gets the final angle damping
+    float getAngleDamping() { return angleDamping * offsetAngleDamping; }
+
+    /// Gets the final length damping
+    float getLengthDamping() { return lengthDamping * offsetLengthDamping; }
+
+    /// Gets the final length damping
+    vec2 getOutputScale() { return outputScale * offsetOutputScale; }
 }
 
 mixin InNode!SimplePhysics;
