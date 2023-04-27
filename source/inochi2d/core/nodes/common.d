@@ -62,8 +62,8 @@ void inSetBlendMode(BlendMode blendingMode) {
             glBlendEquation(GL_FUNC_ADD);
             glBlendFunc(GL_DST_ALPHA, GL_ONE_MINUS_SRC_ALPHA); break;
         case BlendMode.SliceFromLower:
-            glBlendEquation(GL_FUNC_SUBTRACT);
-            glBlendFunc(GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_SRC_ALPHA); break;
+            glBlendEquation(GL_FUNC_ADD);
+            glBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_ALPHA); break;
         default: assert(0);
     }
 }
