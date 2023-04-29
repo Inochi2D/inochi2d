@@ -113,6 +113,8 @@ private:
         RENDERING
     */
     void drawSelf() {
+        if (subParts.length == 0) return;
+        
         glBindVertexArray(cVAO);
 
         cShader.use();
