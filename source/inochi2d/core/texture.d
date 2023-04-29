@@ -502,11 +502,15 @@ void inEndTextureLoading() {
     textureBindings.length = 0;
 }
 
-void inTexPremultiply(ref ubyte[] data) {
-    foreach(i; 0..data.length/4) {
-        data[((i*4)+0)] = cast(ubyte)((cast(int)data[((i*4)+0)] * cast(int)data[((i*4)+3)])/255);
-        data[((i*4)+1)] = cast(ubyte)((cast(int)data[((i*4)+1)] * cast(int)data[((i*4)+3)])/255);
-        data[((i*4)+2)] = cast(ubyte)((cast(int)data[((i*4)+2)] * cast(int)data[((i*4)+3)])/255);
+void inTexPremultiply(ref ubyte[] data, int channels = 4) {
+    if (channels < 4) return;
+
+    foreach(i; 0..data.length/channels) {
+
+        size_t offsetPixel = (i*channels);
+        data[offsetPixel+0] = cast(ubyte)((cast(int)data[offsetPixel+0] * cast(int)data[offsetPixel+3])/255);
+        data[offsetPixel+1] = cast(ubyte)((cast(int)data[offsetPixel+1] * cast(int)data[offsetPixel+3])/255);
+        data[offsetPixel+2] = cast(ubyte)((cast(int)data[offsetPixel+2] * cast(int)data[offsetPixel+3])/255);
     }
 }
 
