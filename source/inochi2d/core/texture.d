@@ -496,8 +496,8 @@ void inAddTextureBinary(ShallowTexture data) {
 /**
     Ends a texture loading pass
 */
-void inEndTextureLoading() {
-    enforce(started, "Texture loading pass not started!");
+void inEndTextureLoading(bool checkErrors=true)() {
+    static if (checkErrors) enforce(started, "Texture loading pass not started!");
     started = false;
     textureBindings.length = 0;
 }

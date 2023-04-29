@@ -31,21 +31,26 @@ bool inIsINPMode() {
     Loads a puppet from a file
 */
 T inLoadPuppet(T = Puppet)(string file) if (is(T : Puppet)) {
-    import std.file : read;
-    ubyte[] buffer = cast(ubyte[])read(file);
+    try {
+        import std.file : read;
+        ubyte[] buffer = cast(ubyte[])read(file);
 
-    switch(extension(file)) {
+        switch(extension(file)) {
 
-        case ".inp":
-            enforce(inVerifyMagicBytes(buffer), "Invalid data format for INP puppet");
-            return inLoadINPPuppet!T(buffer);
+            case ".inp":
+                enforce(inVerifyMagicBytes(buffer), "Invalid data format for INP puppet");
+                return inLoadINPPuppet!T(buffer);
 
-        case ".inx":
-            enforce(inVerifyMagicBytes(buffer), "Invalid data format for Inochi Creator INX");
-            return inLoadINPPuppet!T(buffer);
+            case ".inx":
+                enforce(inVerifyMagicBytes(buffer), "Invalid data format for Inochi Creator INX");
+                return inLoadINPPuppet!T(buffer);
 
-        default:
-            throw new Exception("Invalid file format of %s at path %s".format(extension(file), file));
+            default:
+                throw new Exception("Invalid file format of %s at path %s".format(extension(file), file));
+        }
+    } catch(Exception ex) {
+        inEndTextureLoading!false();
+        throw ex;
     }
 }
 
@@ -126,7 +131,7 @@ T inLoadINPPuppet(T = Puppet)(ubyte[] buffer) if (is(T : Puppet)) {
             } else inCurrentPuppetTextureSlots ~= TextureBlob(textureType, buffer[bufferOffset..bufferOffset+=textureLength]);
         }
 
-        Puppet puppet = inLoadJsonDataFromMemory!T(puppetData);
+        T puppet = inLoadJsonDataFromMemory!T(puppetData);
     }
 
     if (buffer.length >= bufferOffset + 8 && inVerifySection(buffer[bufferOffset..bufferOffset+=8], EXT_SECTION)) {
