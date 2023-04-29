@@ -158,6 +158,7 @@ package(inochi2d) {
         inSetViewport(640, 480);
         
         // Initialize dynamic meshes
+        inInitBlending();
         inInitNodes();
         inInitDrawable();
         inInitPart();
