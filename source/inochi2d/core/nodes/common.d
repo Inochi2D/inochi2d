@@ -135,6 +135,9 @@ enum BlendMode {
     // Inverse
     Inverse,
 
+    // Destination In
+    DestinationIn,
+
     // Clip to Lower
     // Special blending mode that clips the drawable
     // to a lower rendered area.
@@ -240,6 +243,10 @@ void inSetBlendMode(BlendMode blendingMode) {
             case BlendMode.ClipToLower:
                 glBlendEquation(GL_FUNC_ADD);
                 glBlendFunc(GL_DST_ALPHA, GL_ONE_MINUS_SRC_ALPHA); break;
+            
+            case BlendMode.DestinationIn:
+                glBlendEquation(GL_FUNC_ADD);
+                glBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_ALPHA); break;
 
             case BlendMode.SliceFromLower:
                 glBlendEquation(GL_FUNC_ADD);
@@ -289,7 +296,11 @@ void inSetBlendMode(BlendMode blendingMode) {
                     glBlendEquation(GL_FUNC_ADD);
                     glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA); break;
                 }
-            
+                        
+            case BlendMode.DestinationIn:
+                glBlendEquation(GL_FUNC_ADD);
+                glBlendFunc(GL_ZERO, GL_SRC_ALPHA); break;
+
             case BlendMode.ClipToLower:
                 glBlendEquation(GL_FUNC_ADD);
                 glBlendFunc(GL_DST_ALPHA, GL_ONE_MINUS_SRC_ALPHA); break;
