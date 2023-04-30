@@ -41,9 +41,12 @@ void inInitBlending() {
 
     if (inAdvancedBlendingCoherent) glEnable(0x9285); // BLEND_ADVANCED_COHERENT_KHR && BLEND_ADVANCED_COHERENT_NV
     else {
-        import std.stdio : writeln;
-        writeln("No coherent blending :c");
         inAdvancedBlendingCoherent = false;
+        
+        debug {
+            import std.stdio : writeln;
+            if (inAdvancedBlending) writeln("Advanced blending is supported, but non-coherent blending is not available.");
+        }
         inAdvancedBlending = false;
     }
     
