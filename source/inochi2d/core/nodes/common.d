@@ -241,14 +241,14 @@ void inSetBlendMode(BlendMode blendingMode) {
             case BlendMode.Inverse:
                 glBlendEquation(GL_FUNC_ADD);
                 glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA); break;
+            
+            case BlendMode.DestinationIn:
+                glBlendEquation(GL_FUNC_ADD);
+                glBlendFunc(GL_ZERO, GL_SRC_ALPHA); break;
 
             case BlendMode.ClipToLower:
                 glBlendEquation(GL_FUNC_ADD);
                 glBlendFunc(GL_DST_ALPHA, GL_ONE_MINUS_SRC_ALPHA); break;
-            
-            case BlendMode.DestinationIn:
-                glBlendEquation(GL_FUNC_ADD);
-                glBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_ALPHA); break;
 
             case BlendMode.SliceFromLower:
                 glBlendEquation(GL_FUNC_ADD);
