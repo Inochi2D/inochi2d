@@ -69,6 +69,7 @@ void inInitBlending() {
         Exclusion
         Subtract
         Inverse
+        Destination In
         Clip To Lower
         Slice from Lower
     Some of these blending modes behave better on Tiling GPUs.
@@ -81,6 +82,7 @@ void inInitBlending() {
         Color Dodge
         Linear Dodge
         Inverse
+        Destination In
         Clip to Lower
         Slice from Lower
     Tiling GPUs on older mobile devices don't have great drivers, we shouldn't tempt fate.
