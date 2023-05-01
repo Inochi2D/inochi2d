@@ -15,7 +15,6 @@ import std.string;
 private {
     bool inAdvancedBlending;
     bool inAdvancedBlendingCoherent;
-    bool inAdvancedBlendingNV;
     extern(C) void function() glBlendBarrierKHR;
 }
 
@@ -28,13 +27,6 @@ void inInitBlending() {
         // KHR blending extension
         if (ext == "GL_KHR_blend_equation_advanced") inAdvancedBlending = true;
         if (ext == "GL_KHR_blend_equation_advanced_coherent") inAdvancedBlendingCoherent = true;
-
-        // NVIDIA blending extension
-        if (ext == "GL_NV_blend_equation_advanced") {
-            inAdvancedBlending = true;
-            inAdvancedBlendingNV = true;
-        }
-        if (ext == "GL_NV_blend_equation_advanced_coherent") inAdvancedBlendingCoherent = true;
 
         if (inAdvancedBlending && inAdvancedBlendingCoherent) break;
     }
@@ -65,6 +57,7 @@ void inInitBlending() {
         Lighten
         Color Dodge
         Linear Dodge
+        Add (Glow)
         Color Burn
         Hard Light
         Soft Light
@@ -84,6 +77,7 @@ void inInitBlending() {
         Lighten
         Color Dodge
         Linear Dodge
+        Add (Glow)
         Inverse
         Destination In
         Clip to Lower
@@ -118,6 +112,9 @@ enum BlendMode {
 
     // Linear Dodge
     LinearDodge,
+
+    // Add (Glow)
+    AddGlow,
 
     // Color Burn
     ColorBurn,
@@ -168,38 +165,6 @@ enum GL_SOFTLIGHT_KHR = 0x929C;
 enum GL_DIFFERENCE_KHR = 0x929E;
 enum GL_EXCLUSION_KHR = 0x92A0;
 
-// NVIDIA blending
-enum GL_SRC_NV = 0x9286;
-enum GL_DST_NV = 0x9287;
-enum GL_SRC_OVER_NV = 0x9288;
-enum GL_DST_OVER_NV = 0x9289;
-enum GL_SRC_IN_NV = 0x928A;
-enum GL_DST_IN_NV = 0x928B;
-enum GL_SRC_OUT_NV = 0x928C;
-enum GL_DST_OUT_NV = 0x928D;
-enum GL_SRC_ATOP_NV = 0x928E;
-enum GL_DST_ATOP_NV = 0x928F;
-enum GL_XOR_NV = 0x1506;
-enum GL_MULTIPLY_NV = 0x9294;
-enum GL_SCREEN_NV = 0x9295;
-enum GL_OVERLAY_NV = 0x9296;
-enum GL_DARKEN_NV = 0x9297;
-enum GL_LIGHTEN_NV = 0x9298;
-enum GL_COLORDODGE_NV = 0x9299;
-enum GL_COLORBURN_NV = 0x929A;
-enum GL_HARDLIGHT_NV = 0x929B;
-enum GL_SOFTLIGHT_NV = 0x929C;
-enum GL_DIFFERENCE_NV = 0x929E;
-enum GL_EXCLUSION_NV = 0x92A0;
-enum GL_INVERT_RGB_NV = 0x92A3;
-enum GL_LINEARDODGE_NV = 0x92A4;
-enum GL_LINEARBURN_NV = 0x92A5;
-enum GL_VIVIDLIGHT_NV = 0x92A6;
-enum GL_LINEARLIGHT_NV = 0x92A7;
-enum GL_PINLIGHT_NV = 0x92A8;
-enum GL_MINUS_NV = 0x929F;
-enum MINUS_CLAMPED_NV = 0x92B3;
-
 void inSetBlendMode(BlendMode blendingMode) {
     if (!inAdvancedBlending) {
         switch(blendingMode) {
@@ -228,10 +193,14 @@ void inSetBlendMode(BlendMode blendingMode) {
             case BlendMode.ColorDodge:
                 glBlendEquation(GL_FUNC_ADD);
                 glBlendFunc(GL_DST_COLOR, GL_ONE); break;
-
+                
             case BlendMode.LinearDodge:
                 glBlendEquation(GL_FUNC_ADD);
                 glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE); break;
+                
+            case BlendMode.AddGlow:
+                glBlendEquation(GL_FUNC_ADD);
+                glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ONE_MINUS_SRC_ALPHA); break;
 
             case BlendMode.Subtract:
                 glBlendEquationSeparate(GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_ADD);
@@ -270,13 +239,12 @@ void inSetBlendMode(BlendMode blendingMode) {
             case BlendMode.Lighten: glBlendEquation(GL_LIGHTEN_KHR); break;
             case BlendMode.ColorDodge: glBlendEquation(GL_COLORDODGE_KHR); break;
             case BlendMode.LinearDodge:
-                if (inAdvancedBlendingNV) {
-                    glBlendEquation(GL_LINEARDODGE_NV);
-                    glBlendFunc(GL_ONE, GL_ONE); break;
-                } else {
-                    glBlendEquation(GL_FUNC_ADD);
-                    glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE); break;
-                }
+                glBlendEquation(GL_FUNC_ADD);
+                glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE); break;
+                
+            case BlendMode.AddGlow:
+                glBlendEquation(GL_FUNC_ADD);
+                glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ONE_MINUS_SRC_ALPHA); break;
 
             case BlendMode.ColorBurn: glBlendEquation(GL_COLORBURN_KHR); break;
             case BlendMode.HardLight: glBlendEquation(GL_HARDLIGHT_KHR); break;
@@ -285,22 +253,12 @@ void inSetBlendMode(BlendMode blendingMode) {
             case BlendMode.Exclusion: glBlendEquation(GL_EXCLUSION_KHR); break;
 
             case BlendMode.Subtract:
-                if (inAdvancedBlendingNV) {
-                    glBlendEquation(MINUS_CLAMPED_NV);
-                    glBlendFunc(GL_ONE, GL_ONE); break;
-                } else {
-                    glBlendEquationSeparate(GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_ADD);
-                    glBlendFunc(GL_ONE, GL_ONE); break;
-                }
+                glBlendEquationSeparate(GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_ADD);
+                glBlendFunc(GL_ONE, GL_ONE); break;
 
             case BlendMode.Inverse:
-                if (inAdvancedBlendingNV) {
-                    glBlendEquation(GL_INVERT);
-                    glBlendFunc(GL_ONE, GL_ONE); break;
-                } else {
-                    glBlendEquation(GL_FUNC_ADD);
-                    glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA); break;
-                }
+                glBlendEquation(GL_FUNC_ADD);
+                glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA); break;
                         
             case BlendMode.DestinationIn:
                 glBlendEquation(GL_FUNC_ADD);
