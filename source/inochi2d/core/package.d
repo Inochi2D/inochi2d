@@ -314,6 +314,9 @@ void inEndScene() {
 void inPostProcessScene() {
     bool targetBuffer;
 
+    float r, g, b, a;
+    inGetClearColor(r, g, b, a);
+
     // Render area
     vec4 area = vec4(
         0, 0,
@@ -342,6 +345,8 @@ void inPostProcessScene() {
         // We want to be able to post process all the attachments
         glBindFramebuffer(GL_FRAMEBUFFER, cfBuffer);
         glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
+        glClear(GL_COLOR_BUFFER_BIT);
+
         glBindFramebuffer(GL_FRAMEBUFFER, fBuffer);
         glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
 
@@ -357,7 +362,6 @@ void inPostProcessScene() {
 
                 // Composite buffer -> Main buffer 
                 glBindFramebuffer(GL_FRAMEBUFFER, fBuffer); // dst
-                glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
                 renderScene(area, shader, cfAlbedo, cfEmissive, cfBump); // src
             }
         }
