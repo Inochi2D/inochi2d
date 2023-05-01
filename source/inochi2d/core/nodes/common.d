@@ -193,10 +193,10 @@ void inSetBlendMode(BlendMode blendingMode) {
             case BlendMode.ColorDodge:
                 glBlendEquation(GL_FUNC_ADD);
                 glBlendFunc(GL_DST_COLOR, GL_ONE); break;
-                
+
             case BlendMode.LinearDodge:
                 glBlendEquation(GL_FUNC_ADD);
-                glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE); break;
+                glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_COLOR, GL_ONE, GL_ONE_MINUS_SRC_ALPHA); break;
                 
             case BlendMode.AddGlow:
                 glBlendEquation(GL_FUNC_ADD);
@@ -240,7 +240,7 @@ void inSetBlendMode(BlendMode blendingMode) {
             case BlendMode.ColorDodge: glBlendEquation(GL_COLORDODGE_KHR); break;
             case BlendMode.LinearDodge:
                 glBlendEquation(GL_FUNC_ADD);
-                glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE); break;
+                glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_COLOR, GL_ONE, GL_ONE_MINUS_SRC_ALPHA); break;
                 
             case BlendMode.AddGlow:
                 glBlendEquation(GL_FUNC_ADD);
