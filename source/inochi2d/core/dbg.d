@@ -100,6 +100,7 @@ void inDbgSetBuffer(vec3[] points, ushort[] indices) {
     Draws current stored vertices as points with specified color
 */
 void inDbgDrawPoints(vec4 color, mat4 transform = mat4.identity) {
+    glBlendEquation(GL_FUNC_ADD);
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
 
         glBindVertexArray(dbgVAO);
@@ -123,6 +124,7 @@ void inDbgDrawPoints(vec4 color, mat4 transform = mat4.identity) {
 */
 void inDbgDrawLines(vec4 color, mat4 transform = mat4.identity) {
     glEnable(GL_LINE_SMOOTH);
+    glBlendEquation(GL_FUNC_ADD);
     glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE);
     
         glBindVertexArray(dbgVAO);
