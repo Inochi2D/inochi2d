@@ -143,6 +143,9 @@ private:
 
         // Bind the texture
         glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        // Blending barrier
+        inBlendModeBarrier();
     }
 
     void selfSort() {

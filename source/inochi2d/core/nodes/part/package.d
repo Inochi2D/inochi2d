@@ -241,6 +241,9 @@ private:
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
         glDisableVertexAttribArray(2);
+
+        // Blending barrier
+        inBlendModeBarrier();
     }
 
 protected:
