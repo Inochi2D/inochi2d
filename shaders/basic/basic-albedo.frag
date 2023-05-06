@@ -5,9 +5,20 @@
     Authors: Luna Nielsen
 */
 #version 330
+
+// Advanced blendig mode enable
+#ifdef GL_KHR_blend_equation_advanced 
+#extension GL_KHR_blend_equation_advanced : enable
+#endif
+
 in vec2 texUVs;
 
-layout(location = 0) out vec4 outAlbedo;
+// Handle layout qualifiers for advanced blending specially
+#ifdef GL_KHR_blend_equation_advanced 
+    layout(location = 0, blend_support_all_equations) out vec4 outAlbedo;
+#else
+    layout(location = 0) out vec4 outAlbedo;
+#endif
 
 uniform sampler2D albedo;
 
