@@ -114,7 +114,8 @@ private:
     */
     void drawSelf() {
         if (subParts.length == 0) return;
-        
+
+        glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
         glBindVertexArray(cVAO);
 
         cShader.use();
@@ -132,7 +133,7 @@ private:
         if (!offsetScreenTint.y.isNaN) clampedColor.y = clamp(screenTint.y+offsetScreenTint.y, 0, 1);
         if (!offsetScreenTint.z.isNaN) clampedColor.z = clamp(screenTint.z+offsetScreenTint.z, 0, 1);
         cShader.setUniform(gScreenColor, clampedColor);
-        inSetBlendMode(blendingMode);
+        inSetBlendMode(blendingMode, true);
 
         // Enable points array
         glEnableVertexAttribArray(0);
@@ -143,9 +144,6 @@ private:
 
         // Bind the texture
         glDrawArrays(GL_TRIANGLES, 0, 6);
-
-        // Blending barrier
-        inBlendModeBarrier();
     }
 
     void selfSort() {

@@ -26,6 +26,7 @@ package(inochi2d) {
         Texture boundAlbedo;
 
         Shader partShader;
+        Shader partShaderAlbedo;
         Shader partMaskShader;
 
         /* GLSL Uniforms (Normal) */
@@ -35,6 +36,14 @@ package(inochi2d) {
         GLint gMultColor;
         GLint gScreenColor;
         GLint gEmissionStrength;
+
+        
+        /* GLSL Uniforms (Albedo) */
+        GLint gamvp;
+        GLint gaoffset;
+        GLint gaopacity;
+        GLint gaMultColor;
+        GLint gaScreenColor;
 
         /* GLSL Uniforms (Masks) */
         GLint mmvp;
@@ -50,6 +59,7 @@ package(inochi2d) {
 
         version(InDoesRender) {
             partShader = new Shader(import("basic/basic.vert"), import("basic/basic.frag"));
+            partShaderAlbedo = new Shader(import("basic/basic.vert"), import("basic/basic-albedo.frag"));
             partMaskShader = new Shader(import("basic/basic.vert"), import("basic/basic-mask.frag"));
 
             incDrawableBindVAO();
@@ -64,6 +74,14 @@ package(inochi2d) {
             gMultColor = partShader.getUniformLocation("multColor");
             gScreenColor = partShader.getUniformLocation("screenColor");
             gEmissionStrength = partShader.getUniformLocation("emissionStrength");
+            
+            partShaderAlbedo.use();
+            partShaderAlbedo.setUniform(partShader.getUniformLocation("albedo"), 0);
+            gamvp = partShaderAlbedo.getUniformLocation("mvp");
+            gaoffset = partShaderAlbedo.getUniformLocation("offset");
+            gaopacity = partShaderAlbedo.getUniformLocation("opacity");
+            gaMultColor = partShaderAlbedo.getUniformLocation("multColor");
+            gaScreenColor = partShaderAlbedo.getUniformLocation("screenColor");
 
             partMaskShader.use();
             partMaskShader.setUniform(partMaskShader.getUniformLocation("albedo"), 0);
@@ -176,28 +194,56 @@ private:
             partMaskShader.setUniform(mthreshold, clamp(offsetMaskThreshold + maskAlphaThreshold, 0, 1));
             glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         } else {
-            partShader.use();
-            partShader.setUniform(offset, data.origin);
-            partShader.setUniform(mvp, inGetCamera().matrix * puppet.transform.matrix * matrix);
-            partShader.setUniform(gopacity, clamp(offsetOpacity * opacity, 0, 1));
-            partShader.setUniform(gEmissionStrength, emissionStrength*offsetEmissionStrength);
 
-            partShader.setUniform(partShader.getUniformLocation("albedo"), 0);
-            partShader.setUniform(partShader.getUniformLocation("emissive"), 1);
-            partShader.setUniform(partShader.getUniformLocation("bumpmap"), 2);
-            
-            vec3 clampedColor = tint;
-            if (!offsetTint.x.isNaN) clampedColor.x = clamp(tint.x*offsetTint.x, 0, 1);
-            if (!offsetTint.y.isNaN) clampedColor.y = clamp(tint.y*offsetTint.y, 0, 1);
-            if (!offsetTint.z.isNaN) clampedColor.z = clamp(tint.z*offsetTint.z, 0, 1);
-            partShader.setUniform(gMultColor, clampedColor);
+            // Albedo-only
+            if (!textures[1] && !textures[2]) {
+                glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_NONE, GL_NONE].ptr);
 
-            clampedColor = screenTint;
-            if (!offsetScreenTint.x.isNaN) clampedColor.x = clamp(screenTint.x+offsetScreenTint.x, 0, 1);
-            if (!offsetScreenTint.y.isNaN) clampedColor.y = clamp(screenTint.y+offsetScreenTint.y, 0, 1);
-            if (!offsetScreenTint.z.isNaN) clampedColor.z = clamp(screenTint.z+offsetScreenTint.z, 0, 1);
-            partShader.setUniform(gScreenColor, clampedColor);
-            inSetBlendMode(blendingMode);
+                partShaderAlbedo.use();
+                partShaderAlbedo.setUniform(gaoffset, data.origin);
+                partShaderAlbedo.setUniform(gamvp, inGetCamera().matrix * puppet.transform.matrix * matrix);
+                partShaderAlbedo.setUniform(gaopacity, clamp(offsetOpacity * opacity, 0, 1));
+
+                partShaderAlbedo.setUniform(partShaderAlbedo.getUniformLocation("albedo"), 0);
+                
+                vec3 clampedColor = tint;
+                if (!offsetTint.x.isNaN) clampedColor.x = clamp(tint.x*offsetTint.x, 0, 1);
+                if (!offsetTint.y.isNaN) clampedColor.y = clamp(tint.y*offsetTint.y, 0, 1);
+                if (!offsetTint.z.isNaN) clampedColor.z = clamp(tint.z*offsetTint.z, 0, 1);
+                partShaderAlbedo.setUniform(gaMultColor, clampedColor);
+
+                clampedColor = screenTint;
+                if (!offsetScreenTint.x.isNaN) clampedColor.x = clamp(screenTint.x+offsetScreenTint.x, 0, 1);
+                if (!offsetScreenTint.y.isNaN) clampedColor.y = clamp(screenTint.y+offsetScreenTint.y, 0, 1);
+                if (!offsetScreenTint.z.isNaN) clampedColor.z = clamp(screenTint.z+offsetScreenTint.z, 0, 1);
+                partShaderAlbedo.setUniform(gaScreenColor, clampedColor);
+                inSetBlendMode(blendingMode, false);
+            } else {
+                glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
+
+                partShader.use();
+                partShader.setUniform(offset, data.origin);
+                partShader.setUniform(mvp, inGetCamera().matrix * puppet.transform.matrix * matrix);
+                partShader.setUniform(gopacity, clamp(offsetOpacity * opacity, 0, 1));
+                partShader.setUniform(gEmissionStrength, emissionStrength*offsetEmissionStrength);
+
+                partShader.setUniform(partShader.getUniformLocation("albedo"), 0);
+                partShader.setUniform(partShader.getUniformLocation("emissive"), 1);
+                partShader.setUniform(partShader.getUniformLocation("bumpmap"), 2);
+                
+                vec3 clampedColor = tint;
+                if (!offsetTint.x.isNaN) clampedColor.x = clamp(tint.x*offsetTint.x, 0, 1);
+                if (!offsetTint.y.isNaN) clampedColor.y = clamp(tint.y*offsetTint.y, 0, 1);
+                if (!offsetTint.z.isNaN) clampedColor.z = clamp(tint.z*offsetTint.z, 0, 1);
+                partShader.setUniform(gMultColor, clampedColor);
+
+                clampedColor = screenTint;
+                if (!offsetScreenTint.x.isNaN) clampedColor.x = clamp(screenTint.x+offsetScreenTint.x, 0, 1);
+                if (!offsetScreenTint.y.isNaN) clampedColor.y = clamp(screenTint.y+offsetScreenTint.y, 0, 1);
+                if (!offsetScreenTint.z.isNaN) clampedColor.z = clamp(screenTint.z+offsetScreenTint.z, 0, 1);
+                partShader.setUniform(gScreenColor, clampedColor);
+                inSetBlendMode(blendingMode, true);
+            }
 
             // TODO: EXT MODE
         }

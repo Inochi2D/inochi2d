@@ -194,8 +194,8 @@ enum BlendMode {
     SliceFromLower
 }
 
-void inSetBlendMode(BlendMode blendingMode) {
-    if (!inAdvancedBlending) inSetBlendModeLegacy(blendingMode);
+void inSetBlendMode(BlendMode blendingMode, bool legacyOnly=false) {
+    if (!inAdvancedBlending || legacyOnly) inSetBlendModeLegacy(blendingMode);
     else switch(blendingMode) {
         case BlendMode.Normal: 
             glBlendEquation(GL_FUNC_ADD);
