@@ -15,7 +15,8 @@ in vec2 texUVs;
 
 // Handle layout qualifiers for advanced blending specially
 #ifdef GL_KHR_blend_equation_advanced 
-    layout(location = 0, blend_support_all_equations) out vec4 outAlbedo;
+    layout(blend_support_all_equations) out;
+    layout(location = 0) out vec4 outAlbedo;
 #else
     layout(location = 0) out vec4 outAlbedo;
 #endif
