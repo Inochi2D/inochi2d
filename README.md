@@ -3,6 +3,7 @@
 </p>
 
 [日本語](https://github.com/Inochi2D/inochi2d/blob/main/README.ja.md)
+[简体中文](https://github.com/Inochi2D/inochi2d/blob/main/README.zh.md)
 
 # Inochi2D
 [![Support me on Patreon](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3Dclipsey%26type%3Dpatrons&style=for-the-badge)](https://patreon.com/clipsey)
