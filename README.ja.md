@@ -7,10 +7,7 @@
 [![Support me on Patreon](https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3Dclipsey%26type%3Dpatrons&style=for-the-badge)](https://patreon.com/clipsey)
 [![Discord](https://img.shields.io/discord/855173611409506334?label=Community&logo=discord&logoColor=FFFFFF&style=for-the-badge)](https://discord.com/invite/abnxwN6r9v)
 
-Inochi2Dはリアルタイム2Dパペットアニメーションライブラリで、Inochi2DPuppetスタンダードのリファレンス実装です。
-
-**現在、本ライブラリとスタンダードは試作段階です。実用は推奨しません。**
-試用するには、本リポジトリを複製して、 `dub add-local (inochi2d folder) "1.0.0"` を実行し、手動でdub.sdl/json下に従属させてください。
+Inochi2Dはリアルタイム2Dパペットアニメーションライブラリで、Inochi2DPuppetスタンダードのリファレンス実装です。Inochi2Dはレイヤーに分割された絵から作成されたメッシュを、実行時にパラメーターに基づいて変形させることで機能します。これによって見ている人は、3Dの奥行きと動きを見ているかのように騙されます。
 
 https://user-images.githubusercontent.com/7032834/166389697-02eeeedb-6a44-4570-9254-f6aa4f095300.mp4
 
