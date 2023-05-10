@@ -238,10 +238,15 @@ void inBeginScene() {
     // Make sure to reset our viewport if someone has messed with it
     glViewport(0, 0, inViewportWidth, inViewportHeight);
 
+    // Bind and clear composite framebuffer
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, cfBuffer);
+    glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
+    glClearColor(0, 0, 0, 0);
+
     // Bind our framebuffer
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fBuffer);
 
-    // First clear buffer 1
+    // First clear buffer 0
     glDrawBuffers(1, [GL_COLOR_ATTACHMENT0].ptr);
     glClearColor(inClearColor.r, inClearColor.g, inClearColor.b, inClearColor.a);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -312,6 +317,8 @@ void inEndScene() {
     Runs post processing on the scene
 */
 void inPostProcessScene() {
+    if (postProcessingStack.length == 0) return;
+    
     bool targetBuffer;
 
     float r, g, b, a;
@@ -337,45 +344,43 @@ void inPostProcessScene() {
     glBufferData(GL_ARRAY_BUFFER, 24*float.sizeof, data.ptr, GL_DYNAMIC_DRAW);
 
 
-    if (postProcessingStack.length > 0) {
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, fEmissive);
-        glGenerateMipmap(GL_TEXTURE_2D);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, fEmissive);
+    glGenerateMipmap(GL_TEXTURE_2D);
 
-        // We want to be able to post process all the attachments
-        glBindFramebuffer(GL_FRAMEBUFFER, cfBuffer);
-        glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
-        glClear(GL_COLOR_BUFFER_BIT);
+    // We want to be able to post process all the attachments
+    glBindFramebuffer(GL_FRAMEBUFFER, cfBuffer);
+    glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
+    glClear(GL_COLOR_BUFFER_BIT);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, fBuffer);
-        glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
+    glBindFramebuffer(GL_FRAMEBUFFER, fBuffer);
+    glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
 
-        foreach(shader; postProcessingStack) {
-            targetBuffer = !targetBuffer;
-
-            if (targetBuffer) {
-
-                // Main buffer -> Composite buffer
-                glBindFramebuffer(GL_FRAMEBUFFER, cfBuffer); // dst
-                renderScene(area, shader, fAlbedo, fEmissive, fBump); // src
-            } else {
-
-                // Composite buffer -> Main buffer 
-                glBindFramebuffer(GL_FRAMEBUFFER, fBuffer); // dst
-                renderScene(area, shader, cfAlbedo, cfEmissive, cfBump); // src
-            }
-        }
+    foreach(shader; postProcessingStack) {
+        targetBuffer = !targetBuffer;
 
         if (targetBuffer) {
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, cfBuffer);
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fBuffer);
-            glBlitFramebuffer(
-                0, 0, inViewportWidth, inViewportHeight, // src rect
-                0, 0, inViewportWidth, inViewportHeight, // dst rect
-                GL_COLOR_BUFFER_BIT, // blit mask
-                GL_LINEAR // blit filter
-            );
+
+            // Main buffer -> Composite buffer
+            glBindFramebuffer(GL_FRAMEBUFFER, cfBuffer); // dst
+            renderScene(area, shader, fAlbedo, fEmissive, fBump); // src
+        } else {
+
+            // Composite buffer -> Main buffer 
+            glBindFramebuffer(GL_FRAMEBUFFER, fBuffer); // dst
+            renderScene(area, shader, cfAlbedo, cfEmissive, cfBump); // src
         }
+    }
+
+    if (targetBuffer) {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, cfBuffer);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fBuffer);
+        glBlitFramebuffer(
+            0, 0, inViewportWidth, inViewportHeight, // src rect
+            0, 0, inViewportWidth, inViewportHeight, // dst rect
+            GL_COLOR_BUFFER_BIT, // blit mask
+            GL_LINEAR // blit filter
+        );
     }
     
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
