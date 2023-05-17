@@ -28,7 +28,7 @@ https://user-images.githubusercontent.com/7032834/166389697-02eeeedb-6a44-4570-9
 &nbsp;
 
 # ドキュメント
-現在、仕様と公式ツール群に関するドキュメントの執筆中です。[ここ](https://docs.inochi2d.com)から公式ドキュメントを探すことができます。
+現在、仕様と公式ツール群に関するドキュメントの執筆中です。[こちら](https://docs.inochi2d.com)から公式ドキュメントをご覧いただけます。
 
 &nbsp;
 
