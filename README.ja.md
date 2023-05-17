@@ -34,9 +34,9 @@ https://user-images.githubusercontent.com/7032834/166389697-02eeeedb-6a44-4570-9
 
 # サポート対象のプラットフォーム
 
-このリファレンス実装は、動作にOpenGL 3.1コンテキストを必要とし、また、OpenGL 3.1以降のコンテキストが確立された後に`inInit`が呼び出されるべきです。
+このリファレンス実装は、動作にOpenGL 3.1コンテキストを必要とし、また、OpenGL 3.1(または以降のバージョン)のコンテキストが確立された後に`inInit`が呼び出されるべきです。
 
-私たちは、開発者が任意のバックエンドを接続できるように、レンダリング機能をフロントエンドから分離することに取り組むつもりです。私たちはD言語以外からこのライブラリを使用する方法として[inochi2d-c](https://github.com/Inochi2D/inochi2d-c)を提供し、さらに2つ目のワークグループが[Inox2D](https://github.com/Inochi2D/inox2d)でInochi2D仕様の純粋なRust実装を開発しています。
+私たちは、開発者が任意のバックエンドを接続できるように、レンダリング機能をフロントエンドから分離することに取り組むつもりです。私たちは、D言語以外からこのライブラリを使用する方法として[inochi2d-c](https://github.com/Inochi2D/inochi2d-c)を提供し、さらに2つ目のワークグループが、[Inox2D](https://github.com/Inochi2D/inox2d)でInochi2D仕様の純粋なRust実装を開発しています。
 
 &nbsp;
 
