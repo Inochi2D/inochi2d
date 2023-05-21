@@ -263,7 +263,7 @@ public:
     /**
         Gets the relative Z sorting
     */
-    float relZSort() {
+    ref float relZSort() {
         return zsort_;
     }
 
