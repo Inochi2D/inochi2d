@@ -361,6 +361,9 @@ private:
                 renderStage();
             }
         }
+
+        // Reset draw buffers
+        glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
     }
 
 protected:
