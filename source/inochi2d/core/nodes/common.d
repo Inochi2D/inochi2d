@@ -79,6 +79,13 @@ private {
     }
 }
 
+/**
+    Whether a multi-stage rendering pass should be used for blending
+*/
+bool inUseMultistageBlending() {
+    return hasKHRBlendEquationAdvanced;
+}
+
 void inInitBlending() {
     
     if (hasKHRBlendEquationAdvanced) inAdvancedBlending = true;
