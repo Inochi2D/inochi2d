@@ -20,19 +20,28 @@ uniform vec3 multColor;
 uniform vec3 screenColor;
 uniform float emissionStrength = 1;
 
+vec4 screen(vec3 tcol, float a) {
+    return vec4(vec3(1.0) - ((vec3(1.0)-tcol) * (vec3(1.0)-(screenColor*a))), a);
+}
+
 void main() {
     // Sample texture
     vec4 texColor = texture(albedo, texUVs);
+    vec4 emiColor = texture(emissive, texUVs);
+    vec4 bmpColor = texture(bumpmap, texUVs);
 
-    // Screen color math
-    vec3 screenOut = vec3(1.0) - ((vec3(1.0)-(texColor.xyz)) * (vec3(1.0)-(screenColor*texColor.a)));
+    vec4 mult = vec4(multColor.xyz, 1);
+
+    // Out color math
+    vec4 albedoOut = screen(texColor.xyz, texColor.a) * mult;
+    vec4 emissionOut = screen(emiColor.xyz, texColor.a) * mult;
     
-    // Multiply color math + opacity application.
-    outAlbedo = vec4(screenOut.xyz, texColor.a) * vec4(multColor.xyz, 1) * opacity;
+    // Albedo
+    outAlbedo = albedoOut * opacity;
 
     // Emissive
-    outEmissive = vec4(texture(emissive, texUVs).xyz*emissionStrength, 1) * outAlbedo.a;
+    outEmissive = emissionOut * outAlbedo.a;
 
     // Bumpmap
-    outBump = vec4(texture(bumpmap, texUVs).xyz, 1) * outAlbedo.a;
+    outBump = bmpColor * outAlbedo.a;
 }
