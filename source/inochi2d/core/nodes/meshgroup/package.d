@@ -331,6 +331,7 @@ public:
                     Tuple!(vec2[], mat4*) filterResult = filterChildren(vertices, nodeDeform, &matrix);
                     if (filterResult[0] !is null) {
                         nodeBinding.values[x][y].vertexOffsets = filterResult[0];
+                        nodeBinding.getIsSet()[x][y] = true;
                     }
                 } else if (translateChildren) {
                     auto vertices = [node.localTransform.translation.xy];
@@ -343,6 +344,8 @@ public:
                     if (filterResult[0] !is null) {
                         nodeBindingX.values[x][y] += filterResult[0][0].x;
                         nodeBindingY.values[x][y] += filterResult[0][0].y;
+                        nodeBindingX.getIsSet()[x][y] = true;
+                        nodeBindingY.getIsSet()[x][y] = true;
                     }
 
                 }
@@ -389,7 +392,6 @@ public:
 
                     }
                 }
-                translateChildren = false;
                 param.removeBinding(binding);
             }
 
@@ -398,6 +400,7 @@ public:
         data.vertices.length = 0;
         data.uvs.length = 0;
         rebuffer(data);
+        translateChildren = false;
         precalculated = false;
     }
 
