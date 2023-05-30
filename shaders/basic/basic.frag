@@ -34,7 +34,7 @@ void main() {
 
     // Out color math
     vec4 albedoOut = screen(texColor.xyz, texColor.a) * mult;
-    vec4 emissionOut = screen(emiColor.xyz, texColor.a) * mult;
+    vec4 emissionOut = screen(emiColor.xyz, texColor.a) * mult * emissionStrength;
     
     // Albedo
     outAlbedo = albedoOut * opacity;

@@ -34,7 +34,7 @@ void main() {
     vec4 mult = vec4(multColor.xyz, 1);
 
     // Out color math
-    vec4 emissionOut = screen(emiColor.xyz, texColor.a) * mult;
+    vec4 emissionOut = screen(emiColor.xyz, texColor.a) * mult * emissionStrength;
 
     // Emissive
     outEmissive = emissionOut * texColor.a;

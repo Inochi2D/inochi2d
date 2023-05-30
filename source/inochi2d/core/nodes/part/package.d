@@ -51,6 +51,7 @@ package(inochi2d) {
         GLint gs2mvp;
         GLint gs2offset;
         GLint gs2opacity;
+        GLint gs2EmissionStrength;
         GLint gs2MultColor;
         GLint gs2ScreenColor;
 
@@ -101,6 +102,7 @@ package(inochi2d) {
             gs2opacity = partShaderStage2.getUniformLocation("opacity");
             gs2MultColor = partShaderStage2.getUniformLocation("multColor");
             gs2ScreenColor = partShaderStage2.getUniformLocation("screenColor");
+            gs2EmissionStrength = partShaderStage2.getUniformLocation("emissionStrength");
 
             partMaskShader.use();
             partMaskShader.setUniform(partMaskShader.getUniformLocation("albedo"), 0);
@@ -229,6 +231,7 @@ private:
                 partShaderStage2.setUniform(gs2offset, data.origin);
                 partShaderStage2.setUniform(gs2mvp, inGetCamera().matrix * puppet.transform.matrix * matrix);
                 partShaderStage2.setUniform(gs2opacity, clamp(offsetOpacity * opacity, 0, 1));
+                partShaderStage2.setUniform(gs2EmissionStrength, emissionStrength*offsetEmissionStrength);
 
                 partShaderStage2.setUniform(partShaderStage2.getUniformLocation("emission"), 1);
                 partShaderStage2.setUniform(partShaderStage2.getUniformLocation("bump"), 2);
