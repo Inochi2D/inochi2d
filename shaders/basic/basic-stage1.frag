@@ -3,6 +3,8 @@
     Distributed under the 2-Clause BSD License, see LICENSE file.
     
     Authors: Luna Nielsen
+
+    ADVANCED BLENDING - STAGE 1
 */
 #version 330
 

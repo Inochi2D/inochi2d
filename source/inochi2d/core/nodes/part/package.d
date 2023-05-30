@@ -26,7 +26,8 @@ package(inochi2d) {
         Texture boundAlbedo;
 
         Shader partShader;
-        Shader partShaderAlbedo;
+        Shader partShaderStage1;
+        Shader partShaderStage2;
         Shader partMaskShader;
 
         /* GLSL Uniforms (Normal) */
@@ -38,12 +39,20 @@ package(inochi2d) {
         GLint gEmissionStrength;
 
         
-        /* GLSL Uniforms (Albedo) */
-        GLint gamvp;
-        GLint gaoffset;
-        GLint gaopacity;
-        GLint gaMultColor;
-        GLint gaScreenColor;
+        /* GLSL Uniforms (Stage 1) */
+        GLint gs1mvp;
+        GLint gs1offset;
+        GLint gs1opacity;
+        GLint gs1MultColor;
+        GLint gs1ScreenColor;
+
+        
+        /* GLSL Uniforms (Stage 2) */
+        GLint gs2mvp;
+        GLint gs2offset;
+        GLint gs2opacity;
+        GLint gs2MultColor;
+        GLint gs2ScreenColor;
 
         /* GLSL Uniforms (Masks) */
         GLint mmvp;
@@ -59,7 +68,8 @@ package(inochi2d) {
 
         version(InDoesRender) {
             partShader = new Shader(import("basic/basic.vert"), import("basic/basic.frag"));
-            partShaderAlbedo = new Shader(import("basic/basic.vert"), import("basic/basic-albedo.frag"));
+            partShaderStage1 = new Shader(import("basic/basic.vert"), import("basic/basic-stage1.frag"));
+            partShaderStage2 = new Shader(import("basic/basic.vert"), import("basic/basic-stage2.frag"));
             partMaskShader = new Shader(import("basic/basic.vert"), import("basic/basic-mask.frag"));
 
             incDrawableBindVAO();
@@ -75,13 +85,22 @@ package(inochi2d) {
             gScreenColor = partShader.getUniformLocation("screenColor");
             gEmissionStrength = partShader.getUniformLocation("emissionStrength");
             
-            partShaderAlbedo.use();
-            partShaderAlbedo.setUniform(partShader.getUniformLocation("albedo"), 0);
-            gamvp = partShaderAlbedo.getUniformLocation("mvp");
-            gaoffset = partShaderAlbedo.getUniformLocation("offset");
-            gaopacity = partShaderAlbedo.getUniformLocation("opacity");
-            gaMultColor = partShaderAlbedo.getUniformLocation("multColor");
-            gaScreenColor = partShaderAlbedo.getUniformLocation("screenColor");
+            partShaderStage1.use();
+            partShaderStage1.setUniform(partShader.getUniformLocation("albedo"), 0);
+            gs1mvp = partShaderStage1.getUniformLocation("mvp");
+            gs1offset = partShaderStage1.getUniformLocation("offset");
+            gs1opacity = partShaderStage1.getUniformLocation("opacity");
+            gs1MultColor = partShaderStage1.getUniformLocation("multColor");
+            gs1ScreenColor = partShaderStage1.getUniformLocation("screenColor");
+
+            partShaderStage2.use();
+            partShaderStage2.setUniform(partShaderStage2.getUniformLocation("emissive"), 1);
+            partShaderStage2.setUniform(partShaderStage2.getUniformLocation("bumpmap"), 2);
+            gs2mvp = partShaderStage2.getUniformLocation("mvp");
+            gs2offset = partShaderStage2.getUniformLocation("offset");
+            gs2opacity = partShaderStage2.getUniformLocation("opacity");
+            gs2MultColor = partShaderStage2.getUniformLocation("multColor");
+            gs2ScreenColor = partShaderStage2.getUniformLocation("screenColor");
 
             partMaskShader.use();
             partMaskShader.setUniform(partMaskShader.getUniformLocation("albedo"), 0);
@@ -172,53 +191,56 @@ private:
         }
     }
 
-    /*
-        RENDERING
-    */
-    void drawSelf(bool isMask = false)() {
+    void setupShaderStage(int stage, mat4 matrix) {
+                
+        vec3 clampedTint = tint;
+        if (!offsetTint.x.isNaN) clampedTint.x = clamp(tint.x*offsetTint.x, 0, 1);
+        if (!offsetTint.y.isNaN) clampedTint.y = clamp(tint.y*offsetTint.y, 0, 1);
+        if (!offsetTint.z.isNaN) clampedTint.z = clamp(tint.z*offsetTint.z, 0, 1);
 
-        // In some cases this may happen
-        if (textures.length == 0) return;
+        vec3 clampedScreen = screenTint;
+        if (!offsetScreenTint.x.isNaN) clampedScreen.x = clamp(screenTint.x+offsetScreenTint.x, 0, 1);
+        if (!offsetScreenTint.y.isNaN) clampedScreen.y = clamp(screenTint.y+offsetScreenTint.y, 0, 1);
+        if (!offsetScreenTint.z.isNaN) clampedScreen.z = clamp(screenTint.z+offsetScreenTint.z, 0, 1);
 
-        // Bind the vertex array
-        incDrawableBindVAO();
-        mat4 matrix = transform.matrix();
-        if (overrideTransformMatrix !is null)
-            matrix = overrideTransformMatrix.matrix;
-        if (oneTimeTransform !is null)
-            matrix = (*oneTimeTransform) * matrix;
-        static if (isMask) {
-            partMaskShader.use();
-            partMaskShader.setUniform(offset, data.origin);
-            partMaskShader.setUniform(mmvp, inGetCamera().matrix * puppet.transform.matrix * matrix);
-            partMaskShader.setUniform(mthreshold, clamp(offsetMaskThreshold + maskAlphaThreshold, 0, 1));
-            glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-        } else {
+        
+        switch(stage) {
+            case 0:
+                // STAGE 1 - Advanced blending
 
-            // Albedo-only
-            if (!textures[1] && !textures[2]) {
                 glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_NONE, GL_NONE].ptr);
 
-                partShaderAlbedo.use();
-                partShaderAlbedo.setUniform(gaoffset, data.origin);
-                partShaderAlbedo.setUniform(gamvp, inGetCamera().matrix * puppet.transform.matrix * matrix);
-                partShaderAlbedo.setUniform(gaopacity, clamp(offsetOpacity * opacity, 0, 1));
+                partShaderStage1.use();
+                partShaderStage1.setUniform(gs1offset, data.origin);
+                partShaderStage1.setUniform(gs1mvp, inGetCamera().matrix * puppet.transform.matrix * matrix);
+                partShaderStage1.setUniform(gs1opacity, clamp(offsetOpacity * opacity, 0, 1));
 
-                partShaderAlbedo.setUniform(partShaderAlbedo.getUniformLocation("albedo"), 0);
-                
-                vec3 clampedColor = tint;
-                if (!offsetTint.x.isNaN) clampedColor.x = clamp(tint.x*offsetTint.x, 0, 1);
-                if (!offsetTint.y.isNaN) clampedColor.y = clamp(tint.y*offsetTint.y, 0, 1);
-                if (!offsetTint.z.isNaN) clampedColor.z = clamp(tint.z*offsetTint.z, 0, 1);
-                partShaderAlbedo.setUniform(gaMultColor, clampedColor);
-
-                clampedColor = screenTint;
-                if (!offsetScreenTint.x.isNaN) clampedColor.x = clamp(screenTint.x+offsetScreenTint.x, 0, 1);
-                if (!offsetScreenTint.y.isNaN) clampedColor.y = clamp(screenTint.y+offsetScreenTint.y, 0, 1);
-                if (!offsetScreenTint.z.isNaN) clampedColor.z = clamp(screenTint.z+offsetScreenTint.z, 0, 1);
-                partShaderAlbedo.setUniform(gaScreenColor, clampedColor);
+                partShaderStage1.setUniform(partShaderStage1.getUniformLocation("albedo"), 0);
+                partShaderStage1.setUniform(gs1MultColor, clampedTint);
+                partShaderStage1.setUniform(gs1ScreenColor, clampedScreen);
                 inSetBlendMode(blendingMode, false);
-            } else {
+                break;
+            case 1:
+
+                // STAGE 2 - Basic blending (albedo, bump)
+                glDrawBuffers(3, [GL_NONE, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
+
+                partShaderStage2.use();
+                partShaderStage2.setUniform(gs2offset, data.origin);
+                partShaderStage2.setUniform(gs2mvp, inGetCamera().matrix * puppet.transform.matrix * matrix);
+                partShaderStage2.setUniform(gs2opacity, clamp(offsetOpacity * opacity, 0, 1));
+
+                partShaderStage2.setUniform(partShaderStage2.getUniformLocation("emission"), 1);
+                partShaderStage2.setUniform(partShaderStage2.getUniformLocation("bump"), 2);
+
+                // These can be reused from stage 2
+                partShaderStage1.setUniform(gs2MultColor, clampedTint);
+                partShaderStage1.setUniform(gs2ScreenColor, clampedScreen);
+                inSetBlendMode(blendingMode, true);
+                break;
+            case 3:
+
+                // Basic blending
                 glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
 
                 partShader.use();
@@ -243,27 +265,13 @@ private:
                 if (!offsetScreenTint.z.isNaN) clampedColor.z = clamp(screenTint.z+offsetScreenTint.z, 0, 1);
                 partShader.setUniform(gScreenColor, clampedColor);
                 inSetBlendMode(blendingMode, true);
-            }
-
-            // TODO: EXT MODE
+                break;
+            default: return;
         }
 
-        // Make sure we check whether we're already bound
-        // Otherwise we're wasting GPU resources
-        if (boundAlbedo != textures[0]) {
+    }
 
-            // Bind the textures
-            foreach(i, ref texture; textures) {
-                if (texture) texture.bind(cast(uint)i);
-                else {
-
-                    // Disable texture when none is there.
-                    glActiveTexture(GL_TEXTURE0+cast(uint)i);
-                    glBindTexture(GL_TEXTURE_2D, 0);
-                }
-            }
-        }
-        
+    void renderStage() {
 
         // Enable points array
         glEnableVertexAttribArray(0);
@@ -290,6 +298,66 @@ private:
 
         // Blending barrier
         inBlendModeBarrier();
+    }
+
+    /*
+        RENDERING
+    */
+    void drawSelf(bool isMask = false)() {
+
+        // In some cases this may happen
+        if (textures.length == 0) return;
+
+        // Bind the vertex array
+        incDrawableBindVAO();
+
+        // Calculate matrix
+        mat4 matrix = transform.matrix();
+        if (overrideTransformMatrix !is null)
+            matrix = overrideTransformMatrix.matrix;
+        if (oneTimeTransform !is null)
+            matrix = (*oneTimeTransform) * matrix;
+
+        // Make sure we check whether we're already bound
+        // Otherwise we're wasting GPU resources
+        if (boundAlbedo != textures[0]) {
+
+            // Bind the textures
+            foreach(i, ref texture; textures) {
+                if (texture) texture.bind(cast(uint)i);
+                else {
+
+                    // Disable texture when none is there.
+                    glActiveTexture(GL_TEXTURE0+cast(uint)i);
+                    glBindTexture(GL_TEXTURE_2D, 0);
+                }
+            }
+        }
+
+        static if (isMask) {
+            partMaskShader.use();
+            partMaskShader.setUniform(offset, data.origin);
+            partMaskShader.setUniform(mmvp, inGetCamera().matrix * puppet.transform.matrix * matrix);
+            partMaskShader.setUniform(mthreshold, clamp(offsetMaskThreshold + maskAlphaThreshold, 0, 1));
+            glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+
+            renderStage();
+        } else {
+
+            if (inUseMultistageBlending()) {
+
+                // TODO: Detect if this Part is NOT in a composite,
+                // If so, we can relatively safely assume that we may skip stage 1.
+                setupShaderStage(0, matrix);
+                renderStage();
+                setupShaderStage(1, matrix);
+                renderStage();
+
+            } else {
+                setupShaderStage(2, matrix);
+                renderStage();
+            }
+        }
     }
 
 protected:
