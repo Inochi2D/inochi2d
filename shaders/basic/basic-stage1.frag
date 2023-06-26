@@ -13,6 +13,10 @@
 #extension GL_KHR_blend_equation_advanced : enable
 #endif
 
+#ifdef GL_ARB_sample_shading
+#extension GL_ARB_sample_shading : enable
+#endif
+
 in vec2 texUVs;
 
 // Handle layout qualifiers for advanced blending specially
