@@ -210,7 +210,7 @@ private:
             case 0:
                 // STAGE 1 - Advanced blending
 
-                glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_NONE, GL_NONE].ptr);
+                glDrawBuffers(1, [GL_COLOR_ATTACHMENT0].ptr);
 
                 partShaderStage1.use();
                 partShaderStage1.setUniform(gs1offset, data.origin);
@@ -225,7 +225,7 @@ private:
             case 1:
 
                 // STAGE 2 - Basic blending (albedo, bump)
-                glDrawBuffers(3, [GL_NONE, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
+                glDrawBuffers(2, [GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
 
                 partShaderStage2.use();
                 partShaderStage2.setUniform(gs2offset, data.origin);
@@ -233,15 +233,15 @@ private:
                 partShaderStage2.setUniform(gs2opacity, clamp(offsetOpacity * opacity, 0, 1));
                 partShaderStage2.setUniform(gs2EmissionStrength, emissionStrength*offsetEmissionStrength);
 
-                partShaderStage2.setUniform(partShaderStage2.getUniformLocation("emission"), 1);
-                partShaderStage2.setUniform(partShaderStage2.getUniformLocation("bump"), 2);
+                partShaderStage2.setUniform(partShaderStage2.getUniformLocation("emission"), 0);
+                partShaderStage2.setUniform(partShaderStage2.getUniformLocation("bump"), 1);
 
                 // These can be reused from stage 2
                 partShaderStage1.setUniform(gs2MultColor, clampedTint);
                 partShaderStage1.setUniform(gs2ScreenColor, clampedScreen);
                 inSetBlendMode(blendingMode, true);
                 break;
-            case 3:
+            case 2:
 
                 // Basic blending
                 glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
@@ -274,7 +274,7 @@ private:
 
     }
 
-    void renderStage() {
+    void renderStage(bool advanced=true)(BlendMode mode) {
 
         // Enable points array
         glEnableVertexAttribArray(0);
@@ -299,8 +299,10 @@ private:
         glDisableVertexAttribArray(1);
         glDisableVertexAttribArray(2);
 
-        // Blending barrier
-        inBlendModeBarrier();
+        static if (advanced) {
+            // Blending barrier
+            inBlendModeBarrier(mode);
+        }
     }
 
     /*
@@ -342,28 +344,37 @@ private:
             partMaskShader.setUniform(offset, data.origin);
             partMaskShader.setUniform(mmvp, inGetCamera().matrix * puppet.transform.matrix * matrix);
             partMaskShader.setUniform(mthreshold, clamp(offsetMaskThreshold + maskAlphaThreshold, 0, 1));
+
+            // Make sure the equation is correct
+            glBlendEquation(GL_FUNC_ADD);
             glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-            renderStage();
+            renderStage!false(blendingMode);
         } else {
 
-            if (inUseMultistageBlending()) {
+            bool hasEmissionOrBumpmap = (textures[1] || textures[2]);
+
+            if (inUseMultistageBlending(blendingMode)) {
 
                 // TODO: Detect if this Part is NOT in a composite,
                 // If so, we can relatively safely assume that we may skip stage 1.
                 setupShaderStage(0, matrix);
-                renderStage();
-                setupShaderStage(1, matrix);
-                renderStage();
-
+                renderStage(blendingMode);
+                
+                // Only do stage 2 if we have emission or bumpmap textures.
+                if (hasEmissionOrBumpmap) {
+                    setupShaderStage(1, matrix);
+                    renderStage!false(blendingMode);
+                }
             } else {
                 setupShaderStage(2, matrix);
-                renderStage();
+                renderStage!false(blendingMode);
             }
         }
 
         // Reset draw buffers
         glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
+        glBlendEquation(GL_FUNC_ADD);
     }
 
 protected:
