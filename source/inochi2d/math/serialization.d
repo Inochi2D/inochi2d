@@ -10,7 +10,7 @@ void serialize(V, S)(V value, ref S serializer) if(isVector!V) {
     auto state = serializer.arrayBegin();
     static foreach(i; 0..V.dimension) {
         serializer.elemBegin;
-        serializer.putValue(value.vector[i]);
+        serializer.serializeValue(value.vector[i]);
     }
     serializer.arrayEnd(state);
 }
@@ -23,7 +23,7 @@ void serialize(T, S)(T matr, ref S serializer) if(isMatrix!T) {
     static foreach(y; 0..T.rows) {
         static foreach(x; 0..T.cols) {
             serializer.elemBegin;
-            serializer.putValue(matr.matrix[x][y]);
+            serializer.serializeValue(matr.matrix[x][y]);
         }
     }
     serializer.arrayEnd(state);
