@@ -8,8 +8,9 @@ If a vulnerability is sufficiently severe we may backport fixes to earlier versi
 | Version | Supported          |
 | ------- | ------------------ |
 | 0.6.x   | :x:                |
-| 0.7.x   | :white_check_mark: |
-| 0.8.x*  | :white_check_mark: |
+| 0.7.x   | :x:                |
+| 0.8.x   | :white_check_mark: |
+| 0.9.x*  | :white_check_mark: |
 
 \* = Version currently in active development
 
