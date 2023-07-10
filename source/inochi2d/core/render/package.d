@@ -121,7 +121,7 @@ private:
     Mutex textureMutex;
 
     /// List of textures managed by this renderer.
-    InochiTexture[] textures;
+    Texture[] textures;
 
 protected:
 
@@ -148,7 +148,7 @@ protected:
         Deallocates a resource
     */
     final
-    void deallocResource(RendererResource* ptr, bool stopManaging=true) {
+    void deallocResource(RendererResourceData* ptr, bool stopManaging=true) {
         import std.algorithm.searching : countUntil;
         import std.algorithm.mutation : remove;
 
@@ -234,7 +234,12 @@ public:
     /**
         Creates a texture from a TextureData object
     */
-    abstract InochiTexture createTexture(TextureData data);
+    abstract Texture createTexture(TextureData data);
+
+    /**
+        Gets the maximum level of anisotropy
+    */
+    abstract float getMaxAnisotropy();
 
     /**
         Creates a texture from a file
@@ -243,7 +248,7 @@ public:
         based of the contents of the file.
     */
     final
-    InochiTexture createTexture(string file, int channels=0) {
+    Texture createTexture(string file, int channels=0) {
         return createTexture(TextureData(file, channels));
     }
     

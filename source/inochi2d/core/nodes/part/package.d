@@ -128,7 +128,7 @@ package(inochi2d) {
     for real-time use when you want to add/remove parts on the fly
 */
 Part inCreateSimplePart(string file, Node parent = null) {
-    return inCreateSimplePart(ShallowTexture(file), parent, file);
+    return inCreateSimplePart(TextureData(file), parent, file);
 }
 
 /**
@@ -137,8 +137,8 @@ Part inCreateSimplePart(string file, Node parent = null) {
     This is unoptimal for normal use and should only be used
     for real-time use when you want to add/remove parts on the fly
 */
-Part inCreateSimplePart(ShallowTexture texture, Node parent = null, string name = "New Part") {
-	return inCreateSimplePart(new Texture(texture), parent, name);
+Part inCreateSimplePart(TextureData texture, Node parent = null, string name = "New Part") {
+	return inCreateSimplePart(inRendererGetForThisThread().createTexture(texture), parent, name);
 }
 
 /**
@@ -149,10 +149,10 @@ Part inCreateSimplePart(ShallowTexture texture, Node parent = null, string name 
 */
 Part inCreateSimplePart(Texture tex, Node parent = null, string name = "New Part") {
 	MeshData data = MeshData([
-		vec2(-(tex.width/2), -(tex.height/2)),
-		vec2(-(tex.width/2), tex.height/2),
-		vec2(tex.width/2, -(tex.height/2)),
-		vec2(tex.width/2, tex.height/2),
+		vec2(-(tex.getWidth/2), -(tex.getHeight/2)),
+		vec2(-(tex.getWidth/2), tex.getHeight/2),
+		vec2(tex.getWidth/2, -(tex.getHeight/2)),
+		vec2(tex.getWidth/2, tex.getHeight/2),
 	], 
 	[
 		vec2(0, 0),
@@ -878,8 +878,8 @@ public:
     Draws a texture at the transform of the specified part
 */
 void inDrawTextureAtPart(Texture texture, Part part) {
-    const float texWidthP = texture.width()/2;
-    const float texHeightP = texture.height()/2;
+    const float texWidthP = texture.getWidth()/2;
+    const float texHeightP = texture.getHeight()/2;
 
     // Bind the vertex array
     incDrawableBindVAO();
@@ -935,8 +935,8 @@ void inDrawTextureAtPart(Texture texture, Part part) {
     Draws a texture at the transform of the specified part
 */
 void inDrawTextureAtPosition(Texture texture, vec2 position, float opacity = 1, vec3 color = vec3(1, 1, 1), vec3 screenColor = vec3(0, 0, 0)) {
-    const float texWidthP = texture.width()/2;
-    const float texHeightP = texture.height()/2;
+    const float texWidthP = texture.getWidth()/2;
+    const float texHeightP = texture.getHeight()/2;
 
     // Bind the vertex array
     incDrawableBindVAO();
@@ -1027,9 +1027,9 @@ void inDrawTextureAtRect(Texture texture, rect area, rect uvs = rect(0, 0, 1, 1)
     glBindBuffer(GL_ARRAY_BUFFER, sUVBuffer);
     glBufferData(GL_ARRAY_BUFFER, 4*vec2.sizeof, (cast(float[])[
         uvs.x, uvs.y,
-        uvs.width, uvs.y,
-        uvs.x, uvs.height,
-        uvs.width, uvs.height,
+        uvs.getWidth, uvs.y,
+        uvs.x, uvs.getHeight,
+        uvs.getWidth, uvs.getHeight,
     ]).ptr, GL_STATIC_DRAW);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, null);
 

@@ -71,14 +71,14 @@ public:
     int height;
 
     /**
+        Bits per pixel
+    */
+    int bpc;
+
+    /**
         Amount of color channels
     */
     int channels;
-
-    /**
-        Amount of channels to conver to when passed to OpenGL
-    */
-    int convChannels;
 
     /**
         Loads a shallow texture from image file
@@ -88,14 +88,14 @@ public:
         * TGA 8-bit non-palleted
         * JPEG baseline
     */
-    this(string file, int channels = 0) {
+    this(string file, int channels = 0, int bpc=8) {
         import std.file : read;
 
         // Ensure we keep this ref alive until we're done with it
         ubyte[] fData = cast(ubyte[])read(file);
 
         // Load image from disk, as <channels> 8-bit
-        IFImage image = read_image(fData, 0, 8);
+        IFImage image = read_image(fData, 0, bpc);
         enforce( image.e == 0, "%s: %s".format(IF_ERROR[image.e], file));
         scope(exit) image.free();
 
@@ -107,7 +107,7 @@ public:
         this.width = image.w;
         this.height = image.h;
         this.channels = image.c;
-        this.convChannels = channels == 0 ? image.c : channels;
+        this.bpc = bpc;
     }
 
     /**
@@ -120,10 +120,10 @@ public:
 
         By setting channels to a specific value you can force a specific color mode
     */
-    this(ubyte[] buffer, int channels = 0) {
+    this(ubyte[] buffer, int channels = 0, int bpc=8) {
 
         // Load image from disk, as <channels> 8-bit
-        IFImage image = read_image(buffer, 0, 8);
+        IFImage image = read_image(buffer, 0, bpc);
         enforce( image.e == 0, "%s".format(IF_ERROR[image.e]));
         scope(exit) image.free();
 
@@ -135,7 +135,7 @@ public:
         this.width = image.w;
         this.height = image.h;
         this.channels = image.c;
-        this.convChannels = channels == 0 ? image.c : channels;
+        this.bpc = bpc;
     }
     
     /**
@@ -148,20 +148,7 @@ public:
         this.width = w;
         this.height = h;
         this.channels = channels;
-        this.convChannels = channels;
-    }
-    
-    /**
-        Loads uncompressed texture from memory
-    */
-    this(ubyte[] buffer, int w, int h, int channels = 4, int convChannels = 4) {
-        this.data = buffer;
-
-        // Set the width/height data
-        this.width = w;
-        this.height = h;
-        this.channels = channels;
-        this.convChannels = convChannels;
+        this.bpc = 8;
     }
 
     /**
@@ -181,8 +168,21 @@ public:
     }
 }
 
-void inTexPremultiply(ref ubyte[] data, int channels = 4) {
+pragma(inline, true)
+void inTexPremultiply(ref TextureData data) {
+    inTexPremultiply(data.data, data.channels, data.bpc);
+}
+pragma(inline, true)
+void inTexUnPremultiply(ref TextureData data) {
+    if (data.channels < 4) return;
+    if (data.bpc != 8)     return; // TODO: 16 bit un-premultiply.
+
+    inTexUnPremuliply(data.data);
+}
+
+void inTexPremultiply(ref ubyte[] data, int channels = 4, int bpc=8) {
     if (channels < 4) return;
+    if (bpc != 8) return; // TODO: 16 bit premultiply.
 
     foreach(i; 0..data.length/channels) {
 
@@ -193,7 +193,7 @@ void inTexPremultiply(ref ubyte[] data, int channels = 4) {
     }
 }
 
-void inTexUnPremuliply(ref ubyte[] data) {
+void inTexUnPremuliply(ref ubyte[] data, int bpc=8) {
     foreach(i; 0..data.length/4) {
         if (data[((i*4)+3)] == 0) continue;
 

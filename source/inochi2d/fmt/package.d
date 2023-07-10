@@ -285,7 +285,7 @@ ubyte[] inWriteINPPuppetMemory(Puppet p) {
     app ~= nativeToBigEndian(cast(uint)p.textureSlots.length)[0..4];
     foreach(texture; p.textureSlots) {
         int e;
-        ubyte[] tex = write_image_mem(IF_TGA, texture.width, texture.height, texture.getTextureData(), texture.channels, e);
+        ubyte[] tex = write_image_mem(IF_TGA, texture.getWidth, texture.getHeight, texture.getTextureData(), texture.getChannels, e);
         app ~= nativeToBigEndian(cast(uint)tex.length)[0..4];
         app ~= (cast(ubyte)IN_TEX_TGA);
         app ~= (tex);
