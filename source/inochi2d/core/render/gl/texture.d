@@ -1,4 +1,12 @@
-module inochi2d.core.render.gl31.texture;
+/*
+    Inochi2D GL Texture
+
+    Copyright © 2023, Inochi2D Project
+    Distributed under the 2-Clause BSD License, see LICENSE file.
+    
+    Authors: Luna Nielsen
+*/
+module inochi2d.core.render.gl.texture;
 import inochi2d.core.render.texture;
 import inochi2d.core.texture;
 import bindbc.opengl;

@@ -218,6 +218,11 @@ package(inochi2d):
 public:
 
     /**
+        Backend render resource data
+    */
+    RendererResource* resource;
+
+    /**
         Whether the node is enabled
     */
     bool enabled = true;
@@ -733,6 +738,7 @@ public:
         Finalizes this node and any children
     */
     void finalize() {
+        inRendererGetForThisThread().createResourcesFor(this);
         foreach(child; children) {
             child.finalize();
         }

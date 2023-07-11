@@ -1,10 +1,12 @@
 /*
-    Copyright © 2020, Inochi2D Project
+    Inochi2D GL Shader
+
+    Copyright © 2023, Inochi2D Project
     Distributed under the 2-Clause BSD License, see LICENSE file.
     
     Authors: Luna Nielsen
 */
-module inochi2d.core.shader;
+module inochi2d.core.render.gl.shader;
 import inochi2d.math;
 import std.string;
 import bindbc.opengl;
@@ -12,7 +14,7 @@ import bindbc.opengl;
 /**
     A shader
 */
-class Shader {
+class GLShader {
 private:
     GLuint shaderProgram;
     GLuint fragShader;
@@ -140,5 +142,41 @@ public:
 
     void setUniform(GLint uniform, mat4 value) {
         glUniformMatrix4fv(uniform, 1, GL_TRUE, value.ptr);
+    }
+}
+
+/**
+    A post processing shader
+*/
+struct GLPostProcessingShader {
+private:
+    GLint[string] uniformCache;
+
+public:
+    Shader shader;
+    this(Shader shader) {
+        this.shader = shader;
+
+        shader.use();
+        shader.setUniform(shader.getUniformLocation("albedo"), 0);
+        shader.setUniform(shader.getUniformLocation("emissive"), 1);
+        shader.setUniform(shader.getUniformLocation("bumpmap"), 2);
+    }
+
+    /**
+        Gets the location of the specified uniform
+    */
+    GLuint getUniform(string name) {
+        if (this.hasUniform(name)) return uniformCache[name];
+        GLint element = shader.getUniformLocation(name);
+        uniformCache[name] = element;
+        return element;
+    }
+
+    /**
+        Returns true if the uniform is present in the shader cache 
+    */
+    bool hasUniform(string name) {
+        return (name in uniformCache) !is null;
     }
 }

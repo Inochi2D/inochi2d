@@ -19,20 +19,6 @@ import std.string;
 private GLuint drawableVAO;
 
 package(inochi2d) {
-    void inInitDrawable() {
-        version(InDoesRender) glGenVertexArrays(1, &drawableVAO);
-    }
-
-
-    /**
-        Binds the internal vertex array for rendering
-    */
-    void incDrawableBindVAO() {
-
-        // Bind our vertex array
-        glBindVertexArray(drawableVAO);
-    }
-
     bool doGenerateBounds = false;
 }
 
@@ -95,21 +81,6 @@ private:
     }
 
 protected:
-    /**
-        OpenGL Index Buffer Object
-    */
-    GLuint ibo;
-
-    /**
-        OpenGL Vertex Buffer Object
-    */
-    GLuint vbo;
-
-    /**
-        OpenGL Vertex Buffer Object for deformation
-    */
-    GLuint dbo;
-
     /**
         The mesh data of this part
 

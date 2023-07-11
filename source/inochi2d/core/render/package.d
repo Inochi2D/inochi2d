@@ -1,3 +1,11 @@
+/*
+    Inochi2D Rendering
+
+    Copyright © 2023, Inochi2D Project
+    Distributed under the 2-Clause BSD License, see LICENSE file.
+    
+    Authors: Luna Nielsen
+*/
 module inochi2d.core.render;
 import inochi2d.core.render.texture;
 import inochi2d.core.nodes;
@@ -88,19 +96,10 @@ bool inRendererDestroyGlobal() {
     }
     return false;
 }
-
-/**
-    A renderer resource
-*/
-struct RendererResource {
-    InochiRenderer renderer;
-    RendererResourceData* data;
-}
-
 /**
     Renderer resource data
 */
-struct RendererResourceData {
+struct RendererResource {
     string tag;
     void* resourcePointer;
 }
@@ -115,7 +114,7 @@ private:
     Mutex resourceMutex;
 
     /// List of resource pointers managed by this renderer.
-    RendererResourceData*[] resources;
+    RendererResource*[] resources;
     
     // Mutex for resources
     Mutex textureMutex;
@@ -128,17 +127,14 @@ protected:
     /**
         Allocates a resource
     */
-    RendererResource allocResource(T)(string tag) {
+    RendererResource* allocResource(T)(string tag) {
+
+        RendererResource* res = new RendererResourceData(tag, new T);
 
         // Add to local resource cache
         resourceMutex.lock();
-            resources ~= new RendererResourceData(tag, new T);
+            resources ~= res;
         resourceMutex.unlock();
-
-        // Create resource
-        RendererResource res;
-        res.renderer = this;
-        res.data = resources[$-1];
 
         // Return resource
         return res;
@@ -148,7 +144,7 @@ protected:
         Deallocates a resource
     */
     final
-    void deallocResource(RendererResourceData* ptr, bool stopManaging=true) {
+    void deallocResource(RendererResource* ptr, bool stopManaging=true) {
         import std.algorithm.searching : countUntil;
         import std.algorithm.mutation : remove;
 
@@ -159,7 +155,7 @@ protected:
             if (ptrpos >= 0) {
 
                 // Clear data
-                *resources[ptrpos] = RendererResourceData.init;
+                *resources[ptrpos] = RendererResource.init;
 
                 // If the item should stop being managed, remove it from the list
                 if (stopManaging) resources = resources.remove(ptrpos);
@@ -242,6 +238,56 @@ public:
     abstract float getMaxAnisotropy();
 
     /**
+        Sets the viewport
+    */
+    abstract void getViewport(out int width, out int height);
+
+    /**
+        Sets the viewport
+    */
+    abstract void setViewport(int width, int height);
+
+    /**
+        Gets the clear color
+    */
+    abstract void getClearColor(out float r, out float g, out float b, out float a);
+
+    /**
+        Sets the clear color
+    */
+    abstract void setClearColor(float r, float g, float b, float a);
+
+    /**
+        Begins rendering the scene
+    */
+    abstract void beginScene();
+
+    /**
+        Ends rendering the scene
+    */
+    abstract void endScene();
+
+    /**
+        Draws the scene
+    */
+    abstract void drawScene();
+
+    /**
+        Sets whether post-processing should be enabled
+    */
+    abstract bool setPostprocess(bool state);
+
+    /**
+        Gets the ambient lighting color
+    */
+    abstract void getAmbientLightColor(out float r, out float g, out float b);
+
+    /**
+        Sets the ambient lighting
+    */
+    abstract void setAmbientLightColor(float r, float g, float b);
+
+    /**
         Creates a texture from a file
 
         When channels is set to 0 the channel count will be 
@@ -302,4 +348,53 @@ public:
         this.destroyAllResources();
         this.destroyAllTextures();
     }
+}
+
+/**
+    Begins a Inochi2D rendering pass
+*/
+void inBeginScene() {
+    inRendererGetForThisThread().beginScene();
+}
+
+/**
+    Ends a Inochi2D rendering pass
+*/
+void inEndScene() {
+    inRendererGetForThisThread().endScene();
+}
+
+/**
+    Draw scene to area
+*/
+void inDrawScene(vec4 area) {
+    inRendererGetForThisThread().drawScene(area);
+}
+
+/**
+    Sets the viewport area to render to
+*/
+void inSetViewport(int width, int height) nothrow {
+    inRendererGetForThisThread().setViewport(width, height);
+}
+
+/**
+    Gets the viewport
+*/
+void inGetViewport(out int width, out int height) nothrow {
+    inRendererGetForThisThread().getViewport(width, height);
+}
+
+/**
+    Sets the background clear color
+*/
+void inSetClearColor(float r, float g, float b, float a) nothrow {
+    inRendererGetForThisThread().setClearColor(r, g, b, a);
+}
+
+/**
+    Gets the clear color
+*/
+void inGetClearColor(out float r, out float g, out float b, out float a) nothrow {
+    inRendererGetForThisThread().getClearColor(r, g, b, a);
 }
