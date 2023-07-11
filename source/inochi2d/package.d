@@ -22,7 +22,20 @@ private double function() tfunc_;
     Run this after OpenGL context has been set current
 */
 void inInit(double function() timeFunc) {
-    initRenderer();
+
+    inInitNodes();
+    inInitPart();
+    inInitMask();
+    inInitComposite();
+    inInitMeshGroup();
+
+    // Set default parameter factory
+    inParameterSetFactory((data) {
+        import fghj : deserializeValue;
+        Parameter param = new Parameter;
+        data.deserializeValue(param);
+        return param;
+    });
     tfunc_ = timeFunc;
 }
 

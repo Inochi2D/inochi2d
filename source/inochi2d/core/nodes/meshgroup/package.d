@@ -13,7 +13,6 @@ import inochi2d.fmt.serialize;
 import inochi2d.math;
 import inochi2d.math.triangle;
 import std.exception;
-import inochi2d.core.dbg;
 import inochi2d.core;
 import std.typecons: tuple, Tuple;
 import std.stdio;

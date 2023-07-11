@@ -12,7 +12,6 @@ import inochi2d.core.nodes.drivers;
 import inochi2d.core.nodes.common;
 //import inochi2d.core.nodes;
 import inochi2d.fmt;
-import inochi2d.core.dbg;
 //import inochi2d.core;
 import inochi2d.math;
 import inochi2d.phys;

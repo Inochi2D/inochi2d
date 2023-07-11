@@ -10,7 +10,6 @@ module inochi2d.core.nodes;
 import inochi2d.math;
 import inochi2d.fmt.serialize;
 import inochi2d.math.serialization;
-import inochi2d.core.dbg;
 import inochi2d.core;
 
 public import inochi2d.core.nodes.part;

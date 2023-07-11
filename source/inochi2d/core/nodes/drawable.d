@@ -13,7 +13,6 @@ import inochi2d.fmt.serialize;
 import inochi2d.math;
 import bindbc.opengl;
 import std.exception;
-import inochi2d.core.dbg;
 import inochi2d.core;
 import std.string;
 
