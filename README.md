@@ -33,9 +33,10 @@ Documentation is currently in the process of being written for the spec and the 
 &nbsp;
 
 # Supported platforms
-The reference implementation available here currently requires a OpenGL 3.1 context to function, `inInit` should be called *after* a OpenGL 3.1 (or higher) context has been established.
+Inochi2D is a "bring your own renderer" API, we provide a OpenGL 3.1 backend to get you started easily and to work as a reference on how a renderer can be implemented.  
+To use the OpenGL renderer call `inRendererInitGL` during initialization of Inochi2D, a OpenGL 3.1 core context needs to be present.
 
-We will be working on splitting the rendering out from the frontend, so that developers can plug their own backend in. We provide [inochi2d-c](https://github.com/Inochi2D/inochi2d-c) as a way to use this library from non-D languages, additionally a second workgroup is making a pure Rust implementation of the Inochi2D specification over at [Inox2D](https://github.com/Inochi2D/inox2d).
+We provide [inochi2d-c](https://github.com/Inochi2D/inochi2d-c) as a way to use this library from non-D languages and we will be providing a layer to allow non-D languages to create rendering backends, additionally a second workgroup is making a pure Rust implementation of the Inochi2D specification over at [Inox2D](https://github.com/Inochi2D/inox2d).
 
 &nbsp;
 
