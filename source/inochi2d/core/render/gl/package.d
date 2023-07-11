@@ -9,14 +9,15 @@
 deprecated("OpenGL backend will be moving to a seperate package in the future!")
 module inochi2d.core.render.gl;
 import inochi2d.core.render.gl.texture;
+import inochi2d.core.render.gl.blending;
 import inochi2d.core.render;
 import bindbc.opengl;
 
 class GLRenderer : InochiRenderer {
 private:
     // Viewport
-    int inViewportWidth;
-    int inViewportHeight;
+    int viewportWidth;
+    int viewportHeight;
 
     // Scene Buffers
     GLuint sceneVAO;
@@ -55,12 +56,12 @@ private:
         bool targetBuffer;
 
         float r, g, b, a;
-        inGetClearColor(r, g, b, a);
+        getClearColor(r, g, b, a);
 
         // Render area
         vec4 area = vec4(
             0, 0,
-            inViewportWidth, inViewportHeight
+            viewportWidth, viewportHeight
         );
 
         // Tell OpenGL the resolution to render at
@@ -109,8 +110,8 @@ private:
             glBindFramebuffer(GL_READ_FRAMEBUFFER, cfBuffer);
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fBuffer);
             glBlitFramebuffer(
-                0, 0, inViewportWidth, inViewportHeight, // src rect
-                0, 0, inViewportWidth, inViewportHeight, // dst rect
+                0, 0, viewportWidth, viewportHeight, // src rect
+                0, 0, viewportWidth, viewportHeight, // dst rect
                 GL_COLOR_BUFFER_BIT, // blit mask
                 GL_LINEAR // blit filter
             );
@@ -143,7 +144,7 @@ private:
 
         // framebuffer size
         GLint fbSizeUniform = shaderToUse.getUniform("fbSize");
-        if (fbSizeUniform != -1) shaderToUse.shader.setUniform(fbSizeUniform, vec2(inViewportWidth, inViewportHeight));
+        if (fbSizeUniform != -1) shaderToUse.shader.setUniform(fbSizeUniform, vec2(viewportWidth, viewportHeight));
 
         // Bind the texture
         glActiveTexture(GL_TEXTURE0);
@@ -177,21 +178,13 @@ protected:
 
         // Set the viewport and by extension set the textures
         this.setViewport(640, 480);
-        
-        // Initialize dynamic meshes
-        // inInitBlending();
-        // inInitNodes();
-        // inInitDrawable();
-        // inInitPart();
-        // inInitMask();
-        // inInitComposite();
-        // inInitMeshGroup();
-        // version(InDoesRender) inInitDebug();
+        inGLInitBlending();
 
         // Some defaults that should be changed by app writer
         inCamera = new Camera;
 
         inClearColor = vec4(0, 0, 0, 0);
+
         // Shader for scene
         basicSceneShader = PostProcessingShader(new Shader(import("scene.vert"), import("scene.frag")));
         glGenVertexArrays(1, &sceneVAO);
@@ -296,8 +289,8 @@ public:
     
     override
     void getViewport(out int width, out int height) nothrow {
-        width = inViewportWidth;
-        height = inViewportHeight;
+        width = viewportWidth;
+        height = viewportHeight;
     }
     
     override
@@ -329,7 +322,7 @@ public:
         glDisable(GL_CULL_FACE);
 
         // Make sure to reset our viewport if someone has messed with it
-        glViewport(0, 0, inViewportWidth, inViewportHeight);
+        glViewport(0, 0, viewportWidth, viewportHeight);
 
         // Bind and clear composite framebuffer
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, cfBuffer);
@@ -439,101 +432,77 @@ public:
         
     }
     
-}
+    //
+    // GL SPECIFIC FEATURES
+    //
 
-// Internal rendering constants
-private {
-}
+    void compositePrepareRender() {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, cfAlbedo);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, cfEmissive);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, cfBump);
+    }
 
-// Things only available internally for Inochi2D rendering
-package(inochi2d) {
+    /**
+        Gets the Inochi2D framebuffer 
+
+        DO NOT MODIFY THIS IMAGE!
+    */
+    GLuint getFramebuffer() {
+        return fBuffer;
+    }
+
+    /**
+        Gets the Inochi2D framebuffer render image
+
+        DO NOT MODIFY THIS IMAGE!
+    */
+    GLuint getRenderImage() {
+        return fAlbedo;
+    }
+
+    /**
+        Gets the Inochi2D composite render image
+
+        DO NOT MODIFY THIS IMAGE!
+    */
+    GLuint getCompositeImage() {
+        return cfAlbedo;
+    }
     
     /**
-        Initializes the renderer
+        Returns length of viewport data for extraction
     */
-    void initRenderer() {
-        
+    size_t viewportDataLength() {
+        return viewportWidth * viewportHeight * 4;
     }
-}
 
-/**
-    Draw scene to area
-*/
-void inGLDrawScene(vec4 area) {
-}
+    /**
+        Dumps viewport data to texture stream
+    */
+    void dumpViewport(ref ubyte[] dumpTo) {
+        import std.exception : enforce;
+        enforce(dumpTo.length >= inViewportDataLength(), "Invalid data destination length for inDumpViewport");
+        glBindTexture(GL_TEXTURE_2D, fAlbedo);
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, dumpTo.ptr);
 
-void inGLCompositePrepareRender() {
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, cfAlbedo);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, cfEmissive);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, cfBump);
-}
+        // We need to flip it because OpenGL renders stuff with a different coordinate system
+        ubyte[] tmpLine = new ubyte[viewportWidth * 4];
+        size_t ri = 0;
+        foreach_reverse(i; viewportHeight/2..viewportHeight) {
+            size_t lineSize = viewportWidth*4;
+            size_t oldLineStart = (lineSize*ri);
+            size_t newLineStart = (lineSize*i);
+            import core.stdc.string : memcpy;
 
-/**
-    Gets the Inochi2D framebuffer 
-
-    DO NOT MODIFY THIS IMAGE!
-*/
-GLuint inGLGetFramebuffer() {
-    return fBuffer;
-}
-
-/**
-    Gets the Inochi2D framebuffer render image
-
-    DO NOT MODIFY THIS IMAGE!
-*/
-GLuint inGLGetRenderImage() {
-    return fAlbedo;
-}
-
-/**
-    Gets the Inochi2D composite render image
-
-    DO NOT MODIFY THIS IMAGE!
-*/
-GLuint inGLGetCompositeImage() {
-    return cfAlbedo;
-}
-
-/**
-    Gets the viewport
-*/
-void inGLGetViewport(out int width, out int height) nothrow {
-}
-
-/**
-    Returns length of viewport data for extraction
-*/
-size_t inGLViewportDataLength() {
-    return inViewportWidth * inViewportHeight * 4;
-}
-
-/**
-    Dumps viewport data to texture stream
-*/
-void inGLDumpViewport(ref ubyte[] dumpTo) {
-    import std.exception : enforce;
-    enforce(dumpTo.length >= inViewportDataLength(), "Invalid data destination length for inDumpViewport");
-    glBindTexture(GL_TEXTURE_2D, fAlbedo);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, dumpTo.ptr);
-
-    // We need to flip it because OpenGL renders stuff with a different coordinate system
-    ubyte[] tmpLine = new ubyte[inViewportWidth * 4];
-    size_t ri = 0;
-    foreach_reverse(i; inViewportHeight/2..inViewportHeight) {
-        size_t lineSize = inViewportWidth*4;
-        size_t oldLineStart = (lineSize*ri);
-        size_t newLineStart = (lineSize*i);
-        import core.stdc.string : memcpy;
-
-        memcpy(tmpLine.ptr, dumpTo.ptr+oldLineStart, lineSize);
-        memcpy(dumpTo.ptr+oldLineStart, dumpTo.ptr+newLineStart, lineSize);
-        memcpy(dumpTo.ptr+newLineStart, tmpLine.ptr, lineSize);
-        
-        ri++;
+            memcpy(tmpLine.ptr, dumpTo.ptr+oldLineStart, lineSize);
+            memcpy(dumpTo.ptr+oldLineStart, dumpTo.ptr+newLineStart, lineSize);
+            memcpy(dumpTo.ptr+newLineStart, tmpLine.ptr, lineSize);
+            
+            ri++;
+        }
     }
 }
 
