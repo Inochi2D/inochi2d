@@ -231,7 +231,7 @@ public:
     }
 
     override
-    void setAnisotropy(float value) {
+    bool setAnisotropy(float value) {
         this.bind();
         
         glTexParameterf(
@@ -239,6 +239,8 @@ public:
             GL_TEXTURE_MAX_ANISOTROPY,
             clamp(value, 1, inRendererGetForThisThread().getMaxAnisotropy())
         );
+        
+        return true;
     }
 
     /**
@@ -287,9 +289,10 @@ public:
         Generate mipmaps
     */
     override
-    void genMipmap() {
+    bool genMipmap() {
         this.bind();
         glGenerateMipmap(GL_TEXTURE_2D);
+        return true;
     }
 
     /**
@@ -330,8 +333,9 @@ public:
         Saves the texture to file
     */
     override
-    void save(string file) {
+    bool save(string file) {
         write_image(file, width_, height_, getTextureData(true), channels_);
+        return true;
     }
 
     /**

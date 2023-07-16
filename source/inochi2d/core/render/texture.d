@@ -74,24 +74,27 @@ public:
 
     /**
         Generates a mipmap.
+        Returns whether mipmaps were generated successfully
 
         This functionality is OPTIONAL
     */
-    void genMipmap() { }
+    bool genMipmap() { return false; }
     
     /**
         Sets anisotropic filtering mode.
+        Returns whether the function set the anisotropy
 
-        This functionality is OPTIONAL
+        This functionality is OPTIONAL, return false if unimplemented.
     */
-    void setAnisotropy(float value) { }
+    bool setAnisotropy(float value) { return false; }
 
     /**
-        Saves a PNG
+        Saves texture to disk
+        Returns whether the function saved successfully
 
-        This functionality is OPTIONAL
+        This functionality is OPTIONAL, return false if unimplemented.
     */
-    void save(string file) { }
+    bool save(string file) { return false; }
 
     /**
         Gets the texture data for the texture
