@@ -503,4 +503,10 @@ public:
             scanPartsRecurse(children[0].parent);
         }
     }
+
+    /**
+        The render ID of the node
+    */
+    override
+    ubyte getRenderId() { return RenderID.Composite; }
 }

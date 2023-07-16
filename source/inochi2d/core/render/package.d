@@ -195,17 +195,17 @@ protected:
     /**
         Handle node pre-draw
     */
-    abstract void onPreDraw(Node node);
+    abstract void onPreDraw(ubyte rid, void* resource);
 
     /**
         Handle node draw
     */
-    abstract void onDraw(Node node);
+    abstract void onDraw(ubyte rid, void* resource);
 
     /**
         Handle node post-draw
     */
-    abstract void onPostDraw(Node node);
+    abstract void onPostDraw(ubyte rid, void* resource);
 
 public:
     ~this() {

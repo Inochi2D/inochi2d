@@ -872,6 +872,11 @@ public:
         }
     }
 
+    /**
+        The render ID of the node
+    */
+    override
+    ubyte getRenderId() { return RenderID.Part; }
 }
 
 /**

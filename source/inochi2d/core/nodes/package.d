@@ -68,6 +68,44 @@ void inClearUUIDs() {
 }
 
 /**
+    Rendering ID sent to the renderer
+    This contains the basic rendering IDs that Inochi2D supports by default.
+*/
+enum RenderID : ubyte {
+
+    /**
+        Item does not render.
+
+        Node is a NoRender render ID.
+    */
+    NoRender        = 0x00,
+    
+    /**
+        Part rendering
+    */
+    Part            = 0x01,
+
+    /**
+        Animated Part rendering
+    */
+    AnimatedPart    = 0x02,
+    
+    /**
+        Mask rendering
+    */
+    Mask            = 0x03,
+
+    /**
+        Composite rendering
+    */
+    Composite       = 0x04,
+
+    // Reserved section
+    ReservedStart = 0x80,
+    COUNT = 255
+}
+
+/**
     A node in the Inochi2D rendering tree
 */
 @TypeId("Node")
@@ -1005,6 +1043,11 @@ public:
             return transform.matrix;
         }
     }
+
+    /**
+        The render ID of the node
+    */
+    ubyte getRenderId() { return RenderID.NoRender; }
 }
 
 //
