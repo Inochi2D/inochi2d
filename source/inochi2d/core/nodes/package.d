@@ -983,7 +983,8 @@ public:
 
         unsetGroup(this);
 
-        setRelativeTo(parent);
+        if (parent !is null)
+            setRelativeTo(parent);
         insertInto(parent, pOffset);
         auto c = this;
         for (auto p = parent; p !is null; p = p.parent, c = c.parent) {
