@@ -845,8 +845,8 @@ public:
         this.uuid_ = uuid;
     }
 
-    rect getCombinedBoundsRect() {
-        vec4 combinedBounds = getCombinedBounds();
+    rect getCombinedBoundsRect(bool reupdate = false, bool countPuppet=false)() {
+        vec4 combinedBounds = getCombinedBounds!(reupdate, countPuppet)();
         return rect(
             combinedBounds.x, 
             combinedBounds.y, 
