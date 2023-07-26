@@ -284,7 +284,8 @@ public:
         void setGroup(Node node) {
             auto drawable = cast(Drawable)node;
             auto group    = cast(MeshGroup)node;
-            bool isDrawable = drawable !is null && group is null;
+            bool isDrawable = drawable !is null;
+            bool mustPropagate = isDrawable && group is null;
             if (translateChildren || isDrawable) {
                 if (isDrawable && dynamic) {
                     node.preProcessFilter  = null;
@@ -298,7 +299,7 @@ public:
                 node.postProcessFilter = null;
             }
             // traverse children if node is Drawable and is not MeshGroup instance.
-            if (isDrawable) {
+            if (mustPropagate) {
                 foreach (child; node.children) {
                     setGroup(child);
                 }
@@ -325,8 +326,9 @@ public:
             void transferChildren(Node node, int x, int y) {
                 auto drawable = cast(Drawable)node;
                 auto group = cast(MeshGroup)node;
-                bool isDrawable = drawable !is null && group is null;
-                if (drawable) {
+                bool isDrawable = drawable !is null;
+                bool mustPropagate = isDrawable && group is null;
+                if (isDrawable) {
                     auto vertices = drawable.vertices;
                     mat4 matrix = drawable.transform.matrix;
 
@@ -353,7 +355,7 @@ public:
                     }
 
                 }
-                if (isDrawable) {
+                if (mustPropagate) {
                     foreach (child; node.children) {
                         transferChildren(child, x, y);
                     }
