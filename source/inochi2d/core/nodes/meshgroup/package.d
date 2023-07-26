@@ -54,12 +54,12 @@ protected:
 
     override
     void preProcess() {
-        Node.preProcess();
+        super.preProcess();
     }
 
     override
     void postProcess() {
-        Node.postProcess();
+        super.preProcess();
     }
 
 public:
@@ -112,6 +112,9 @@ public:
     */
     override
     void update() {
+        preProcess();
+        deformStack.update();
+        
         if (data.indices.length > 0) {
             if (!precalculated) {
                 precalculate();
@@ -132,8 +135,9 @@ public:
             inverseMatrix = globalTransform.matrix.inverse;
         }
 
-       super.update(); 
-    }
+        Node.update();
+        this.updateDeform();
+   }
 
     override
     void draw() {
@@ -322,7 +326,7 @@ public:
                 auto drawable = cast(Drawable)node;
                 auto group = cast(MeshGroup)node;
                 bool isDrawable = drawable !is null && group is null;
-                if (isDrawable) {
+                if (drawable) {
                     auto vertices = drawable.vertices;
                     mat4 matrix = drawable.transform.matrix;
 
