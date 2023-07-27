@@ -233,6 +233,9 @@ protected:
         serializer.putKey("opacity");
         serializer.putValue(opacity);
 
+        serializer.putKey("propagate_meshgroup");
+        serializer.serializeValue(propagateMeshGroup);
+
         if (masks.length > 0) {
             serializer.putKey("masks");
             auto state = serializer.arrayBegin();
@@ -241,6 +244,7 @@ protected:
                     serializer.serializeValue(m);
                 }
             serializer.arrayEnd(state);
+
         }
     }
 
@@ -254,6 +258,10 @@ protected:
         if (!data["screenTint"].isEmpty) deserialize(this.screenTint, data["screenTint"]);
         if (!data["blend_mode"].isEmpty) data["blend_mode"].deserializeValue(this.blendingMode);
         if (!data["masks"].isEmpty) data["masks"].deserializeValue(this.masks);
+        if (!data["propagate_meshgroup"].isEmpty)
+            data["propagate_meshgroup"].deserializeValue(propagateMeshGroup);
+        else // falls back to legacy default
+            propagateMeshGroup = false;
 
         return super.deserializeFromFghj(data);
     }
@@ -281,7 +289,20 @@ protected:
         return c;
     }
 
+    override
+    void preProcess() {
+        if (!propagateMeshGroup)
+            Node.preProcess();
+    }
+
+    override
+    void postProcess() {
+        if (!propagateMeshGroup)
+            Node.postProcess();
+    }
+
 public:
+    bool propagateMeshGroup = true;
 
     /**
         The blending mode
