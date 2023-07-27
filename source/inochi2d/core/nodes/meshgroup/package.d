@@ -286,7 +286,8 @@ public:
             auto group    = cast(MeshGroup)node;
             auto composite = cast(Composite)node;
             bool isDrawable = drawable !is null;
-            bool mustPropagate = (isDrawable && group is null) || composite !is null;
+            bool isComposite = composite !is null && composite.propagateMeshGroup;
+            bool mustPropagate = (isDrawable && group is null) || isComposite;
             if (translateChildren || isDrawable) {
                 if (isDrawable && dynamic) {
                     node.preProcessFilter  = null;
@@ -329,7 +330,8 @@ public:
                 auto group = cast(MeshGroup)node;
                 auto composite = cast(Composite)node;
                 bool isDrawable = drawable !is null;
-                bool mustPropagate = (isDrawable && group is null) || composite !is null;
+                bool isComposite = composite !is null && composite.propagateMeshGroup;
+                bool mustPropagate = (isDrawable && group is null) || isComposite;
                 if (isDrawable) {
                     auto vertices = drawable.vertices;
                     mat4 matrix = drawable.transform.matrix;
@@ -341,7 +343,7 @@ public:
                         nodeBinding.values[x][y].vertexOffsets = filterResult[0];
                         nodeBinding.getIsSet()[x][y] = true;
                     }
-                } else if (translateChildren && composite is null) {
+                } else if (translateChildren && !isComposite) {
                     auto vertices = [node.localTransform.translation.xy];
                     mat4 matrix = node.parent? node.parent.transform.matrix: mat4.identity;
 
