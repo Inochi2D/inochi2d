@@ -258,10 +258,10 @@ protected:
         if (!data["screenTint"].isEmpty) deserialize(this.screenTint, data["screenTint"]);
         if (!data["blend_mode"].isEmpty) data["blend_mode"].deserializeValue(this.blendingMode);
         if (!data["masks"].isEmpty) data["masks"].deserializeValue(this.masks);
-        propagateMeshGroup = false;
         if (!data["propagate_meshgroup"].isEmpty)
             data["propagate_meshgroup"].deserializeValue(propagateMeshGroup);
-
+        else // falls back to legacy default
+            propagateMeshGroup = false;
 
         return super.deserializeFromFghj(data);
     }
