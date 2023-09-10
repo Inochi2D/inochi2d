@@ -88,18 +88,6 @@ public:
     }
 
     override
-    void drawDebug(mat4 trans = mat4.identity) {
-        vec3[] points = [
-            vec3(driver.anchor.x, driver.anchor.y, 0),
-            vec3(bob.x, bob.y, 0),
-        ];
-
-        inDbgSetBuffer(points);
-        inDbgLineWidth(3);
-        inDbgDrawLines(vec4(1, 0, 1, 1), trans);
-    }
-
-    override
     void updateAnchor() {
         bob = driver.anchor + vec2(0, driver.getLength());
     }
@@ -173,18 +161,6 @@ public:
         super.tick(h);
 
         driver.output = bob;
-    }
-
-    override
-    void drawDebug(mat4 trans = mat4.identity) {
-        vec3[] points = [
-            vec3(driver.anchor.x, driver.anchor.y, 0),
-            vec3(bob.x, bob.y, 0),
-        ];
-
-        inDbgSetBuffer(points);
-        inDbgLineWidth(3);
-        inDbgDrawLines(vec4(1, 0, 1, 1), trans);
     }
 
     override
@@ -456,11 +432,6 @@ public:
         param_ = puppet.findParameter(paramRef);
         super.finalize();
         reset();
-    }
-
-    override
-    void drawDebug() {
-        system.drawDebug();
     }
 
     Parameter param() {

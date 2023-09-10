@@ -16,7 +16,6 @@ public import inochi2d.core.param;
 public import inochi2d.core.automation;
 public import inochi2d.core.animation;
 public import inochi2d.core.render;
-public import inochi2d.core.render.texture;
 public import inochi2d.integration;
 
 import bindbc.opengl;

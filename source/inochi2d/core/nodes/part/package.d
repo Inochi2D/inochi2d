@@ -7,6 +7,7 @@
     Authors: Luna Nielsen
 */
 module inochi2d.core.nodes.part;
+import inochi2d.core.render.ftable;
 import inochi2d.integration;
 import inochi2d.fmt;
 import inochi2d.core.nodes.drawable;
@@ -27,10 +28,10 @@ package(inochi2d) {
     }
 }
 
-struct PartRenderData {
-    float* vtxdata;
-    MeshData
-}
+// struct PartRenderData {
+//     float* vtxdata;
+//     MeshData* meshData;
+// }
 
 /**
     Creates a simple part that is sized after the texture given
@@ -51,7 +52,7 @@ Part inCreateSimplePart(string file, Node parent = null) {
     for real-time use when you want to add/remove parts on the fly
 */
 Part inCreateSimplePart(TextureData texture, Node parent = null, string name = "New Part") {
-	return inCreateSimplePart(inRendererGetForThisThread().createTexture(texture), parent, name);
+	return inCreateSimplePart(new RuntimeTexture(texture), parent, name);
 }
 
 /**
@@ -60,12 +61,15 @@ Part inCreateSimplePart(TextureData texture, Node parent = null, string name = "
     This is unoptimal for normal use and should only be used
     for real-time use when you want to add/remove parts on the fly
 */
-Part inCreateSimplePart(Texture tex, Node parent = null, string name = "New Part") {
-	MeshData data = MeshData([
-		vec2(-(tex.getWidth/2), -(tex.getHeight/2)),
-		vec2(-(tex.getWidth/2), tex.getHeight/2),
-		vec2(tex.getWidth/2, -(tex.getHeight/2)),
-		vec2(tex.getWidth/2, tex.getHeight/2),
+Part inCreateSimplePart(RuntimeTexture* tex, Node parent = null, string name = "New Part") {
+	float twidth = tex.width;
+    float theight = tex.height;
+    
+    MeshData data = MeshData([
+		vec2(-(twidth/2), -(theight/2)),
+		vec2(-(twidth/2), theight/2),
+		vec2(twidth/2, -(theight/2)),
+		vec2(twidth/2, theight/2),
 	], 
 	[
 		vec2(0, 0),
@@ -123,21 +127,21 @@ protected:
 
         serializer.putKey("textures");
         auto state = serializer.arrayBegin();
-            foreach(ref texture; textures) {
-                if (texture) {
-                    ptrdiff_t index = puppet.getTextureSlotIndexFor(texture);
-                    if (index >= 0) {
-                        serializer.elemBegin;
-                        serializer.putValue(cast(size_t)index);
-                    } else {
-                        serializer.elemBegin;
-                        serializer.putValue(cast(size_t)NO_TEXTURE);
-                    }
+        foreach(ref texture; textures) {
+            if (texture) {
+                ptrdiff_t index = puppet.getTextureSlotIndexFor(texture);
+                if (index >= 0) {
+                    serializer.elemBegin;
+                    serializer.putValue(cast(size_t)index);
                 } else {
                     serializer.elemBegin;
                     serializer.putValue(cast(size_t)NO_TEXTURE);
                 }
+            } else {
+                serializer.elemBegin;
+                serializer.putValue(cast(size_t)NO_TEXTURE);
             }
+        }
         serializer.arrayEnd(state);
 
         serializer.putKey("blend_mode");
@@ -154,7 +158,7 @@ protected:
 
         if (masks.length > 0) {
             serializer.putKey("masks");
-            auto state = serializer.arrayBegin();
+            state = serializer.arrayBegin();
                 foreach(m; masks) {
                     serializer.elemBegin;
                     serializer.serializeValue(m);
@@ -215,8 +219,6 @@ protected:
             data["masks"].deserializeValue(this.masks);
         }
 
-        // Update indices and vertices
-        this.updateUVs();
         return null;
     }
 
@@ -228,7 +230,7 @@ protected:
             foreach(ref texture; textures) {
                 uint uid;
                 if (texture !is null) {
-                    uid = texture.getRuntimeUID();                                    
+                    uid = texture.uid;                                    
                 } else {
                     uid = InInvalidUID;
                 }
@@ -261,7 +263,10 @@ protected:
     }
 
 public:
-    InRenderTexture*[TextureUsage.COUNT] textures;
+    /**
+        Runtime textures associated with this part
+    */
+    RuntimeTexture*[TextureUsage.COUNT] textures;
 
     /**
         List of texture IDs
@@ -306,7 +311,7 @@ public:
     /**
         Constructs a new part
     */
-    this(MeshData data, InRenderTexture*[] textures, Node parent = null) {
+    this(MeshData data, RuntimeTexture*[] textures, Node parent = null) {
         this(data, textures, inCreateUID(), parent);
     }
 
@@ -322,14 +327,12 @@ public:
     /**
         Constructs a new part
     */
-    this(MeshData data, InRenderTexture*[] textures, uint uid, Node parent = null) {
+    this(MeshData data, RuntimeTexture*[] textures, uint uid, Node parent = null) {
         super(data, uid, parent);
         foreach(i; 0..TextureUsage.COUNT) {
             if (i >= textures.length) break;
             this.textures[i] = textures[i];
         }
-
-        this.updateUVs();
     }
     
     override
@@ -470,7 +473,6 @@ public:
     override
     void rebuffer(ref MeshData data) {
         super.rebuffer(data);
-        this.updateUVs();
     }
 
     override
@@ -552,177 +554,177 @@ public:
     ubyte getRenderId() { return RenderID.Part; }
 }
 
-/**
-    Draws a texture at the transform of the specified part
-*/
-deprecated("Not available at current time, does nothing")
-void inDrawTextureAtPart(Texture texture, Part part) {
-    // const float texWidthP = texture.getWidth()/2;
-    // const float texHeightP = texture.getHeight()/2;
+// /**
+//     Draws a texture at the transform of the specified part
+// */
+// deprecated("Not available at current time, does nothing")
+// void inDrawTextureAtPart(RuntimeTexture* texture, Part part) {
+//     // const float texWidthP = texture.getWidth()/2;
+//     // const float texHeightP = texture.getHeight()/2;
 
-    // // Bind the vertex array
-    // incDrawableBindVAO();
+//     // // Bind the vertex array
+//     // incDrawableBindVAO();
 
-    // partShader.use();
-    // partShader.setUniform(mvp, 
-    //     inGetCamera().matrix * 
-    //     mat4.translation(vec3(part.transform.matrix() * vec4(1, 1, 1, 1)))
-    // );
-    // partShader.setUniform(gopacity, part.opacity);
-    // partShader.setUniform(gMultColor, part.tint);
-    // partShader.setUniform(gScreenColor, part.screenTint);
+//     // partShader.use();
+//     // partShader.setUniform(mvp, 
+//     //     inGetCamera().matrix * 
+//     //     mat4.translation(vec3(part.transform.matrix() * vec4(1, 1, 1, 1)))
+//     // );
+//     // partShader.setUniform(gopacity, part.opacity);
+//     // partShader.setUniform(gMultColor, part.tint);
+//     // partShader.setUniform(gScreenColor, part.screenTint);
     
-    // // Bind the texture
-    // texture.bind();
+//     // // Bind the texture
+//     // texture.bind();
 
-    // // Enable points array
-    // glEnableVertexAttribArray(0);
-    // glBindBuffer(GL_ARRAY_BUFFER, sVertexBuffer);
-    // glBufferData(GL_ARRAY_BUFFER, 4*vec2.sizeof, [
-    //     -texWidthP, -texHeightP,
-    //     texWidthP, -texHeightP,
-    //     -texWidthP, texHeightP,
-    //     texWidthP, texHeightP,
-    // ].ptr, GL_STATIC_DRAW);
-    // glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, null);
+//     // // Enable points array
+//     // glEnableVertexAttribArray(0);
+//     // glBindBuffer(GL_ARRAY_BUFFER, sVertexBuffer);
+//     // glBufferData(GL_ARRAY_BUFFER, 4*vec2.sizeof, [
+//     //     -texWidthP, -texHeightP,
+//     //     texWidthP, -texHeightP,
+//     //     -texWidthP, texHeightP,
+//     //     texWidthP, texHeightP,
+//     // ].ptr, GL_STATIC_DRAW);
+//     // glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, null);
 
-    // // Enable UVs array
-    // glEnableVertexAttribArray(1); // uvs
-    // glBindBuffer(GL_ARRAY_BUFFER, sUVBuffer);
-    // glBufferData(GL_ARRAY_BUFFER, 4*vec2.sizeof, [
-    //     0, 0,
-    //     1, 0,
-    //     0, 1,
-    //     1, 1,
-    // ].ptr, GL_STATIC_DRAW);
-    // glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, null);
+//     // // Enable UVs array
+//     // glEnableVertexAttribArray(1); // uvs
+//     // glBindBuffer(GL_ARRAY_BUFFER, sUVBuffer);
+//     // glBufferData(GL_ARRAY_BUFFER, 4*vec2.sizeof, [
+//     //     0, 0,
+//     //     1, 0,
+//     //     0, 1,
+//     //     1, 1,
+//     // ].ptr, GL_STATIC_DRAW);
+//     // glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, null);
 
-    // // Bind element array and draw our mesh
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sElementBuffer);
-    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6*ushort.sizeof, (cast(ushort[])[
-    //     0u, 1u, 2u,
-    //     2u, 1u, 3u
-    // ]).ptr, GL_STATIC_DRAW);
-    // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, null);
+//     // // Bind element array and draw our mesh
+//     // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sElementBuffer);
+//     // glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6*ushort.sizeof, (cast(ushort[])[
+//     //     0u, 1u, 2u,
+//     //     2u, 1u, 3u
+//     // ]).ptr, GL_STATIC_DRAW);
+//     // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, null);
 
-    // // Disable the vertex attribs after use
-    // glDisableVertexAttribArray(0);
-    // glDisableVertexAttribArray(1);
-}
+//     // // Disable the vertex attribs after use
+//     // glDisableVertexAttribArray(0);
+//     // glDisableVertexAttribArray(1);
+// }
 
-/**
-    Draws a texture at the transform of the specified part
-*/
-deprecated("Not available at current time, does nothing")
-void inDrawTextureAtPosition(Texture texture, vec2 position, float opacity = 1, vec3 color = vec3(1, 1, 1), vec3 screenColor = vec3(0, 0, 0)) {
-    // const float texWidthP = texture.getWidth()/2;
-    // const float texHeightP = texture.getHeight()/2;
+// /**
+//     Draws a texture at the transform of the specified part
+// */
+// deprecated("Not available at current time, does nothing")
+// void inDrawTextureAtPosition(RuntimeTexture* texture, vec2 position, float opacity = 1, vec3 color = vec3(1, 1, 1), vec3 screenColor = vec3(0, 0, 0)) {
+//     // const float texWidthP = texture.getWidth()/2;
+//     // const float texHeightP = texture.getHeight()/2;
 
-    // // Bind the vertex array
-    // incDrawableBindVAO();
+//     // // Bind the vertex array
+//     // incDrawableBindVAO();
 
-    // partShader.use();
-    // partShader.setUniform(mvp, 
-    //     inGetCamera().matrix * 
-    //     mat4.scaling(1, 1, 1) * 
-    //     mat4.translation(vec3(position, 0))
-    // );
-    // partShader.setUniform(gopacity, opacity);
-    // partShader.setUniform(gMultColor, color);
-    // partShader.setUniform(gScreenColor, screenColor);
+//     // partShader.use();
+//     // partShader.setUniform(mvp, 
+//     //     inGetCamera().matrix * 
+//     //     mat4.scaling(1, 1, 1) * 
+//     //     mat4.translation(vec3(position, 0))
+//     // );
+//     // partShader.setUniform(gopacity, opacity);
+//     // partShader.setUniform(gMultColor, color);
+//     // partShader.setUniform(gScreenColor, screenColor);
     
-    // // Bind the texture
-    // texture.bind();
+//     // // Bind the texture
+//     // texture.bind();
 
-    // // Enable points array
-    // glEnableVertexAttribArray(0);
-    // glBindBuffer(GL_ARRAY_BUFFER, sVertexBuffer);
-    // glBufferData(GL_ARRAY_BUFFER, 4*vec2.sizeof, [
-    //     -texWidthP, -texHeightP,
-    //     texWidthP, -texHeightP,
-    //     -texWidthP, texHeightP,
-    //     texWidthP, texHeightP,
-    // ].ptr, GL_STATIC_DRAW);
-    // glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, null);
+//     // // Enable points array
+//     // glEnableVertexAttribArray(0);
+//     // glBindBuffer(GL_ARRAY_BUFFER, sVertexBuffer);
+//     // glBufferData(GL_ARRAY_BUFFER, 4*vec2.sizeof, [
+//     //     -texWidthP, -texHeightP,
+//     //     texWidthP, -texHeightP,
+//     //     -texWidthP, texHeightP,
+//     //     texWidthP, texHeightP,
+//     // ].ptr, GL_STATIC_DRAW);
+//     // glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, null);
 
-    // // Enable UVs array
-    // glEnableVertexAttribArray(1); // uvs
-    // glBindBuffer(GL_ARRAY_BUFFER, sUVBuffer);
-    // glBufferData(GL_ARRAY_BUFFER, 4*vec2.sizeof, (cast(float[])[
-    //     0, 0,
-    //     1, 0,
-    //     0, 1,
-    //     1, 1,
-    // ]).ptr, GL_STATIC_DRAW);
-    // glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, null);
+//     // // Enable UVs array
+//     // glEnableVertexAttribArray(1); // uvs
+//     // glBindBuffer(GL_ARRAY_BUFFER, sUVBuffer);
+//     // glBufferData(GL_ARRAY_BUFFER, 4*vec2.sizeof, (cast(float[])[
+//     //     0, 0,
+//     //     1, 0,
+//     //     0, 1,
+//     //     1, 1,
+//     // ]).ptr, GL_STATIC_DRAW);
+//     // glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, null);
 
-    // // Bind element array and draw our mesh
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sElementBuffer);
-    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6*ushort.sizeof, (cast(ushort[])[
-    //     0u, 1u, 2u,
-    //     2u, 1u, 3u
-    // ]).ptr, GL_STATIC_DRAW);
-    // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, null);
+//     // // Bind element array and draw our mesh
+//     // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sElementBuffer);
+//     // glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6*ushort.sizeof, (cast(ushort[])[
+//     //     0u, 1u, 2u,
+//     //     2u, 1u, 3u
+//     // ]).ptr, GL_STATIC_DRAW);
+//     // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, null);
 
-    // // Disable the vertex attribs after use
-    // glDisableVertexAttribArray(0);
-    // glDisableVertexAttribArray(1);
-}
+//     // // Disable the vertex attribs after use
+//     // glDisableVertexAttribArray(0);
+//     // glDisableVertexAttribArray(1);
+// }
 
-/**
-    Draws a texture at the transform of the specified part
-*/
-deprecated("Not available at current time, does nothing")
-void inDrawTextureAtRect(Texture texture, rect area, rect uvs = rect(0, 0, 1, 1), float opacity = 1, vec3 color = vec3(1, 1, 1), vec3 screenColor = vec3(0, 0, 0), Shader s = null, Camera cam = null) {
+// /**
+//     Draws a texture at the transform of the specified part
+// */
+// deprecated("Not available at current time, does nothing")
+// void inDrawTextureAtRect(RuntimeTexture* texture, rect area, rect uvs = rect(0, 0, 1, 1), float opacity = 1, vec3 color = vec3(1, 1, 1), vec3 screenColor = vec3(0, 0, 0), Shader s = null, Camera cam = null) {
 
-    // // Bind the vertex array
-    // incDrawableBindVAO();
+//     // // Bind the vertex array
+//     // incDrawableBindVAO();
 
-    // if (!s) s = partShader;
-    // if (!cam) cam = inGetCamera();
-    // s.use();
-    // s.setUniform(s.getUniformLocation("mvp"), 
-    //     cam.matrix * 
-    //     mat4.scaling(1, 1, 1)
-    // );
-    // s.setUniform(s.getUniformLocation("opacity"), opacity);
-    // s.setUniform(s.getUniformLocation("multColor"), color);
-    // s.setUniform(s.getUniformLocation("screenColor"), screenColor);
+//     // if (!s) s = partShader;
+//     // if (!cam) cam = inGetCamera();
+//     // s.use();
+//     // s.setUniform(s.getUniformLocation("mvp"), 
+//     //     cam.matrix * 
+//     //     mat4.scaling(1, 1, 1)
+//     // );
+//     // s.setUniform(s.getUniformLocation("opacity"), opacity);
+//     // s.setUniform(s.getUniformLocation("multColor"), color);
+//     // s.setUniform(s.getUniformLocation("screenColor"), screenColor);
     
-    // // Bind the texture
-    // texture.bind();
+//     // // Bind the texture
+//     // texture.bind();
 
-    // // Enable points array
-    // glEnableVertexAttribArray(0);
-    // glBindBuffer(GL_ARRAY_BUFFER, sVertexBuffer);
-    // glBufferData(GL_ARRAY_BUFFER, 4*vec2.sizeof, [
-    //     area.left, area.top,
-    //     area.right, area.top,
-    //     area.left, area.bottom,
-    //     area.right, area.bottom,
-    // ].ptr, GL_STATIC_DRAW);
-    // glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, null);
+//     // // Enable points array
+//     // glEnableVertexAttribArray(0);
+//     // glBindBuffer(GL_ARRAY_BUFFER, sVertexBuffer);
+//     // glBufferData(GL_ARRAY_BUFFER, 4*vec2.sizeof, [
+//     //     area.left, area.top,
+//     //     area.right, area.top,
+//     //     area.left, area.bottom,
+//     //     area.right, area.bottom,
+//     // ].ptr, GL_STATIC_DRAW);
+//     // glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, null);
 
-    // // Enable UVs array
-    // glEnableVertexAttribArray(1); // uvs
-    // glBindBuffer(GL_ARRAY_BUFFER, sUVBuffer);
-    // glBufferData(GL_ARRAY_BUFFER, 4*vec2.sizeof, (cast(float[])[
-    //     uvs.x, uvs.y,
-    //     uvs.getWidth, uvs.y,
-    //     uvs.x, uvs.getHeight,
-    //     uvs.getWidth, uvs.getHeight,
-    // ]).ptr, GL_STATIC_DRAW);
-    // glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, null);
+//     // // Enable UVs array
+//     // glEnableVertexAttribArray(1); // uvs
+//     // glBindBuffer(GL_ARRAY_BUFFER, sUVBuffer);
+//     // glBufferData(GL_ARRAY_BUFFER, 4*vec2.sizeof, (cast(float[])[
+//     //     uvs.x, uvs.y,
+//     //     uvs.getWidth, uvs.y,
+//     //     uvs.x, uvs.getHeight,
+//     //     uvs.getWidth, uvs.getHeight,
+//     // ]).ptr, GL_STATIC_DRAW);
+//     // glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, null);
 
-    // // Bind element array and draw our mesh
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sElementBuffer);
-    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6*ushort.sizeof, (cast(ushort[])[
-    //     0u, 1u, 2u,
-    //     2u, 1u, 3u
-    // ]).ptr, GL_STATIC_DRAW);
-    // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, null);
+//     // // Bind element array and draw our mesh
+//     // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sElementBuffer);
+//     // glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6*ushort.sizeof, (cast(ushort[])[
+//     //     0u, 1u, 2u,
+//     //     2u, 1u, 3u
+//     // ]).ptr, GL_STATIC_DRAW);
+//     // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, null);
 
-    // // Disable the vertex attribs after use
-    // glDisableVertexAttribArray(0);
-    // glDisableVertexAttribArray(1);
-}
+//     // // Disable the vertex attribs after use
+//     // glDisableVertexAttribArray(0);
+//     // glDisableVertexAttribArray(1);
+// }

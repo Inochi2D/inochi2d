@@ -1,4 +1,7 @@
 module inochi2d.core.render;
+import inochi2d.core.texture;
+
+public import inochi2d.core.render.ftable;
 
 /**
     A render ID
@@ -14,7 +17,7 @@ enum InRID IN_NONE = 0;
 enum InRID IN_PART = 1;
 
 /// A animated part
-enum inRID IN_ANIMATED_PART = 2;
+enum InRID IN_ANIMATED_PART = 2;
 
 /// A mask
 enum InRID IN_MASK = 3;
@@ -53,34 +56,13 @@ struct InRenderMesh {
     Allocates a mesh object with the specified amount of buffer slots
 */
 InRenderMesh inRenderAllocMesh(size_t buffers) {
-    void*[] bufs = new void[buffers];
+    void*[] bufs = new void*[buffers];
     return InRenderMesh(
         bufs.length,
         bufs.ptr,
         null
     );
 }
-
-/**
-    A texture to be used in rendering
-*/
-struct InRenderTexture {
-    /**
-        Width of the texture
-    */
-    uint width;
-    
-    /**
-        Height of the texture
-    */
-    uint height;
-
-    /**
-        Texture ID
-    */
-    void* textureId;
-}
-
 
 /**
     Render data for one RID
@@ -119,5 +101,5 @@ struct InRenderData {
     /**
         Textures
     */
-    InRenderTexture* textures;
+    RuntimeTexture* textures;
 }

@@ -360,9 +360,11 @@ public:
 
     /**
         INP Texture slots for this puppet
+
+        These texture slots are API specific data
     */
     @Ignore
-    Texture[] textureSlots;
+    RuntimeTexture*[] textureSlots;
 
     /**
         Extended vendor data
@@ -537,10 +539,10 @@ public:
     */
     final void updateTextureState() {
 
-        // Update filtering mode for texture slots
-        foreach(texutre; textureSlots) {
-            texutre.setFiltering(meta.preservePixels ? Filtering.Point : Filtering.Linear);
-        }
+        // // Update filtering mode for texture slots
+        // foreach(texture; textureSlots) {
+        //     texture.setFiltering(meta.preservePixels ? Filtering.Point : Filtering.Linear);
+        // }
     }
 
     /**
@@ -585,7 +587,7 @@ public:
     /**
         Adds a texture to a new slot if it doesn't already exist within this puppet
     */
-    final uint addTextureToSlot(Texture texture) {
+    final uint addTextureToSlot(RuntimeTexture* texture) {
         import std.algorithm.searching : canFind;
 
         // Add texture if we can't find it.
@@ -609,9 +611,9 @@ public:
     /**
         Finds a texture by its runtime UID
     */
-    final Texture findTextureByRuntimeUID(uint uid) {
+    final RuntimeTexture* findTextureByRuntimeUID(uint uid) {
         foreach(ref slot; textureSlots) {
-            if (slot.getRuntimeUID())
+            if (slot.uid)
                 return slot;
         }
         return null;
@@ -620,7 +622,7 @@ public:
     /**
         Sets thumbnail of this puppet
     */
-    final void setThumbnail(Texture texture) {
+    final void setThumbnail(RuntimeTexture* texture) {
         if (this.meta.thumbnailId == NO_THUMBNAIL) {
             this.meta.thumbnailId = this.addTextureToSlot(texture);
         } else {
@@ -633,7 +635,7 @@ public:
 
         returns -1 if none was found
     */
-    final ptrdiff_t getTextureSlotIndexFor(Texture texture) {
+    final ptrdiff_t getTextureSlotIndexFor(RuntimeTexture* texture) {
         import std.algorithm.searching : countUntil;
         return textureSlots.countUntil(texture);
     }
