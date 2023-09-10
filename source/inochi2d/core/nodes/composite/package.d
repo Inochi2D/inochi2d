@@ -318,14 +318,14 @@ public:
         Constructs a new mask
     */
     this(Node parent = null) {
-        this(inCreateUUID(), parent);
+        this(inCreateUID(), parent);
     }
 
     /**
         Constructs a new composite
     */
-    this(uint uuid, Node parent = null) {
-        super(uuid, parent);
+    this(uint uid, Node parent = null) {
+        super(uid, parent);
     }
 
     override
@@ -414,7 +414,7 @@ public:
 
     bool isMaskedBy(Drawable drawable) {
         foreach(mask; masks) {
-            if (mask.maskSrc.uuid == drawable.uuid) return true;
+            if (mask.maskSrc.uid == drawable.uid) return true;
         }
         return false;
     }
@@ -422,14 +422,14 @@ public:
     ptrdiff_t getMaskIdx(Drawable drawable) {
         if (drawable is null) return -1;
         foreach(i, ref mask; masks) {
-            if (mask.maskSrc.uuid == drawable.uuid) return i;
+            if (mask.maskSrc.uid == drawable.uid) return i;
         }
         return -1;
     }
 
-    ptrdiff_t getMaskIdx(uint uuid) {
+    ptrdiff_t getMaskIdx(uint uid) {
         foreach(i, ref mask; masks) {
-            if (mask.maskSrc.uuid == uuid) return i;
+            if (mask.maskSrc.uid == uid) return i;
         }
         return -1;
     }
@@ -484,7 +484,7 @@ public:
         
         MaskBinding[] validMasks;
         foreach(i; 0..masks.length) {
-            if (Drawable nMask = puppet.find!Drawable(masks[i].maskSrcUUID)) {
+            if (Drawable nMask = puppet.find!Drawable(masks[i].maskSrcUID)) {
                 masks[i].maskSrc = nMask;
                 validMasks ~= masks[i];
             }

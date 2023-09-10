@@ -79,21 +79,21 @@ public:
     */
     this(Node parent = null) {
         MeshData empty;
-        this(empty, inCreateUUID(), parent);
+        this(empty, inCreateUID(), parent);
     }
 
     /**
         Constructs a new mask
     */
     this(MeshData data, Node parent = null) {
-        this(data, inCreateUUID(), parent);
+        this(data, inCreateUID(), parent);
     }
 
     /**
         Constructs a new mask
     */
-    this(MeshData data, uint uuid, Node parent = null) {
-        super(data, uuid, parent);
+    this(MeshData data, uint uid, Node parent = null) {
+        super(data, uid, parent);
     }
     
     override

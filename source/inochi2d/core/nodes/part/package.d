@@ -205,9 +205,9 @@ protected:
 
             // Go every masked part
             foreach(imask; data["masked_by"].byElement) {
-                uint uuid;
-                if (auto exc = imask.deserializeValue(uuid)) return exc;
-                this.masks ~= MaskBinding(uuid, mode, null);
+                uint uid;
+                if (auto exc = imask.deserializeValue(uid)) return exc;
+                this.masks ~= MaskBinding(uid, mode, null);
             }
         }
 
@@ -223,17 +223,17 @@ protected:
     override
     void serializePartial(ref InochiSerializer serializer, bool recursive=true) {
         super.serializePartial(serializer, recursive);
-        serializer.putKey("textureUUIDs");
+        serializer.putKey("textureUIDs");
         auto state = serializer.arrayBegin();
             foreach(ref texture; textures) {
-                uint uuid;
+                uint uid;
                 if (texture !is null) {
-                    uuid = texture.getRuntimeUUID();                                    
+                    uid = texture.getRuntimeUID();                                    
                 } else {
-                    uuid = InInvalidUUID;
+                    uid = InInvalidUID;
                 }
                 serializer.elemBegin;
-                serializer.putValue(cast(size_t)uuid);
+                serializer.putValue(cast(size_t)uid);
             }
         serializer.arrayEnd(state);
     }
@@ -307,7 +307,7 @@ public:
         Constructs a new part
     */
     this(MeshData data, InRenderTexture*[] textures, Node parent = null) {
-        this(data, textures, inCreateUUID(), parent);
+        this(data, textures, inCreateUID(), parent);
     }
 
     /**
@@ -322,8 +322,8 @@ public:
     /**
         Constructs a new part
     */
-    this(MeshData data, InRenderTexture*[] textures, uint uuid, Node parent = null) {
-        super(data, uuid, parent);
+    this(MeshData data, InRenderTexture*[] textures, uint uid, Node parent = null) {
+        super(data, uid, parent);
         foreach(i; 0..TextureUsage.COUNT) {
             if (i >= textures.length) break;
             this.textures[i] = textures[i];
@@ -437,7 +437,7 @@ public:
 
     bool isMaskedBy(Drawable drawable) {
         foreach(mask; masks) {
-            if (mask.maskSrc.uuid == drawable.uuid) return true;
+            if (mask.maskSrc.uid == drawable.uid) return true;
         }
         return false;
     }
@@ -445,14 +445,14 @@ public:
     ptrdiff_t getMaskIdx(Drawable drawable) {
         if (drawable is null) return -1;
         foreach(i, ref mask; masks) {
-            if (mask.maskSrc.uuid == drawable.uuid) return i;
+            if (mask.maskSrc.uid == drawable.uid) return i;
         }
         return -1;
     }
 
-    ptrdiff_t getMaskIdx(uint uuid) {
+    ptrdiff_t getMaskIdx(uint uid) {
         foreach(i, ref mask; masks) {
-            if (mask.maskSrc.uuid == uuid) return i;
+            if (mask.maskSrc.uid == uid) return i;
         }
         return -1;
     }
@@ -526,7 +526,7 @@ public:
         
         MaskBinding[] validMasks;
         foreach(i; 0..masks.length) {
-            if (Drawable nMask = puppet.find!Drawable(masks[i].maskSrcUUID)) {
+            if (Drawable nMask = puppet.find!Drawable(masks[i].maskSrcUID)) {
                 masks[i].maskSrc = nMask;
                 validMasks ~= masks[i];
             }

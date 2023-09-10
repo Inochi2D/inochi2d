@@ -128,7 +128,7 @@ struct AnimationParameterRef {
 */
 struct AnimationLane {
 private:
-    uint refuuid;
+    uint refuid;
 
 public:
 
@@ -146,8 +146,8 @@ public:
             serializer.serializeValue(interpolation);
 
             if (paramRef) {
-                serializer.putKey("uuid");
-                serializer.putValue(paramRef.targetParam.uuid);
+                serializer.putKey("uid");
+                serializer.putValue(paramRef.targetParam.uid);
                 serializer.putKey("target");
                 serializer.putValue(paramRef.targetAxis);
             }
@@ -165,7 +165,9 @@ public:
     */
     SerdeException deserializeFromFghj(Fghj data) {
         data["interpolation"].deserializeValue(this.interpolation);
-        data["uuid"].deserializeValue(refuuid);
+        if (!data["uuid"].isEmpty) data["uuid"].deserializeValue(refuid);
+        if (!data["uid"].isEmpty) data["uid"].deserializeValue(refuid);
+        
 
         this.paramRef = new AnimationParameterRef(null, 0);
         data["target"].deserializeValue(this.paramRef.targetAxis);
@@ -265,7 +267,7 @@ public:
     void reconstruct(Puppet puppet) { }
     
     void finalize(Puppet puppet) {
-        if (paramRef) paramRef.targetParam = puppet.findParameter(refuuid);
+        if (paramRef) paramRef.targetParam = puppet.findParameter(refuid);
     }
 
     /**

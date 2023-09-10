@@ -147,9 +147,9 @@ abstract class ParameterBinding {
     abstract Node getNode();
 
     /**
-        Gets the uuid of the node of the binding
+        Gets the uid of the node of the binding
     */
-    abstract uint getNodeUUID();
+    abstract uint getNodeUID();
 
     /**
         Checks whether a binding is compatible with another node
@@ -235,10 +235,10 @@ public:
     }
 
     /**
-        Gets the uuid of the node of the binding
+        Gets the uid of the node of the binding
     */
     override
-    uint getNodeUUID() {
+    uint getNodeUID() {
         return nodeRef;
     }
 
@@ -283,7 +283,7 @@ public:
     void serializeSelf(ref InochiSerializer serializer) {
         auto state = serializer.objectBegin();
             serializer.putKey("node");
-            serializer.putValue(target.node.uuid);
+            serializer.putValue(target.node.uid);
             serializer.putKey("param_name");
             serializer.putValue(target.paramName);
             serializer.putKey("values");

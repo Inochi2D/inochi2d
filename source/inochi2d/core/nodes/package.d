@@ -25,7 +25,7 @@ import std.typecons: tuple, Tuple;
 import std.exception;
 
 private {
-    uint[] takenUUIDs;
+    uint[] takenUIDs;
 }
 
 package(inochi2d) {
@@ -35,36 +35,36 @@ package(inochi2d) {
     }
 }
 
-enum InInvalidUUID = uint.max;
+enum InInvalidUID = uint.max;
 
 /**
-    Creates a new UUID for a node
+    Creates a new UID for a node
 */
-uint inCreateUUID() {
+uint inCreateUID() {
     import std.algorithm.searching : canFind;
     import std.random : uniform;
 
-    uint id = uniform(uint.min, InInvalidUUID);
-    while (takenUUIDs.canFind(id)) { id = uniform(uint.min, InInvalidUUID); } // Make sure the ID is actually unique in the current context
+    uint id = uniform(uint.min, InInvalidUID);
+    while (takenUIDs.canFind(id)) { id = uniform(uint.min, InInvalidUID); } // Make sure the ID is actually unique in the current context
 
     return id;
 }
 
 /**
-    Unloads a single UUID from the internal listing, freeing it up for reuse
+    Unloads a single UID from the internal listing, freeing it up for reuse
 */
-void inUnloadUUID(uint id) {
+void inUnloadUID(uint id) {
     import std.algorithm.searching : countUntil;
     import std.algorithm.mutation : remove;
-    ptrdiff_t idx = takenUUIDs.countUntil(id);
-    if (idx != -1) takenUUIDs.remove(idx);
+    ptrdiff_t idx = takenUIDs.countUntil(id);
+    if (idx != -1) takenUIDs.remove(idx);
 }
 
 /**
-    Clears all UUIDs from the internal listing
+    Clears all UIDs from the internal listing
 */
-void inClearUUIDs() {
-    takenUUIDs.length = 0;
+void inClearUIDs() {
+    takenUIDs.length = 0;
 }
 
 /**
@@ -123,7 +123,7 @@ private:
     Node[] children_;
     
     @Ignore
-    uint uuid_;
+    uint uid_;
     
     @Name("zsort")
     float zsort_ = 0;
@@ -155,8 +155,8 @@ protected:
 
     void serializeSelfImpl(ref InochiSerializer serializer, bool recursive=true) {
         
-        serializer.putKey("uuid");
-        serializer.putValue(uuid);
+        serializer.putKey("uid");
+        serializer.putValue(uid);
         
         serializer.putKey("name");
         serializer.putValue(name);
@@ -293,8 +293,8 @@ public:
     /**
         Returns the unique identifier for this node
     */
-    uint uuid() {
-        return uuid_;
+    uint uid() {
+        return uid_;
     }
 
     /**
@@ -370,15 +370,15 @@ public:
         Constructs a new node
     */
     this(Node parent = null) {
-        this(inCreateUUID(), parent);
+        this(inCreateUID(), parent);
     }
 
     /**
-        Constructs a new node with an UUID
+        Constructs a new node with an UID
     */
-    this(uint uuid, Node parent = null) {
+    this(uint uid, Node parent = null) {
         this.parent = parent;
-        this.uuid_ = uuid;
+        this.uid_ = uid;
     }
 
     /**
@@ -839,7 +839,12 @@ public:
     */
     SerdeException deserializeFromFghj(Fghj data) {
 
-        if (auto exc = data["uuid"].deserializeValue(this.uuid_)) return exc;
+        // Handle conversion of old "UUID" scheme to new "UID" scheme
+        if (!data["uuid"].isEmpty) data["uuid"].deserializeValue(this.uid);
+        else if (!data["uid"].isEmpty) {
+            if (auto exc = data["uid"].deserializeValue(this.uid_)) return exc;
+        }
+
 
         if (!data["name"].isEmpty) {
             if (auto exc = data["name"].deserializeValue(this.name)) return exc;
@@ -884,8 +889,8 @@ public:
 
         THIS IS NOT A SAFE OPERATION.
     */
-    final void forceSetUUID(uint uuid) {
-        this.uuid_ = uuid;
+    final void forceSetUID(uint uid) {
+        this.uid_ = uid;
     }
 
     rect getCombinedBoundsRect() {
@@ -939,7 +944,7 @@ public:
     bool canReparent(Node to) {
         Node tmp = to;
         while(tmp !is null) {
-            if (tmp.uuid == this.uuid) return false;
+            if (tmp.uid == this.uid) return false;
             
             // Check next up
             tmp = tmp.parent;

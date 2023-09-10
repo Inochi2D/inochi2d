@@ -311,14 +311,14 @@ private:
         return null;
     }
 
-    Node findNode(Node n, uint uuid) {
+    Node findNode(Node n, uint uid) {
 
         // Name matches!
-        if (n.uuid == uuid) return n;
+        if (n.uid == uid) return n;
 
         // Recurse through children
         foreach(child; n.children) {
-            if (Node c = findNode(child, uuid)) return c;
+            if (Node c = findNode(child, uid)) return c;
         }
 
         // Not found
@@ -478,11 +478,11 @@ public:
     }
 
     /**
-        Returns a parameter by UUID
+        Returns a parameter by UID
     */
-    Parameter findParameter(uint uuid) {
+    Parameter findParameter(uint uid) {
         foreach(i, parameter; parameters) {
-            if (parameter.uuid == uuid) {
+            if (parameter.uid == uid) {
                 return parameter;
             }
         }
@@ -553,8 +553,8 @@ public:
     /**
         Finds Node by its unique id
     */
-    T find(T = Node)(uint uuid) if (is(T : Node)) {
-        return cast(T)findNode(root, uuid);
+    T find(T = Node)(uint uid) if (is(T : Node)) {
+        return cast(T)findNode(root, uid);
     }
 
     /**
@@ -607,11 +607,11 @@ public:
     }
 
     /**
-        Finds a texture by its runtime UUID
+        Finds a texture by its runtime UID
     */
-    final Texture findTextureByRuntimeUUID(uint uuid) {
+    final Texture findTextureByRuntimeUID(uint uid) {
         foreach(ref slot; textureSlots) {
-            if (slot.getRuntimeUUID())
+            if (slot.getRuntimeUID())
                 return slot;
         }
         return null;
@@ -677,7 +677,7 @@ public:
 
             string iden = getLineSet();
 
-            string s = "%s[%s] %s <%s>\n".format(n.children.length > 0 ? "╭─" : "", n.typeId, n.name, n.uuid);
+            string s = "%s[%s] %s <%s>\n".format(n.children.length > 0 ? "╭─" : "", n.typeId, n.name, n.uid);
             foreach(i, child; n.children) {
                 string term = "├→";
                 if (i == n.children.length-1) {

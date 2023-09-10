@@ -24,8 +24,8 @@ protected:
     /**
         Constructs a new Driver node
     */
-    this(uint uuid, Node parent = null) {
-        super(uuid, parent);
+    this(uint uid, Node parent = null) {
+        super(uid, parent);
     }
 
 public:
@@ -46,7 +46,7 @@ public:
     final
     bool affectsParameter(ref Parameter param) {
         foreach(ref Parameter p; getAffectedParameters()) {
-            if (p.uuid == param.uuid) return true;
+            if (p.uid == param.uid) return true;
         } 
         return false;
     }

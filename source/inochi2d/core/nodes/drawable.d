@@ -193,14 +193,14 @@ public:
         Constructs a new drawable surface
     */
     this(MeshData data, Node parent = null) {
-        this(data, inCreateUUID(), parent);
+        this(data, inCreateUID(), parent);
     }
 
     /**
         Constructs a new drawable surface
     */
-    this(MeshData data, uint uuid, Node parent = null) {
-        super(uuid, parent);
+    this(MeshData data, uint uid, Node parent = null) {
+        super(uid, parent);
         this.data = data;
         this.deformStack = DeformationStack(this);
 

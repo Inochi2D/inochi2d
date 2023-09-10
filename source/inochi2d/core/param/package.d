@@ -114,8 +114,8 @@ private:
     Combinator imul;
 protected:
     void serializeSelf(ref InochiSerializer serializer) {
-        serializer.putKey("uuid");
-        serializer.putValue(uuid);
+        serializer.putKey("uid");
+        serializer.putValue(uid);
         serializer.putKey("name");
         serializer.putValue(name);
         serializer.putKey("is_vec2");
@@ -143,7 +143,7 @@ public:
     /**
         Unique ID of parameter
     */
-    uint uuid;
+    uint uid;
 
     /**
         Name of the parameter
@@ -231,17 +231,17 @@ public:
     this() { }
 
     /**
-        Unload UUID on clear
+        Unload UID on clear
     */
     ~this() {
-        inUnloadUUID(this.uuid);
+        inUnloadUID(this.uid);
     }
 
     /**
         Create new parameter
     */
     this(string name, bool isVec2) {
-        this.uuid = inCreateUUID();
+        this.uid = inCreateUID();
         this.name = name;
         this.isVec2 = isVec2;
         if (!isVec2)
@@ -291,7 +291,9 @@ public:
         Deserializes a parameter
     */
     SerdeException deserializeFromFghj(Fghj data) {
-        data["uuid"].deserializeValue(this.uuid);
+        if (!data["uuid"].isEmpty) data["uuid"].deserializeValue(this.uid);
+        if (!data["uid"].isEmpty) data["uid"].deserializeValue(this.uid);
+        
         data["name"].deserializeValue(this.name);
         if (!data["is_vec2"].isEmpty) data["is_vec2"].deserializeValue(this.isVec2);
         if (!data["min"].isEmpty) min.deserialize(data["min"]);
@@ -339,7 +341,7 @@ public:
 
         ParameterBinding[] validBindingList;
         foreach(i, binding; bindings) {
-            if (puppet.find!Node(binding.getNodeUUID())) {
+            if (puppet.find!Node(binding.getNodeUID())) {
                 binding.finalize(puppet);
                 validBindingList ~= binding;
             }

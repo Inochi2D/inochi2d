@@ -141,7 +141,7 @@ struct MaskBinding {
 public:
     import inochi2d.core.nodes.drawable : Drawable;
     @Name("source")
-    uint maskSrcUUID;
+    uint maskSrcUID;
 
     @Name("mode")
     MaskingMode mode;

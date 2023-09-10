@@ -202,7 +202,7 @@ private:
     this() { }
 
     @Name("param")
-    uint paramRef = InInvalidUUID;
+    uint paramRef = InInvalidUID;
 
     @Ignore
     Parameter param_;
@@ -333,14 +333,14 @@ public:
         Constructs a new SimplePhysics node
     */
     this(Node parent = null) {
-        this(inCreateUUID(), parent);
+        this(inCreateUID(), parent);
     }
 
     /**
         Constructs a new SimplePhysics node
     */
-    this(uint uuid, Node parent = null) {
-        super(uuid, parent);
+    this(uint uid, Node parent = null) {
+        super(uid, parent);
         reset();
     }
 
@@ -469,8 +469,8 @@ public:
 
     void param(Parameter p) {
         param_ = p;
-        if (p is null) paramRef = InInvalidUUID;
-        else paramRef = p.uuid;
+        if (p is null) paramRef = InInvalidUID;
+        else paramRef = p.uid;
     }
 
     float getScale() {
