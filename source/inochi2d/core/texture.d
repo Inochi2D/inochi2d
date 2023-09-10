@@ -5,13 +5,14 @@
     Authors: Luna Nielsen
 */
 module inochi2d.core.texture;
+import inochi2d.core.render;
+import inochi2d.core.nodes;
 import inochi2d.math;
 import std.exception;
 import std.format;
 import bindbc.opengl;
 import imagefmt;
 import std.stdio;
-import inochi2d.core.nodes : inCreateUUID;
 
 /**
     Filtering mode for texture
@@ -81,6 +82,13 @@ public:
     int channels;
 
     /**
+        Whether the texture data is compressed for GPU usage.
+
+        This should only be true for formats such as BPTC, S3TC, etc.
+    */
+    bool compressed = false;
+
+    /**
         Loads a shallow texture from image file
         Supported file types:
         * PNG 8-bit
@@ -120,22 +128,30 @@ public:
 
         By setting channels to a specific value you can force a specific color mode
     */
-    this(ubyte[] buffer, int channels = 0, int bpc=8) {
+    this(ubyte[] buffer, int channels = 0, int bpc=8, bool compressed=false) {
+        this.compressed = compressed;
 
-        // Load image from disk, as <channels> 8-bit
-        IFImage image = read_image(buffer, 0, bpc);
-        enforce( image.e == 0, "%s".format(IF_ERROR[image.e]));
-        scope(exit) image.free();
+        if (!this.compressed) {
+            // Load image from disk, as <channels> 8-bit
+            IFImage image = read_image(buffer, 0, bpc);
+            enforce( image.e == 0, "%s".format(IF_ERROR[image.e]));
+            scope(exit) image.free();
 
-        // Copy data from IFImage to this ShallowTexture
-        this.data = new ubyte[image.buf8.length];
-        this.data[] = image.buf8;
+            // Copy data from IFImage to this ShallowTexture
+            this.data = new ubyte[image.buf8.length];
+            this.data[] = image.buf8;
 
-        // Set the width/height data
-        this.width = image.w;
-        this.height = image.h;
-        this.channels = image.c;
-        this.bpc = bpc;
+            // Set the width/height data
+            this.width = image.w;
+            this.height = image.h;
+            this.channels = image.c;
+            this.bpc = bpc;
+        } else {
+            this.data = new ubyte[buffer.length];
+            this.data[] = buffer;
+
+            // TODO: Handle compressed texture data width/height
+        }
     }
     
     /**
@@ -200,5 +216,44 @@ void inTexUnPremuliply(ref ubyte[] data, int bpc=8) {
         data[((i*4)+0)] = cast(ubyte)(cast(int)data[((i*4)+0)] * 255 / cast(int)data[((i*4)+3)]);
         data[((i*4)+1)] = cast(ubyte)(cast(int)data[((i*4)+1)] * 255 / cast(int)data[((i*4)+3)]);
         data[((i*4)+2)] = cast(ubyte)(cast(int)data[((i*4)+2)] * 255 / cast(int)data[((i*4)+3)]);
+    }
+}
+
+/**
+    A runtime texture
+*/
+struct RuntimeTexture {
+    
+    /// UID of texture
+    uint uid;
+
+    /// Width of texture
+    uint width;
+    
+    /// Height of texture
+    uint height;
+
+    /// Amount of channels
+    uint channels;
+
+    /// Backend API data
+    void* apiData;
+
+    /**
+        Creates a runtime texture from a TextureData object
+    */
+    this(ref TextureData data, uint uid=InInvalidUID) {
+        import inochi2d.core.render;
+        this.apiData = inRenderAllocateTexture(data, data.channels);
+        this.width = data.width;
+        this.height = data.height;
+        this.channels = data.channels;
+        if (uid == InInvalidUID) {
+            uid = inCreateUID();
+        }
+    }
+
+    ~this() {
+        inRenderDeallocateTexture(apiData);
     }
 }
