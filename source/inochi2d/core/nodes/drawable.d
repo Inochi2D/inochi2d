@@ -42,19 +42,11 @@ abstract class Drawable : Node {
 private:
 
     void updateIndices() {
-        version (InDoesRender) {
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, data.indices.length*ushort.sizeof, data.indices.ptr, GL_STATIC_DRAW);
-        }
+        
     }
 
     void updateVertices() {
-        version (InDoesRender) {
 
-            // Important check since the user can change this every frame
-            glBindBuffer(GL_ARRAY_BUFFER, vbo);
-            glBufferData(GL_ARRAY_BUFFER, data.vertices.length*vec2.sizeof, data.vertices.ptr, GL_DYNAMIC_DRAW);
-        }
 
         // Zero-fill the deformation delta
         this.deformation.length = vertices.length;
@@ -72,11 +64,6 @@ private:
         );
         postProcess();
 
-        version (InDoesRender) {
-            glBindBuffer(GL_ARRAY_BUFFER, dbo);
-            glBufferData(GL_ARRAY_BUFFER, deformation.length*vec2.sizeof, deformation.ptr, GL_DYNAMIC_DRAW);
-        }
-
         this.updateBounds();
     }
 
@@ -88,17 +75,6 @@ protected:
         The data in here is only to be used for reference.
     */
     MeshData data;
-
-    /**
-        Binds Index Buffer for rendering
-    */
-    final void bindIndex() {
-        version (InDoesRender) {
-            // Bind element array and draw our mesh
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-            glDrawElements(GL_TRIANGLES, cast(int)data.indices.length, GL_UNSIGNED_SHORT, null);
-        }
-    }
 
     /**
         Allows serializing self data (with pretty serializer)
@@ -177,14 +153,6 @@ public:
     this(Node parent = null) {
         super(parent);
 
-        version(InDoesRender) {
-
-            // Generate the buffers
-            glGenBuffers(1, &vbo);
-            glGenBuffers(1, &ibo);
-            glGenBuffers(1, &dbo);
-        }
-
         // Create deformation stack
         this.deformStack = DeformationStack(this);
     }
@@ -206,14 +174,6 @@ public:
 
         // Set the deformable points to their initial position
         this.vertices = data.vertices.dup;
-
-        version(InDoesRender) {
-            
-            // Generate the buffers
-            glGenBuffers(1, &vbo);
-            glGenBuffers(1, &ibo);
-            glGenBuffers(1, &dbo);
-        }
 
         // Update indices and vertices
         this.updateIndices();
@@ -338,7 +298,7 @@ public:
     This also clears whatever old mask there was.
 */
 void inBeginMask(bool hasMasks) {
-
+    inRenderSubmit(IN_MASK_BEGIN, null);
 }
 
 /**
@@ -347,7 +307,7 @@ void inBeginMask(bool hasMasks) {
     Once masking is ended content will no longer be masked by the defined mask.
 */
 void inEndMask() {
-
+    inRenderSubmit(IN_MASK_END, null);
 }
 
 /**
@@ -356,5 +316,5 @@ void inEndMask() {
     NOTE: This have to be run within a inBeginMask and inEndMask block!
 */
 void inBeginMaskContent() {
-
+    inRenderSubmit(IN_MASK_ELEM, null);
 }
