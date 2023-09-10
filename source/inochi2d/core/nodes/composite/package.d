@@ -16,73 +16,9 @@ import bindbc.opengl;
 import std.exception;
 import std.algorithm.sorting;
 
-private {
-    GLuint cVAO;
-    GLuint cBuffer;
-    Shader cShader;
-    Shader cShaderMask;
-
-    GLint gopacity;
-    GLint gMultColor;
-    GLint gScreenColor;
-
-    GLint mthreshold;
-    GLint mopacity;
-}
-
 package(inochi2d) {
     void inInitComposite() {
         inRegisterNodeType!Composite;
-
-        version(InDoesRender) {
-            cShader = new Shader(
-                import("basic/composite.vert"),
-                import("basic/composite.frag")
-            );
-
-            cShader.use();
-            gopacity = cShader.getUniformLocation("opacity");
-            gMultColor = cShader.getUniformLocation("multColor");
-            gScreenColor = cShader.getUniformLocation("screenColor");
-            cShader.setUniform(cShader.getUniformLocation("albedo"), 0);
-            cShader.setUniform(cShader.getUniformLocation("emissive"), 1);
-            cShader.setUniform(cShader.getUniformLocation("bumpmap"), 2);
-
-            cShaderMask = new Shader(
-                import("basic/composite.vert"),
-                import("basic/composite-mask.frag")
-            );
-            cShaderMask.use();
-            mthreshold = cShader.getUniformLocation("threshold");
-            mopacity = cShader.getUniformLocation("opacity");
-
-            glGenVertexArrays(1, &cVAO);
-            glGenBuffers(1, &cBuffer);
-
-            // Clip space vertex data since we'll just be superimposing
-            // Our composite framebuffer over the main framebuffer
-            float[] vertexData = [
-                // verts
-                -1f, -1f,
-                -1f, 1f,
-                1f, -1f,
-                1f, -1f,
-                -1f, 1f,
-                1f, 1f,
-
-                // uvs
-                0f, 0f,
-                0f, 1f,
-                1f, 0f,
-                1f, 0f,
-                0f, 1f,
-                1f, 1f,
-            ];
-
-            glBindVertexArray(cVAO);
-            glBindBuffer(GL_ARRAY_BUFFER, cBuffer);
-            glBufferData(GL_ARRAY_BUFFER, float.sizeof*vertexData.length, vertexData.ptr, GL_STATIC_DRAW);
-        }
     }
 }
 
@@ -100,13 +36,13 @@ private:
         // Optimization: Nothing to be drawn, skip context switching
         if (subParts.length == 0) return;
 
-        inBeginComposite();
+        // inBeginComposite();
 
             foreach(Part child; subParts) {
                 child.drawOne();
             }
 
-        inEndComposite();
+        // inEndComposite();
     }
 
     /*
@@ -114,36 +50,6 @@ private:
     */
     void drawSelf() {
         if (subParts.length == 0) return;
-
-        glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
-        glBindVertexArray(cVAO);
-
-        cShader.use();
-        cShader.setUniform(gopacity, clamp(offsetOpacity * opacity, 0, 1));
-        incCompositePrepareRender();
-        
-        vec3 clampedColor = tint;
-        if (!offsetTint.x.isNaN) clampedColor.x = clamp(tint.x*offsetTint.x, 0, 1);
-        if (!offsetTint.y.isNaN) clampedColor.y = clamp(tint.y*offsetTint.y, 0, 1);
-        if (!offsetTint.z.isNaN) clampedColor.z = clamp(tint.z*offsetTint.z, 0, 1);
-        cShader.setUniform(gMultColor, clampedColor);
-
-        clampedColor = screenTint;
-        if (!offsetScreenTint.x.isNaN) clampedColor.x = clamp(screenTint.x+offsetScreenTint.x, 0, 1);
-        if (!offsetScreenTint.y.isNaN) clampedColor.y = clamp(screenTint.y+offsetScreenTint.y, 0, 1);
-        if (!offsetScreenTint.z.isNaN) clampedColor.z = clamp(screenTint.z+offsetScreenTint.z, 0, 1);
-        cShader.setUniform(gScreenColor, clampedColor);
-        inSetBlendMode(blendingMode, true);
-
-        // Enable points array
-        glEnableVertexAttribArray(0);
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, cBuffer);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, null);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, cast(void*)(12*float.sizeof));
-
-        // Bind the texture
-        glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 
     void selfSort() {
@@ -179,39 +85,9 @@ protected:
     Part[] subParts;
     
     void renderMask() {
-        inBeginComposite();
+        // inBeginComposite();
 
-            // Enable writing to stencil buffer and disable writing to color buffer
-            glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-            glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-            glStencilFunc(GL_ALWAYS, 1, 0xFF);
-            glStencilMask(0xFF);
-
-            foreach(Part child; subParts) {
-                child.drawOneDirect(true);
-            }
-
-            // Disable writing to stencil buffer and enable writing to color buffer
-            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-        inEndComposite();
-
-
-        glBindVertexArray(cVAO);
-        cShaderMask.use();
-        cShaderMask.setUniform(mopacity, opacity);
-        cShaderMask.setUniform(mthreshold, threshold);
-        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-
-        // Enable points array
-        glEnableVertexAttribArray(0);
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, cBuffer);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, null);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, cast(void*)(12*float.sizeof));
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, inGetCompositeImage());
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        // inEndComposite();
     }
 
     override
@@ -452,18 +328,18 @@ public:
         size_t cMasks = maskCount;
 
         if (masks.length > 0) {
-            inBeginMask(cMasks > 0);
+            // inBeginMask(cMasks > 0);
 
             foreach(ref mask; masks) {
                 mask.maskSrc.renderMask(mask.mode == MaskingMode.DodgeMask);
             }
 
-            inBeginMaskContent();
+            // inBeginMaskContent();
 
             // We are the content
             this.drawSelf();
 
-            inEndMask();
+            // inEndMask();
             return;
         }
 
