@@ -20,6 +20,8 @@ public import inochi2d.core.nodes.meshgroup;
 public import inochi2d.core.nodes.drivers; 
 import std.typecons: tuple, Tuple;
 
+version(InUseUUIDs) import std.uuid;
+
 //public import inochi2d.core.nodes.shapes; // This isn't mainline yet!
 
 import std.exception;
@@ -155,6 +157,11 @@ protected:
 
     void serializeSelfImpl(ref InochiSerializer serializer, bool recursive=true) {
         
+        version(InUseUUIDs) {
+            serializer.putKey("ext_uuid");
+            serializer.putValue(uuid.toString());
+        }
+
         serializer.putKey("uid");
         serializer.putValue(uid);
         
@@ -260,6 +267,12 @@ public:
     */
     bool enabled = true;
 
+    version(InUseUUIDs) {
+
+        // Globally Unique Identifier
+        UUID uuid;
+    }
+
     /**
         Whether the node is enabled for rendering
 
@@ -359,6 +372,10 @@ public:
     */
     this(Puppet puppet) {
         puppet_ = puppet;
+        
+        version(InUseUUIDs) {
+            uuid = randomUUID();
+        }
     }
 
     /**
@@ -374,6 +391,10 @@ public:
     this(uint uid, Node parent = null) {
         this.parent = parent;
         this.uid_ = uid;
+        
+        version(InUseUUIDs) {
+            uuid = randomUUID();
+        }
     }
 
     /**
@@ -838,6 +859,15 @@ public:
             data["uuid"].deserializeValue(this.uid_);
         } else if (!data["uid"].isEmpty) {
             if (auto exc = data["uid"].deserializeValue(this.uid_)) return exc;
+        }
+
+        version (InUseUUIDs) {
+            if (!data["ext_uuid"].isEmpty) {
+                string uuidStr;
+                data["ext_uuid"].deserializeValue(uuidStr);
+
+                this.uuid = parseUUID(uuidStr);
+            }
         }
 
 
