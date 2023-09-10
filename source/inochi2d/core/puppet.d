@@ -392,6 +392,13 @@ public:
     Transform transform;
 
     /**
+        Destructor
+    */
+    ~this() {
+        inRenderUnRef();
+    }
+
+    /**
         Creates a new puppet from nothing ()
     */
     this() { 
@@ -401,6 +408,8 @@ public:
         root = new Node(this.puppetRootNode); 
         root.name = "Root";
         transform = Transform(vec3(0, 0, 0));
+
+        inRenderAddRef();
     }
 
     /**
@@ -415,6 +424,8 @@ public:
         this.scanParts!true(this.root);
         transform = Transform(vec3(0, 0, 0));
         this.selfSort();
+
+        inRenderAddRef();
     }
 
     /**
