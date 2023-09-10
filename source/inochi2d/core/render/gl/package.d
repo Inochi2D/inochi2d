@@ -27,7 +27,7 @@ private:
 
 __gshared GLSupport loaded = GLSupport.noLibrary;
 
-extern(C):
+extern(C) nothrow:
 bool incRenderGLIsThreadsafe() {
     return false;
 }
@@ -47,6 +47,8 @@ bool incRenderGLConstruct() {
 
     // TODO: Handle various GL versions and return an error if too low version
     // is returned.
+
+    // TODO: Check for advanced blending support
 }
 
 bool incRenderGLDestruct() {

@@ -102,7 +102,8 @@ T inLoadINPPuppet(T = Puppet)(ubyte[] buffer) if (is(T : Puppet)) {
             ubyte textureType = buffer[bufferOffset++];
         
             // Readd to puppet so that stuff doesn't break if we re-save the puppet
-            slot = new RuntimeTexture(TextureData(buffer[bufferOffset..bufferOffset+=textureLength]));
+            auto data = TextureData(buffer[bufferOffset..bufferOffset+=textureLength]);
+            slot = new RuntimeTexture(data);
         }
     } else {
 
@@ -116,7 +117,8 @@ T inLoadINPPuppet(T = Puppet)(ubyte[] buffer) if (is(T : Puppet)) {
             ubyte textureType = buffer[bufferOffset++];
         
             // Readd to puppet so that stuff doesn't break if we re-save the puppet
-            slots[i] = new RuntimeTexture(TextureData(buffer[bufferOffset..bufferOffset+=textureLength]));
+            auto data = TextureData(buffer[bufferOffset..bufferOffset+=textureLength]);
+            slots[i] = new RuntimeTexture(data);
         }
     }
 

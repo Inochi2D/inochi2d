@@ -107,7 +107,7 @@ private:
         RENDERING
     */
     void drawSelf(bool isMask = false)() {
-
+        inRenderSubmit(IN_PART, &renderData);
     }
 
 protected:
@@ -308,6 +308,10 @@ public:
     */
     vec3 screenTint = vec3(0, 0, 0);
 
+    ~this() {
+        inRenderNodeCleanup(IN_PART, &renderData);
+    }
+
     /**
         Constructs a new part
     */
@@ -320,8 +324,6 @@ public:
     */
     this(Node parent = null) {
         super(parent);
-        
-        version(InDoesRender) glGenBuffers(1, &uvbo);
     }
 
     /**
@@ -473,6 +475,7 @@ public:
     override
     void rebuffer(ref MeshData data) {
         super.rebuffer(data);
+        inRenderNodeUpdate(IN_PART, &renderData);
     }
 
     override
@@ -487,32 +490,31 @@ public:
 
     override
     void drawOne() {
-        version (InDoesRender) {
-            if (!enabled) return;
-            if (!data.isReady) return; // Yeah, don't even try
-            
-            size_t cMasks = maskCount;
+        if (!enabled) return;
+        if (!data.isReady) return; // Yeah, don't even try
+        
+        size_t cMasks = maskCount;
 
-            if (masks.length > 0) {
-                import std.stdio : writeln;
-                inBeginMask(cMasks > 0);
+        if (masks.length > 0) {
+            import std.stdio : writeln;
+            inBeginMask(cMasks > 0);
 
-                foreach(ref mask; masks) {
-                    mask.maskSrc.renderMask(mask.mode == MaskingMode.DodgeMask);
-                }
-
-                inBeginMaskContent();
-
-                // We are the content
-                this.drawSelf();
-
-                inEndMask();
-                return;
+            foreach(ref mask; masks) {
+                mask.maskSrc.renderMask(mask.mode == MaskingMode.DodgeMask);
             }
 
-            // No masks, draw normally
+            inBeginMaskContent();
+
+            // We are the content
             this.drawSelf();
+
+            inEndMask();
+            return;
         }
+
+        // No masks, draw normally
+        this.drawSelf();
+    
         super.drawOne();
     }
 
@@ -533,6 +535,8 @@ public:
                 validMasks ~= masks[i];
             }
         }
+
+        inRenderNodeFinalize(IN_PART, &renderData);
 
         // Remove invalid masks
         masks = validMasks;

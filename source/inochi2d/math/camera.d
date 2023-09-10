@@ -36,8 +36,9 @@ public:
     vec2 scale = vec2(1, 1);
 
     vec2 getRealSize() {
-        int width, height;
-        inGetViewport(width, height);
+        int x, y;
+        uint width, height;
+        inRenderGetViewport(&x, &y, &width, &height);
 
         return vec2(cast(float)width/scale.x, cast(float)height/scale.y);
     }
