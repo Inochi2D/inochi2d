@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Discord Chat
+    url: https://discord.com/invite/abnxwN6r9v
+    about: Ask questions and discuss with other Inochi2D users in real time.
+  - name: Inochi2D SDK Documentation
+    url: https://docs.inochi2d.com/en/latest/inochi2d/about.html
+    about: Latest documentation about the SDK
+  - name: Inochi2D Technical Specification
+    url: https://docs.inochi2d.com/en/latest/spec/inp/index.html
+    about: Inochi2D Technical Specification
