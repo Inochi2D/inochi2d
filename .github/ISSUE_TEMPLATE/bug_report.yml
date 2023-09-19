@@ -6,9 +6,8 @@ body:
   - type: markdown
     attributes:
       value: |
+        **NOTE** _If the bug pertains to Inochi Creator or Inochi Session, please go to their respective issue pages!_
         Thanks for taking the time to fill out this bug report!  
-        If the bug pertains to Inochi Creator or Inochi Session, 
-        please go to their respective issue pages!
   - type: checkboxes
     id: checkboxes
     attributes:

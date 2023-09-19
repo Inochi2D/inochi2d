@@ -6,6 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
+        **NOTE** _If the feature request pertains to Inochi Creator or Inochi Session, please go to their respective issue pages!_
         Thanks for your interest in the project and taking the time to fill out this feature request!
   - type: checkboxes
     id: checkboxes
