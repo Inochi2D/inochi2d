@@ -1,0 +1,67 @@
+name: Bug Report
+description: Report an issue with Inochi2D
+title: "[BUG]"
+labels: ["Bug", "Triage"] 
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!  
+        If the bug pertains to Inochi Creator or Inochi Session, 
+        please go to their respective issue pages!
+  - type: checkboxes
+    id: checkboxes
+    attributes:
+      label: Validations
+      description: Before submitting the bug report, please make sure you do the following
+      options:
+        - label: I have checked for similar bug reports and could not find any.
+          required: true
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is, and the behavior you expect instead. If you intend to submit a PR for this issue, tell us in the description. Thanks!
+      placeholder: I am doing ... What I expect is ...  What is actually happening is ...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See error
+    validations:
+      required: true
+  - type: dropdown
+    id: sys-arch
+    attributes:
+      label: System Architecture
+      options:
+        - x86 / x86_64
+        - arm64 / aarch64
+        - other
+  - type: dropdown
+    id: sys-os
+    attributes:
+      label: Operating System
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - OS-less
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The version of Inochi2D used, or the branch name and commit hash if you are using a cloned branch.
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: |
+        Any other context or screenshots about the issue here.

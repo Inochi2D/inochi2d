@@ -1,0 +1,52 @@
+name: Feature request
+description: Suggest an idea for Inochi2D
+title: "[Feature Request]"
+labels: ["Enhancement", "Triage"] 
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your interest in the project and taking the time to fill out this feature request!
+  - type: checkboxes
+    id: checkboxes
+    attributes:
+      label: Validations
+      description: Before submitting the feature request, please make sure you do the following
+      options:
+        - label: I have checked for similar feature requests and could not find any.
+          required: true
+        - label: I have made sure this is not an already-existing feature.
+          required: true
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Description
+      description: |
+        Clear and concise description of the problem being solved. 
+        Please make the reason and usecases as detailed as possible. 
+        If you intend to submit a PR for this issue, tell us in the description. 
+        Thanks!
+      placeholder: When using Inochi2D, I would like to be able to [goal / wish] so that [benefit].
+    validations:
+      required: true
+  - type: textarea
+    id: suggested-solution
+    attributes:
+      label: Suggested solution
+      description: |
+        A possible implementation to solve the problem.  
+        If you have technical knowledge, please also take in to account how the solution would work in inochi2d-c.
+    validations:
+      required: true
+  - type: textarea
+    id: alternative
+    attributes:
+      label: Alternative solution
+      description: |
+        A different possible solution to solve the problem.
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: |
+        Any other context or screenshots about the issue here.
