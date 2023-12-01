@@ -731,13 +731,13 @@ public:
                 offsetTint.z *= value;
                 return true;
             case "screenTint.r":
-                offsetScreenTint.x *= value;
+                offsetScreenTint.x += value;
                 return true;
             case "screenTint.g":
-                offsetScreenTint.y *= value;
+                offsetScreenTint.y += value;
                 return true;
             case "screenTint.b":
-                offsetScreenTint.z *= value;
+                offsetScreenTint.z += value;
                 return true;
             case "emissionStrength":
                 offsetEmissionStrength += value;
