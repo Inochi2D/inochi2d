@@ -398,13 +398,13 @@ public:
                 offsetOpacity *= value;
                 return true;
             case "tint.r":
-                offsetTint.x += value;
+                offsetTint.x *= value;
                 return true;
             case "tint.g":
-                offsetTint.y += value;
+                offsetTint.y *= value;
                 return true;
             case "tint.b":
-                offsetTint.z += value;
+                offsetTint.z *= value;
                 return true;
             case "screenTint.r":
                 offsetScreenTint.x += value;
