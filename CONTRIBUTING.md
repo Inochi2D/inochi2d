@@ -49,6 +49,11 @@ You can find full instructions for this specific release in the `README.md` file
 ## Contribute code changes
 Raise a pull request on our [Github project](https://github.com/Inochi2D/inochi2d) and follow the template.
 
+#### NOTE
+Inochi2D does not support compilation with the OpenD language, make sure any PRs for the Inochi2D library compiles with the official D language compilers (LDC2, DMD, GDC).
+
+Which can be downloaded from [the official website](https://dlang.org).
+
 ### Notes
 * We do not accept contributions from people who work for/at Live2D inc. and affiliates.
 * We will not accept pull requests that aim to support other 2d puppet formats within Inochi2D.

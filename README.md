@@ -38,6 +38,9 @@ To use the OpenGL renderer call `inRendererInitGL` during initialization of Inoc
 
 We provide [inochi2d-c](https://github.com/Inochi2D/inochi2d-c) as a way to use this library from non-D languages and we will be providing a layer to allow non-D languages to create rendering backends, additionally a second workgroup is making a pure Rust implementation of the Inochi2D specification over at [Inox2D](https://github.com/Inochi2D/inox2d).
 
+#### NOTE
+Inochi2D does not support compilation with the OpenD language. Only the [the official D language](https://dlang.org) and compilers are supported.
+
 &nbsp;
 
 
