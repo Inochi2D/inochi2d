@@ -424,7 +424,6 @@ void inSetCamera(Camera camera) {
     Draw scene to area
 */
 void inDrawScene(vec4 area) {
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     float[] data = [
         area.x,         area.y+area.w,          0, 0,
         area.x,         area.y,                 0, 1,

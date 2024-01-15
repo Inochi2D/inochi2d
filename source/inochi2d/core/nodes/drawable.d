@@ -79,6 +79,7 @@ private:
         this.updateDeform();
     }
 
+protected:
     void updateDeform() {
         // Important check since the user can change this every frame
         enforce(
@@ -95,7 +96,6 @@ private:
         this.updateBounds();
     }
 
-protected:
     /**
         OpenGL Index Buffer Object
     */
