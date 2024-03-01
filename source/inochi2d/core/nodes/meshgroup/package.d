@@ -295,7 +295,7 @@ public:
             auto composite = cast(Composite)node;
             bool isDrawable = drawable !is null;
             bool isComposite = composite !is null && composite.propagateMeshGroup;
-            bool mustPropagate = (isDrawable && group is null) || isComposite;
+            bool mustPropagate = (isDrawable && group is null) || (group !is null && group.data.indices.length == 0) || isComposite;
             if (translateChildren || isDrawable) {
                 if (isDrawable && dynamic) {
                     node.preProcessFilter  = null;
@@ -332,18 +332,6 @@ public:
         forwardMatrix = transform.matrix;
         inverseMatrix = globalTransform.matrix.inverse;
 
-        bool isDescendantOfDynamicMG(MeshGroup group) {
-            auto parent = group.parent;
-            while (parent) {
-                auto pg = cast(MeshGroup)parent;
-                if (pg !is null && pg.dynamic)
-                    return true;
-                parent = parent.parent;
-            }
-            return false;
-        }
-        if (isDescendantOfDynamicMG(this))
-            return;
         foreach (param; params) {
             void transferChildren(Node node, int x, int y) {
                 auto drawable = cast(Drawable)node;
@@ -351,7 +339,7 @@ public:
                 auto composite = cast(Composite)node;
                 bool isDrawable = drawable !is null;
                 bool isComposite = composite !is null && composite.propagateMeshGroup;
-                bool mustPropagate = (isDrawable && group is null) || isComposite;
+                bool mustPropagate = (isDrawable && group is null) || (group !is null && group.data.indices.length == 0) || isComposite;
                 if (isDrawable) {
                     auto vertices = drawable.vertices;
                     mat4 matrix = drawable.transform.matrix;
