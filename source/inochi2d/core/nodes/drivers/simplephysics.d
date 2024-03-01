@@ -256,6 +256,8 @@ protected:
         outputScale.serialize(serializer);
         serializer.putKey("local_only");
         serializer.serializeValue(localOnly);
+        serializer.putKey("flip_output_axis");
+        serializer.serializeValue(flipOutputAxis);
     }
 
     override
@@ -282,6 +284,8 @@ protected:
             if (auto exc = outputScale.deserialize(data["output_scale"])) return exc;
         if (!data["local_only"].isEmpty)
             if (auto exc = data["local_only"].deserializeValue(this.localOnly)) return exc;
+        if (!data["flip_output_axis"].isEmpty)
+            if (auto exc = data["flip_output_axis"].deserializeValue(this.flipOutputAxis)) return exc;
 
         return null;
     }
@@ -294,6 +298,11 @@ public:
         Whether physics system listens to local transform only.
     */
     bool localOnly = false;
+
+    /**
+        Flip output axis.
+    */
+    bool flipOutputAxis = false;
 
     /**
         Gravity scale (1.0 = puppet gravity)
@@ -431,6 +440,7 @@ public:
                 break;
             default: assert(0);
         }
+        if(flipOutputAxis) paramVal = vec2(paramVal.y, paramVal.x);
 
         param.pushIOffset(vec2(paramVal.x * oscale.x, paramVal.y * oscale.y), ParamMergeMode.Forced);
         param.update();
