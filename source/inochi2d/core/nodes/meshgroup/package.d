@@ -52,14 +52,30 @@ protected:
 
     bool precalculated = false;
 
-    override
-    void preProcess() {
-        super.preProcess();
-    }
-
-    override
-    void postProcess() {
-        super.preProcess();
+    void updateForFilter() {
+        if (data.indices.length > 0) {
+            if (!precalculated) {
+                precalculate();
+            }
+            transformedVertices.length = vertices.length;
+            foreach(i, vertex; vertices) {
+                transformedVertices[i] = vertex+this.deformation[i];
+            }
+            foreach (index; 0..triangles.length) {
+                auto p1 = transformedVertices[data.indices[index * 3]];
+                auto p2 = transformedVertices[data.indices[index * 3 + 1]];
+                auto p3 = transformedVertices[data.indices[index * 3 + 2]];
+                triangles[index].transformMatrix = mat3([p2.x - p1.x, p3.x - p1.x, p1.x,
+                                                        p2.y - p1.y, p3.y - p1.y, p1.y,
+                                                        0, 0, 1]) * triangles[index].offsetMatrices;
+            }
+            forwardMatrix = (overrideTransformMatrix is null)? 
+                transform.matrix: 
+                overrideTransformMatrix.matrix;
+            inverseMatrix = (overrideTransformMatrix is null)?
+                globalTransform.matrix.inverse:
+                overrideTransformMatrix.matrix.inverse;
+        }
     }
 
 public:
@@ -92,19 +108,19 @@ public:
                 index = bit - 1;
             }
             vec2 newPos = (index < 0)? cVertex: (triangles[index].transformMatrix * vec3(cVertex, 1)).xy;
-            if (!dynamic) {
+ //           if (!dynamic) {
                 mat4 inv = centerMatrix.inverse;
                 inv[0][3] = 0;
                 inv[1][3] = 0;
                 inv[2][3] = 0;
                 origDeformation[i] += (inv * vec4(newPos - cVertex, 0, 1)).xy;
-            } else
-                origDeformation[i] = newPos - origVertices[i];
+//            } else
+//                origDeformation[i] = newPos - origVertices[i];
         }
 
-        if (!dynamic)
+//        if (!dynamic)
             return tuple(origDeformation, cast(mat4*)null);
-        return tuple(origDeformation, &forwardMatrix);
+//        return tuple(origDeformation, &forwardMatrix);
     }
 
     /**
@@ -115,29 +131,21 @@ public:
         preProcess();
         deformStack.update();
         
-        if (data.indices.length > 0) {
-            if (!precalculated) {
-                precalculate();
-            }
-            transformedVertices.length = vertices.length;
-            foreach(i, vertex; vertices) {
-                transformedVertices[i] = vertex+this.deformation[i];
-            }
-            foreach (index; 0..triangles.length) {
-                auto p1 = transformedVertices[data.indices[index * 3]];
-                auto p2 = transformedVertices[data.indices[index * 3 + 1]];
-                auto p3 = transformedVertices[data.indices[index * 3 + 2]];
-                triangles[index].transformMatrix = mat3([p2.x - p1.x, p3.x - p1.x, p1.x,
-                                                        p2.y - p1.y, p3.y - p1.y, p1.y,
-                                                        0, 0, 1]) * triangles[index].offsetMatrices;
-            }
-            forwardMatrix = transform.matrix;
-            inverseMatrix = globalTransform.matrix.inverse;
-        }
+        if (!dynamic)
+            updateForFilter();
 
         Node.update();
         this.updateDeform();
-   }
+    }
+
+    override
+    void endUpdate() {
+        postProcess();
+        if (dynamic)
+            updateForFilter();
+
+        super.endUpdate();
+    }
 
     override
     void draw() {
@@ -324,6 +332,18 @@ public:
         forwardMatrix = transform.matrix;
         inverseMatrix = globalTransform.matrix.inverse;
 
+        bool isDescendantOfDynamicMG(MeshGroup group) {
+            auto parent = group.parent;
+            while (parent) {
+                auto pg = cast(MeshGroup)parent;
+                if (pg !is null && pg.dynamic)
+                    return true;
+                parent = parent.parent;
+            }
+            return false;
+        }
+        if (isDescendantOfDynamicMG(this))
+            return;
         foreach (param; params) {
             void transferChildren(Node node, int x, int y) {
                 auto drawable = cast(Drawable)node;
