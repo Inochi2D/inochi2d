@@ -40,6 +40,8 @@ enum PhysicsModel {
 enum ParamMapMode {
     AngleLength = "angle_length",
     XY = "xy",
+    LengthAngle = "length_angle",
+    YX = "yx",
 }
 
 class Pendulum : PhysicsSystem {
@@ -428,6 +430,16 @@ public:
             case ParamMapMode.AngleLength:
                 float a = atan2(-localAngle.x, localAngle.y) / PI;
                 paramVal = vec2(a, relLength);
+                break;
+            case ParamMapMode.YX:
+                auto localPosNorm = localAngle * relLength;
+                paramVal = localPosNorm - vec2(0, 1);
+                paramVal.y = -paramVal.y; // Y goes up for params
+                paramVal = vec2(paramVal.y, paramVal.x);
+                break;
+            case ParamMapMode.LengthAngle:
+                float a = atan2(-localAngle.x, localAngle.y) / PI;
+                paramVal = vec2(relLength, a);
                 break;
             default: assert(0);
         }
