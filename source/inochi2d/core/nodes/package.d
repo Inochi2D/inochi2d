@@ -763,7 +763,16 @@ public:
         foreach(child; children) {
             child.update();
         }
+    }
+
+    /**
+        Complete update
+    */
+    void endUpdate() {
         postProcess();
+        foreach(child; children) {
+            child.endUpdate();
+        }
     }
 
     /**
