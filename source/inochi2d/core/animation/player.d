@@ -141,6 +141,11 @@ private:
             _looped++;
         }
 
+        // Always render the last frame
+        if (frame+1 >= frames) {
+            _time = cast(float)(frames-1)*anim.timestep;
+        }
+
         render();
 
         // Handle stopping animation completely on lead-out end
