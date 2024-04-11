@@ -324,6 +324,13 @@ public:
     vec2 outputScale = vec2(1, 1);
 
     @Ignore
+    vec2 prevAnchor = vec2(0, 0);
+    @Ignore
+    mat4 prevTransMat;
+    @Ignore
+    bool prevAnchorSet = false;
+
+    @Ignore
     vec2 anchor = vec2(0, 0);
 
     @Ignore
@@ -350,7 +357,6 @@ public:
     override
     void beginUpdate() {
         super.beginUpdate();
-
         offsetGravity = 1;
         offsetLength = 0;
         offsetFrequency = 1;
@@ -387,6 +393,7 @@ public:
 
         system.tick(h);
         updateOutputs();
+        prevAnchorSet = false;
     }
 
     void updateAnchors() {
@@ -394,11 +401,45 @@ public:
     }
 
     void updateInputs() {
+        if (prevAnchorSet) {
+        } else {
+            auto anchorPos = localOnly ? 
+                (vec4(transformLocal.translation, 1)) : 
+                (transform.matrix * vec4(0, 0, 0, 1));
+            anchor = vec2(anchorPos.x, anchorPos.y);
+        }
+    }
 
-        auto anchorPos = localOnly ? 
+    override
+    void preProcess() {
+        auto prevPos = (localOnly ? 
             (vec4(transformLocal.translation, 1)) : 
-            (transform.matrix * vec4(0, 0, 0, 1));
-        anchor = vec2(anchorPos.x, anchorPos.y);
+            (transform.matrix * vec4(0, 0, 0, 1))).xy;
+        super.preProcess(); 
+        auto anchorPos = (localOnly ? 
+            (vec4(transformLocal.translation, 1)) : 
+            (transform.matrix * vec4(0, 0, 0, 1))).xy;
+        if (anchorPos != prevPos) {
+            anchor = anchorPos;
+            prevTransMat = transform.matrix.inverse;
+            prevAnchorSet = true;
+        }
+    }
+
+    override
+    void postProcess() { 
+        auto prevPos = (localOnly ? 
+            (vec4(transformLocal.translation, 1)) : 
+            (transform.matrix * vec4(0, 0, 0, 1))).xy;
+        super.postProcess(); 
+        auto anchorPos = (localOnly ? 
+            (vec4(transformLocal.translation, 1)) : 
+            (transform.matrix * vec4(0, 0, 0, 1))).xy;
+        if (anchorPos != prevPos) {
+            anchor = anchorPos;
+            prevTransMat = transform.matrix.inverse;
+            prevAnchorSet = true;
+        }
     }
 
     void updateOutputs() {
@@ -411,9 +452,10 @@ public:
 
         // Transform the physics output back into local space.
         // The origin here is the anchor. This gives us the local angle.
-        auto localPos4 = localOnly ? 
-            vec4(output.x, output.y, 0, 1) : 
-            (transform.matrix.inverse * vec4(output.x, output.y, 0, 1));
+        vec4 localPos4;
+        localPos4 = localOnly ? 
+        vec4(output.x, output.y, 0, 1) : 
+        ((prevAnchorSet? prevTransMat: transform.matrix.inverse) * vec4(output.x, output.y, 0, 1));
         vec2 localAngle = vec2(localPos4.x, localPos4.y);
         localAngle.normalize();
 
