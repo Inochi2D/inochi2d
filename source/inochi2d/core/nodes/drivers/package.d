@@ -17,7 +17,11 @@ public import inochi2d.core.nodes.drivers.simplephysics;
 */
 @TypeId("Driver")
 abstract class Driver : Node {
-private:
+package(inochi2d):
+
+    /**
+        Needed for deserialization
+    */
     this() { }
 
 protected:

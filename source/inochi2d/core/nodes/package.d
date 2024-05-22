@@ -113,8 +113,6 @@ enum RenderID : ubyte {
 @TypeId("Node")
 class Node : ISerializable {
 private:
-    this() { }
-
     @Ignore
     Puppet puppet_;
 
@@ -259,6 +257,8 @@ package(inochi2d):
     void setPuppet(Puppet puppet) {
         this.puppet_ = puppet;
     }
+
+    this() { }
 
 public:
 
