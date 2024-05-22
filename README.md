@@ -44,6 +44,12 @@ Inochi2D does not support compilation with the OpenD language. Only the [the off
 &nbsp;
 
 
+## Special Thanks
+
+This project is funded through [NGI0 Entrust](https://nlnet.nl/entrust), a fund established by [NLnet](https://nlnet.nl) with financial support from the European Commission's [Next Generation Internet](https://ngi.eu) program. Learn more at the [NLnet project page](https://nlnet.nl/project/Inochi2D).
+
+[<img src="https://nlnet.nl/logo/banner.svg" alt="NLnet foundation logo" width="20%" />](https://nlnet.nl)  
+
 ---
 
 The Inochi2D logo was designed by [James Daniel](https://twitter.com/rakujira)
