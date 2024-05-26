@@ -74,7 +74,6 @@ void inClearUUIDs() {
 @TypeId("Node")
 class Node : ISerializable {
 private:
-    this() { }
 
     @Ignore
     Puppet puppet_;
@@ -98,6 +97,8 @@ private:
     string nodePath_;
 
 protected:
+    this() { }
+
     bool preProcessed  = false;
     bool postProcessed = false;
 
