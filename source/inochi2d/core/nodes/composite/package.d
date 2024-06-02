@@ -15,6 +15,7 @@ import inochi2d.math;
 import bindbc.opengl;
 import std.exception;
 import std.algorithm.sorting;
+import std.stdio;
 
 private {
     GLuint cVAO;
@@ -96,7 +97,6 @@ private:
     this() { }
 
     void drawContents() {
-
         // Optimization: Nothing to be drawn, skip context switching
         if (subParts.length == 0) return;
 
@@ -114,7 +114,6 @@ private:
     */
     void drawSelf() {
         if (subParts.length == 0) return;
-
         glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
         glBindVertexArray(cVAO);
 
@@ -154,7 +153,6 @@ private:
     }
 
     void scanPartsRecurse(ref Node node) {
-
         // Don't need to scan null nodes
         if (node is null) return;
 
@@ -523,5 +521,43 @@ public:
         if (children.length > 0) {
             scanPartsRecurse(children[0].parent);
         }
+    }
+
+    override
+    void transformChanged() {
+        super.transformChanged();
+    }
+
+    override
+    void centralize() {
+        super.centralize();
+        vec4 bounds;
+        vec4[] childTranslations;
+        if (children.length > 0) {
+            bounds = children[0].getCombinedBounds();
+            foreach (child; children) {
+                auto cbounds = child.getCombinedBounds();
+                bounds.x = min(bounds.x, cbounds.x);
+                bounds.y = min(bounds.y, cbounds.y);
+                bounds.z = max(bounds.z, cbounds.z);
+                bounds.w = max(bounds.w, cbounds.w);
+                childTranslations ~= child.transform.matrix() * vec4(0, 0, 0, 1);
+            }
+        } else {
+            bounds = transform.translation.xyxy;
+        }
+        vec2 center = (bounds.xy + bounds.zw) / 2;
+        if (parent !is null) {
+            center = (parent.transform.matrix.inverse * vec4(center, 0, 1)).xy;
+        }
+        auto diff = center - localTransform.translation.xy;
+        localTransform.translation.x = center.x;
+        localTransform.translation.y = center.y;
+        clearCache();
+        foreach (i, child; children) {
+            child.localTransform.translation = (transform.matrix.inverse * childTranslations[i]).xyz;
+            child.transformChanged();
+        }
+
     }
 }

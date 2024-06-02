@@ -19,7 +19,10 @@ public import inochi2d.core.nodes.drawable;
 public import inochi2d.core.nodes.composite;
 public import inochi2d.core.nodes.meshgroup;
 public import inochi2d.core.nodes.drivers; 
+import inochi2d.core.nodes.utils;
 import std.typecons: tuple, Tuple;
+import std.algorithm.searching;
+import std.string;
 
 //public import inochi2d.core.nodes.shapes; // This isn't mainline yet!
 
@@ -101,6 +104,12 @@ protected:
 
     bool preProcessed  = false;
     bool postProcessed = false;
+    bool changed = false;
+    /**
+        Whether the node is enabled
+    */
+    bool enabled = true;
+
 
     /**
         The offset to the transform to apply
@@ -173,22 +182,22 @@ protected:
     }
     MatrixHolder overrideTransformMatrix = null;
 
-    Tuple!(vec2[], mat4*) delegate(vec2[], vec2[], mat4*) preProcessFilter  = null;
-    Tuple!(vec2[], mat4*) delegate(vec2[], vec2[], mat4*) postProcessFilter = null;
+    Tuple!(vec2[], mat4*, bool) delegate(Node, vec2[], vec2[], mat4*)[] preProcessFilters;
+    Tuple!(vec2[], mat4*, bool) delegate(Node, vec2[], vec2[], mat4*)[] postProcessFilters;
 
     import std.stdio;
     void preProcess() {
         if (preProcessed)
             return;
         preProcessed = true;
-        if (preProcessFilter !is null) {
-            overrideTransformMatrix = null;
+        overrideTransformMatrix = null;
+        foreach (preProcessFilter; preProcessFilters) {
             mat4 matrix = this.parent? this.parent.transform.matrix: mat4.identity;
-            auto filterResult = preProcessFilter([localTransform.translation.xy], [offsetTransform.translation.xy], &matrix);
+            auto filterResult = preProcessFilter(this, [localTransform.translation.xy], [offsetTransform.translation.xy], &matrix);
             if (filterResult[0] !is null && filterResult[0].length > 0) {
                 offsetTransform.translation = vec3(filterResult[0][0], offsetTransform.translation.z);
                 transformChanged();
-            } 
+            }
         }
     }
 
@@ -196,10 +205,10 @@ protected:
         if (postProcessed)
             return;
         postProcessed = true;
-        if (postProcessFilter !is null) {
-            overrideTransformMatrix = null;
+        overrideTransformMatrix = null;
+        foreach (postProcessFilter; postProcessFilters) {
             mat4 matrix = this.parent? this.parent.transform.matrix: mat4.identity;
-            auto filterResult = postProcessFilter([localTransform.translation.xy], [offsetTransform.translation.xy], &matrix);
+            auto filterResult = postProcessFilter(this, [localTransform.translation.xy], [offsetTransform.translation.xy], &matrix);
             if (filterResult[0] !is null && filterResult[0].length > 0) {
                 offsetTransform.translation = vec3(filterResult[0][0], offsetTransform.translation.z);
                 transformChanged();
@@ -217,12 +226,14 @@ package(inochi2d):
         this.puppet_ = puppet;
     }
 
-public:
-
     /**
-        Whether the node is enabled
+        Gets a list of this node's children
     */
-    bool enabled = true;
+    final ref Node[] children_ref() {
+        return children_;
+    }
+
+public:
 
     /**
         Whether the node is enabled for rendering
@@ -358,31 +369,20 @@ public:
         The transform in world space
     */
     @Ignore
-    Transform transform(bool ignoreParam=false)() {
+//    Transform transform(bool ignoreParam=false)() {
+    Transform transform() {
         if (recalculateTransform) {
             localTransform.update();
             offsetTransform.update();
 
-            static if (!ignoreParam) {
-                if (lockToRoot_)
-                    globalTransform = localTransform.calcOffset(offsetTransform) * puppet.root.localTransform;
-                else if (parent !is null)
-                    globalTransform = localTransform.calcOffset(offsetTransform) * parent.transform();
-                else
-                    globalTransform = localTransform.calcOffset(offsetTransform);
+            if (lockToRoot_)
+                globalTransform = localTransform.calcOffset(offsetTransform) * puppet.root.localTransform;
+            else if (parent !is null)
+                globalTransform = localTransform.calcOffset(offsetTransform) * parent.transform();
+            else
+                globalTransform = localTransform.calcOffset(offsetTransform);
 
-                recalculateTransform = false;
-            } else {
-
-                if (lockToRoot_)
-                    globalTransform = localTransform * puppet.root.localTransform;
-                else if (parent !is null)
-                    globalTransform = localTransform * parent.transform();
-                else
-                    globalTransform = localTransform;
-
-                recalculateTransform = false;
-            }
+            recalculateTransform = false;
         }
 
         return globalTransform;
@@ -548,10 +548,13 @@ public:
             // Try to find ourselves in our parent
             // note idx will be -1 if we can't be found
             ptrdiff_t idx = parent_.children_.countUntil(this);
-            assert(idx >= 0, "Invalid parent-child relationship!");
+            if (idx >= 0) {
+                // Following happens when parent is shadowed by system (DynamicComposite cases.)
+                //assert(idx >= 0, "Invalid parent-child relationship!");
 
-            // Remove ourselves
-            parent_.children_ = parent_.children_.remove(idx);
+                // Remove ourselves
+                parent_.children_ = parent_.children_.remove(idx);
+            }
         }
 
         // If we want to become parentless we need to handle that
@@ -743,6 +746,7 @@ public:
     void beginUpdate() {
         preProcessed  = false;
         postProcessed = false;
+        changed = false;
 
         offsetSort = 0;
         offsetTransform.clear();
@@ -765,6 +769,9 @@ public:
             child.update();
         }
         postProcess();
+    }
+
+    void endUpdate() {
     }
 
     /**
@@ -801,6 +808,7 @@ public:
 
         if (!data["name"].isEmpty) {
             if (auto exc = data["name"].deserializeValue(this.name)) return exc;
+            this.name = this.name.toStringz.fromStringz;
         }
 
         if (auto exc = data["enabled"].deserializeValue(this.enabled)) return exc;
@@ -970,35 +978,129 @@ public:
      * set new Parent
      */
     void reparent(Node parent, ulong pOffset) {
-        void unsetGroup(Node node) {
-            node.postProcessFilter = null;
-            node.preProcessFilter  = null;
-            auto group = cast(MeshGroup)node;
-            if (group is null) {
-                foreach (child; node.children) {
-                    unsetGroup(child);
-                }
-            }
-        }
 
-        unsetGroup(this);
+        auto c = this;
+        releaseSelf();
+        for (auto p = c.parent; p !is null && c !is null; p = p.parent, c = c.parent) {
+            p.releaseChild(c);
+        }
 
         if (parent !is null)
             setRelativeTo(parent);
         insertInto(parent, pOffset);
-        auto c = this;
+        c = this;
         for (auto p = parent; p !is null; p = p.parent, c = c.parent) {
             p.setupChild(c);
         }
+        setupSelf();
     }
 
     void setupChild(Node child) { }
+    void releaseChild(Node child) { }
+    void setupSelf() { }
+    void releaseSelf() { }
 
     mat4 getDynamicMatrix() {
         if (overrideTransformMatrix !is null) {
             return overrideTransformMatrix.matrix;
         } else {
             return transform.matrix;
+        }
+    }
+
+    void clearCache() { }
+    void normalizeUV(MeshData* data) { }
+
+    bool getEnabled() { return enabled; }
+    void setEnabled(bool value) { 
+        bool changed = enabled != value;
+        enabled = value;
+    }
+
+    void centralize() {
+        foreach (child; children) {
+            child.centralize();
+        }
+
+        vec4 bounds;
+        vec4[] childTranslations;
+        if (children.length > 0) {
+            bounds = children[0].getCombinedBounds();
+            foreach (child; children) {
+                auto cbounds = child.getCombinedBounds();
+                bounds.x = min(bounds.x, cbounds.x);
+                bounds.y = min(bounds.y, cbounds.y);
+                bounds.z = max(bounds.z, cbounds.z);
+                bounds.w = max(bounds.w, cbounds.w);
+                childTranslations ~= child.transform.matrix() * vec4(0, 0, 0, 1);
+            }
+        } else {
+            bounds = transform.translation.xyxy;
+        }
+        vec2 center = (bounds.xy + bounds.zw) / 2;
+        if (parent !is null) {
+            center = (parent.transform.matrix.inverse * vec4(center, 0, 1)).xy;
+        }
+        auto diff = center - localTransform.translation.xy;
+        localTransform.translation.x = center.x;
+        localTransform.translation.y = center.y;
+        transformChanged();
+
+        foreach (i, child; children) {
+            child.localTransform.translation = (transform.matrix.inverse * childTranslations[i]).xyz;
+            child.transformChanged();
+        }
+    }
+
+    void copyFrom(Node src, bool inPlace = false, bool deepCopy = true) {
+        name = src.name;
+        enabled = src.enabled;
+        zsort_ = src.zsort_;
+        lockToRoot_ = src.lockToRoot_;
+        nodePath_ = src.nodePath_;
+        changed = src.changed;
+//        localTransform = src.localTransform;
+        if (inPlace) {
+            uuid_ = src.uuid_;
+            Node parent = src.parent_;
+            auto tmpTransform = src.transform;
+            localTransform = tmpTransform;
+            recalculateTransform = true;
+            puppet_ = src.puppet_;
+            ulong offset = 0;
+            reparent(parent, offset);
+            this.finalize();
+            if (deepCopy) {
+                children_.length = 0;
+                while (src.children.length != 0) {
+                    src.children[0].reparent(this, src.children.length - 1);
+                }
+            }
+            src.reparent(null, 0);
+            src.localTransform = tmpTransform;
+        } else {
+            uuid_ = inCreateUUID();
+            if (deepCopy) {
+                children_.length = 0;
+                localTransform = src.transform;
+                foreach (i, srcChild; src.children) {
+                    auto child = inInstantiateNode(srcChild.typeId, null);
+                    child.copyFrom(srcChild);
+                    child.reparent(this, i);
+                }
+            }
+        }
+    }
+
+    Node dup() {
+        Node node = inInstantiateNode(typeId);
+        node.copyFrom(this);
+        return node;
+    }
+
+    void build(bool force = false) {
+        foreach (child; children) {
+            child.build(force);
         }
     }
 }
@@ -1027,10 +1129,10 @@ public:
 //
 private {
     Node delegate(Node parent)[string] typeFactories;
+}
 
-    Node inInstantiateNode(string id, Node parent = null) {
-        return typeFactories[id](parent);
-    }
+Node inInstantiateNode(string id, Node parent = null) {
+    return typeFactories[id](parent);
 }
 
 void inRegisterNodeType(T)() if (is(T : Node)) {

@@ -17,6 +17,8 @@ import inochi2d.core.dbg;
 import inochi2d.core;
 import std.typecons: tuple, Tuple;
 import std.stdio;
+import inochi2d.core.nodes.utils;
+import std.algorithm.searching;
 
 package(inochi2d) {
     void inInitMeshGroup() {
@@ -30,6 +32,7 @@ struct Triangle{
     mat3 offsetMatrices;
     mat3 transformMatrix;
 }
+
 }
 
 /**
@@ -72,9 +75,9 @@ public:
         super(parent);
     }
 
-    Tuple!(vec2[], mat4*) filterChildren(vec2[] origVertices, vec2[] origDeformation, mat4* origTransform) {
+    Tuple!(vec2[], mat4*, bool) filterChildren(Node target, vec2[] origVertices, vec2[] origDeformation, mat4* origTransform) {
         if (!precalculated)
-            return Tuple!(vec2[], mat4*)(null, null);
+            return Tuple!(vec2[], mat4*, bool)(null, null, false);
 
         mat4 centerMatrix = inverseMatrix * (*origTransform);
 
@@ -103,8 +106,8 @@ public:
         }
 
         if (!dynamic)
-            return tuple(origDeformation, cast(mat4*)null);
-        return tuple(origDeformation, &forwardMatrix);
+            return tuple(origDeformation, cast(mat4*)null, changed);
+        return tuple(origDeformation, &forwardMatrix, changed);
     }
 
     /**
@@ -287,18 +290,20 @@ public:
             auto composite = cast(Composite)node;
             bool isDrawable = drawable !is null;
             bool isComposite = composite !is null && composite.propagateMeshGroup;
-            bool mustPropagate = (isDrawable && group is null) || isComposite;
+            bool mustPropagate = ((isDrawable && group is null) || isComposite);
             if (translateChildren || isDrawable) {
                 if (isDrawable && dynamic) {
-                    node.preProcessFilter  = null;
-                    node.postProcessFilter = &filterChildren;
+                    node.preProcessFilters  = node.preProcessFilters.removeByValue(&filterChildren);
+                    if (node.postProcessFilters.countUntil(&filterChildren) == -1)
+                        node.postProcessFilters ~= &filterChildren;
                 } else {
-                    node.preProcessFilter  = &filterChildren;
-                    node.postProcessFilter = null;
+                    if (node.preProcessFilters.countUntil(&filterChildren) == -1)
+                        node.preProcessFilters  ~= &filterChildren;
+                    node.postProcessFilters = node.postProcessFilters.removeByValue(&filterChildren);
                 }
             } else {
-                node.preProcessFilter  = null;
-                node.postProcessFilter = null;
+                node.preProcessFilters  = node.preProcessFilters.removeByValue(&filterChildren);
+                node.postProcessFilters = node.postProcessFilters.removeByValue(&filterChildren);
             }
             // traverse children if node is Drawable and is not MeshGroup instance.
             if (mustPropagate) {
@@ -312,6 +317,21 @@ public:
             setGroup(child);
         } 
 
+    }
+
+    override
+    void releaseChild(Node child) {
+        void unsetGroup(Node node) {
+            node.preProcessFilters = node.preProcessFilters.removeByValue(&this.filterChildren);
+            node.postProcessFilters = node.postProcessFilters.removeByValue(&this.filterChildren);
+            auto group = cast(MeshGroup)node;
+            if (group is null) {
+                foreach (child; node.children) {
+                    unsetGroup(child);
+                }
+            }
+        }
+        unsetGroup(child);
     }
 
     void applyDeformToChildren(Parameter[] params) {
@@ -331,14 +351,14 @@ public:
                 auto composite = cast(Composite)node;
                 bool isDrawable = drawable !is null;
                 bool isComposite = composite !is null && composite.propagateMeshGroup;
-                bool mustPropagate = (isDrawable && group is null) || isComposite;
+                bool mustPropagate = ((isDrawable && group is null) || isComposite);
                 if (isDrawable) {
                     auto vertices = drawable.vertices;
                     mat4 matrix = drawable.transform.matrix;
 
                     auto nodeBinding = cast(DeformationParameterBinding)param.getOrAddBinding(node, "deform");
                     auto nodeDeform = nodeBinding.values[x][y].vertexOffsets.dup;
-                    Tuple!(vec2[], mat4*) filterResult = filterChildren(vertices, nodeDeform, &matrix);
+                    Tuple!(vec2[], mat4*, bool) filterResult = filterChildren(node, vertices, nodeDeform, &matrix);
                     if (filterResult[0] !is null) {
                         nodeBinding.values[x][y].vertexOffsets = filterResult[0];
                         nodeBinding.getIsSet()[x][y] = true;
@@ -350,7 +370,7 @@ public:
                     auto nodeBindingX = cast(ValueParameterBinding)param.getOrAddBinding(node, "transform.t.x");
                     auto nodeBindingY = cast(ValueParameterBinding)param.getOrAddBinding(node, "transform.t.y");
                     auto nodeDeform = [node.offsetTransform.translation.xy];
-                    Tuple!(vec2[], mat4*) filterResult = filterChildren(vertices, nodeDeform, &matrix);
+                    Tuple!(vec2[], mat4*, bool) filterResult = filterChildren(node, vertices, nodeDeform, &matrix);
                     if (filterResult[0] !is null) {
                         nodeBindingX.values[x][y] += filterResult[0][0].x;
                         nodeBindingY.values[x][y] += filterResult[0][0].y;
@@ -429,9 +449,70 @@ public:
             setupChild(child);
     }
 
+    override
     void clearCache() {
         precalculated = false;
         bitMask.length = 0;
         triangles.length = 0;
+    }
+
+    override
+    void centralize() {
+        super.centralize();
+        vec4 bounds;
+        vec4[] childTranslations;
+        if (children.length > 0) {
+            bounds = children[0].getCombinedBounds();
+            foreach (child; children) {
+                auto cbounds = child.getCombinedBounds();
+                bounds.x = min(bounds.x, cbounds.x);
+                bounds.y = min(bounds.y, cbounds.y);
+                bounds.z = max(bounds.z, cbounds.z);
+                bounds.w = max(bounds.w, cbounds.w);
+                childTranslations ~= child.transform.matrix() * vec4(0, 0, 0, 1);
+            }
+        } else {
+            bounds = transform.translation.xyxy;
+        }
+        vec2 center = (bounds.xy + bounds.zw) / 2;
+        if (parent !is null) {
+            center = (parent.transform.matrix.inverse * vec4(center, 0, 1)).xy;
+        }
+        auto diff = center - localTransform.translation.xy;
+        localTransform.translation.x = center.x;
+        localTransform.translation.y = center.y;
+        foreach (ref v; vertices) {
+            v -= diff;
+        }
+        transformChanged();
+        clearCache();
+        updateBounds();
+        foreach (i, child; children) {
+            child.localTransform.translation = (transform.matrix.inverse * childTranslations[i]).xyz;
+            child.transformChanged();
+        }
+    }
+
+    override
+    void copyFrom(Node src, bool inPlace = false, bool deepCopy = true) {
+        super.copyFrom(src, inPlace, deepCopy);
+
+        if (auto mgroup = cast(MeshGroup)src) {
+            dynamic = mgroup.dynamic;
+            translateChildren = mgroup.translateChildren;
+            clearCache();
+        }
+    }
+
+    override
+    void build(bool force = false) { 
+        if (force || !precalculated) {
+            precalculate();
+        }
+        foreach (child; children) {
+            setupChild(child);
+        }
+        setupSelf();
+        super.build(force);
     }
 }

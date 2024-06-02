@@ -16,8 +16,14 @@ import std.exception;
 import inochi2d.core.dbg;
 import inochi2d.core;
 import std.string;
+import std.typecons: tuple, Tuple;
+import std.algorithm.searching;
+import std.algorithm.mutation: remove;
+import inochi2d.core.nodes.utils;
+import std.stdio;
 
 private GLuint drawableVAO;
+private const ptrdiff_t NOINDEX = cast(ptrdiff_t)-1;
 
 package(inochi2d) {
     void inInitDrawable() {
@@ -54,7 +60,7 @@ void inSetUpdateBounds(bool state) {
 
 @TypeId("Drawable")
 abstract class Drawable : Node {
-private:
+protected:
 
     void updateIndices() {
         version (InDoesRender) {
@@ -79,7 +85,56 @@ private:
         this.updateDeform();
     }
 
-protected:
+    Tuple!(vec2[], mat4*, bool) weldingProcessor(Node target, vec2[] origVertices, vec2[] origDeformation, mat4* origTransform) {
+        auto linkIndex = welded.countUntil!((a)=>a.target == target)();
+        bool changed = false;
+        WeldingLink link = welded[linkIndex];
+        if (!postProcessed)
+            return Tuple!(vec2[], mat4*, bool)(null, null, changed);
+        if (weldingApplied[link.target] || link.target.weldingApplied[this])
+            return Tuple!(vec2[], mat4*, bool)(null, null, changed);
+//        import std.stdio;
+//        writefln("welding: %s(%b) --> %s(%b)", name, postProcessed, target.name, target.postProcessed);
+        weldingApplied[link.target] = true;
+        link.target.weldingApplied[this] = true;
+        float weldingWeight = min(1, max(0, link.weight));
+        foreach(i, vertex; vertices) {
+            if (i >= link.indices.length)
+                break;
+            auto index = link.indices[i];
+            if (index == NOINDEX)
+                continue;
+            vec2 selfVertex = vertex + deformation[i];
+            mat4 selfMatrix = overrideTransformMatrix? overrideTransformMatrix.matrix: transform.matrix;
+            selfVertex = (selfMatrix * vec4(selfVertex, 0, 1)).xy;
+
+            vec2 targetVertex = origVertices[index] + origDeformation[index];
+            targetVertex = ((*origTransform) * vec4(targetVertex, 0, 1)).xy;
+
+            vec2 newPos = targetVertex * (1 - weldingWeight) + selfVertex * (weldingWeight);
+
+            changed = newPos != selfVertex;
+
+            auto selfMatrixInv = selfMatrix.inverse;
+            selfMatrixInv[0][3] = 0;
+            selfMatrixInv[1][3] = 0;
+            selfMatrixInv[2][3] = 0;
+            deformation[i] += (selfMatrixInv * vec4(newPos - selfVertex, 0, 1)).xy;
+            version (InDoesRender) {
+                glBindBuffer(GL_ARRAY_BUFFER, dbo);
+                glBufferData(GL_ARRAY_BUFFER, deformation.length*vec2.sizeof, deformation.ptr, GL_DYNAMIC_DRAW);
+            }
+
+            auto targetMatrixInv = (*origTransform).inverse;
+            targetMatrixInv[0][3] = 0;
+            targetMatrixInv[1][3] = 0;
+            targetMatrixInv[2][3] = 0;
+            origDeformation[index] += (targetMatrixInv * vec4(newPos - targetVertex, 0, 1)).xy;
+        }
+
+        return tuple(origDeformation, cast(mat4*)null, changed);
+    }
+
     void updateDeform() {
         // Important check since the user can change this every frame
         enforce(
@@ -138,6 +193,17 @@ protected:
         super.serializeSelfImpl(serializer, recursive);
         serializer.putKey("mesh");
         serializer.serializeValue(data);
+
+        if (welded.length > 0) {
+            serializer.putKey("weldedLinks");
+            auto state = serializer.arrayBegin();
+                foreach(link; welded) {
+                    serializer.elemBegin;
+                    serializer.serializeValue(link);
+                }
+            serializer.arrayEnd(state);
+        }
+
     }
 
     override
@@ -147,6 +213,10 @@ protected:
         if (auto exc = data["mesh"].deserializeValue(this.data)) return exc;
 
         this.vertices = this.data.vertices.dup;
+
+        if (!data["weldedLinks"].isEmpty) {
+            data["weldedLinks"].deserializeValue(this.welded);
+        }
 
         // Update indices and vertices
         this.updateIndices();
@@ -161,10 +231,9 @@ protected:
         if (preProcessed)
             return;
         preProcessed = true;
-        if (preProcessFilter !is null) {
-            overrideTransformMatrix = null;
-            mat4 matrix = this.transform.matrix;
-            auto filterResult = preProcessFilter(vertices, deformation, &matrix);
+        foreach (preProcessFilter; preProcessFilters) {
+            mat4 matrix = (overrideTransformMatrix !is null)? overrideTransformMatrix.matrix: this.transform.matrix;
+            auto filterResult = preProcessFilter(this, vertices, deformation, &matrix);
             if (filterResult[0] !is null) {
                 deformation = filterResult[0];
             } 
@@ -179,10 +248,9 @@ protected:
         if (postProcessed)
             return;
         postProcessed = true;
-        if (postProcessFilter !is null) {
-            overrideTransformMatrix = null;
-            mat4 matrix = this.transform.matrix;
-            auto filterResult = postProcessFilter(vertices, deformation, &matrix);
+        foreach (postProcessFilter; postProcessFilters) {
+            mat4 matrix = (overrideTransformMatrix !is null)? overrideTransformMatrix.matrix: this.transform.matrix;
+            auto filterResult = postProcessFilter(this, vertices, deformation, &matrix);
             if (filterResult[0] !is null) {
                 deformation = filterResult[0];
             } 
@@ -198,6 +266,19 @@ package(inochi2d):
     }
 
 public:
+
+    struct WeldingLink {
+        @Name("targetUUID")
+        uint targetUUID; 
+        @Ignore
+        Drawable target;
+        @Name("indices")
+        ptrdiff_t[] indices;
+        @Name("weight")
+        float weight;
+    };
+    WeldingLink[] welded;
+    bool[Drawable] weldingApplied;
 
     abstract void renderMask(bool dodge = false);
 
@@ -286,6 +367,10 @@ public:
     override
     void beginUpdate() {
         deformStack.preUpdate();
+        weldingApplied.clear();
+        overrideTransformMatrix = null;
+        foreach (link; welded)
+            weldingApplied[link.target] = false;
         super.beginUpdate();
     }
 
@@ -436,6 +521,127 @@ public:
     final void reset() {
         vertices[] = data.vertices;
     }
+
+    void addWeldedTarget(Drawable target, ptrdiff_t[] weldedVertexIndices, float weldingWeight) {
+        // FIXME: must check whether target is already added.
+        auto index = welded.countUntil!"a.target == b"(target);
+        if (index != -1)
+            return;
+        auto link = WeldingLink(target.uuid, target, weldedVertexIndices, weldingWeight);
+        welded ~= link;
+
+        ptrdiff_t[] counterWeldedVertexIndices;
+        counterWeldedVertexIndices.length = target.vertices.length;
+        counterWeldedVertexIndices[0..$] = -1;
+        foreach (i, ind; weldedVertexIndices) {
+            if (ind != NOINDEX)
+                counterWeldedVertexIndices[ind] = i;
+        }
+        auto counterLink = WeldingLink(uuid, this, counterWeldedVertexIndices, 1 - weldingWeight);
+        target.welded ~= counterLink;
+
+        target.postProcessFilters ~= &weldingProcessor;
+        postProcessFilters ~= &target.weldingProcessor;
+    }
+
+    void removeWeldedTarget(Drawable target) {
+        auto index = welded.countUntil!((a) => a.target == target)();
+        if (index != -1) {
+            welded = welded.remove(index);
+            postProcessFilters = postProcessFilters.removeByValue(&target.weldingProcessor);
+        }
+        index = target.welded.countUntil!((a) => a.target == this)();
+        if (index != -1) {
+            target.welded = target.welded.remove(index);
+            target.postProcessFilters = target.postProcessFilters.removeByValue(&weldingProcessor);
+        }
+    }
+
+    bool isWeldedBy(Drawable target) {
+        return welded.countUntil!"a.target == b"(target) != -1;
+    }
+
+    override
+    void setupSelf() {
+        foreach (link; welded) {
+            if (postProcessFilters.countUntil(&link.target.weldingProcessor) == -1)
+                postProcessFilters ~= &link.target.weldingProcessor;
+        }
+    }
+
+    override
+    void finalize() {
+        super.finalize();
+        
+        WeldingLink[] validLinks;
+        foreach(i; 0..welded.length) {
+            if (Drawable nLink = puppet.find!Drawable(welded[i].targetUUID)) {
+                welded[i].target = nLink;
+                validLinks ~= welded[i];
+            }
+        }
+
+        // Remove invalid welded links
+        welded = validLinks;
+        setupSelf();
+    }
+
+    override
+    void normalizeUV(MeshData* data) {
+        import std.algorithm: map;
+        import std.algorithm: minElement, maxElement;
+        if (data.uvs.length != 0) {
+            float minX = data.uvs.map!(a => a.x).minElement;
+            float maxX = data.uvs.map!(a => a.x).maxElement;
+            float minY = data.uvs.map!(a => a.y).minElement;
+            float maxY = data.uvs.map!(a => a.y).maxElement;
+            float width = maxX - minX;
+            float height = maxY - minY;
+            float centerX = (minX + maxX) / 2 / width;
+            float centerY = (minY + maxY) / 2 / height;
+            foreach(i; 0..data.uvs.length) {
+                data.uvs[i].x /= width;
+                data.uvs[i].y /= height;
+                data.uvs[i] += vec2(0.5 - centerX, 0.5 - centerY);
+            }
+        }
+    }
+
+    override
+    void centralize() {
+        foreach (child; children) {
+            child.centralize();
+        }
+        updateBounds();
+    }
+
+    override
+    void copyFrom(Node src, bool inPlace = false, bool deepCopy = true) {
+        super.copyFrom(src, inPlace, deepCopy);
+        if (auto drawable = cast(Drawable)src) {
+            MeshData newData;
+            newData.vertices = drawable.data.vertices.dup;
+            newData.uvs = drawable.data.uvs.dup;
+            newData.indices = drawable.data.indices.dup;
+            if (drawable.data.gridAxes.length > 0) {
+                foreach (ax; drawable.data.gridAxes) {
+                    newData.gridAxes ~= ax.dup;
+                }
+            }
+            rebuffer(newData);
+            deformation = drawable.deformation.dup;
+        }
+    }
+
+    override
+    void build(bool force = false) { 
+        foreach (child; children) {
+            setupChild(child);
+        }
+        setupSelf();
+        super.build(force);
+    }
+
 }
 
 version (InDoesRender) {

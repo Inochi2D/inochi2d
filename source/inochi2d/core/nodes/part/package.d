@@ -305,6 +305,7 @@ private:
         }
     }
 
+protected:
     /*
         RENDERING
     */
@@ -376,8 +377,6 @@ private:
         glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
         glBlendEquation(GL_FUNC_ADD);
     }
-
-protected:
 
     override
     string typeId() { return "Part"; }
@@ -872,6 +871,39 @@ public:
         }
     }
 
+    override
+    void normalizeUV(MeshData* data) {
+        // Texture 0 is always albedo texture
+        auto tex = textures[0];
+        foreach (i; 0..data.uvs.length) {
+            data.uvs[i].x /= cast(float)tex.width;
+            data.uvs[i].y /= cast(float)tex.height;
+            data.uvs[i] += vec2(0.5, 0.5);
+        }
+    }
+
+    override
+    void copyFrom(Node src, bool inPlace = false, bool deepCopy = true) {
+        super.copyFrom(src, inPlace, deepCopy);
+
+        if (auto part = cast(Part)src) {
+            offsetMaskThreshold = 0;
+            offsetOpacity = 1;
+            offsetEmissionStrength = 1;
+            offsetTint = vec3(0);
+            offsetScreenTint = vec3(0);
+
+            textures = part.textures.dup;
+            textureIds = part.textureIds.dup;
+            masks = part.masks.dup;
+            blendingMode = part.blendingMode;
+            maskAlphaThreshold = part.maskAlphaThreshold;
+            opacity = part.opacity;
+            emissionStrength = part.emissionStrength;
+            tint = part.tint;
+            screenTint = part.screenTint;
+        }
+    }
 }
 
 /**
@@ -935,6 +967,8 @@ void inDrawTextureAtPart(Texture texture, Part part) {
     Draws a texture at the transform of the specified part
 */
 void inDrawTextureAtPosition(Texture texture, vec2 position, float opacity = 1, vec3 color = vec3(1, 1, 1), vec3 screenColor = vec3(0, 0, 0)) {
+    if (texture is null) return;
+    
     const float texWidthP = texture.width()/2;
     const float texHeightP = texture.height()/2;
 
