@@ -19,6 +19,7 @@ public import inochi2d.core.nodes.drawable;
 public import inochi2d.core.nodes.composite;
 public import inochi2d.core.nodes.meshgroup;
 public import inochi2d.core.nodes.drivers; 
+public import inochi2d.core.nodes.composite.dcomposite;
 import inochi2d.core.nodes.utils;
 import std.typecons: tuple, Tuple;
 import std.algorithm.searching;
@@ -71,6 +72,13 @@ void inClearUUIDs() {
     takenUUIDs.length = 0;
 }
 
+enum NotifyReason {
+    Initialized,
+    Transformed,
+    StructureChanged,
+    AttributeChanged,
+}
+
 /**
     A node in the Inochi2D rendering tree
 */
@@ -105,10 +113,16 @@ protected:
     bool preProcessed  = false;
     bool postProcessed = false;
     bool changed = false;
+    bool changeDeferred = false;
+    struct ChangeRecord {
+        Node target;
+        NotifyReason reason;
+    }
+    ChangeRecord[] changePooled = [];
     /**
         Whether the node is enabled
     */
-    bool enabled_ = true;
+    bool enabled = true;
 
 
     /**
@@ -138,7 +152,7 @@ protected:
         serializer.putValue(typeId);
         
         serializer.putKey("enabled");
-        serializer.putValue(enabled_);
+        serializer.putValue(enabled);
         
         serializer.putKey("zsort");
         serializer.putValue(zsort_);
@@ -173,6 +187,9 @@ protected:
     mat4* oneTimeTransform = null;
 
     @Ignore
+    void delegate(Node, NotifyReason)[] notifyListeners;
+
+    @Ignore
     class MatrixHolder {
     public:
         this(mat4 matrix) {
@@ -198,6 +215,9 @@ protected:
                 offsetTransform.translation = vec3(filterResult[0][0], offsetTransform.translation.z);
                 transformChanged();
             }
+            if (filterResult[2]) {
+                notifyChange(this);
+            }
         }
     }
 
@@ -214,6 +234,9 @@ protected:
                 transformChanged();
                 overrideTransformMatrix = new MatrixHolder(transform.matrix);
             } 
+            if (filterResult[2]) {
+                notifyChange(this);
+            }
         }
     }
 
@@ -747,6 +770,8 @@ public:
         preProcessed  = false;
         postProcessed = false;
         changed = false;
+        changeDeferred = true;
+        changePooled.length = 0;
 
         offsetSort = 0;
         offsetTransform.clear();
@@ -772,6 +797,10 @@ public:
     }
 
     void endUpdate() {
+        flushNotifyChange();
+        foreach (child; children) {
+            child.endUpdate();
+        }
     }
 
     /**
@@ -811,7 +840,7 @@ public:
             this.name = this.name.toStringz.fromStringz;
         }
 
-        if (auto exc = data["enabled"].deserializeValue(this.enabled_)) return exc;
+        if (auto exc = data["enabled"].deserializeValue(this.enabled)) return exc;
 
         if (auto exc = data["zsort"].deserializeValue(this.zsort_)) return exc;
         
@@ -1011,13 +1040,43 @@ public:
     void clearCache() { }
     void normalizeUV(MeshData* data) { }
 
-    bool enabled() { return enabled_; }
-    void enabled(bool value) { 
-        bool changed = enabled_ != value;
-        enabled_ = value;
+    void flushNotifyChange() {
+        changeDeferred = false;
+        foreach (rec; changePooled) {
+            notifyChange(rec.target, rec.reason);
+        }
+        changePooled.length = 0;
     }
-    final bool getEnabled() { return enabled_; }
-    final void setEnabled(bool value) { enabled(value); }
+
+    void notifyChange(Node target, NotifyReason reason = NotifyReason.Transformed) {
+        if (target == this) changed = true;
+        if (changeDeferred) {
+            changePooled ~= ChangeRecord(target, reason);
+        } else {
+            if (parent !is null) parent.notifyChange(target, reason);
+            foreach (listener; notifyListeners) {
+                listener(target, reason);
+            }
+        }
+    }
+
+    void addNotifyListener(void delegate(Node, NotifyReason) listener) {
+        if (listener !is null) {
+            if (notifyListeners.countUntil(listener) < 0)
+                notifyListeners ~= listener;
+        }
+    }
+
+    void removeNotifyListener(void delegate(Node, NotifyReason) listener) {
+        notifyListeners = notifyListeners.removeByValue(listener);
+    }
+
+    bool getEnabled() { return enabled; }
+    void setEnabled(bool value) { 
+        bool changed = enabled != value;
+        enabled = value;
+        if (changed) notifyChange(this);
+    }
 
     void centralize() {
         foreach (child; children) {

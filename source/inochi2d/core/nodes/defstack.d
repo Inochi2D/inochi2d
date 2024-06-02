@@ -208,7 +208,8 @@ public:
         Push deformation on to stack
     */
     void push(ref Deformation deformation) {
-        enforce(this.parent.deformation.length == deformation.vertexOffsets.length, "Mismatched lengths");
+        if (this.parent.deformation.length != deformation.vertexOffsets.length) return;
+//        enforce(this.parent.deformation.length == deformation.vertexOffsets.length, "Mismatched lengths");
         foreach(i; 0..this.parent.deformation.length) {
             this.parent.deformation[i] += deformation.vertexOffsets[i];
         }

@@ -245,7 +245,12 @@ private:
         } else if (!driversOnly) {
             // Collect drawable nodes only if we aren't inside a Composite node
 
-            if (Composite composite = cast(Composite)node) {
+            if (DynamicComposite dcomposite = cast(DynamicComposite)node) {
+                dcomposite.scanParts();
+                rootParts ~= dcomposite;
+                driversOnly = true;
+
+            } else if (Composite composite = cast(Composite)node) {
                 // Composite nodes handle and keep their own root node list, as such we should just draw them directly
                 composite.scanParts();
                 rootParts ~= composite;
@@ -254,6 +259,7 @@ private:
                 driversOnly = true;
             } else if (Part part = cast(Part)node) {
                 // Collect Part nodes
+                part.ignorePuppet = false;
                 rootParts ~= part;
             }
             // Non-part nodes just need to be recursed through,
@@ -324,6 +330,8 @@ private:
         // Not found
         return null;
     }
+package(inochi2d):
+    Node getPuppetRootNode() { return puppetRootNode; }
 
 public:
     /**
@@ -415,6 +423,12 @@ public:
         this.selfSort();
     }
 
+    Node actualRoot() {
+        auto node = root;
+        while (node && node.parent && node.parent != puppetRootNode) node = node.parent;        
+        return node;
+    }
+
     /**
         Updates the nodes
     */
@@ -426,7 +440,7 @@ public:
             auto_.update();
         }
 
-        root.beginUpdate();
+        actualRoot.beginUpdate();
 
         if (renderParameters) {
 
@@ -439,7 +453,7 @@ public:
         }
 
         // Ensure the transform tree is updated
-        root.transformChanged();
+        actualRoot.transformChanged();
 
         if (renderParameters && enableDrivers) {
             // Update parameter/node driver nodes (e.g. physics)
@@ -449,7 +463,9 @@ public:
         }
 
         // Update nodes
-        root.update();
+        actualRoot.update();
+
+        actualRoot.endUpdate();
     }
 
     /**
@@ -509,6 +525,18 @@ public:
             if (!rootPart.renderEnabled) continue;
             rootPart.drawOne();
         }
+        /*
+        // debug
+        foreach (c; findNodesType!Composite(actualRoot())) {
+            auto d = c.delegated;
+            if (d)
+                d.drawBounds();
+        }
+        foreach (d; findNodesType!DynamicComposite(actualRoot())) {
+            if (d)
+                d.drawBounds();
+        }
+        */
     }
 
     /**
@@ -529,7 +557,8 @@ public:
         Run this every time you change the layout of the puppet's node tree
     */
     final void rescanNodes() {
-        this.scanParts!false(root);
+        auto node = actualRoot();
+        this.scanParts!false(node);
     }
 
     /**

@@ -93,8 +93,6 @@ protected:
             return Tuple!(vec2[], mat4*, bool)(null, null, changed);
         if (weldingApplied[link.target] || link.target.weldingApplied[this])
             return Tuple!(vec2[], mat4*, bool)(null, null, changed);
-//        import std.stdio;
-//        writefln("welding: %s(%b) --> %s(%b)", name, postProcessed, target.name, target.postProcessed);
         weldingApplied[link.target] = true;
         link.target.weldingApplied[this] = true;
         float weldingWeight = min(1, max(0, link.weight));
@@ -240,6 +238,10 @@ protected:
             if (filterResult[1] !is null) {
                 overrideTransformMatrix = new MatrixHolder(*filterResult[1]);
             }
+            if (filterResult[2]) {
+                notifyChange(this);
+            }
+
         }
     }
 
@@ -256,6 +258,9 @@ protected:
             } 
             if (filterResult[1] !is null) {
                 overrideTransformMatrix = new MatrixHolder(*filterResult[1]);
+            }
+            if (filterResult[2]) {
+                notifyChange(this);
             }
         }
     }
@@ -617,6 +622,12 @@ public:
 
     override
     void copyFrom(Node src, bool inPlace = false, bool deepCopy = true) {
+        bool autoResizedMesh = false;
+        auto dcomposite = cast(DynamicComposite)src;
+        if (dcomposite !is null) {
+            autoResizedMesh = dcomposite.autoResizedMesh;
+            dcomposite.autoResizedMesh = false;
+        }
         super.copyFrom(src, inPlace, deepCopy);
         if (auto drawable = cast(Drawable)src) {
             MeshData newData;
@@ -631,6 +642,8 @@ public:
             rebuffer(newData);
             deformation = drawable.deformation.dup;
         }
+        if (dcomposite !is null)
+            dcomposite.autoResizedMesh = autoResizedMesh;
     }
 
     override

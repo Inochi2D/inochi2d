@@ -170,7 +170,8 @@ public:
     /**
         The previous internal value offset
     */
-    vec2 lastInternal = vec2(0);
+    vec2 latestInternal = vec2(0);
+    vec2 previousInternal = vec2(0);
 
     /**
         Parameter merge mode
@@ -372,16 +373,24 @@ public:
         if (!active)
             return;
 
-        lastInternal = (value + iadd.csum()) * imul.avg();
+        previousInternal = latestInternal;
+        latestInternal = (value + iadd.csum()) * imul.avg();
 
-        findOffset(this.mapValue(lastInternal), index, offset_);
+        findOffset(this.mapValue(latestInternal), index, offset_);
         foreach(binding; bindings) {
             binding.apply(index, offset_);
+            if (binding.getTarget().node !is null) {
+                if (valueChanged()) binding.getTarget().node.notifyChange(binding.getTarget().node);
+            }
         }
 
         // Reset combinatorics
         iadd.clear();
         imul.clear();
+    }
+
+    bool valueChanged() {
+        return latestInternal != previousInternal;
     }
 
     void pushIOffset(vec2 offset, ParamMergeMode mode = ParamMergeMode.Passthrough, float weight=1) {

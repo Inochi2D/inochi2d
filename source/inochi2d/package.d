@@ -11,6 +11,7 @@ public import inochi2d.phys;
 public import inochi2d.fmt;
 public import inochi2d.core;
 public import inochi2d.ver;
+public import inochi2d.utils.snapshot;
 
 private double currentTime_ = 0;
 private double lastTime_ = 0;

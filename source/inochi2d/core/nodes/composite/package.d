@@ -8,6 +8,7 @@
 */
 module inochi2d.core.nodes.composite;
 import inochi2d.core.nodes.common;
+import inochi2d.core.nodes.composite.dcomposite;
 import inochi2d.core.nodes;
 import inochi2d.fmt;
 import inochi2d.core;
@@ -92,11 +93,26 @@ package(inochi2d) {
 */
 @TypeId("Composite")
 class Composite : Node {
+public:
+    DynamicComposite delegated = null;
 private:
 
     this() { }
 
+    void synchronizeDelegated() {
+        if (delegated) {
+            delegated.opacity = opacity;
+            delegated.blendingMode = blendingMode;
+            delegated.zSort = relZSort;
+        }
+    }
+
     void drawContents() {
+        if (delegated) {
+            delegated.drawContents();
+            return;
+        }
+
         // Optimization: Nothing to be drawn, skip context switching
         if (subParts.length == 0) return;
 
@@ -113,6 +129,11 @@ private:
         RENDERING
     */
     void drawSelf() {
+        if (delegated) {
+            synchronizeDelegated();
+            delegated.drawSelf();
+            return;
+        }
         if (subParts.length == 0) return;
         glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
         glBindVertexArray(cVAO);
@@ -146,6 +167,12 @@ private:
     }
 
     void selfSort() {
+        if (delegated) {
+            synchronizeDelegated();
+            delegated.selfSort();
+            return;
+        }
+
         import std.math : cmp;
         sort!((a, b) => cmp(
             a.zSort, 
@@ -153,12 +180,19 @@ private:
     }
 
     void scanPartsRecurse(ref Node node) {
+        if (delegated) {
+            synchronizeDelegated();
+            delegated.scanPartsRecurse(node);
+            return;
+        }
+
         // Don't need to scan null nodes
         if (node is null) return;
 
         // Do the main check
         if (Part part = cast(Part)node) {
             subParts ~= part;
+            part.ignorePuppet = false;
             foreach(child; part.children) {
                 scanPartsRecurse(child);
             }
@@ -289,12 +323,18 @@ protected:
 
     override
     void preProcess() {
+        if (delegated) {
+            delegated.preProcess();
+        }
         if (!propagateMeshGroup)
             Node.preProcess();
     }
 
     override
     void postProcess() {
+        if (delegated) {
+            delegated.postProcess();
+        }
         if (!propagateMeshGroup)
             Node.postProcess();
     }
@@ -455,6 +495,9 @@ public:
 
     override
     void beginUpdate() {
+        if (delegated) {
+            delegated.beginUpdate();
+        }
         offsetOpacity = 1;
         offsetTint = vec3(1, 1, 1);
         offsetScreenTint = vec3(0, 0, 0);
@@ -462,7 +505,20 @@ public:
     }
 
     override
+    void update() {
+        super.update();
+        if (delegated) {
+            delegated.update();
+        }
+    }
+
+    override
     void drawOne() {
+        if (delegated) {
+            synchronizeDelegated();
+            delegated.drawOne();
+            return;
+        }
         if (!enabled) return;
         
         this.selfSort();
@@ -493,6 +549,11 @@ public:
 
     override
     void draw() {
+        if (delegated) {
+            synchronizeDelegated();
+            delegated.draw();
+            return;
+        }
         if (!enabled) return;
         this.drawOne();
     }
@@ -517,6 +578,11 @@ public:
         Scans for parts to render
     */
     void scanParts() {
+        if (delegated) {
+            synchronizeDelegated();
+            delegated.scanSubParts(children);
+            return;
+        }
         subParts.length = 0;
         if (children.length > 0) {
             scanPartsRecurse(children[0].parent);
@@ -524,12 +590,62 @@ public:
     }
 
     override
+    void setupChild(Node node) {
+        if (delegated) {
+            synchronizeDelegated();
+            delegated.setupChild(node);
+        }
+    }
+
+    override
+    void releaseChild(Node node) {
+        if (delegated) {
+            synchronizeDelegated();
+            delegated.releaseChild(node);
+        }
+    }
+
+    override
+    void setupSelf() {
+        if (delegated) {
+            synchronizeDelegated();
+            delegated.setupSelf();
+        }
+    }
+
+    override
+    void normalizeUV(MeshData* data) {
+        if (delegated) {
+            synchronizeDelegated();
+            delegated.normalizeUV(data);
+        }
+    }
+
+    override
+    void notifyChange(Node target, NotifyReason reason = NotifyReason.Transformed) {
+        if (delegated) {
+            synchronizeDelegated();
+            delegated.notifyChange(target, reason);
+        } else {
+            super.notifyChange(target, reason);
+        }
+    }
+
+    override
     void transformChanged() {
         super.transformChanged();
+        if (delegated) {
+            delegated.recalculateTransform = true;
+        }
     }
 
     override
     void centralize() {
+        if (delegated) {
+            synchronizeDelegated();
+            delegated.centralize();
+            return;
+        }
         super.centralize();
         vec4 bounds;
         vec4[] childTranslations;
@@ -559,5 +675,21 @@ public:
             child.transformChanged();
         }
 
+    }
+
+    void setDelegation(DynamicComposite delegated) {
+        if (this.delegated && this.delegated != delegated) {
+            this.delegated.children_ref.length = 0;
+            this.delegated.parent = null;
+        }
+        this.delegated = delegated;
+    }
+
+    override
+    void flushNotifyChange() {
+        if (delegated) {
+            delegated.flushNotifyChange();
+        }
+        super.flushNotifyChange();
     }
 }

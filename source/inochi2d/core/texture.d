@@ -232,19 +232,19 @@ public:
     /**
         Creates a new empty texture
     */
-    this(int width, int height, int channels = 4) {
+    this(int width, int height, int channels = 4, bool stencil = false) {
 
         // Create an empty texture array with no data
-        ubyte[] empty = new ubyte[width_*height_*channels];
+        ubyte[] empty = stencil? null: new ubyte[width_*height_*channels];
 
         // Pass it on to the other texturing
-        this(empty, width, height, channels, channels);
+        this(empty, width, height, channels, channels, stencil);
     }
 
     /**
         Creates a new texture from specified data
     */
-    this(ubyte[] data, int width, int height, int inChannels = 4, int outChannels = 4) {
+    this(ubyte[] data, int width, int height, int inChannels = 4, int outChannels = 4, bool stencil = false) {
         this.width_ = width;
         this.height_ = height;
         this.channels_ = outChannels;
@@ -257,10 +257,19 @@ public:
         if (outChannels == 1) this.outColorMode_ = GL_RED;
         else if (outChannels == 2) this.outColorMode_ = GL_RG;
         else if (outChannels == 3) this.outColorMode_ = GL_RGB;
+        if (stencil) {
+            this.outColorMode_ = GL_DEPTH24_STENCIL8;
+            this.inColorMode_  = GL_DEPTH_STENCIL;
+        }
 
         // Generate OpenGL texture
         glGenTextures(1, &id);
-        this.setData(data);
+        if (stencil) {
+            this.bind();
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width_, height_, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, null);
+        } else {
+            this.setData(data);
+        }
 
         // Set default filtering and wrapping
         this.setFiltering(Filtering.Linear);
@@ -446,6 +455,14 @@ public:
     void dispose() {
         glDeleteTextures(1, &id);
         id = 0;
+    }
+
+    Texture dup() {
+        bool stencil = outColorMode_ == GL_DEPTH24_STENCIL8;
+        auto result = new Texture(width_, height_, channels_, stencil);
+        // FIXME: copy must be done in OpenGL Framebuffer, but currently uses offline copy instead.
+        result.setData(getTextureData());
+        return result;
     }
 }
 

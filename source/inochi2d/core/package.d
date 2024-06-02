@@ -65,8 +65,8 @@ public:
 // Internal rendering constants
 private {
     // Viewport
-    int inViewportWidth;
-    int inViewportHeight;
+    int[] inViewportWidth;
+    int[] inViewportHeight;
 
     GLuint sceneVAO;
     GLuint sceneVBO;
@@ -90,7 +90,7 @@ private {
     PostProcessingShader[] postProcessingStack;
 
     // Camera
-    Camera inCamera;
+    Camera[] inCamera;
 
     bool isCompositing;
 
@@ -118,7 +118,7 @@ private {
 
         // framebuffer size
         GLint fbSizeUniform = shaderToUse.getUniform("fbSize");
-        if (fbSizeUniform != -1) shaderToUse.shader.setUniform(fbSizeUniform, vec2(inViewportWidth, inViewportHeight));
+        if (fbSizeUniform != -1) shaderToUse.shader.setUniform(fbSizeUniform, vec2(inViewportWidth[$-1], inViewportHeight[$-1]));
 
         // Bind the texture
         glActiveTexture(GL_TEXTURE0);
@@ -145,6 +145,26 @@ private {
 
         glDisable(GL_BLEND);
     }
+
+    /** 
+        Push new camera to camera stack
+    */
+    void inPushCamera() {
+        inPushCamera(new Camera);
+    }
+
+    void inPushCamera(Camera camera) {
+        inCamera ~= camera;
+    }
+
+    /** 
+        Pop camera from camera stack
+    */
+    void inPopCamera() {
+        if (inCamera.length > 1) {
+            inCamera.length = inCamera.length - 1;
+        }
+    }
 }
 
 // Things only available internally for Inochi2D rendering
@@ -154,6 +174,9 @@ package(inochi2d) {
         Initializes the renderer
     */
     void initRenderer() {
+
+        // Some defaults that should be changed by app writer
+        inPushViewport(0, 0);
 
         // Set the viewport and by extension set the textures
         inSetViewport(640, 480);
@@ -166,6 +189,7 @@ package(inochi2d) {
         inInitMask();
         inInitComposite();
         inInitMeshGroup();
+        inInitDComposite();
         version(InDoesRender) inInitDebug();
 
         inParameterSetFactory((data) {
@@ -174,9 +198,6 @@ package(inochi2d) {
             data.deserializeValue(param);
             return param;
         });
-
-        // Some defaults that should be changed by app writer
-        inCamera = new Camera;
 
         inClearColor = vec4(0, 0, 0, 0);
 
@@ -237,7 +258,7 @@ void inBeginScene() {
     glDisable(GL_CULL_FACE);
 
     // Make sure to reset our viewport if someone has messed with it
-    glViewport(0, 0, inViewportWidth, inViewportHeight);
+    glViewport(0, 0, inViewportWidth[$-1], inViewportHeight[$-1]);
 
     // Bind and clear composite framebuffer
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, cfBuffer);
@@ -312,6 +333,7 @@ void inEndScene() {
     glDisable(GL_BLEND);
     glFlush();
     glDrawBuffers(1, [GL_COLOR_ATTACHMENT0].ptr);
+
 }
 
 /**
@@ -329,7 +351,7 @@ void inPostProcessScene() {
     // Render area
     vec4 area = vec4(
         0, 0,
-        inViewportWidth, inViewportHeight
+        inViewportWidth[$-1], inViewportHeight[$-1]
     );
 
     // Tell OpenGL the resolution to render at
@@ -379,8 +401,8 @@ void inPostProcessScene() {
         glBindFramebuffer(GL_READ_FRAMEBUFFER, cfBuffer);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fBuffer);
         glBlitFramebuffer(
-            0, 0, inViewportWidth, inViewportHeight, // src rect
-            0, 0, inViewportWidth, inViewportHeight, // dst rect
+            0, 0, inViewportWidth[$-1], inViewportHeight[$-1], // src rect
+            0, 0, inViewportWidth[$-1], inViewportHeight[$-1], // dst rect
             GL_COLOR_BUFFER_BIT, // blit mask
             GL_LINEAR // blit filter
         );
@@ -412,14 +434,14 @@ ref PostProcessingShader[] inGetPostProcessingStack() {
     Gets the global camera
 */
 Camera inGetCamera() {
-    return inCamera;
+    return inCamera[$-1];
 }
 
 /**
     Sets the global camera, allows switching between cameras
 */
 void inSetCamera(Camera camera) {
-    inCamera = camera;
+    inCamera[$-1] = camera;
 }
 
 /**
@@ -477,16 +499,30 @@ GLuint inGetCompositeImage() {
     return cfAlbedo;
 }
 
+void inPushViewport(int width, int height) {
+    inViewportWidth ~= width;
+    inViewportHeight ~= height;
+    inPushCamera();
+}
+
+void inPopViewport() {
+    if (inViewportWidth.length > 1) {
+        inViewportWidth.length = inViewportWidth.length - 1;
+        inViewportHeight.length = inViewportHeight.length - 1;
+        inPopCamera();
+    }
+}
+
 /**
     Sets the viewport area to render to
 */
 void inSetViewport(int width, int height) nothrow {
 
     // Skip resizing when not needed.
-    if (width == inViewportWidth && height == inViewportHeight) return;
+    if (width == inViewportWidth[$-1] && height == inViewportHeight[$-1]) return;
 
-    inViewportWidth = width;
-    inViewportHeight = height;
+    inViewportWidth[$-1] = width;
+    inViewportHeight[$-1] = height;
 
     version(InDoesRender) {
         // Render Framebuffer
@@ -550,15 +586,15 @@ void inSetViewport(int width, int height) nothrow {
     Gets the viewport
 */
 void inGetViewport(out int width, out int height) nothrow {
-    width = inViewportWidth;
-    height = inViewportHeight;
+    width = inViewportWidth[$-1];
+    height = inViewportHeight[$-1];
 }
 
 /**
     Returns length of viewport data for extraction
 */
 size_t inViewportDataLength() {
-    return inViewportWidth * inViewportHeight * 4;
+    return inViewportWidth[$-1] * inViewportHeight[$-1] * 4;
 }
 
 /**
@@ -571,10 +607,10 @@ void inDumpViewport(ref ubyte[] dumpTo) {
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, dumpTo.ptr);
 
     // We need to flip it because OpenGL renders stuff with a different coordinate system
-    ubyte[] tmpLine = new ubyte[inViewportWidth * 4];
+    ubyte[] tmpLine = new ubyte[inViewportWidth[$-1] * 4];
     size_t ri = 0;
-    foreach_reverse(i; inViewportHeight/2..inViewportHeight) {
-        size_t lineSize = inViewportWidth*4;
+    foreach_reverse(i; inViewportHeight[$-1]/2..inViewportHeight[$-1]) {
+        size_t lineSize = inViewportWidth[$-1]*4;
         size_t oldLineStart = (lineSize*ri);
         size_t newLineStart = (lineSize*i);
         import core.stdc.string : memcpy;
