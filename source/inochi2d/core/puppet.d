@@ -450,6 +450,9 @@ public:
 
         // Update nodes
         root.update();
+
+        // Complete updates
+        root.endUpdate();
     }
 
     /**

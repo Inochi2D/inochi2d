@@ -297,7 +297,12 @@ public:
         preProcess();
         deformStack.update();
         super.update();
+    }
+
+    override
+    void endUpdate() {
         this.updateDeform();
+        super.endUpdate();
     }
 
     /**
