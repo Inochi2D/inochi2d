@@ -108,7 +108,7 @@ protected:
     /**
         Whether the node is enabled
     */
-    bool enabled = true;
+    bool enabled_ = true;
 
 
     /**
@@ -138,7 +138,7 @@ protected:
         serializer.putValue(typeId);
         
         serializer.putKey("enabled");
-        serializer.putValue(enabled);
+        serializer.putValue(enabled_);
         
         serializer.putKey("zsort");
         serializer.putValue(zsort_);
@@ -811,7 +811,7 @@ public:
             this.name = this.name.toStringz.fromStringz;
         }
 
-        if (auto exc = data["enabled"].deserializeValue(this.enabled)) return exc;
+        if (auto exc = data["enabled"].deserializeValue(this.enabled_)) return exc;
 
         if (auto exc = data["zsort"].deserializeValue(this.zsort_)) return exc;
         
@@ -1011,11 +1011,13 @@ public:
     void clearCache() { }
     void normalizeUV(MeshData* data) { }
 
-    bool getEnabled() { return enabled; }
-    void setEnabled(bool value) { 
-        bool changed = enabled != value;
-        enabled = value;
+    bool enabled() { return enabled_; }
+    void enabled(bool value) { 
+        bool changed = enabled_ != value;
+        enabled_ = value;
     }
+    final bool getEnabled() { return enabled_; }
+    final void setEnabled(bool value) { enabled(value); }
 
     void centralize() {
         foreach (child; children) {
