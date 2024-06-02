@@ -642,6 +642,30 @@ public:
 
     /// Gets the final length damping
     vec2 getOutputScale() { return outputScale * offsetOutputScale; }
+
+    override
+    void copyFrom(Node src, bool inPlace = false, bool deepCopy = true) {
+        super.copyFrom(src, inPlace, deepCopy);
+
+        if (auto sphysics = cast(SimplePhysics)src) {
+            modelType_ = sphysics.modelType_;
+            mapMode = sphysics.mapMode;
+            localOnly = sphysics.localOnly;
+            gravity = sphysics.gravity;
+            length = sphysics.length;
+            frequency = sphysics.frequency;
+            angleDamping = sphysics.angleDamping;
+            lengthDamping = sphysics.lengthDamping;
+            outputScale = sphysics.outputScale;
+            prevAnchorSet = false;
+            anchor = vec2(0, 0);
+            system = sphysics.system;
+
+            paramRef = sphysics.paramRef;
+            param_ = sphysics.param_;
+        }
+    }
+
 }
 
 mixin InNode!SimplePhysics;
