@@ -136,6 +136,8 @@ abstract class ParameterBinding {
     */
     BindTarget getTarget();
 
+    abstract void setTarget(Node node, string paramName);
+
     /**
         Gets name of binding
     */
@@ -216,6 +218,12 @@ public:
     override
     BindTarget getTarget() {
         return target;
+    }
+
+    override
+    void setTarget(Node node, string paramName) {
+        target.node = node;
+        target.paramName = paramName;
     }
 
     /**
