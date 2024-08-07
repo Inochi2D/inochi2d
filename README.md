@@ -20,6 +20,9 @@ https://user-images.githubusercontent.com/7032834/166389697-02eeeedb-6a44-4570-9
 
 &nbsp;
 
+# Looking for 0.8?
+Inochi2D is undergoing what essentially amounts to a rewrite, if you're looking for Inochi2D 0.8 check the v0_8 branch!
+
 # For Riggers and VTubers
 If you're a model rigger you may want to check out [Inochi Creator](https://github.com/Inochi2D/inochi-creator), the official Inochi2D rigging app in development.
 If you're a VTuber you may want to check out [Inochi Session](https://github.com/Inochi2D/inochi-session).

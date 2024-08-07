@@ -10,4 +10,22 @@ dependency "numem" version="~>0.10.0"
 dependency "inmath" version="~>1.0.5"
 dependency "fghj" version="~>1.0.2"
 
-preBuildCommands "dub run gitver -- --prefix IN --file source/inochi2d/ver.d --mod inochi2d.ver --appname Inochi2D"
+targetPath "out/"
+
+// Default config
+configuration "build" {
+    targetType "autodetect"
+}
+
+// Build w/ minimal runtime
+configuration "build-tinyd" {
+    targetType "autodetect"
+
+    // TODO: Implement
+}
+
+// Update ver.d
+configuration "updateVersion" {
+    targetType "none"
+    preBuildCommands "dub run gitver -- --prefix IN --file source/inochi2d/ver.d --mod inochi2d.ver --appname Inochi2D"
+}
