@@ -17,6 +17,7 @@ import numem.all;
 class CommandQueue {
 @nogc:
 private:
+    bool isBegun = false;
     size_t ridx = 0;
     vector!RenderCommand queue;
 
@@ -26,14 +27,18 @@ public:
         Begins command submission
     */
     void begin() {
-        queue.clear();
-        ridx = 0;
+        if (!isBegun) {
+            queue.clear();
+            ridx = 0;
+            isBegun = true;
+        }
     }
 
     /**
         Submits a command to the queue.
     */
     void submit(RenderCommand command) {
+        assert(isBegun, "Attempted to submit a command into a queue which wasn't ready!");
         queue ~= command;
     }
 
@@ -41,7 +46,10 @@ public:
         Ends command submission and verifies commands.
     */
     void end() {
-        // TODO: Verify commands.
+        if (isBegun) {
+            isBegun = false;
+            // TODO: Verify commands.
+        }
     }
 
     /**
