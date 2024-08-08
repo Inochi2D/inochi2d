@@ -5,7 +5,14 @@
     Authors: Luna the Foxgirl
 */
 
+module inochi2d.puppet.puppet;
+
+@nogc:
+
 /**
-    Implementation of the Inochi2D Puppet Specification.
+    An Inochi2D Puppet
 */
-module inochi2d.puppet;
+class Puppet {
+@nogc:
+
+}

@@ -1,4 +1,12 @@
+/*
+    Copyright © 2024, Inochi2D Project
+    Distributed under the 2-Clause BSD License, see LICENSE file.
+
+    Authors: Luna the Foxgirl
+*/
+
 module inochi2d.core.commands;
+import inochi2d.core.blending;
 import numem.all;
 
 /// A Inochi2D Render ID.
@@ -43,7 +51,13 @@ struct RenderCommand {
     Data for mesh submission
 */
 struct UpdateMeshCommand {
+@nogc:
     
+    /**
+        Buffer index in the case multiple buffers are present.
+    */
+    uint bufferIdx;
+
     /**
         Vertex data to submit.
 
@@ -66,6 +80,8 @@ struct UpdateMeshCommand {
     Data for drawing operation
 */
 struct DrawCommand {
+@nogc:
+    
     /**
         Whether drawing should happen to the stencil buffer
         instead of the color buffer.
@@ -78,6 +94,11 @@ struct DrawCommand {
         this may clear the color or the stencil buffer.
     */
     bool clearBackingBuffer = false;
+
+    /**
+        The blending mode to be used for the rendering operation
+    */
+    BlendMode blending;
 }
 
 /**
