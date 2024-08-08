@@ -50,8 +50,9 @@ public:
     /**
         Loads a puppet from the specified source.
     */
-    void loadPuppet(Stream from) {
+    Puppet loadPuppet(Stream from) {
         // TODO: Actually load
+        return null;
     }
 
     /**
@@ -66,6 +67,13 @@ public:
                 return;
             }
         }
+    }
+
+    /**
+        Gets the amount of loaded puppets.
+    */
+    size_t getPuppetCount() {
+        return puppets.size();
     }
 
     /**
