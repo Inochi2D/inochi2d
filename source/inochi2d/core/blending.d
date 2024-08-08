@@ -5,7 +5,7 @@
     Authors: Luna the Foxgirl
 */
 
-module inochi2d.core.commands;
+module inochi2d.core.blending;
 import numem.all;
 
 /**

@@ -15,12 +15,12 @@ targetPath "out/"
 
 // Default config
 configuration "build" {
-    targetType "autodetect"
+    targetType "dynamicLibrary"
 }
 
 // Build w/ minimal runtime
 configuration "build-tinyd" {
-    targetType "autodetect"
+    targetType "dynamicLibrary"
 
     // TODO: Implement
 }
