@@ -7,13 +7,9 @@
 
 module inochi2d.core.draw.cmd;
 import inochi2d.core.draw.blending;
+import inochi2d.core.draw.resource;
 import numem.all;
 import inmath;
-
-/**
-    Texture reference
-*/
-alias InTexture = void*;
 
 /**
     Command types
@@ -71,14 +67,19 @@ struct DrawCommand {
     rect clippingRect;
 
     /**
+        How many textures (max 3) that is being rendered from
+    */
+    uint renderSources;
+
+    /**
         Texture to be bound in drawing command
     */
-    InTexture source;
+    InResourceID[3] source;
 
     /**
         Render target of draw command, null if main framebuffer.
     */
-    InTexture target;
+    InResourceID target;
 
     /**
         State of the stencil buffer.
@@ -98,15 +99,15 @@ struct DrawCommand {
     /**
         Index offset
     */
-    size_t idxOffset;
+    uint idxOffset;
 
     /**
         Vertex offset
     */
-    size_t vtxOffset;
+    uint vtxOffset;
 
     /**
         Amount of elements to draw.
     */
-    size_t drawCount;
+    uint drawCount;
 }
