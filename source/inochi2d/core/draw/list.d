@@ -24,6 +24,11 @@ enum IN_DRAW_COMPACT_READINGS = 10;
 enum IN_DRAW_COMPACT_THRESHOLD = 5;
 
 /**
+    How many vertices should be reserved initially.
+*/
+enum IN_DRAW_RESERVE = 10_000;
+
+/**
     Draw List which keeps track of drawing commands.
 */
 class DrawList {
@@ -41,6 +46,26 @@ private:
     size_t[IN_DRAW_COMPACT_READINGS+1] prevIndiceCount;
 
 public:
+
+    /**
+        Destructor
+    */
+    ~this() {
+        destroy(commands);
+        destroy(vertices);
+        destroy(indices);
+    }
+
+    /**
+        Constructor
+    */
+    this() {
+
+        // To optimize initial rendering before warmup,
+        // we reserve enough memory for 10k vertices.
+        this.vertices.reserve(IN_DRAW_RESERVE);
+    }
+
 
     /**
         Gets current draw commands in draw list.
@@ -115,6 +140,21 @@ public:
     }
 
     /**
+        Blits a source framebuffer to the targeted framebuffer.
+
+        Remember to finalize the draw submission with the
+        submit(DrawCommand) call.
+    */
+    DrawCommand blit(InTexture source, InTexture target) {
+        DrawCommand ret;
+        ret.type = CommandType.Blit;
+        ret.source = source;
+        ret.target = target;
+
+        return ret;
+    }
+
+    /**
         Adds vertices and indices into the draw list and returns 
         a draw command ready to be filled out with supplementary
         render information.
@@ -140,15 +180,24 @@ public:
     }
 
     /**
-        Finalize a drawing command, pushing it to this frame's draw list.
+        Submit a command to the list, 
     */
     void submit(DrawCommand command) {
 
-        // Don't allow invalid render commands.
-        if (command.vtxOffset >= this.vertices.size()) return;
-        if (command.idxOffset >= this.indices.size()) return;
-        if (command.idxOffset + command.drawCount > this.indices.size()) return;
-        if (command.texture is null) return;
+        // Error condition handling.
+        switch(command.type) {
+
+            case CommandType.Draw:
+                // Don't allow invalid render commands.
+                if (command.vtxOffset >= this.vertices.size()) return;
+                if (command.idxOffset >= this.indices.size()) return;
+                if (command.idxOffset + command.drawCount > this.indices.size()) return;
+                if (command.texture is null) return;
+                break;
+
+            default:
+                break;
+        }
 
         commands ~= command;
     }

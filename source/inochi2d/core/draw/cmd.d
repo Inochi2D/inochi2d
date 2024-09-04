@@ -6,7 +6,7 @@
 */
 
 module inochi2d.core.draw.cmd;
-import inochi2d.core.blending;
+import inochi2d.core.draw.blending;
 import numem.all;
 import inmath;
 
@@ -16,10 +16,19 @@ import inmath;
 alias InTexture = void*;
 
 /**
-    A rendering target
+    Command types
 */
-alias InRenderTarget = void*;
+enum CommandType {
+    /// Command is drawing
+    Draw,
 
+    /// Commanding is blitting framebuffers
+    Blit
+}
+
+/**
+    State of the stencil buffer
+*/
 enum StencilState {
     /**
         Stencil is turned off
@@ -38,10 +47,24 @@ enum StencilState {
 }
 
 /**
+    Flags to be set.
+*/
+enum DrawFlags : uint {
+
+    /// Nothing special should be performed
+    None = 0x00,
+
+    /// Tells the render backend to clear the render target.
+    ClearTarget = 0x01,
+}
+
+/**
     A drawing command, equating to one draw call sent to the GPU.
 */
 struct DrawCommand {
 @nogc:
+    CommandType type;
+
     /**
         Clipping rectangle to be applied
     */
@@ -50,17 +73,27 @@ struct DrawCommand {
     /**
         Texture to be bound in drawing command
     */
-    InTexture texture;
+    InTexture source;
 
     /**
         Render target of draw command, null if main framebuffer.
     */
-    InRenderTarget target;
+    InTexture target;
 
     /**
         State of the stencil buffer.
     */
     StencilState stencilState;
+
+    /**
+        Drawing flags.
+    */
+    DrawFlags flags;
+
+    /**
+        Blending mode to be set for this command.
+    */
+    BlendMode blending;
 
     /**
         Index offset
