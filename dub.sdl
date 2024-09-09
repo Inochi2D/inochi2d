@@ -6,7 +6,7 @@ license "BSD 2-clause"
 
 dependency "imagefmt" version="~>2.1.0"
 dependency "silly" version="~>1.1.1"
-dependency "numem" version="~>0.10.0"
+dependency "numem" version="~>0.11.1"
 dependency "inmath" version="~>1.0.5"
 dependency "fghj" version="~>1.0.2"
 dependency "intel-intrinsics" version="1.11.19"

@@ -7,7 +7,7 @@
 
 module inochi2d.core.draw.cmd;
 import inochi2d.core.draw.blending;
-import inochi2d.core.draw.resource;
+import inochi2d.core.draw.render;
 import numem.all;
 import inmath;
 

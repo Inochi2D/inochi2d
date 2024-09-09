@@ -6,6 +6,7 @@
 */
 
 module inochi2d.core.draw.render;
+import inochi2d.core.draw.list;
 
 /**
     Texture reference
@@ -123,13 +124,13 @@ public:
         Destroys a framebuffer
     */
     bool destroyFramebuffer(InResourceID fb) {
-        return this.renderFuncs.createFramebuffer(userData, fb);
+        return this.renderFuncs.destroyFramebuffer(userData, fb);
     }
 
     /**
         Called when a drawlist is requesting to be rendered.
     */
     bool renderList (DrawList* drawList) {
-        return this.renderFuncs.createFramebuffer(userData, drawList);
+        return this.renderFuncs.renderList(userData, drawList);
     }
 }

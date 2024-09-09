@@ -7,7 +7,8 @@
 
 module inochi2d.puppet.scene;
 import inochi2d.puppet.puppet;
-import inochi2d.core.cqueue;
+import inochi2d.core.draw;
+import inochi2d.core.draw.list : DrawList;
 import numem.all;
 
 @nogc:
@@ -24,27 +25,27 @@ import numem.all;
 class Scene {
 @nogc:
 private:
-    CommandQueue queue;
+    DrawList list;
     vector!Puppet puppets;
 
 public:
 
     /// Destructor
     ~this() {
-        nogc_delete(queue);
+        nogc_delete(list);
         nogc_delete(puppets);
     }
 
     /// Constructor
     this() {
-        queue = nogc_new!CommandQueue();
+        list = nogc_new!DrawList();
     }
 
     /**
         Gets the command queue associated with this scene.
     */
-    ref CommandQueue getCommandQueue() {
-        return queue;
+    ref DrawList getDrawList() {
+        return list;
     }
 
     /**

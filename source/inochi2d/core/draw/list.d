@@ -7,7 +7,9 @@
 
 module inochi2d.core.draw.list;
 import inochi2d.core.draw.cmd;
+import inochi2d.core.draw.render;
 import numem.all;
+import inmath;
 
 /**
     Draw vertices
@@ -140,9 +142,9 @@ public:
             // NOTE: numem vectors will not free memory when length is changed
             // without calls to shrinkToFit. This allows reusing the memory
             // using the append operator, which is safer.
-            commands.length = 0;
-            vertices.length = 0;
-            indices.length = 0;
+            commands.resize(0);
+            vertices.resize(0);
+            indices.resize(0);
         }
     }
 
@@ -152,7 +154,7 @@ public:
         Remember to finalize the draw submission with the
         submit(DrawCommand) call.
     */
-    DrawCommand blit(InTexture source, InTexture target) {
+    DrawCommand blit(InResourceID source, InResourceID target) {
         DrawCommand ret;
         ret.type = CommandType.Blit;
         ret.source = source;
@@ -173,15 +175,15 @@ public:
         DrawCommand ret;
 
         // Get offset to beginning of data.
-        size_t vtxOffset = this.vertices.size();
-        size_t idxOffset = this.indices.size();
+        uint vtxOffset = cast(uint)this.vertices.size();
+        uint idxOffset = cast(uint)this.indices.size();
 
         this.vertices ~= vertices;
         this.indices ~= indices;
     
         ret.vtxOffset = vtxOffset;
         ret.idxOffset = idxOffset;
-        ret.drawCount = indices.length;
+        ret.drawCount = cast(uint)indices.length;
 
         return ret;
     }
@@ -199,7 +201,7 @@ public:
                 if (command.vtxOffset >= this.vertices.size()) return;
                 if (command.idxOffset >= this.indices.size()) return;
                 if (command.idxOffset + command.drawCount > this.indices.size()) return;
-                if (command.texture is null) return;
+                if (command.source[0] is null) return;
                 break;
 
             default:
