@@ -137,6 +137,13 @@ public:
     /**
         Builds a PUSH instruction
     */
+    void buildPUSH(string str) {
+        this.buildPUSH(nstring(str));
+    }
+
+    /**
+        Builds a PUSH instruction
+    */
     void buildPUSH(nstring str) {
         bytecode ~= InExprOpCode.PUSH_s;
         bytecode ~= toEndian(cast(uint)str.length(), Endianess.littleEndian);

@@ -41,6 +41,15 @@ public:
         if (sp+1 >= IN_EXPR_STACK_SIZE) return;
         stack[sp++] = InExprValue(f32);
     }
+
+    /**
+        Pushes a string slice to the stack
+    */
+    void push(string str) {
+        if (sp+1 >= IN_EXPR_STACK_SIZE) return;
+        stack[sp++] = InExprValue(nstring(str));
+    }
+
     /**
         Pushes a string to the stack
     */
@@ -129,7 +138,7 @@ public:
     InExprValue* pop() {
         ptrdiff_t rsp = cast(ptrdiff_t)sp;
         if (rsp-1 < 0) return null;
-        return &stack[sp--];
+        return &stack[--sp];
     }
 
 
@@ -158,5 +167,35 @@ public:
     */
     size_t getMaxDepth() {
         return IN_EXPR_STACK_SIZE;
+    }
+
+    /**
+        Dumps stack to stdout
+    */
+    void dumpStack() {
+        import core.stdc.stdio : printf;
+        foreach_reverse(i; 0..sp) {
+            final switch(stack[i].getType()) {
+                case InExprValueType.NONE:
+                    printf("%d: null (none)\n", cast(int)i);
+                    return;
+                case InExprValueType.number:
+                    printf("%d: %f (number)\n", cast(int)i, stack[i].number);
+                    return;
+                case InExprValueType.str:
+                    printf("%d: %s (string)\n", cast(int)i, stack[i].str.toCString());
+                    return;
+                case InExprValueType.returnAddr:
+                    printf("%d: %d (return addr)\n", cast(int)i, stack[i].retptr.pc);
+                    return;
+                case InExprValueType.nativeFunction:
+                    printf("%d: %p (return addr)\n", cast(int)i, cast(void*)stack[i].func);
+                    return;
+                case InExprValueType.bytecode:
+                    printf("%d: (bytecode, %u bytes)\n", cast(int)i, cast(uint)stack[i].bytecode.size());
+                    return;
+                
+            }
+        }
     }
 }

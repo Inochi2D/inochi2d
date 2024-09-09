@@ -215,13 +215,17 @@ protected:
 
             case InExprOpCode.PUSH_s:
                 ubyte[4] val = state.bc[state.pc..state.pc+4];
+                state.pc += 4;
+
                 uint length = fromEndian!uint(val, Endianess.littleEndian);
                 
                 // Invalid string.
                 if (state.pc+length >= state.bc.length)
                     return false;
 
-                state.stack.push(nstring(cast(string)state.bc[state.pc..state.pc+length]));
+                nstring nstr = cast(string)state.bc[state.pc..state.pc+length];
+                state.stack.push(nstr);
+
                 state.pc += length;
                 return true;
 
@@ -313,7 +317,7 @@ protected:
 
                 // Get information
                 ptrdiff_t passed = state.bc[state.pc++];
-                InExprValue* func = state.stack.peek(0);
+                InExprValue* func = state.stack.pop();
 
                 if (passed >= state.stack.getMaxDepth()) return false;
                 if (!func || !func.isCallable()) return false;
@@ -352,8 +356,9 @@ protected:
                 return true;
 
             case InExprOpCode.SETG:
-                InExprValue* name = state.stack.peek(0);
-                InExprValue* item = state.stack.peek(1);
+                InExprValue* name = state.stack.pop();
+                InExprValue* item = state.stack.pop();
+
                 if (name && item && name.getType() == InExprValueType.str) {
                     state.stack.pop(2);
 
@@ -363,9 +368,8 @@ protected:
                 return false;
                 
             case InExprOpCode.GETG:
-                InExprValue* name = state.stack.peek(0);
+                InExprValue* name = state.stack.pop();
                 if (name && name.getType() == InExprValueType.str) {
-                    state.stack.pop(1);
 
                     if (name.str in this.getGlobalState().globals) {
                         state.stack.push(this.getGlobalState().globals[name.str]);
@@ -526,4 +530,178 @@ public:
         }
         return -1;
     }
+
+    /**
+        Dumps stack to stdout
+    */
+    void dumpStack() {
+        state.stack.dumpStack();
+    }
+}
+
+
+//
+//      UNIT TESTS
+//
+
+import inochi2d.expr.vm.builder : InExprBytecodeBuilder;
+
+@("VM: NATIVE CALL")
+unittest {
+    import inmath.math : sin;
+
+    // Sin function
+    static int mySinFunc(ref InExprStack stack) @nogc {
+        InExprValue* v = stack.pop();
+        if (v && v.isNumeric) {
+            stack.push(sin(v.number));
+            return 1;
+        }
+        return 0;
+    }
+
+    // Instantiate VM
+    InExprVM vm = new InExprVM();
+    vm.setGlobal(nstring("sin"), InExprValue(&mySinFunc));
+
+    vm.push(1.0);
+    int retValCount = vm.call(nstring("sin"));
+    
+    assert(retValCount == 1);
+    assert(vm.getStackDepth() == retValCount);
+    assert(vm.pop().number == sin(1.0f));
+}
+
+@("VM: ADD")
+unittest {
+    InExprBytecodeBuilder builder = nogc_new!InExprBytecodeBuilder();
+    builder.buildADD();
+    builder.buildRET(1);
+
+    // Instantiate VM
+    InExprVM vm = new InExprVM();
+    vm.setGlobal(nstring("add"), InExprValue(builder.finalize()));
+
+    vm.push(32.0);
+    vm.push(32.0);
+    int retValCount = vm.call(nstring("add"));
+
+    assert(retValCount == 1);
+    assert(vm.getStackDepth() == retValCount);
+    assert(vm.pop().number == 64.0f);
+}
+
+@("VM: SUB")
+unittest {
+    InExprBytecodeBuilder builder = nogc_new!InExprBytecodeBuilder();
+    builder.buildSUB();
+    builder.buildRET(1);
+
+    // Instantiate VM
+    InExprVM vm = new InExprVM();
+    vm.setGlobal(nstring("sub"), InExprValue(builder.finalize()));
+
+    vm.push(32.0);
+    vm.push(32.0);
+    int retValCount = vm.call(nstring("sub"));
+
+    assert(retValCount == 1);
+    assert(vm.getStackDepth() == retValCount);
+    assert(vm.pop().number == 0.0f);
+}
+
+@("VM: DIV")
+unittest {
+    InExprBytecodeBuilder builder = nogc_new!InExprBytecodeBuilder();
+    builder.buildDIV();
+    builder.buildRET(1);
+
+    // Instantiate VM
+    InExprVM vm = new InExprVM();
+    vm.setGlobal(nstring("div"), InExprValue(builder.finalize()));
+
+    vm.push(32.0);
+    vm.push(2.0);
+    int retValCount = vm.call(nstring("div"));
+
+    assert(retValCount == 1);
+    assert(vm.getStackDepth() == retValCount);
+    assert(vm.pop().number == 16.0f);
+}
+
+@("VM: MUL")
+unittest {
+    InExprBytecodeBuilder builder = nogc_new!InExprBytecodeBuilder();
+    builder.buildMUL();
+    builder.buildRET(1);
+
+    // Instantiate VM
+    InExprVM vm = new InExprVM();
+    vm.setGlobal(nstring("mul"), InExprValue(builder.finalize()));
+
+    vm.push(32.0);
+    vm.push(2.0);
+    int retValCount = vm.call(nstring("mul"));
+
+    assert(retValCount == 1);
+    assert(vm.getStackDepth() == retValCount);
+    assert(vm.pop().number == 64.0f);
+}
+
+@("VM: MOD")
+unittest {
+    InExprBytecodeBuilder builder = nogc_new!InExprBytecodeBuilder();
+    builder.buildMOD();
+    builder.buildRET(1);
+
+    // Instantiate VM
+    InExprVM vm = new InExprVM();
+    vm.setGlobal(nstring("mod"), InExprValue(builder.finalize()));
+
+    vm.push(32.0);
+    vm.push(16.0);
+    int retValCount = vm.call(nstring("mod"));
+
+    assert(retValCount == 1);
+    assert(vm.getStackDepth() == retValCount);
+    assert(vm.pop().number == 0.0f);
+}
+
+@("VM: JSR NATIVE")
+unittest {
+    import std.stdio : writeln;
+    import inmath.math : sin;
+
+    // Sin function
+    static int mySinFunc(ref InExprStack stack) @nogc {
+        InExprValue* v = stack.pop();
+        if (v && v.isNumeric) {
+            stack.push(sin(v.number));
+            return 1;
+        }
+        return 0;
+    }
+    InExprBytecodeBuilder builder = nogc_new!InExprBytecodeBuilder();
+    
+    // Parameters
+    builder.buildPUSH(1.0);
+    
+    // Function get
+    builder.buildPUSH("sin");
+    builder.buildGETG();
+
+    // Jump
+    builder.buildJSR(1);
+    builder.buildRET(1);
+
+    // Instantiate VM
+    InExprVM vm = new InExprVM();
+    vm.setGlobal(nstring("sin"), InExprValue(&mySinFunc));
+    vm.setGlobal(nstring("bcfunc"), InExprValue(builder.finalize()));
+
+    int retValCount = vm.call(nstring("bcfunc"));
+
+    assert(retValCount == 1);
+    assert(vm.getStackDepth() == retValCount);
+    assert(vm.pop().number == sin(1.0f));
 }
