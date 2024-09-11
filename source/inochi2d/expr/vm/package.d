@@ -14,7 +14,7 @@
     The VM seperates call and value stacks and strictly limits which
     types may be used in conjunction with it for security.
 
-    The VM is stack based and uses not JIT, for maximum compatibility
+    The VM is stack based and does not use a JIT, for maximum compatibility
     with platforms which do not support the use of JIT compilation.
 */
 module inochi2d.expr.vm;
