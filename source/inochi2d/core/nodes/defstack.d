@@ -15,6 +15,18 @@ struct Deformation {
         nogc_delete(vertexOffsets);
     }
 
+    this(ref return scope Deformation rhs) @trusted @nogc nothrow {
+        this.vertexOffsets = vector!vec2(rhs.vertexOffsets);
+    }
+
+    this(vec2[] data) {
+        this.update(data);
+    }
+
+    this(vector!vec2 data) {
+        this.vertexOffsets = vector!vec2(data);
+    }
+
     void update(vec2[] points) {
         vertexOffsets.resize(points.length);
         vertexOffsets.data[0..points.length] = points[0..$];
@@ -24,14 +36,6 @@ struct Deformation {
         import core.stdc.string : memset;
         vertexOffsets.resize(length);
         memset(vertexOffsets.data, 0, vertexOffsets.size()*vertexOffsets.valueType.sizeof);
-    }
-
-    this(ref return scope Deformation rhs) @trusted @nogc nothrow {
-        this.vertexOffsets = vector!vec2(rhs.vertexOffsets);
-    }
-
-    this(vec2[] data) {
-        this.update(data);
     }
 
     Deformation opUnary(string op : "-")() @safe @nogc nothrow {
