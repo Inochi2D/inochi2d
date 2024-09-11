@@ -30,6 +30,10 @@ struct Deformation {
         this.vertexOffsets = vector!vec2(rhs.vertexOffsets);
     }
 
+    this(vec2[] data) {
+        this.update(data);
+    }
+
     Deformation opUnary(string op : "-")() @safe @nogc nothrow {
         Deformation new_;
 
