@@ -1006,7 +1006,7 @@ class DeformationParameterBinding : ParameterBindingImpl!Deformation {
 
     void update(vec2u point, vec2[] offsets) {
         this.isSet_[point.x][point.y] = true;
-        this.values[point.x][point.y].vertexOffsets = offsets.dup;
+        this.values[point.x][point.y].update(offsets.dup);
         this.reInterpolate();
     }
 
@@ -1023,10 +1023,7 @@ class DeformationParameterBinding : ParameterBindingImpl!Deformation {
     void clearValue(ref Deformation val) {
         // Reset deformation to identity, with the right vertex count
         if (Drawable d = cast(Drawable)target.node) {
-            val.vertexOffsets.length = d.vertices.length;
-            foreach(i; 0..d.vertices.length) {
-                val.vertexOffsets[i] = vec2(0);
-            }
+            val.clear(d.vertices.length);
         }
     }
 

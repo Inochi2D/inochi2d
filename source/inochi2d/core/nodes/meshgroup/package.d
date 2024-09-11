@@ -337,10 +337,10 @@ public:
                     mat4 matrix = drawable.transform.matrix;
 
                     auto nodeBinding = cast(DeformationParameterBinding)param.getOrAddBinding(node, "deform");
-                    auto nodeDeform = nodeBinding.values[x][y].vertexOffsets.dup;
+                    auto nodeDeform = nodeBinding.values[x][y].vertexOffsets[].dup;
                     Tuple!(vec2[], mat4*) filterResult = filterChildren(vertices, nodeDeform, &matrix);
                     if (filterResult[0] !is null) {
-                        nodeBinding.values[x][y].vertexOffsets = filterResult[0];
+                        nodeBinding.values[x][y].vertexOffsets.data[0..filterResult[0].length] = filterResult[0][0..$];
                         nodeBinding.getIsSet()[x][y] = true;
                     }
                 } else if (translateChildren && !isComposite) {
@@ -377,11 +377,11 @@ public:
 
                         vec2[] deformation;
                         if (deformBinding.isSet_[x][y])
-                            deformation = deformBinding.values[x][y].vertexOffsets;
+                            deformation = deformBinding.values[x][y].vertexOffsets[].dup;
                         else {
                             bool rightMost  = x == param.axisPoints[0].length - 1;
                             bool bottomMost = y == param.axisPoints[1].length - 1;
-                            deformation = deformBinding.interpolate(vec2u(rightMost? x - 1: x, bottomMost? y - 1: y), vec2(rightMost? 1: 0, bottomMost? 1:0)).vertexOffsets;
+                            deformation = deformBinding.interpolate(vec2u(rightMost? x - 1: x, bottomMost? y - 1: y), vec2(rightMost? 1: 0, bottomMost? 1:0)).vertexOffsets[];
                         }
                         transformedVertices.length = vertices.length;
                         foreach(i, vertex; vertices) {

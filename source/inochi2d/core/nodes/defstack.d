@@ -3,43 +3,51 @@ import inochi2d.core;
 import inochi2d.math;
 import inochi2d;
 import std.exception : enforce;
+import numem.all;
 
 /**
     A deformation
 */
 struct Deformation {
+    vector!vec2 vertexOffsets;
 
-    /**
-        Deformed values
-    */
-    vec2[] vertexOffsets;
+    ~this() @trusted @nogc nothrow {
+        nogc_delete(vertexOffsets);
+    }
 
     void update(vec2[] points) {
-        vertexOffsets = points.dup;
+        vertexOffsets.resize(points.length);
+        vertexOffsets.data[0..points.length] = points[0..$];
     }
 
-    this(this) pure @safe nothrow {
-        vertexOffsets = vertexOffsets.dup;
+    void clear(size_t length) {
+        import core.stdc.string : memset;
+        vertexOffsets.resize(length);
+        memset(vertexOffsets.data, 0, vertexOffsets.size()*vertexOffsets.valueType.sizeof);
     }
 
-    Deformation opUnary(string op : "-")() @safe pure nothrow {
+    this(ref return scope Deformation rhs) @trusted @nogc nothrow {
+        this.vertexOffsets = vector!vec2(rhs.vertexOffsets);
+    }
+
+    Deformation opUnary(string op : "-")() @safe @nogc nothrow {
         Deformation new_;
 
-        new_.vertexOffsets.length = vertexOffsets.length;
-        foreach(i; 0..vertexOffsets.length) {
+        new_.vertexOffsets.size() = vertexOffsets.size();
+        foreach(i; 0..vertexOffsets.size()) {
             new_.vertexOffsets[i] = -vertexOffsets[i];
         }
 
         return new_;
     }
 
-    Deformation opBinary(string op : "*", T)(T other) @safe pure nothrow {
+    Deformation opBinary(string op : "*", T)(T other) @safe @nogc nothrow {
         static if (is(T == Deformation)) {
             Deformation new_;
 
-            new_.vertexOffsets.length = vertexOffsets.length;
+            new_.vertexOffsets.resize(vertexOffsets.size());
 
-            foreach(i; 0..vertexOffsets.length) {
+            foreach(i; 0..vertexOffsets.size()) {
                 new_.vertexOffsets[i] = vertexOffsets[i] * other.vertexOffsets[i];
             }
 
@@ -47,9 +55,9 @@ struct Deformation {
         } else static if (is(T == vec2)) {
             Deformation new_;
 
-            new_.vertexOffsets.length = vertexOffsets.length;
+            new_.vertexOffsets.resize(vertexOffsets.size());
 
-            foreach(i; 0..vertexOffsets.length) {
+            foreach(i; 0..vertexOffsets.size()) {
                 new_.vertexOffsets[i] = vec2(vertexOffsets[i].x * other.x, vertexOffsets[i].y * other.y);
             }
 
@@ -57,9 +65,9 @@ struct Deformation {
         } else {
             Deformation new_;
 
-            new_.vertexOffsets.length = vertexOffsets.length;
+            new_.vertexOffsets.resize(vertexOffsets.size());
 
-            foreach(i; 0..vertexOffsets.length) {
+            foreach(i; 0..vertexOffsets.size()) {
                 new_.vertexOffsets[i] = vertexOffsets[i] * other;
             }
 
@@ -67,13 +75,13 @@ struct Deformation {
         }
     }
 
-    Deformation opBinaryRight(string op : "*", T)(T other) @safe pure nothrow {
+    Deformation opBinaryRight(string op : "*", T)(T other) @safe @nogc nothrow {
         static if (is(T == Deformation)) {
             Deformation new_;
 
-            new_.vertexOffsets.length = vertexOffsets.length;
+            new_.vertexOffsets.resize(vertexOffsets.size());
 
-            foreach(i; 0..vertexOffsets.length) {
+            foreach(i; 0..vertexOffsets.size()) {
                 new_.vertexOffsets[i] = other.vertexOffsets[i] * vertexOffsets[i];
             }
 
@@ -81,9 +89,9 @@ struct Deformation {
         } else static if (is(T == vec2)) {
             Deformation new_;
 
-            new_.vertexOffsets.length = vertexOffsets.length;
+            new_.vertexOffsets.resize(vertexOffsets.size());
 
-            foreach(i; 0..vertexOffsets.length) {
+            foreach(i; 0..vertexOffsets.size()) {
                 new_.vertexOffsets[i] = vec2(other.x * vertexOffsets[i].x, other.y * vertexOffsets[i].y);
             }
 
@@ -91,9 +99,9 @@ struct Deformation {
         } else {
             Deformation new_;
 
-            new_.vertexOffsets.length = vertexOffsets.length;
+            new_.vertexOffsets.resize(vertexOffsets.size());
 
-            foreach(i; 0..vertexOffsets.length) {
+            foreach(i; 0..vertexOffsets.size()) {
                 new_.vertexOffsets[i] = other * vertexOffsets[i];
             }
 
@@ -101,13 +109,13 @@ struct Deformation {
         }
     }
 
-    Deformation opBinary(string op : "+", T)(T other) @safe pure nothrow {
+    Deformation opBinary(string op : "+", T)(T other) @safe @nogc nothrow {
         static if (is(T == Deformation)) {
             Deformation new_;
 
-            new_.vertexOffsets.length = vertexOffsets.length;
+            new_.vertexOffsets.resize(vertexOffsets.size());
 
-            foreach(i; 0..vertexOffsets.length) {
+            foreach(i; 0..vertexOffsets.size()) {
                 new_.vertexOffsets[i] = vertexOffsets[i] + other.vertexOffsets[i];
             }
 
@@ -115,9 +123,9 @@ struct Deformation {
         } else static if (is(T == vec2)) {
             Deformation new_;
 
-            new_.vertexOffsets.length = vertexOffsets.length;
+            new_.vertexOffsets.resize(vertexOffsets.size());
 
-            foreach(i; 0..vertexOffsets.length) {
+            foreach(i; 0..vertexOffsets.size()) {
                 new_.vertexOffsets[i] = vec2(vertexOffsets[i].x + other.x, vertexOffsets[i].y + other.y);
             }
 
@@ -125,9 +133,9 @@ struct Deformation {
         } else {
             Deformation new_;
 
-            new_.vertexOffsets.length = vertexOffsets.length;
+            new_.vertexOffsets.resize(vertexOffsets.size());
 
-            foreach(i; 0..vertexOffsets.length) {
+            foreach(i; 0..vertexOffsets.size()) {
                 new_.vertexOffsets[i] = vertexOffsets[i] + other;
             }
 
@@ -135,13 +143,13 @@ struct Deformation {
         }
     }
 
-    Deformation opBinary(string op : "-", T)(T other) @safe pure nothrow {
+    Deformation opBinary(string op : "-", T)(T other) @safe @nogc nothrow {
         static if (is(T == Deformation)) {
             Deformation new_;
 
-            new_.vertexOffsets.length = vertexOffsets.length;
+            new_.vertexOffsets.resize(vertexOffsets.size());
 
-            foreach(i; 0..vertexOffsets.length) {
+            foreach(i; 0..vertexOffsets.size()) {
                 new_.vertexOffsets[i] = vertexOffsets[i] - other.vertexOffsets[i];
             }
 
@@ -149,9 +157,9 @@ struct Deformation {
         } else static if (is(T == vec2)) {
             Deformation new_;
 
-            new_.vertexOffsets.length = vertexOffsets.length;
+            new_.vertexOffsets.resize(vertexOffsets.size());
 
-            foreach(i; 0..vertexOffsets.length) {
+            foreach(i; 0..vertexOffsets.size()) {
                 new_.vertexOffsets[i] = vec2(vertexOffsets[i].x - other.x, vertexOffsets[i].y - other.y);
             }
 
@@ -159,9 +167,9 @@ struct Deformation {
         } else {
             Deformation new_;
 
-            new_.vertexOffsets.length = vertexOffsets.length;
+            new_.vertexOffsets.resize(vertexOffsets.size());
 
-            foreach(i; 0..vertexOffsets.length) {
+            foreach(i; 0..vertexOffsets.size()) {
                 new_.vertexOffsets[i] = vertexOffsets[i] - other;
             }
 
@@ -208,7 +216,7 @@ public:
         Push deformation on to stack
     */
     void push(ref Deformation deformation) {
-        enforce(this.parent.deformation.length == deformation.vertexOffsets.length, "Mismatched lengths");
+        enforce(this.parent.deformation.length == deformation.vertexOffsets.size(), "Mismatched lengths");
         foreach(i; 0..this.parent.deformation.length) {
             this.parent.deformation[i] += deformation.vertexOffsets[i];
         }
