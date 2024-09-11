@@ -1,10 +1,17 @@
-module inochi2d.expr.vm.builder;
+/*
+    Copyright © 2024, Inochi2D Project
+    Distributed under the 2-Clause BSD License, see LICENSE file.
+
+    Authors: Luna the Foxgirl
+*/
+
+module inochi2d.expr.compiler.builder;
 import inochi2d.expr.vm.opcodes;
 import inochi2d.expr.vm.stack;
 import numem.all;
 
 /**
-    A builder which can emit InVm instructions.
+    A builder which can emit Inochi2D Expression instructions.
 */
 final
 class InVmBytecodeBuilder {

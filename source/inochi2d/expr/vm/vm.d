@@ -555,7 +555,7 @@ public:
 //      UNIT TESTS
 //
 
-import inochi2d.expr.vm.builder : InVmBytecodeBuilder;
+import inochi2d.expr.compiler.builder : InVmBytecodeBuilder;
 
 @("VM: NATIVE CALL")
 unittest {
