@@ -17,6 +17,12 @@ enum INVM_STACK_SIZE = 64;
     A stack-frame, normally not user accessible.
 */
 struct InVmFrame {
+
+    /**
+        Whether the frame is within the VM.
+    */
+    bool isWithinVM;
+
     /**
         Program
     */

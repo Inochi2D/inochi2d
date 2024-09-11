@@ -79,6 +79,55 @@ private:
         map!(nstring, InVmValue) globals;
     }
 
+    bool _vcall(InVmValue* func) {
+
+        // Get information
+        if (!func || !func.isCallable()) return false;
+
+        // Store stack frame
+        InVmFrame frame;
+        if (state.callStack.getDepth() == 0) {
+            frame.isWithinVM = false;
+        } else {
+            frame.isWithinVM = true;
+            frame.prog = state.bc;
+            frame.pc = state.pc;
+        }
+        state.callStack.push(frame);
+
+        // Call function.
+        if (func.isNativeFunction()) {
+            func.func(this);
+
+        } else {
+
+            this.state.pc = 0;
+            this.state.bc = func.bytecode[];
+        }
+
+        return true;
+    }
+
+    bool _vreturn() {
+        ptrdiff_t stackDepth = cast(ptrdiff_t)state.callStack.getDepth();
+        
+        // Return to caller
+        InVmFrame* frame = state.callStack.pop();
+
+        // No frame?
+        if (!frame) return false;
+
+        // NOTE: Native functions may end up calling back into the VM.
+        // This value should be set by JSR when calling into a native function.
+        // which tells it to return to caller.
+        if (!frame.isWithinVM) return false;
+
+        // Restore previous frame
+        this.state.pc = frame.pc;
+        this.state.bc = frame.prog;
+        return true;
+    }
+
 protected:
 
     /**
@@ -318,43 +367,10 @@ protected:
 
                 // Get information
                 InVmValue* func = state.stack.pop();
-                if (!func || !func.isCallable()) return false;
-
-                if (func.isNativeFunction()) {
-
-                    func.func(this);
-
-                } else {
-
-                    // Store return pointer
-                    InVmFrame frame;
-                    frame.prog = state.bc;
-                    frame.pc = state.pc;
-
-                    state.callStack.push(frame);
-                    this.state.pc = 0;
-                    this.state.bc = func.bytecode[];
-                }
-                return true;
+                return this._vcall(func);
 
             case InVmOpCode.RET:
-                ptrdiff_t stackDepth = cast(ptrdiff_t)state.callStack.getDepth();
-                
-                // CASE: Return to host
-                if (stackDepth-1 < 0) {
-                    return false;
-                }
-
-                // Return to caller
-                InVmFrame* frame = state.callStack.pop();
-
-                // No frame?
-                if (!frame) return false;
-
-                // Restore previous frame
-                this.state.pc = frame.pc;
-                this.state.bc = frame.prog;
-                return true;
+                return this._vreturn();
 
             case InVmOpCode.SETG:
                 InVmValue* name = state.stack.pop();
@@ -388,9 +404,8 @@ protected:
 
         Returns the depth of the stack on completion.
     */
-    size_t run() {
+    void run() {
         while(this.runOne()) { }
-        return state.stack.getDepth();
     }
 
     this() {
@@ -482,18 +497,22 @@ public:
         Executes code in global scope.
 
         Returns size of stack after operation.
+        Returns -1 on error.
     */
     int execute(ubyte[] bytecode) {
-        state.bc = bytecode;
-        state.pc = 0;
+        if (state.callStack.getDepth() == 0) {
+            state.bc = bytecode;
+            state.pc = 0;
 
-        // Run and get return values
-        size_t rval = run();
+            // Run and get return values
+            this.run();
 
-        // Reset code and program counter.
-        state.pc = 0;
-        state.bc = null;
-        return cast(int)rval;
+            // Reset code and program counter.
+            state.pc = 0;
+            state.bc = null;
+            return cast(int)this.getStackDepth();
+        }
+        return -1;
     }
 
     /**
@@ -505,12 +524,10 @@ public:
     int call(nstring gfunc) {
         InVmValue* v = this.getGlobal(gfunc);
         if (v && v.isCallable()) {
-            if (v.isNativeFunction()) {
-                return v.func(this);
-            } else {
-                size_t rval = execute(v.bytecode[]);
-                return cast(int)rval;
+            if (this._vcall(v) && v.isBytecodeBlob()) {
+                this.run();
             }
+            return cast(int)this.getStackDepth();
         }
         return -1;
     }
@@ -560,7 +577,7 @@ unittest {
 
     vm.push(1.0);
     int retValCount = vm.call(nstring("sin"));
-    
+    import std.stdio : writeln;
     assert(retValCount == 1);
     assert(vm.getStackDepth() == retValCount);
     assert(vm.pop().number == sin(1.0f));
