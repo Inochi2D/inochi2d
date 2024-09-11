@@ -12,63 +12,61 @@ import inochi2d.expr.vm.stack;
 import numem.all;
 import std.string;
 
+private {
+    struct _vmExecutionState {
+    @nogc:
 
-/**
-    Local execution state
-*/
-struct InVmState {
-@nogc:
+        // Value Stack
+        InVmValueStack stack;
 
-    // Value Stack
-    InVmValueStack stack;
+        // Call stack
+        InVmCallStack callStack;
 
-    // Call stack
-    InVmCallStack callStack;
+        /// Bytecode being executed
+        ubyte[] bc;
 
-    /// Bytecode being executed
-    ubyte[] bc;
+        /// Program counter
+        uint pc;
 
-    /// Program counter
-    uint pc;
+        /// Current operation flag
+        ubyte flags;
 
-    /// Current operation flag
-    ubyte flags;
+        /// Get if the previous CMP flag was set to Equal
+        bool flagEq() {
+            return (flags & InVmFlag.eq) != 0;
+        }
 
-    /// Get if the previous CMP flag was set to Equal
-    bool flagEq() {
-        return (flags & InVmFlag.eq) != 0;
+        /// Get if the previous CMP flag was set to Below
+        bool flagBelow() {
+            return (flags & InVmFlag.below) != 0;
+        }
+
+        /// Get if the previous CMP flag was set to Above
+        bool flagAbove() {
+            return flags == 0;
+        }
     }
 
-    /// Get if the previous CMP flag was set to Below
-    bool flagBelow() {
-        return (flags & InVmFlag.below) != 0;
+    enum InVmFlag : ubyte {
+        /// Equal flag (zero flag)
+        eq          = 0b0000_0001,
+
+        /// Below flag (carry flag)
+        below       = 0b0000_0010,
+
+        /// Invalid operation flag.
+        invalidOp   = 0b0001_0000,
     }
-
-    /// Get if the previous CMP flag was set to Above
-    bool flagAbove() {
-        return flags == 0;
-    }
-}
-
-enum InVmFlag : ubyte {
-    /// Equal flag (zero flag)
-    eq          = 0b0000_0001,
-
-    /// Below flag (carry flag)
-    below       = 0b0000_0010,
-
-    /// Invalid operation flag.
-    invalidOp   = 0b0001_0000,
 }
 
 /**
     A execution environment
 */
 abstract
-class InVmExecutor {
+class InVmState {
 @nogc:
 private:
-    InVmState state;
+    _vmExecutionState state;
 
     void _vmcmp(T)(T lhs, T rhs) {
         state.flags = 0;
@@ -87,7 +85,7 @@ protected:
         Gets the local execution state
     */
     final
-    InVmState getState() {
+    _vmExecutionState getState() {
         return state;
     }
 
@@ -324,7 +322,7 @@ protected:
 
                 if (func.isNativeFunction()) {
 
-                    func.func(state.stack);
+                    func.func(this);
 
                 } else {
 
@@ -441,7 +439,7 @@ public:
     }
     
     /**
-        Pushes a ExprValue to the stack
+        Pushes a value to the stack
     */
     final
     void push(InVmValue val) {
@@ -449,33 +447,27 @@ public:
     }
 
     /**
-        Pops a ExprValue from the stack
+        Pops a value from the stack
     */
     final
-    InVmValue peek(ptrdiff_t offset) {
-        InVmValue v;
-
-        auto p = state.stack.peek(offset);
-        if (p) {
-            v = *p;
-        }
-
-        return v;
+    InVmValue* peek(ptrdiff_t offset) {
+        return state.stack.peek(offset);
     }
 
     /**
-        Pops a ExprValue from the stack
+        Pops a value from the stack
     */
     final
-    InVmValue pop() {
-        InVmValue v;
+    InVmValue* pop() {
+        return state.stack.pop();
+    }
 
-        auto p = state.stack.peek(0);
-        if (p) {
-            v = *state.stack.pop();
-        }
-
-        return v;
+    /**
+        Pops a range of values off the stack
+    */
+    final
+    void pop(ptrdiff_t offset, size_t count) {
+        state.stack.pop(offset, count);
     }
 
     /**
@@ -484,23 +476,6 @@ public:
     final
     size_t getStackDepth() {
         return state.stack.getDepth();
-    }
-}
-
-class InVmVM : InVmExecutor {
-@nogc:
-private:
-    shared_ptr!_vmGlobalState globalState;
-
-protected:
-    override
-    _vmGlobalState* getGlobalState() {
-        return globalState.get();
-    }
-
-public:
-    this() {
-        this.globalState = shared_new!_vmGlobalState;
     }
 
     /**
@@ -531,13 +506,30 @@ public:
         InVmValue* v = this.getGlobal(gfunc);
         if (v && v.isCallable()) {
             if (v.isNativeFunction()) {
-                return v.func(state.stack);
+                return v.func(this);
             } else {
                 size_t rval = execute(v.bytecode[]);
                 return cast(int)rval;
             }
         }
         return -1;
+    }
+}
+
+class InVmVM : InVmState {
+@nogc:
+private:
+    shared_ptr!_vmGlobalState globalState;
+
+protected:
+    override
+    _vmGlobalState* getGlobalState() {
+        return globalState.get();
+    }
+
+public:
+    this() {
+        this.globalState = shared_new!_vmGlobalState;
     }
 }
 
@@ -553,10 +545,10 @@ unittest {
     import inmath.math : sin;
 
     // Sin function
-    static int mySinFunc(ref InVmValueStack stack) @nogc {
-        InVmValue* v = stack.pop();
+    static int mySinFunc(ref InVmState state) @nogc {
+        InVmValue* v = state.pop();
         if (v && v.isNumeric) {
-            stack.push(InVmValue(sin(v.number)));
+            state.push(sin(v.number));
             return 1;
         }
         return 0;
@@ -675,10 +667,10 @@ unittest {
     import inmath.math : sin;
 
     // Sin function
-    static int mySinFunc(ref InVmValueStack stack) @nogc {
-        InVmValue* v = stack.pop();
+    static int mySinFunc(ref InVmState state) @nogc {
+        InVmValue* v = state.pop();
         if (v && v.isNumeric) {
-            stack.push(InVmValue(sin(v.number)));
+            state.push(sin(v.number));
             return 1;
         }
         return 0;

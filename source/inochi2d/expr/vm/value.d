@@ -6,6 +6,7 @@
 */
 module inochi2d.expr.vm.value;
 import inochi2d.expr.vm.stack;
+import inochi2d.expr.vm.vm;
 import numem.all;
 
 enum InVmValueType {
@@ -34,7 +35,7 @@ public:
         vector!ubyte bytecode;
 
         /// Native function
-        int function(ref InVmValueStack stack) func;
+        int function(ref InVmState state) func;
     }
 
     /**
@@ -74,7 +75,7 @@ public:
     /**
         Constructor
     */
-    this(int function(ref InVmValueStack stack) @nogc func) {
+    this(int function(ref InVmState stack) @nogc func) {
         type = InVmValueType.nativeFunction;
         this.func = func;
     }
