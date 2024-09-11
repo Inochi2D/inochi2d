@@ -13,6 +13,8 @@ import numem.all;
 import std.string;
 
 private {
+    
+    // Vm execution state
     struct _vmExecutionState {
     @nogc:
 
@@ -47,6 +49,7 @@ private {
         }
     }
 
+    // Vm execution state flags
     enum InVmFlag : ubyte {
         /// Equal flag (zero flag)
         eq          = 0b0000_0001,
@@ -56,6 +59,12 @@ private {
 
         /// Invalid operation flag.
         invalidOp   = 0b0001_0000,
+    }
+
+    // An itme in the global store
+    struct _vmGlobalItem {
+        bool writeProtected;
+        InVmValue value;
     }
 }
 
@@ -76,7 +85,33 @@ private:
     }
 
     struct _vmGlobalState {
-        map!(nstring, InVmValue) globals;
+    @nogc:
+        map!(nstring, _vmGlobalItem) globals;
+
+        bool set(bool host=false)(nstring name, InVmValue value, bool writeProtect=false) {
+
+            // Handle write protection.
+            static if (!host) {
+                if (name in globals) {
+                    if (globals[name].writeProtected) 
+                        return false;
+                }
+            }
+
+            globals[name] = _vmGlobalItem(
+                host && writeProtect,
+                value
+            );
+
+            return true;
+        }
+
+        InVmValue* get(nstring name) {
+            if (name in globals) {
+                return &globals[name].value;
+            }
+            return null;
+        }
     }
 
     bool _vcall(InVmValue* func) {
@@ -378,9 +413,9 @@ protected:
 
                 if (name && item && name.getType() == InVmValueType.str) {
                     state.stack.pop(2);
-
-                    this.getGlobalState().globals[name.str] = *item;
-                    return true;
+                    
+                    // TODO: emit error if write protected.
+                    return this.getGlobalState().set(name.str, *item);
                 }
                 return false;
                 
@@ -388,8 +423,9 @@ protected:
                 InVmValue* name = state.stack.pop();
                 if (name && name.getType() == InVmValueType.str) {
 
-                    if (name.str in this.getGlobalState().globals) {
-                        state.stack.push(this.getGlobalState().globals[name.str]);
+                    InVmValue* val = this.getGlobalState().get(name.str);
+                    if (val) {
+                        state.stack.push(*val);
                         return true;
                     }
                 }
@@ -424,17 +460,14 @@ public:
         Gets global value
     */
     InVmValue* getGlobal(nstring name) {
-        if (name in getGlobalState().globals) {
-            return &getGlobalState().globals[name];
-        }
-        return null;
+        return getGlobalState().get(name);
     }
 
     /**
         Sets global value
     */
-    void setGlobal(nstring name, InVmValue value) {
-        getGlobalState().globals[name] = value;
+    void setGlobal(nstring name, InVmValue value, bool writeProtect=false) {
+        getGlobalState().set!true(name, value, writeProtect);
     }
 
     /**
