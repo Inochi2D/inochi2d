@@ -8,7 +8,7 @@
 module inochi2d.expr.vm.opcodes;
 import numem.all;
 
-enum InExprOpCode : ubyte {
+enum InVmOpCode : ubyte {
 
     /// No-op, placeholder opcode.
     NOP = 0x00,
@@ -33,7 +33,7 @@ enum InExprOpCode : ubyte {
     MOD = 0x05,
 
     /// Negate value
-    NOT = 0x06,
+    NEG = 0x06,
 
     
 

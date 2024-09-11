@@ -11,67 +11,55 @@ import numem.all;
 /**
     Size of a VM stack.
 */
-enum IN_EXPR_STACK_SIZE = 64;
+enum INVM_STACK_SIZE = 64;
 
 /**
-    The execution stack of a VM
+    A stack-frame, normally not user accessible.
+*/
+struct InVmFrame {
+    /**
+        Program
+    */
+    ubyte[] prog;
 
-    TODO: Add stack overflow and underflow exceptions.
+    /**
+        Program Counter
+    */
+    uint pc;
+}
+
+/**
+    A VM stack
 */
 final
-class InExprStack {
+class InVmStack(T) {
 @nogc:
 private:
-
     size_t sp = 0;
-    InExprValue[IN_EXPR_STACK_SIZE] stack;
+    T[INVM_STACK_SIZE] stack;
 
 public:
 
     ~this() {
-        foreach(i; 0..IN_EXPR_STACK_SIZE) {
+        foreach(i; 0..INVM_STACK_SIZE) {
             nogc_delete(stack[i]);
         }
     }
 
     /**
-        Pushes a float to the stack
+        Pushes an item to the stack
     */
-    void push(float f32) {
-        if (sp+1 >= IN_EXPR_STACK_SIZE) return;
-        stack[sp++] = InExprValue(f32);
-    }
-
-    /**
-        Pushes a string slice to the stack
-    */
-    void push(string str) {
-        if (sp+1 >= IN_EXPR_STACK_SIZE) return;
-        stack[sp++] = InExprValue(nstring(str));
-    }
-
-    /**
-        Pushes a string to the stack
-    */
-    void push(nstring str) {
-        if (sp+1 >= IN_EXPR_STACK_SIZE) return;
-        stack[sp++] = InExprValue(str);
-    }
-    
-    /**
-        Pushes a ExprValue to the stack
-    */
-    void push(InExprValue val) {
-        if (sp+1 >= IN_EXPR_STACK_SIZE) return;
-        stack[sp++] = val;
+    void push(T item) {
+        if (sp+1 >= INVM_STACK_SIZE) return;
+        stack[sp++] = item;
     }
 
     /**
         Inserts value at offset.
     */
-    void insert(InExprValue val, ptrdiff_t offset) {
+    void insert(T val, ptrdiff_t offset) {
         ptrdiff_t rsp = cast(ptrdiff_t)sp;
-        if (rsp+1 >= IN_EXPR_STACK_SIZE) return;
+        if (rsp+1 >= INVM_STACK_SIZE) return;
         
         // Insert end
         if (offset == 0) {
@@ -135,7 +123,7 @@ public:
     /**
         Pops the top value off the stack
     */
-    InExprValue* pop() {
+    T* pop() {
         ptrdiff_t rsp = cast(ptrdiff_t)sp;
         if (rsp-1 < 0) return null;
         return &stack[--sp];
@@ -146,7 +134,7 @@ public:
         Gets the value at a specific offset.
         Returns null if peeking below 0 or above the stack pointer.
     */
-    InExprValue* peek(ptrdiff_t offset) {
+    T* peek(ptrdiff_t offset) {
         ptrdiff_t rsp = cast(ptrdiff_t)sp-1;
         
         if (rsp-offset < 0) return null;
@@ -166,36 +154,9 @@ public:
         Gets the maximum depth of the stack
     */
     size_t getMaxDepth() {
-        return IN_EXPR_STACK_SIZE;
-    }
-
-    /**
-        Dumps stack to stdout
-    */
-    void dumpStack() {
-        import core.stdc.stdio : printf;
-        foreach_reverse(i; 0..sp) {
-            final switch(stack[i].getType()) {
-                case InExprValueType.NONE:
-                    printf("%d: null (none)\n", cast(int)i);
-                    return;
-                case InExprValueType.number:
-                    printf("%d: %f (number)\n", cast(int)i, stack[i].number);
-                    return;
-                case InExprValueType.str:
-                    printf("%d: %s (string)\n", cast(int)i, stack[i].str.toCString());
-                    return;
-                case InExprValueType.returnAddr:
-                    printf("%d: %d (return addr)\n", cast(int)i, stack[i].retptr.pc);
-                    return;
-                case InExprValueType.nativeFunction:
-                    printf("%d: %p (return addr)\n", cast(int)i, cast(void*)stack[i].func);
-                    return;
-                case InExprValueType.bytecode:
-                    printf("%d: (bytecode, %u bytes)\n", cast(int)i, cast(uint)stack[i].bytecode.size());
-                    return;
-                
-            }
-        }
+        return INVM_STACK_SIZE;
     }
 }
+
+alias InVmValueStack = InVmStack!InVmValue;
+alias InVmCallStack = InVmStack!InVmFrame;

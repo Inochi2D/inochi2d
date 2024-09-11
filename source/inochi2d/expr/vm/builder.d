@@ -4,10 +4,10 @@ import inochi2d.expr.vm.stack;
 import numem.all;
 
 /**
-    A builder which can emit InExpr instructions.
+    A builder which can emit InVm instructions.
 */
 final
-class InExprBytecodeBuilder {
+class InVmBytecodeBuilder {
 @nogc:
 private:
     vector!ubyte bytecode;
@@ -21,7 +21,7 @@ private:
     // Validates the code every stack step.
     void validateStack() {
         if (eStackPtr < 0) underflow = true;
-        if (eStackPtr >= IN_EXPR_STACK_SIZE) overflow = true;
+        if (eStackPtr >= INVM_STACK_SIZE) overflow = true;
     }
 
 public:
@@ -69,14 +69,14 @@ public:
         Builds a NOP instruction
     */
     void buildNOP() {
-        bytecode ~= InExprOpCode.NOP;
+        bytecode ~= InVmOpCode.NOP;
     }
 
     /**
         Builds a ADD instruction
     */
     void buildADD() {
-        bytecode ~= InExprOpCode.ADD;
+        bytecode ~= InVmOpCode.ADD;
         eStackPtr--;
         this.validateStack();
     }
@@ -85,7 +85,7 @@ public:
         Builds a SUB instruction
     */
     void buildSUB() {
-        bytecode ~= InExprOpCode.SUB;
+        bytecode ~= InVmOpCode.SUB;
         eStackPtr--;
         this.validateStack();
     }
@@ -94,7 +94,7 @@ public:
         Builds a DIV instruction
     */
     void buildDIV() {
-        bytecode ~= InExprOpCode.DIV;
+        bytecode ~= InVmOpCode.DIV;
         eStackPtr--;
         this.validateStack();
     }
@@ -103,7 +103,7 @@ public:
         Builds a MUL instruction
     */
     void buildMUL() {
-        bytecode ~= InExprOpCode.MUL;
+        bytecode ~= InVmOpCode.MUL;
         eStackPtr--;
         this.validateStack();
     }
@@ -112,23 +112,23 @@ public:
         Builds a MUL instruction
     */
     void buildMOD() {
-        bytecode ~= InExprOpCode.MOD;
+        bytecode ~= InVmOpCode.MOD;
         eStackPtr--;
         this.validateStack();
     }
 
     /**
-        Builds a NOT instruction
+        Builds a NEG instruction
     */
-    void buildNOT() {
-        bytecode ~= InExprOpCode.NOT;
+    void buildNEG() {
+        bytecode ~= InVmOpCode.NEG;
     }
 
     /**
         Builds a PUSH instruction
     */
     void buildPUSH(float immediate) {
-        bytecode ~= InExprOpCode.PUSH_n;
+        bytecode ~= InVmOpCode.PUSH_n;
         bytecode ~= toEndian(immediate, Endianess.littleEndian);
         eStackPtr++;
         this.validateStack();
@@ -145,7 +145,7 @@ public:
         Builds a PUSH instruction
     */
     void buildPUSH(nstring str) {
-        bytecode ~= InExprOpCode.PUSH_s;
+        bytecode ~= InVmOpCode.PUSH_s;
         bytecode ~= toEndian(cast(uint)str.length(), Endianess.littleEndian);
         bytecode ~= cast(ubyte[])str[0..$];
         eStackPtr++;
@@ -163,7 +163,7 @@ public:
         Builds a POP instruction
     */
     void buildPOP(uint offset, uint count) {
-        bytecode ~= InExprOpCode.POP;
+        bytecode ~= InVmOpCode.POP;
         bytecode ~= cast(ubyte)offset;
         bytecode ~= cast(ubyte)count;
 
@@ -175,7 +175,7 @@ public:
         Builds a PEEK instruction
     */
     void buildPEEK(uint offset) {
-        bytecode ~= InExprOpCode.PEEK;
+        bytecode ~= InVmOpCode.PEEK;
         bytecode ~= cast(ubyte)offset;
 
         eStackPtr++;
@@ -186,7 +186,7 @@ public:
         Builds a CMP instruction
     */
     void buildCMP(uint offsetA, uint offsetB) {
-        bytecode ~= InExprOpCode.CMP;
+        bytecode ~= InVmOpCode.CMP;
         bytecode ~= cast(ubyte)offsetA;
         bytecode ~= cast(ubyte)offsetB;
 
@@ -198,7 +198,7 @@ public:
         Builds a JMP instruction
     */
     void buildJMP(size_t offset) {
-        bytecode ~= InExprOpCode.JMP;
+        bytecode ~= InVmOpCode.JMP;
         bytecode ~= toEndian(offset, Endianess.littleEndian);
     }
 
@@ -206,7 +206,7 @@ public:
         Builds a JEQ instruction
     */
     void buildJEQ(size_t offset) {
-        bytecode ~= InExprOpCode.JEQ;
+        bytecode ~= InVmOpCode.JEQ;
         bytecode ~= toEndian(offset, Endianess.littleEndian);
 
         eStackPtr--;
@@ -217,7 +217,7 @@ public:
         Builds a JEQ instruction
     */
     void buildJNQ(size_t offset) {
-        bytecode ~= InExprOpCode.JEQ;
+        bytecode ~= InVmOpCode.JEQ;
         bytecode ~= toEndian(offset, Endianess.littleEndian);
 
         eStackPtr--;
@@ -228,7 +228,7 @@ public:
         Builds a JL instruction
     */
     void buildJL(size_t offset) {
-        bytecode ~= InExprOpCode.JL;
+        bytecode ~= InVmOpCode.JL;
         bytecode ~= toEndian(offset, Endianess.littleEndian);
 
         eStackPtr--;
@@ -239,7 +239,7 @@ public:
         Builds a JG instruction
     */
     void buildJG(size_t offset) {
-        bytecode ~= InExprOpCode.JG;
+        bytecode ~= InVmOpCode.JG;
         bytecode ~= toEndian(offset, Endianess.littleEndian);
 
         eStackPtr--;
@@ -249,30 +249,22 @@ public:
     /**
         Builds a JSR instruction
     */
-    void buildJSR(size_t params) {
-        bytecode ~= InExprOpCode.JSR;
-        bytecode ~= cast(ubyte)params;
-
-        eStackPtr++;
-        this.validateStack();
+    void buildJSR() {
+        bytecode ~= InVmOpCode.JSR;
     }
 
     /**
         Builds a RET instruction
     */
-    void buildRET(size_t params) {
-        bytecode ~= InExprOpCode.RET;
-        bytecode ~= cast(ubyte)params;
-
-        eStackPtr++;
-        this.validateStack();
+    void buildRET() {
+        bytecode ~= InVmOpCode.RET;
     }
 
     /**
         Builds a SETG instruction
     */
     void buildSETG() {
-        bytecode ~= InExprOpCode.SETG;
+        bytecode ~= InVmOpCode.SETG;
         
         eStackPtr -= 2;
         this.validateStack();
@@ -282,7 +274,7 @@ public:
         Builds a GETG instruction
     */
     void buildGETG() {
-        bytecode ~= InExprOpCode.GETG;
+        bytecode ~= InVmOpCode.GETG;
     }
 
     /**

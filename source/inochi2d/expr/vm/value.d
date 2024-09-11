@@ -8,7 +8,7 @@ module inochi2d.expr.vm.value;
 import inochi2d.expr.vm.stack;
 import numem.all;
 
-enum InExprValueType {
+enum InVmValueType {
     NONE,
     number,
     str,
@@ -17,24 +17,10 @@ enum InExprValueType {
     returnAddr
 }
 
-/**
-    Stores the return address and chunk to execute
-
-    TODO: make a bytecode manager interface that makes this safe.
-*/
-struct InRetPtr {
-
-    /// Bytecode slice
-    ubyte[] bc;
-
-    /// Program counter
-    uint pc;
-}
-
-struct InExprValue {
+struct InVmValue {
 @nogc:
 private:
-    InExprValueType type;
+    InVmValueType type;
 
 public:
     union {
@@ -48,17 +34,14 @@ public:
         vector!ubyte bytecode;
 
         /// Native function
-        int function(ref InExprStack stack) func;
-
-        /// Return address
-        InRetPtr retptr;
+        int function(ref InVmValueStack stack) func;
     }
 
     /**
         Destructor
     */
     ~this() {
-        if (type == InExprValueType.str) {
+        if (type == InVmValueType.str) {
             if (!str.empty) 
                 nogc_delete(str);
         }
@@ -68,7 +51,7 @@ public:
         Constructor
     */
     this(float f32) {
-        type = InExprValueType.number;
+        type = InVmValueType.number;
         this.number = f32;
     }
 
@@ -76,7 +59,7 @@ public:
         Constructor
     */
     this(nstring str) {
-        type = InExprValueType.str;
+        type = InVmValueType.str;
         this.str = str;
     }
 
@@ -84,59 +67,51 @@ public:
         Constructor
     */
     this(vector!ubyte bytecode) {
-        type = InExprValueType.bytecode;
+        type = InVmValueType.bytecode;
         this.bytecode = bytecode;
     }
 
     /**
         Constructor
     */
-    this(int function(ref InExprStack stack) @nogc func) {
-        type = InExprValueType.nativeFunction;
+    this(int function(ref InVmValueStack stack) @nogc func) {
+        type = InVmValueType.nativeFunction;
         this.func = func;
-    }
-
-    /**
-        Constructor
-    */
-    this(InRetPtr retptr) {
-        type = InExprValueType.returnAddr;
-        this.retptr = retptr;
     }
 
     /**
         Get whether the value callable
     */
     bool isCallable() {
-        return type == InExprValueType.nativeFunction || type == InExprValueType.bytecode;
+        return type == InVmValueType.nativeFunction || type == InVmValueType.bytecode;
     }
 
     /**
         Get whether the value is a native function
     */
     bool isNativeFunction() {
-        return type == InExprValueType.nativeFunction;
+        return type == InVmValueType.nativeFunction;
     }
 
     /**
         Get whether the value is a bytecode blob
     */
     bool isBytecodeBlob() {
-        return type == InExprValueType.bytecode;
+        return type == InVmValueType.bytecode;
     }
 
     /**
         Get whether 2 values are compatible
     */
-    bool isCompatible(ref InExprValue other) {
+    bool isCompatible(ref InVmValue other) {
         final switch(this.getType()) {
-            case InExprValueType.NONE:
+            case InVmValueType.NONE:
                 return false;
-            case InExprValueType.number:
-            case InExprValueType.str:
-            case InExprValueType.nativeFunction:
-            case InExprValueType.bytecode:
-            case InExprValueType.returnAddr:
+            case InVmValueType.number:
+            case InVmValueType.str:
+            case InVmValueType.nativeFunction:
+            case InVmValueType.bytecode:
+            case InVmValueType.returnAddr:
                 return other.getType() == this.getType();
         }
     }
@@ -145,13 +120,13 @@ public:
         Gets whether the value is numeric
     */
     bool isNumeric() {
-        return type == InExprValueType.number;
+        return type == InVmValueType.number;
     }
 
     /**
         Gets the type of the value
     */
-    InExprValueType getType() {
+    InVmValueType getType() {
         return type;
     }
 }

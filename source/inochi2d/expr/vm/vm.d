@@ -16,11 +16,14 @@ import std.string;
 /**
     Local execution state
 */
-struct InExprVMState {
+struct InVmState {
 @nogc:
 
-    // Stack
-    InExprStack stack;
+    // Value Stack
+    InVmValueStack stack;
+
+    // Call stack
+    InVmCallStack callStack;
 
     /// Bytecode being executed
     ubyte[] bc;
@@ -33,12 +36,12 @@ struct InExprVMState {
 
     /// Get if the previous CMP flag was set to Equal
     bool flagEq() {
-        return (flags & InExprVMFlag.eq) != 0;
+        return (flags & InVmFlag.eq) != 0;
     }
 
     /// Get if the previous CMP flag was set to Below
     bool flagBelow() {
-        return (flags & InExprVMFlag.below) != 0;
+        return (flags & InVmFlag.below) != 0;
     }
 
     /// Get if the previous CMP flag was set to Above
@@ -47,7 +50,7 @@ struct InExprVMState {
     }
 }
 
-enum InExprVMFlag : ubyte {
+enum InVmFlag : ubyte {
     /// Equal flag (zero flag)
     eq          = 0b0000_0001,
 
@@ -62,20 +65,20 @@ enum InExprVMFlag : ubyte {
     A execution environment
 */
 abstract
-class InExprExecutor {
+class InVmExecutor {
 @nogc:
 private:
-    InExprVMState state;
+    InVmState state;
 
     void _vmcmp(T)(T lhs, T rhs) {
         state.flags = 0;
 
-        if (lhs == rhs) state.flags |= InExprVMFlag.eq;
-        if (lhs < rhs)  state.flags |= InExprVMFlag.below;
+        if (lhs == rhs) state.flags |= InVmFlag.eq;
+        if (lhs < rhs)  state.flags |= InVmFlag.below;
     }
 
     struct _vmGlobalState {
-        map!(nstring, InExprValue) globals;
+        map!(nstring, InVmValue) globals;
     }
 
 protected:
@@ -84,7 +87,7 @@ protected:
         Gets the local execution state
     */
     final
-    InExprVMState getState() {
+    InVmState getState() {
         return state;
     }
 
@@ -108,112 +111,112 @@ protected:
     final
     bool runOne() {
         import core.stdc.stdio : printf;
-        InExprOpCode opcode = cast(InExprOpCode)state.bc[state.pc++];
+        InVmOpCode opcode = cast(InVmOpCode)state.bc[state.pc++];
         
         switch(opcode) {
             default:
                 return false;
 
-            case InExprOpCode.NOP:
+            case InVmOpCode.NOP:
                 return true;
             
-            case InExprOpCode.ADD:
-                InExprValue* rhsp = state.stack.peek(0);
-                InExprValue* lhsp = state.stack.peek(1);
+            case InVmOpCode.ADD:
+                InVmValue* rhsp = state.stack.peek(0);
+                InVmValue* lhsp = state.stack.peek(1);
                 if (!rhsp || !lhsp) 
                     return false;
 
-                InExprValue rhs = *rhsp;
-                InExprValue lhs = *lhsp;
+                InVmValue rhs = *rhsp;
+                InVmValue lhs = *lhsp;
 
                 if (lhs.isNumeric && rhs.isNumeric) {
                     state.stack.pop(2);
-                    state.stack.push(lhs.number + rhs.number);
+                    state.stack.push(InVmValue(lhs.number + rhs.number));
                 }
                 return false;
             
-            case InExprOpCode.SUB:
-                InExprValue* rhsp = state.stack.peek(0);
-                InExprValue* lhsp = state.stack.peek(1);
+            case InVmOpCode.SUB:
+                InVmValue* rhsp = state.stack.peek(0);
+                InVmValue* lhsp = state.stack.peek(1);
                 if (!rhsp || !lhsp) 
                     return false;
 
-                InExprValue rhs = *rhsp;
-                InExprValue lhs = *lhsp;
+                InVmValue rhs = *rhsp;
+                InVmValue lhs = *lhsp;
 
                 if (lhs.isNumeric && rhs.isNumeric) {
                     state.stack.pop(2);
-                    state.stack.push(lhs.number - rhs.number);
+                    state.stack.push(InVmValue(lhs.number - rhs.number));
                 }
                 return false;
             
-            case InExprOpCode.MUL:
-                InExprValue* rhsp = state.stack.peek(0);
-                InExprValue* lhsp = state.stack.peek(1);
+            case InVmOpCode.MUL:
+                InVmValue* rhsp = state.stack.peek(0);
+                InVmValue* lhsp = state.stack.peek(1);
                 if (!rhsp || !lhsp) 
                     return false;
 
-                InExprValue rhs = *rhsp;
-                InExprValue lhs = *lhsp;
+                InVmValue rhs = *rhsp;
+                InVmValue lhs = *lhsp;
 
                 if (lhs.isNumeric && rhs.isNumeric) {
                     state.stack.pop(2);
-                    state.stack.push(lhs.number * rhs.number);
+                    state.stack.push(InVmValue(lhs.number * rhs.number));
                 }
                 return false;
             
-            case InExprOpCode.DIV:
-                InExprValue* rhsp = state.stack.peek(0);
-                InExprValue* lhsp = state.stack.peek(1);
+            case InVmOpCode.DIV:
+                InVmValue* rhsp = state.stack.peek(0);
+                InVmValue* lhsp = state.stack.peek(1);
                 if (!rhsp || !lhsp) 
                     return false;
 
-                InExprValue rhs = *rhsp;
-                InExprValue lhs = *lhsp;
+                InVmValue rhs = *rhsp;
+                InVmValue lhs = *lhsp;
 
                 if (lhs.isNumeric && rhs.isNumeric) {
                     state.stack.pop(2);
-                    state.stack.push(lhs.number / rhs.number);
+                    state.stack.push(InVmValue(lhs.number / rhs.number));
                 }
                 return false;
             
-            case InExprOpCode.MOD:
-                InExprValue* rhsp = state.stack.peek(0);
-                InExprValue* lhsp = state.stack.peek(1);
+            case InVmOpCode.MOD:
+                InVmValue* rhsp = state.stack.peek(0);
+                InVmValue* lhsp = state.stack.peek(1);
                 if (!rhsp || !lhsp) 
                     return false;
 
-                InExprValue rhs = *rhsp;
-                InExprValue lhs = *lhsp;
+                InVmValue rhs = *rhsp;
+                InVmValue lhs = *lhsp;
 
                 if (lhs.isNumeric && rhs.isNumeric) {
                     import inmath.math : fmodf;
                     state.stack.pop(2);
-                    state.stack.push(fmodf(lhs.number, rhs.number));
+                    state.stack.push(InVmValue(fmodf(lhs.number, rhs.number)));
                 }
                 return false;
             
-            case InExprOpCode.NOT:
-                InExprValue* lhsp = state.stack.peek(0);
+            case InVmOpCode.NEG:
+                InVmValue* lhsp = state.stack.peek(0);
                 if (!lhsp) 
                     return false;
                 
-                InExprValue lhs = *lhsp;
+                InVmValue lhs = *lhsp;
 
                 if (lhs.isNumeric) {
                     state.stack.pop(1);
-                    state.stack.push(-lhs.number);
+                    state.stack.push(InVmValue(-lhs.number));
                 }
                 return false;
 
-            case InExprOpCode.PUSH_n:
+            case InVmOpCode.PUSH_n:
                 ubyte[4] val = state.bc[state.pc..state.pc+4];
                 float f32 = fromEndian!float(val, Endianess.littleEndian);
-                state.stack.push(f32);
+                state.stack.push(InVmValue(f32));
                 state.pc += 4;
                 return true;
 
-            case InExprOpCode.PUSH_s:
+            case InVmOpCode.PUSH_s:
                 ubyte[4] val = state.bc[state.pc..state.pc+4];
                 state.pc += 4;
 
@@ -224,34 +227,34 @@ protected:
                     return false;
 
                 nstring nstr = cast(string)state.bc[state.pc..state.pc+length];
-                state.stack.push(nstr);
+                state.stack.push(InVmValue(nstr));
 
                 state.pc += length;
                 return true;
 
-            case InExprOpCode.POP:
+            case InVmOpCode.POP:
                 ptrdiff_t offset = state.bc[state.pc++];
                 ptrdiff_t count = state.bc[state.pc++];
                 state.stack.pop(offset, count);
                 return true;
 
-            case InExprOpCode.PEEK:
+            case InVmOpCode.PEEK:
                 ptrdiff_t offset = state.bc[state.pc++];
                 state.stack.push(*state.stack.peek(offset));
                 return true;
 
-            case InExprOpCode.CMP:
-                state.flags = InExprVMFlag.invalidOp;
+            case InVmOpCode.CMP:
+                state.flags = InVmFlag.invalidOp;
 
-                InExprValue* rhs = state.stack.peek(0);
-                InExprValue* lhs = state.stack.peek(1);
+                InVmValue* rhs = state.stack.peek(0);
+                InVmValue* lhs = state.stack.peek(1);
 
                 if (lhs.isNumeric && rhs.isNumeric) {
                     _vmcmp(lhs.number, rhs.number);
                 }
                 return false;
 
-            case InExprOpCode.JMP:
+            case InVmOpCode.JMP:
                 ubyte[4] var = state.bc[state.pc..state.pc+4];
                 uint addr = fromEndian!uint(var, Endianess.littleEndian);
                 state.pc += 4;
@@ -259,7 +262,7 @@ protected:
                 this.jump(addr);
                 return true;
 
-            case InExprOpCode.JEQ:
+            case InVmOpCode.JEQ:
                 ubyte[4] var = state.bc[state.pc..state.pc+4];
                 uint addr = fromEndian!uint(var, Endianess.littleEndian);
                 state.pc += 4;
@@ -268,7 +271,7 @@ protected:
                     this.jump(addr);
                 return true;
 
-            case InExprOpCode.JNQ:
+            case InVmOpCode.JNQ:
                 ubyte[4] var = state.bc[state.pc..state.pc+4];
                 uint addr = fromEndian!uint(var, Endianess.littleEndian);
                 state.pc += 4;
@@ -277,7 +280,7 @@ protected:
                     this.jump(addr);
                 return true;
 
-            case InExprOpCode.JL:
+            case InVmOpCode.JL:
                 ubyte[4] var = state.bc[state.pc..state.pc+4];
                 uint addr = fromEndian!uint(var, Endianess.littleEndian);
                 state.pc += 4;
@@ -286,7 +289,7 @@ protected:
                     this.jump(addr);
                 return true;
 
-            case InExprOpCode.JLE:
+            case InVmOpCode.JLE:
                 ubyte[4] var = state.bc[state.pc..state.pc+4];
                 uint addr = fromEndian!uint(var, Endianess.littleEndian);
                 state.pc += 4;
@@ -295,7 +298,7 @@ protected:
                     this.jump(addr);
                 return true;
 
-            case InExprOpCode.JG:
+            case InVmOpCode.JG:
                 ubyte[4] var = state.bc[state.pc..state.pc+4];
                 uint addr = fromEndian!uint(var, Endianess.littleEndian);
                 state.pc += 4;
@@ -304,7 +307,7 @@ protected:
                     this.jump(addr);
                 return true;
 
-            case InExprOpCode.JGE:
+            case InVmOpCode.JGE:
                 ubyte[4] var = state.bc[state.pc..state.pc+4];
                 uint addr = fromEndian!uint(var, Endianess.littleEndian);
                 state.pc += 4;
@@ -313,13 +316,10 @@ protected:
                     this.jump(addr);
                 return true;
 
-            case InExprOpCode.JSR:
+            case InVmOpCode.JSR:
 
                 // Get information
-                ptrdiff_t passed = state.bc[state.pc++];
-                InExprValue* func = state.stack.pop();
-
-                if (passed >= state.stack.getMaxDepth()) return false;
+                InVmValue* func = state.stack.pop();
                 if (!func || !func.isCallable()) return false;
 
                 if (func.isNativeFunction()) {
@@ -329,37 +329,40 @@ protected:
                 } else {
 
                     // Store return pointer
-                    InRetPtr retptr;
-                    retptr.pc = state.pc;
-                    retptr.bc = state.bc;
+                    InVmFrame frame;
+                    frame.prog = state.bc;
+                    frame.pc = state.pc;
 
-                    state.stack.insert(InExprValue(retptr), passed);
+                    state.callStack.push(frame);
                     this.state.pc = 0;
                     this.state.bc = func.bytecode[];
                 }
                 return true;
 
-            case InExprOpCode.RET:
-                ptrdiff_t returnValues = state.bc[state.pc];
-                ptrdiff_t stackDepth = cast(ptrdiff_t)state.stack.getDepth();
+            case InVmOpCode.RET:
+                ptrdiff_t stackDepth = cast(ptrdiff_t)state.callStack.getDepth();
                 
                 // CASE: Return to host
-                if (stackDepth-returnValues == 0) {
+                if (stackDepth-1 < 0) {
                     return false;
                 }
 
                 // Return to caller
-                InExprValue* rptr = state.stack.peek(returnValues);
-                if (!rptr || rptr.getType() != InExprValueType.returnAddr) return false;
-                this.state.pc = rptr.retptr.pc;
-                this.state.bc = rptr.retptr.bc;
+                InVmFrame* frame = state.callStack.pop();
+
+                // No frame?
+                if (!frame) return false;
+
+                // Restore previous frame
+                this.state.pc = frame.pc;
+                this.state.bc = frame.prog;
                 return true;
 
-            case InExprOpCode.SETG:
-                InExprValue* name = state.stack.pop();
-                InExprValue* item = state.stack.pop();
+            case InVmOpCode.SETG:
+                InVmValue* name = state.stack.pop();
+                InVmValue* item = state.stack.pop();
 
-                if (name && item && name.getType() == InExprValueType.str) {
+                if (name && item && name.getType() == InVmValueType.str) {
                     state.stack.pop(2);
 
                     this.getGlobalState().globals[name.str] = *item;
@@ -367,9 +370,9 @@ protected:
                 }
                 return false;
                 
-            case InExprOpCode.GETG:
-                InExprValue* name = state.stack.pop();
-                if (name && name.getType() == InExprValueType.str) {
+            case InVmOpCode.GETG:
+                InVmValue* name = state.stack.pop();
+                if (name && name.getType() == InVmValueType.str) {
 
                     if (name.str in this.getGlobalState().globals) {
                         state.stack.push(this.getGlobalState().globals[name.str]);
@@ -393,15 +396,21 @@ protected:
     }
 
     this() {
-        state.stack = nogc_new!InExprStack();
+        state.stack = nogc_new!InVmValueStack();
+        state.callStack = nogc_new!InVmCallStack();
     }
 
 public:
 
+    ~this() {
+        nogc_delete(state.stack);
+        nogc_delete(state.callStack);
+    }
+
     /**
         Gets global value
     */
-    InExprValue* getGlobal(nstring name) {
+    InVmValue* getGlobal(nstring name) {
         if (name in getGlobalState().globals) {
             return &getGlobalState().globals[name];
         }
@@ -411,7 +420,7 @@ public:
     /**
         Sets global value
     */
-    void setGlobal(nstring name, InExprValue value) {
+    void setGlobal(nstring name, InVmValue value) {
         getGlobalState().globals[name] = value;
     }
 
@@ -420,7 +429,7 @@ public:
     */
     final
     void push(float f32) {
-        state.stack.push(f32);
+        state.stack.push(InVmValue(f32));
     }
 
     /**
@@ -428,14 +437,14 @@ public:
     */
     final
     void push(nstring str) {
-        state.stack.push(str);
+        state.stack.push(InVmValue(str));
     }
     
     /**
         Pushes a ExprValue to the stack
     */
     final
-    void push(InExprValue val) {
+    void push(InVmValue val) {
         state.stack.push(val);
     }
 
@@ -443,8 +452,8 @@ public:
         Pops a ExprValue from the stack
     */
     final
-    InExprValue peek(ptrdiff_t offset) {
-        InExprValue v;
+    InVmValue peek(ptrdiff_t offset) {
+        InVmValue v;
 
         auto p = state.stack.peek(offset);
         if (p) {
@@ -458,8 +467,8 @@ public:
         Pops a ExprValue from the stack
     */
     final
-    InExprValue pop() {
-        InExprValue v;
+    InVmValue pop() {
+        InVmValue v;
 
         auto p = state.stack.peek(0);
         if (p) {
@@ -478,7 +487,7 @@ public:
     }
 }
 
-class InExprVM : InExprExecutor {
+class InVmVM : InVmExecutor {
 @nogc:
 private:
     shared_ptr!_vmGlobalState globalState;
@@ -519,7 +528,7 @@ public:
         Returns -1 on error.
     */
     int call(nstring gfunc) {
-        InExprValue* v = this.getGlobal(gfunc);
+        InVmValue* v = this.getGlobal(gfunc);
         if (v && v.isCallable()) {
             if (v.isNativeFunction()) {
                 return v.func(state.stack);
@@ -530,13 +539,6 @@ public:
         }
         return -1;
     }
-
-    /**
-        Dumps stack to stdout
-    */
-    void dumpStack() {
-        state.stack.dumpStack();
-    }
 }
 
 
@@ -544,25 +546,25 @@ public:
 //      UNIT TESTS
 //
 
-import inochi2d.expr.vm.builder : InExprBytecodeBuilder;
+import inochi2d.expr.vm.builder : InVmBytecodeBuilder;
 
 @("VM: NATIVE CALL")
 unittest {
     import inmath.math : sin;
 
     // Sin function
-    static int mySinFunc(ref InExprStack stack) @nogc {
-        InExprValue* v = stack.pop();
+    static int mySinFunc(ref InVmValueStack stack) @nogc {
+        InVmValue* v = stack.pop();
         if (v && v.isNumeric) {
-            stack.push(sin(v.number));
+            stack.push(InVmValue(sin(v.number)));
             return 1;
         }
         return 0;
     }
 
     // Instantiate VM
-    InExprVM vm = new InExprVM();
-    vm.setGlobal(nstring("sin"), InExprValue(&mySinFunc));
+    InVmVM vm = new InVmVM();
+    vm.setGlobal(nstring("sin"), InVmValue(&mySinFunc));
 
     vm.push(1.0);
     int retValCount = vm.call(nstring("sin"));
@@ -574,13 +576,13 @@ unittest {
 
 @("VM: ADD")
 unittest {
-    InExprBytecodeBuilder builder = nogc_new!InExprBytecodeBuilder();
+    InVmBytecodeBuilder builder = nogc_new!InVmBytecodeBuilder();
     builder.buildADD();
-    builder.buildRET(1);
+    builder.buildRET();
 
     // Instantiate VM
-    InExprVM vm = new InExprVM();
-    vm.setGlobal(nstring("add"), InExprValue(builder.finalize()));
+    InVmVM vm = new InVmVM();
+    vm.setGlobal(nstring("add"), InVmValue(builder.finalize()));
 
     vm.push(32.0);
     vm.push(32.0);
@@ -593,13 +595,13 @@ unittest {
 
 @("VM: SUB")
 unittest {
-    InExprBytecodeBuilder builder = nogc_new!InExprBytecodeBuilder();
+    InVmBytecodeBuilder builder = nogc_new!InVmBytecodeBuilder();
     builder.buildSUB();
-    builder.buildRET(1);
+    builder.buildRET();
 
     // Instantiate VM
-    InExprVM vm = new InExprVM();
-    vm.setGlobal(nstring("sub"), InExprValue(builder.finalize()));
+    InVmVM vm = new InVmVM();
+    vm.setGlobal(nstring("sub"), InVmValue(builder.finalize()));
 
     vm.push(32.0);
     vm.push(32.0);
@@ -612,13 +614,13 @@ unittest {
 
 @("VM: DIV")
 unittest {
-    InExprBytecodeBuilder builder = nogc_new!InExprBytecodeBuilder();
+    InVmBytecodeBuilder builder = nogc_new!InVmBytecodeBuilder();
     builder.buildDIV();
-    builder.buildRET(1);
+    builder.buildRET();
 
     // Instantiate VM
-    InExprVM vm = new InExprVM();
-    vm.setGlobal(nstring("div"), InExprValue(builder.finalize()));
+    InVmVM vm = new InVmVM();
+    vm.setGlobal(nstring("div"), InVmValue(builder.finalize()));
 
     vm.push(32.0);
     vm.push(2.0);
@@ -631,13 +633,13 @@ unittest {
 
 @("VM: MUL")
 unittest {
-    InExprBytecodeBuilder builder = nogc_new!InExprBytecodeBuilder();
+    InVmBytecodeBuilder builder = nogc_new!InVmBytecodeBuilder();
     builder.buildMUL();
-    builder.buildRET(1);
+    builder.buildRET();
 
     // Instantiate VM
-    InExprVM vm = new InExprVM();
-    vm.setGlobal(nstring("mul"), InExprValue(builder.finalize()));
+    InVmVM vm = new InVmVM();
+    vm.setGlobal(nstring("mul"), InVmValue(builder.finalize()));
 
     vm.push(32.0);
     vm.push(2.0);
@@ -650,13 +652,13 @@ unittest {
 
 @("VM: MOD")
 unittest {
-    InExprBytecodeBuilder builder = nogc_new!InExprBytecodeBuilder();
+    InVmBytecodeBuilder builder = nogc_new!InVmBytecodeBuilder();
     builder.buildMOD();
-    builder.buildRET(1);
+    builder.buildRET();
 
     // Instantiate VM
-    InExprVM vm = new InExprVM();
-    vm.setGlobal(nstring("mod"), InExprValue(builder.finalize()));
+    InVmVM vm = new InVmVM();
+    vm.setGlobal(nstring("mod"), InVmValue(builder.finalize()));
 
     vm.push(32.0);
     vm.push(16.0);
@@ -673,15 +675,15 @@ unittest {
     import inmath.math : sin;
 
     // Sin function
-    static int mySinFunc(ref InExprStack stack) @nogc {
-        InExprValue* v = stack.pop();
+    static int mySinFunc(ref InVmValueStack stack) @nogc {
+        InVmValue* v = stack.pop();
         if (v && v.isNumeric) {
-            stack.push(sin(v.number));
+            stack.push(InVmValue(sin(v.number)));
             return 1;
         }
         return 0;
     }
-    InExprBytecodeBuilder builder = nogc_new!InExprBytecodeBuilder();
+    InVmBytecodeBuilder builder = nogc_new!InVmBytecodeBuilder();
     
     // Parameters
     builder.buildPUSH(1.0);
@@ -691,13 +693,13 @@ unittest {
     builder.buildGETG();
 
     // Jump
-    builder.buildJSR(1);
-    builder.buildRET(1);
+    builder.buildJSR();
+    builder.buildRET();
 
     // Instantiate VM
-    InExprVM vm = new InExprVM();
-    vm.setGlobal(nstring("sin"), InExprValue(&mySinFunc));
-    vm.setGlobal(nstring("bcfunc"), InExprValue(builder.finalize()));
+    InVmVM vm = new InVmVM();
+    vm.setGlobal(nstring("sin"), InVmValue(&mySinFunc));
+    vm.setGlobal(nstring("bcfunc"), InVmValue(builder.finalize()));
 
     int retValCount = vm.call(nstring("bcfunc"));
 
