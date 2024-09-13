@@ -11,5 +11,5 @@
 module inochi2d;
 
 public import inochi2d.core.draw;
-public import inochi2d.io;
+public import inochi2d.core.io;
 public import inochi2d.puppet;

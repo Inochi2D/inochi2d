@@ -16,13 +16,19 @@ targetPath "out/"
 // Default config
 configuration "build" {
     targetType "dynamicLibrary"
+    excludedSourceFiles "inochi2d/demo/*"
 }
 
 // Build w/ minimal runtime
 configuration "build-tinyd" {
     targetType "dynamicLibrary"
+    excludedSourceFiles "inochi2d/demo/*"
 
     // TODO: Implement
+}
+
+configuration "demo" {
+    targetType "executable"
 }
 
 // Update ver.d
