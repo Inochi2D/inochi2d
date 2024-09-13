@@ -8,5 +8,8 @@
 /**
     Puppet reading and writing.
 */
-module inochi2d.io;
+module inochi2d.core.io;
 
+public import inochi2d.core.io.obj;
+public import inochi2d.core.io.serializer;
+public import inochi2d.core.io.inp;
