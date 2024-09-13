@@ -5,10 +5,10 @@
     Authors: Luna the Foxgirl
 */
 
-module inochi2d.expr.vm.vm;
-import inochi2d.expr.vm.value;
-import inochi2d.expr.vm.opcodes;
-import inochi2d.expr.vm.stack;
+module inochi2d.core.expr.vm.vm;
+import inochi2d.core.expr.vm.value;
+import inochi2d.core.expr.vm.opcodes;
+import inochi2d.core.expr.vm.stack;
 import numem.all;
 import std.string;
 
@@ -588,7 +588,7 @@ public:
 //      UNIT TESTS
 //
 
-import inochi2d.expr.compiler.builder : InVmBytecodeBuilder;
+import inochi2d.core.expr.compiler.builder : InVmBytecodeBuilder;
 
 @("VM: NATIVE CALL")
 unittest {

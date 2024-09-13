@@ -4,9 +4,9 @@
 
     Authors: Luna the Foxgirl
 */
-module inochi2d.expr.vm.value;
-import inochi2d.expr.vm.stack;
-import inochi2d.expr.vm.vm;
+module inochi2d.core.expr.vm.value;
+import inochi2d.core.expr.vm.stack;
+import inochi2d.core.expr.vm.vm;
 import numem.all;
 
 enum InVmValueType {

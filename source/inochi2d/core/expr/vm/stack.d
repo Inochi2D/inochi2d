@@ -4,8 +4,8 @@
 
     Authors: Luna the Foxgirl
 */
-module inochi2d.expr.vm.stack;
-import inochi2d.expr.vm.value;
+module inochi2d.core.expr.vm.stack;
+import inochi2d.core.expr.vm.value;
 import numem.all;
 
 /**

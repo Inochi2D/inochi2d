@@ -5,9 +5,9 @@
     Authors: Luna the Foxgirl
 */
 
-module inochi2d.expr.compiler.builder;
-import inochi2d.expr.vm.opcodes;
-import inochi2d.expr.vm.stack;
+module inochi2d.core.expr.compiler.builder;
+import inochi2d.core.expr.vm.opcodes;
+import inochi2d.core.expr.vm.stack;
 import numem.all;
 
 /**

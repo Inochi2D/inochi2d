@@ -5,7 +5,7 @@
     Authors: Luna the Foxgirl
 */
 
-module inochi2d.expr.vm.opcodes;
+module inochi2d.core.expr.vm.opcodes;
 import numem.all;
 
 enum InVmOpCode : ubyte {

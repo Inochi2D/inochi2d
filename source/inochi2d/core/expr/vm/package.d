@@ -17,8 +17,8 @@
     The VM is stack based and does not use a JIT, for maximum compatibility
     with platforms which do not support the use of JIT compilation.
 */
-module inochi2d.expr.vm;
+module inochi2d.core.expr.vm;
 
-public import inochi2d.expr.vm.vm;
-public import inochi2d.expr.vm.value;
-public import inochi2d.expr.vm.stack;
+public import inochi2d.core.expr.vm.vm;
+public import inochi2d.core.expr.vm.value;
+public import inochi2d.core.expr.vm.stack;
