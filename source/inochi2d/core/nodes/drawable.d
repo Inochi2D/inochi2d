@@ -359,7 +359,10 @@ public:
             vec3(bounds.x, bounds.y, 0),
         ]);
         inDbgLineWidth(3);
-        inDbgDrawLines(vec4(.5, .5, .5, 1));
+        if (oneTimeTransform !is null)
+            inDbgDrawLines(vec4(.5, .5, .5, 1), (*oneTimeTransform));
+        else
+            inDbgDrawLines(vec4(.5, .5, .5, 1));
         inDbgLineWidth(1);
     }
     
