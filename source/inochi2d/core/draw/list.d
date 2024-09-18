@@ -73,6 +73,11 @@ public:
         // To optimize initial rendering before warmup,
         // we reserve enough memory for 10k vertices.
         this.vertices.reserve(IN_DRAW_RESERVE);
+
+        // This will prevent compacting in the first IN_DRAW_COMPACT_READINGS frames.
+        foreach(i; 0..prevIndiceCount.length) {
+            prevIndiceCount[i] = size_t.max;
+        }
     }
 
 
@@ -132,9 +137,6 @@ public:
             // If below the compile-time set threshold, compact the memory to save space.
             if (lowerCount >= IN_DRAW_COMPACT_THRESHOLD) 
                 this.compact();
-
-            // Move all indices one step back
-            prevIndiceCount[0..IN_DRAW_COMPACT_READINGS] = prevIndiceCount[1..IN_DRAW_COMPACT_READINGS+1];
         }
 
         // Setup step.
@@ -146,6 +148,15 @@ public:
             vertices.resize(0);
             indices.resize(0);
         }
+    }
+
+    /**
+        Ends a render pass
+    */
+    void end() {
+        // Move all indices one step back
+        prevIndiceCount[0..IN_DRAW_COMPACT_READINGS] = prevIndiceCount[1..IN_DRAW_COMPACT_READINGS+1];
+        prevIndiceCount[IN_DRAW_COMPACT_READINGS] = indices.size();
     }
 
     /**
