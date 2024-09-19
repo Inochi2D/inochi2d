@@ -5,17 +5,21 @@
     Authors: Luna the Foxgirl
 */
 
-module inochi2d.core.io.inp.ctx;
-import inochi2d.core.io.inp.node;
+module inochi2d.core.io.tree.ctx;
+import inochi2d.core.io.tree.value;
+import numem.core.uuid;
 import numem.all;
+import inochi2d.puppet.node;
 
 /**
     Context for serialization and deserialization
 */
-class InpContext {
+class InDataContext {
 @nogc:
 private:
     set!(nstring) flags;
+    map!(uint, UUID) mappings;
+    InTreeValue root;
 
 
 public:
@@ -24,7 +28,7 @@ public:
     }
 
     this() {
-        
+        root = InTreeValue.newObject();
     }
     
     /**
@@ -34,6 +38,22 @@ public:
     @safe
     bool hasFlag(nstring flag) {
         return flags.contains(flag);
+    }
+
+    /**
+        Maps a legacy id to a UUID
+    */
+    UUID mapLegacyID(uint id) {
+        mappings[id] = inNewUUID();
+        return mappings[id];
+    }
+
+    /**
+        Gets the UUID the legacy ID maps to
+    */
+    UUID getMappingFor(uint id) {
+        if (id in mappings) return mappings[id];
+        return UUID.nil;
     }
 
     /**
@@ -56,5 +76,13 @@ public:
     @trusted
     auto getFlags() {
         return flags.byKey();
+    }
+
+    /**
+        Gets the root of the serialization context
+    */
+    final
+    ref InTreeValue getRoot() {
+        return root;
     }
 }

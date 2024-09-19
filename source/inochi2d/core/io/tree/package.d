@@ -17,5 +17,8 @@
     This allows Inochi2D to both support the older INP 1.0 and the new
     INP 2.0 file format w/ the inbf encoding style.
 */
-module inochi2d.core.io.inp;
+module inochi2d.core.io.tree;
 import numem.all;
+
+public import inochi2d.core.io.tree.value;
+public import inochi2d.core.io.tree.ctx;

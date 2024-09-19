@@ -20,20 +20,40 @@ private:
     Node root;
 
 public:
+
+    /**
+        Serialize the object
+    */
+    void serialize(ref InDataContext context) {
+        InTreeValue treeRoot = context.getRoot();
+
+        treeRoot["rigging_data"] = InTreeValue.newObject();
+        this.serialize(*treeRoot.getNodeRef("rigging_data"), context);
+    }
     
     /**
         Serialize the object
     */
     override
-    void serialize(ref InpNode node, ref InpContext context) {
-        
+    void serialize(ref InTreeValue node, ref InDataContext context) {
+        InTreeValue nodes = InTreeValue.newObject();
+        root.serialize(nodes, context);
+        node["nodes"] = nodes;
     }
 
     /**
         Deserialize the object
     */
     override
-    void deserialize(ref InpNode node) { }
+    void deserialize(ref InTreeValue node, ref InDataContext context) { }
+
+    /**
+        Finalize the object
+    */
+    override
+    void finalize(ref InTreeValue node, ref InDataContext context) {
+
+    }
 
     /**
         Puppets cannot be copied.
