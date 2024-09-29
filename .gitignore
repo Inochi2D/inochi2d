@@ -27,3 +27,5 @@ basicrender.a
 basicrender.lib
 basicrender-test-*
 !logo.png
+
+out/

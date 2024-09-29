@@ -15,6 +15,10 @@ struct Deformation {
         nogc_delete(vertexOffsets);
     }
 
+    this(ref Deformation rhs) @trusted @nogc nothrow {
+        this.vertexOffsets = vector!vec2(rhs.vertexOffsets);
+    }
+
     this(ref return scope Deformation rhs) @trusted @nogc nothrow {
         this.vertexOffsets = vector!vec2(rhs.vertexOffsets);
     }
