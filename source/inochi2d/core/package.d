@@ -107,14 +107,23 @@ private {
         glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
         shaderToUse.shader.use();
-        shaderToUse.shader.setUniform(shaderToUse.getUniform("mvp"), 
-            mat4.orthographic(0, area.z, area.w, 0, 0, max(area.z, area.w)) * 
+        shaderToUse.shader.setUniform(shaderToUse.getUniform("mvpModel"), 
+            mat4.identity()
+        );
+        shaderToUse.shader.setUniform(shaderToUse.getUniform("mvpView"), 
             mat4.translation(area.x, area.y, 0)
+        );
+        shaderToUse.shader.setUniform(shaderToUse.getUniform("mvpProjection"), 
+            mat4.orthographic(0, area.z, area.w, 0, 0, max(area.z, area.w))
         );
 
         // Ambient light
         GLint ambientLightUniform = shaderToUse.getUniform("ambientLight");
         if (ambientLightUniform != -1) shaderToUse.shader.setUniform(ambientLightUniform, inSceneAmbientLight);
+
+        // Ambient shadow
+        GLint ambientShadowUniform = shaderToUse.getUniform("ambientShadow");
+        if (ambientShadowUniform != -1) shaderToUse.shader.setUniform(ambientShadowUniform, inSceneAmbientShadow);
 
         // framebuffer size
         GLint fbSizeUniform = shaderToUse.getUniform("fbSize");
@@ -183,7 +192,7 @@ package(inochi2d) {
         version (InDoesRender) {
             
             // Shader for scene
-            basicSceneShader = PostProcessingShader(new Shader(import("scene.vert"), import("scene.frag")));
+            basicSceneShader = PostProcessingShader(new Shader("scene", import("scene.vert"), import("scene.frag")));
             glGenVertexArrays(1, &sceneVAO);
             glGenBuffers(1, &sceneVBO);
 
@@ -222,7 +231,19 @@ package(inochi2d) {
     }
 }
 
+/// Ambient light value
 vec3 inSceneAmbientLight = vec3(1, 1, 1);
+
+/// Ambient shadow value
+vec3 inSceneAmbientShadow = vec3(0, 0, 0);
+
+/// Unit vector describing the direction of the light
+vec3 inSceneLightDirection = vec3(0, 0, 1);
+
+/// Sets the light direction in 2D.
+void inSceneSetLightDirection(float angle) {
+    inSceneLightDirection = vec3(cos(angle), sin(angle), 1);
+}
 
 /**
     Begins rendering to the framebuffer
@@ -394,7 +415,7 @@ void inPostProcessScene() {
 */
 void inPostProcessingAddBasicLighting() {
     postProcessingStack ~= PostProcessingShader(
-        new Shader(
+        new Shader("scene+lighting", 
             import("scene.vert"),
             import("lighting.frag")
         )

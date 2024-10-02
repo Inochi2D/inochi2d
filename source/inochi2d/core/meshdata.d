@@ -153,27 +153,27 @@ struct MeshData {
     }
 
     void serialize(S)(ref S serializer) {
-        auto state = serializer.objectBegin();
+        auto state = serializer.structBegin();
             serializer.putKey("verts");
-            auto arr = serializer.arrayBegin();
+            auto arr = serializer.listBegin();
                 foreach(vertex; vertices) {
                     serializer.elemBegin;
                     serializer.serializeValue(vertex.x);
                     serializer.elemBegin;
                     serializer.serializeValue(vertex.y);
                 }
-            serializer.arrayEnd(arr);
+            serializer.listEnd(arr);
 
             if (uvs.length > 0) {
                 serializer.putKey("uvs");
-                arr = serializer.arrayBegin();
+                arr = serializer.listBegin();
                     foreach(uv; uvs) {
                         serializer.elemBegin;
                         serializer.serializeValue(uv.x);
                         serializer.elemBegin;
                         serializer.serializeValue(uv.y);
                     }
-                serializer.arrayEnd(arr);
+                serializer.listEnd(arr);
             }
 
             serializer.putKey("indices");
@@ -185,7 +185,7 @@ struct MeshData {
                 serializer.putKey("grid_axes");
                 serializer.serializeValue(gridAxes);
             }
-        serializer.objectEnd(state);
+        serializer.structEnd(state);
     }
 
     SerdeException deserializeFromFghj(Fghj data) {

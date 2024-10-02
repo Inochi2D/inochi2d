@@ -35,7 +35,7 @@ package(inochi2d) {
         inRegisterNodeType!Composite;
 
         version(InDoesRender) {
-            cShader = new Shader(
+            cShader = new Shader("composite",
                 import("basic/composite.vert"),
                 import("basic/composite.frag")
             );
@@ -48,7 +48,7 @@ package(inochi2d) {
             cShader.setUniform(cShader.getUniformLocation("emissive"), 1);
             cShader.setUniform(cShader.getUniformLocation("bumpmap"), 2);
 
-            cShaderMask = new Shader(
+            cShaderMask = new Shader("composite (mask)",
                 import("basic/composite.vert"),
                 import("basic/composite-mask.frag")
             );
@@ -238,12 +238,12 @@ protected:
 
         if (masks.length > 0) {
             serializer.putKey("masks");
-            auto state = serializer.arrayBegin();
+            auto state = serializer.listBegin();
                 foreach(m; masks) {
                     serializer.elemBegin;
                     serializer.serializeValue(m);
                 }
-            serializer.arrayEnd(state);
+            serializer.listEnd(state);
 
         }
     }

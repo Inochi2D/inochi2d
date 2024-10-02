@@ -715,9 +715,9 @@ public:
         Serializes a puppet
     */
     void serialize(ref InochiSerializer serializer) {
-        auto state = serializer.objectBegin;
+        auto state = serializer.structBegin;
         serializeSelf(serializer);
-        serializer.objectEnd(state);
+        serializer.structEnd(state);
     }
 
     /**

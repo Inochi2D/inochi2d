@@ -66,7 +66,7 @@ public:
         Serialization function
     */
     void serialize(ref InochiSerializer serializer) {
-        auto obj = serializer.objectBegin();
+        auto obj = serializer.structBegin();
             serializer.putKey("timestep");
             serializer.serializeValue(timestep);
             serializer.putKey("additive");
@@ -83,15 +83,15 @@ public:
             serializer.serializeValue(animationWeight);
 
             serializer.putKey("lanes");
-            auto state = serializer.arrayBegin;
+            auto state = serializer.listBegin;
             foreach(lane; lanes) {
                 if (lane.paramRef.targetParam) {
                     serializer.elemBegin;
                     serializer.serializeValue(lane);
                 }
             }
-            serializer.arrayEnd(state);
-        serializer.objectEnd(obj);
+            serializer.listEnd(state);
+        serializer.structEnd(obj);
     }
 
     /**
@@ -141,7 +141,7 @@ public:
         Serialization function
     */
     void serialize(ref InochiSerializer serializer) {
-        auto obj = serializer.objectBegin();
+        auto obj = serializer.structBegin();
             serializer.putKey("interpolation");
             serializer.serializeValue(interpolation);
 
@@ -157,7 +157,7 @@ public:
 
             serializer.putKey("merge_mode");
             serializer.serializeValue(mergeMode);
-        serializer.objectEnd(obj);
+        serializer.structEnd(obj);
     }
 
     /**

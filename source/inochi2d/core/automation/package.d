@@ -75,14 +75,14 @@ struct AutomationBinding {
         Serializes a parameter
     */
     void serialize(S)(ref S serializer) {
-        auto state = serializer.objectBegin;
+        auto state = serializer.structBegin;
             serializer.putKey("param");
             serializer.putValue(param.name);
             serializer.putKey("axis");
             serializer.putValue(axis);
             serializer.putKey("range");
             range.serialize(serializer);
-        serializer.objectEnd(state);
+        serializer.structEnd(state);
     }
 
     /**
@@ -199,7 +199,7 @@ public:
         Serializes a parameter
     */
     void serialize(S)(ref S serializer) {
-        auto state = serializer.objectBegin;
+        auto state = serializer.structBegin;
             serializer.putKey("type");
             serializer.serializeValue(typeId);
             serializer.putKey("name");
@@ -207,7 +207,7 @@ public:
             serializer.putKey("bindings");
             serializer.serializeValue(bindings);
             this.serializeSelf(serializer);
-        serializer.objectEnd(state);
+        serializer.structEnd(state);
     }
 
     /**

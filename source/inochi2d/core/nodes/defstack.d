@@ -15,10 +15,6 @@ struct Deformation {
         nogc_delete(vertexOffsets);
     }
 
-    this(ref Deformation rhs) @trusted @nogc nothrow {
-        this.vertexOffsets = vector!vec2(rhs.vertexOffsets);
-    }
-
     this(ref return scope Deformation rhs) @trusted @nogc nothrow {
         this.vertexOffsets = vector!vec2(rhs.vertexOffsets);
     }
@@ -191,12 +187,12 @@ struct Deformation {
 
     void serialize(S)(ref S serializer) {
         import inochi2d.math.serialization : serialize;
-        auto state = serializer.arrayBegin();
+        auto state = serializer.listBegin();
             foreach(offset; vertexOffsets) {
                 serializer.elemBegin;
                 offset.serialize(serializer);
             }
-        serializer.arrayEnd(state);
+        serializer.listEnd(state);
     }
 
     SerdeException deserializeFromFghj(Fghj data) {

@@ -16,8 +16,8 @@ package(inochi2d) {
     GLint mvpId;
     GLint colorId;
     void inInitDebug() {
-        dbgShaderLine = new Shader(import("dbg.vert"), import("dbgline.frag"));
-        dbgShaderPoint = new Shader(import("dbg.vert"), import("dbgpoint.frag"));
+        dbgShaderLine = new Shader("debug line", import("dbg.vert"), import("dbgline.frag"));
+        dbgShaderPoint = new Shader("debug point", import("dbg.vert"), import("dbgpoint.frag"));
         glGenVertexArrays(1, &dbgVAO);
         glGenBuffers(1, &dbgVBO);
         glGenBuffers(1, &dbgIBO);

@@ -68,10 +68,10 @@ package(inochi2d) {
         inRegisterNodeType!Part;
 
         version(InDoesRender) {
-            partShader = new Shader(import("basic/basic.vert"), import("basic/basic.frag"));
-            partShaderStage1 = new Shader(import("basic/basic.vert"), import("basic/basic-stage1.frag"));
-            partShaderStage2 = new Shader(import("basic/basic.vert"), import("basic/basic-stage2.frag"));
-            partMaskShader = new Shader(import("basic/basic.vert"), import("basic/basic-mask.frag"));
+            partShader = new Shader("part", import("basic/basic.vert"), import("basic/basic.frag"));
+            partShaderStage1 = new Shader("part (stage 1)", import("basic/basic.vert"), import("basic/basic-stage1.frag"));
+            partShaderStage2 = new Shader("part (stage 2)", import("basic/basic.vert"), import("basic/basic-stage2.frag"));
+            partMaskShader = new Shader("part (mask)", import("basic/basic.vert"), import("basic/basic-mask.frag"));
 
             incDrawableBindVAO();
 
@@ -391,7 +391,7 @@ protected:
         version (InDoesRender) {
             if (inIsINPMode()) {
                 serializer.putKey("textures");
-                auto state = serializer.arrayBegin();
+                auto state = serializer.listBegin();
                     foreach(ref texture; textures) {
                         if (texture) {
                             ptrdiff_t index = puppet.getTextureSlotIndexFor(texture);
@@ -407,7 +407,7 @@ protected:
                             serializer.putValue(cast(size_t)NO_TEXTURE);
                         }
                     }
-                serializer.arrayEnd(state);
+                serializer.listEnd(state);
             }
         }
 
@@ -425,12 +425,12 @@ protected:
 
         if (masks.length > 0) {
             serializer.putKey("masks");
-            auto state = serializer.arrayBegin();
+            auto state = serializer.listBegin();
                 foreach(m; masks) {
                     serializer.elemBegin;
                     serializer.serializeValue(m);
                 }
-            serializer.arrayEnd(state);
+            serializer.listEnd(state);
         }
 
         serializer.putKey("mask_threshold");
@@ -518,7 +518,7 @@ protected:
     void serializePartial(ref InochiSerializer serializer, bool recursive=true) {
         super.serializePartial(serializer, recursive);
         serializer.putKey("textureUUIDs");
-        auto state = serializer.arrayBegin();
+        auto state = serializer.listBegin();
             foreach(ref texture; textures) {
                 uint uuid;
                 if (texture !is null) {
@@ -529,7 +529,7 @@ protected:
                 serializer.elemBegin;
                 serializer.putValue(cast(size_t)uuid);
             }
-        serializer.arrayEnd(state);
+        serializer.listEnd(state);
     }
 
     //

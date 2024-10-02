@@ -23,14 +23,14 @@ struct VerletNode {
         Serializes a parameter
     */
     void serialize(S)(ref S serializer) {
-        auto state = serializer.objectBegin;
+        auto state = serializer.structBegin;
             serializer.putKey("distance");
             serializer.putValue(distance);
             serializer.putKey("position");
             position.serialize(serializer);
             serializer.putKey("old_position");
             oldPosition.serialize(serializer);
-        serializer.objectEnd(state);
+        serializer.structEnd(state);
     }
 
     /**

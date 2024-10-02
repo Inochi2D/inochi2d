@@ -14,6 +14,7 @@ import bindbc.opengl;
 */
 class Shader {
 private:
+    string name;
     GLuint shaderProgram;
     GLuint fragShader;
     GLuint vertShader;
@@ -44,6 +45,8 @@ private:
 
     void verifyShader(GLuint shader) {
 
+        string shaderType = shader == fragShader ? "fragment" : "vertex";
+
         int compileStatus;
         glGetShaderiv(shader, GL_COMPILE_STATUS, &compileStatus);
         if (compileStatus == GL_FALSE) {
@@ -57,7 +60,7 @@ private:
                 char[] log = new char[logLength];
                 glGetShaderInfoLog(shader, logLength, null, log.ptr);
 
-                throw new Exception(cast(string)log);
+                throw new Exception("Compilation error for %s->%s:\n\n%s".format(name, shaderType, cast(string)log));
             }
         }
     }
@@ -99,7 +102,8 @@ public:
     /**
         Creates a new shader object from source
     */
-    this(string vertex, string fragment) {
+    this(string name, string vertex, string fragment) {
+        this.name = name;
         compileShaders(vertex, fragment);
     }
 

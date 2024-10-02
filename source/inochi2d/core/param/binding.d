@@ -281,7 +281,7 @@ public:
     */
     override
     void serializeSelf(ref InochiSerializer serializer) {
-        auto state = serializer.objectBegin();
+        auto state = serializer.structBegin();
             serializer.putKey("node");
             serializer.putValue(target.node.uuid);
             serializer.putKey("param_name");
@@ -292,7 +292,7 @@ public:
             serializer.serializeValue(isSet_);
             serializer.putKey("interpolate_mode");
             serializer.serializeValue(interpolateMode_);
-        serializer.objectEnd(state);
+        serializer.structEnd(state);
     }
 
     /**
