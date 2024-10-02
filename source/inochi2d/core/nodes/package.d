@@ -14,7 +14,6 @@ import inochi2d.core.dbg;
 import inochi2d.core;
 
 public import inochi2d.core.nodes.part;
-public import inochi2d.core.nodes.mask;
 public import inochi2d.core.nodes.drawable;
 public import inochi2d.core.nodes.composite;
 public import inochi2d.core.nodes.meshgroup;
