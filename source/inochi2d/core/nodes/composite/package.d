@@ -17,8 +17,6 @@ import std.exception;
 import std.algorithm.sorting;
 
 private {
-    GLuint cVAO;
-    GLuint cBuffer;
     Shader cShader;
     Shader cShaderMask;
 
@@ -55,33 +53,6 @@ package(inochi2d) {
             cShaderMask.use();
             mthreshold = cShader.getUniformLocation("threshold");
             mopacity = cShader.getUniformLocation("opacity");
-
-            glGenVertexArrays(1, &cVAO);
-            glGenBuffers(1, &cBuffer);
-
-            // Clip space vertex data since we'll just be superimposing
-            // Our composite framebuffer over the main framebuffer
-            float[] vertexData = [
-                // verts
-                -1f, -1f,
-                -1f, 1f,
-                1f, -1f,
-                1f, -1f,
-                -1f, 1f,
-                1f, 1f,
-
-                // uvs
-                0f, 0f,
-                0f, 1f,
-                1f, 0f,
-                1f, 0f,
-                0f, 1f,
-                1f, 1f,
-            ];
-
-            glBindVertexArray(cVAO);
-            glBindBuffer(GL_ARRAY_BUFFER, cBuffer);
-            glBufferData(GL_ARRAY_BUFFER, float.sizeof*vertexData.length, vertexData.ptr, GL_STATIC_DRAW);
         }
     }
 }
@@ -116,7 +87,6 @@ private:
         if (subParts.length == 0) return;
 
         glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
-        glBindVertexArray(cVAO);
 
         cShader.use();
         cShader.setUniform(gopacity, clamp(offsetOpacity * opacity, 0, 1));
@@ -134,13 +104,6 @@ private:
         if (!offsetScreenTint.z.isNaN) clampedColor.z = clamp(screenTint.z+offsetScreenTint.z, 0, 1);
         cShader.setUniform(gScreenColor, clampedColor);
         inSetBlendMode(blendingMode, true);
-
-        // Enable points array
-        glEnableVertexAttribArray(0);
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, cBuffer);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, null);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, cast(void*)(12*float.sizeof));
 
         // Bind the texture
         glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -195,19 +158,10 @@ protected:
             glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         inEndComposite();
 
-
-        glBindVertexArray(cVAO);
         cShaderMask.use();
         cShaderMask.setUniform(mopacity, opacity);
         cShaderMask.setUniform(mthreshold, threshold);
         glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-
-        // Enable points array
-        glEnableVertexAttribArray(0);
-        glEnableVertexAttribArray(1);
-        glBindBuffer(GL_ARRAY_BUFFER, cBuffer);
-        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, null);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, cast(void*)(12*float.sizeof));
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, inGetCompositeImage());
