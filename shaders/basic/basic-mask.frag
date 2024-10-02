@@ -6,6 +6,8 @@
 */
 #version 330
 in vec2 texUVs;
+in vec4 vertexCoord;
+
 out vec4 outColor;
 
 uniform sampler2D tex;

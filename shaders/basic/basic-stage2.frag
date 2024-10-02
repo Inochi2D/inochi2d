@@ -8,6 +8,7 @@
 */
 #version 330
 in vec2 texUVs;
+in vec4 vertexCoord;
 
 layout(location = 1) out vec4 outEmissive;
 layout(location = 2) out vec4 outBump;

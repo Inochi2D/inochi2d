@@ -14,7 +14,7 @@ layout(location = 1) out vec4 outEmissive;
 layout(location = 2) out vec4 outBump;
 
 uniform vec3 ambientLight;
-uniform vec3 ambientShadow;
+uniform vec3 lightColor;
 uniform vec3 lightDirection;
 uniform vec2 fbSize;
 
@@ -47,37 +47,38 @@ vec4 bloom(sampler2D sp, vec2 uv, vec2 scale) {
 // Normal mapping using blinn-phong
 // This function takes a light and shadow color
 // This allows coloring the shadowed parts.
-vec4 normalMapping(sampler2D sp, vec2 uv, vec4 albedo, vec4 light, vec4 shadow) {
-    vec3 viewDir = normalize(viewPosition - fragPosition);
-    vec3 halfwayDir = normalize(lightDirection + viewDir);
+vec4 normalMapping(vec3 bump, vec4 albedo, vec3 light, vec3 ambientLight) {
+    vec3 lightDir = vec3(lightDirection.xy, clamp(-lightDirection.z, -1, 1));
+    vec3 viewDir = vec3(0, 0, -1);
+    vec3 halfwayDir = normalize(lightDir + viewDir);
+    vec3 normal = normalize((bump * 2.0) - 1.0);
 
-    vec3 normal = texture(sp, uv).rgb;
-    normal = normalize((normal * 2.0) - 1.0);
-    
     // Callculate diffuse factor
-    float diff = max(dot(normal, lightDirection), 0.0);
-    vec3 diffuse = diff * light.xyz;
+    float diff = max(dot(normal, lightDir), 0.0);
+    vec3 diffuse = light * diff;
     
     // Calculate specular factor.
-    float spec = pow(max(dot(normal, halfwayDir), 0.0), 2.0);
-    vec3 specular = light.xyz * spec;
+    float spec = pow(max(dot(normal, halfwayDir), 0.0), 0.5);
+    vec3 specular = light * spec;
 
     // Calculate the object color
-    vec4 objectColor = vec4((light.xyz + diffuse + specular), 1.0) * albedo;
+    vec4 objectColor = vec4((ambientLight + diffuse + specular), 1.0) * albedo;
 
     // Mix between the shadow color and calculated light
     // via linear interpolation
-    return mix(albedo * shadow, objectColor, diff);
+    return vec4(objectColor.rgb, albedo.a);
 }
 
 void main() {
 
     // Bloom
     outEmissive = texture(emissive, texUVs)+bloom(emissive, texUVs, 1.0/fbSize);
-
-    // Set color to the corrosponding pixel in the FBO
-    vec4 light = vec4(ambientLight, 1) + outEmissive;
-
-    outAlbedo = normalMapping(bumpmap, texUVs, texture(albedo, texUVs), light, vec4(ambientShadow, 1.0));
     outBump = texture(bumpmap, texUVs);
+
+    vec4 albedo = texture(albedo, texUVs);
+    vec4 emission = albedo * outEmissive;
+    vec4 bump = normalMapping(outBump.rgb, albedo, lightColor, ambientLight);
+
+    vec4 final = vec4((bump + emission).rgb, bump.a);
+    outAlbedo = final;
 }

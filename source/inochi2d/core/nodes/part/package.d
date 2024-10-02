@@ -31,7 +31,8 @@ package(inochi2d) {
         Shader partMaskShader;
 
         /* GLSL Uniforms (Normal) */
-        GLint mvp;
+        GLint mvpModel;
+        GLint mvpViewProjection;
         GLint offset;
         GLint gopacity;
         GLint gMultColor;
@@ -40,7 +41,8 @@ package(inochi2d) {
 
         
         /* GLSL Uniforms (Stage 1) */
-        GLint gs1mvp;
+        GLint gs1MvpModel;
+        GLint gs1MvpViewProjection;
         GLint gs1offset;
         GLint gs1opacity;
         GLint gs1MultColor;
@@ -48,7 +50,8 @@ package(inochi2d) {
 
         
         /* GLSL Uniforms (Stage 2) */
-        GLint gs2mvp;
+        GLint gs2MvpModel;
+        GLint gs2MvpViewProjection;
         GLint gs2offset;
         GLint gs2opacity;
         GLint gs2EmissionStrength;
@@ -56,7 +59,8 @@ package(inochi2d) {
         GLint gs2ScreenColor;
 
         /* GLSL Uniforms (Masks) */
-        GLint mmvp;
+        GLint mMvpModel;
+        GLint mMvpViewProjection;
         GLint mthreshold;
 
         GLuint sVertexBuffer;
@@ -79,7 +83,8 @@ package(inochi2d) {
             partShader.setUniform(partShader.getUniformLocation("albedo"), 0);
             partShader.setUniform(partShader.getUniformLocation("emissive"), 1);
             partShader.setUniform(partShader.getUniformLocation("bumpmap"), 2);
-            mvp = partShader.getUniformLocation("mvp");
+            mvpModel = partShader.getUniformLocation("mvpModel");
+            mvpViewProjection = partShader.getUniformLocation("mvpViewProjection");
             offset = partShader.getUniformLocation("offset");
             gopacity = partShader.getUniformLocation("opacity");
             gMultColor = partShader.getUniformLocation("multColor");
@@ -88,7 +93,8 @@ package(inochi2d) {
             
             partShaderStage1.use();
             partShaderStage1.setUniform(partShader.getUniformLocation("albedo"), 0);
-            gs1mvp = partShaderStage1.getUniformLocation("mvp");
+            gs1MvpModel = partShaderStage1.getUniformLocation("mvpModel");
+            gs1MvpViewProjection = partShaderStage1.getUniformLocation("mvpViewProjection");
             gs1offset = partShaderStage1.getUniformLocation("offset");
             gs1opacity = partShaderStage1.getUniformLocation("opacity");
             gs1MultColor = partShaderStage1.getUniformLocation("multColor");
@@ -97,7 +103,8 @@ package(inochi2d) {
             partShaderStage2.use();
             partShaderStage2.setUniform(partShaderStage2.getUniformLocation("emissive"), 1);
             partShaderStage2.setUniform(partShaderStage2.getUniformLocation("bumpmap"), 2);
-            gs2mvp = partShaderStage2.getUniformLocation("mvp");
+            gs2MvpModel = partShaderStage1.getUniformLocation("mvpModel");
+            gs2MvpViewProjection = partShaderStage1.getUniformLocation("mvpViewProjection");
             gs2offset = partShaderStage2.getUniformLocation("offset");
             gs2opacity = partShaderStage2.getUniformLocation("opacity");
             gs2MultColor = partShaderStage2.getUniformLocation("multColor");
@@ -108,7 +115,8 @@ package(inochi2d) {
             partMaskShader.setUniform(partMaskShader.getUniformLocation("albedo"), 0);
             partMaskShader.setUniform(partMaskShader.getUniformLocation("emissive"), 1);
             partMaskShader.setUniform(partMaskShader.getUniformLocation("bumpmap"), 2);
-            mmvp = partMaskShader.getUniformLocation("mvp");
+            mMvpModel = partMaskShader.getUniformLocation("mvpModel");
+            mMvpViewProjection = partMaskShader.getUniformLocation("mvpViewProjection");
             mthreshold = partMaskShader.getUniformLocation("threshold");
             
             glGenBuffers(1, &sVertexBuffer);
@@ -205,6 +213,8 @@ private:
         if (!offsetScreenTint.y.isNaN) clampedScreen.y = clamp(screenTint.y+offsetScreenTint.y, 0, 1);
         if (!offsetScreenTint.z.isNaN) clampedScreen.z = clamp(screenTint.z+offsetScreenTint.z, 0, 1);
 
+        mat4 mModel = puppet.transform.matrix * matrix;
+        mat4 mViewProjection = inGetCamera().matrix;
         
         switch(stage) {
             case 0:
@@ -214,7 +224,8 @@ private:
 
                 partShaderStage1.use();
                 partShaderStage1.setUniform(gs1offset, data.origin);
-                partShaderStage1.setUniform(gs1mvp, inGetCamera().matrix * puppet.transform.matrix * matrix);
+                partShaderStage1.setUniform(gs1MvpModel, mModel);
+                partShaderStage1.setUniform(gs1MvpViewProjection, mViewProjection);
                 partShaderStage1.setUniform(gs1opacity, clamp(offsetOpacity * opacity, 0, 1));
 
                 partShaderStage1.setUniform(partShaderStage1.getUniformLocation("albedo"), 0);
@@ -229,7 +240,8 @@ private:
 
                 partShaderStage2.use();
                 partShaderStage2.setUniform(gs2offset, data.origin);
-                partShaderStage2.setUniform(gs2mvp, inGetCamera().matrix * puppet.transform.matrix * matrix);
+                partShaderStage2.setUniform(gs2MvpModel, mModel);
+                partShaderStage2.setUniform(gs2MvpViewProjection, mViewProjection);
                 partShaderStage2.setUniform(gs2opacity, clamp(offsetOpacity * opacity, 0, 1));
                 partShaderStage2.setUniform(gs2EmissionStrength, emissionStrength*offsetEmissionStrength);
 
@@ -248,7 +260,8 @@ private:
 
                 partShader.use();
                 partShader.setUniform(offset, data.origin);
-                partShader.setUniform(mvp, inGetCamera().matrix * puppet.transform.matrix * matrix);
+                partShader.setUniform(mvpModel, mModel);
+                partShader.setUniform(mvpViewProjection, mViewProjection);
                 partShader.setUniform(gopacity, clamp(offsetOpacity * opacity, 0, 1));
                 partShader.setUniform(gEmissionStrength, emissionStrength*offsetEmissionStrength);
 
@@ -340,9 +353,14 @@ private:
         }
 
         static if (isMask) {
+            
+            mat4 mModel = puppet.transform.matrix * matrix;
+            mat4 mViewProjection = inGetCamera().matrix;
+
             partMaskShader.use();
             partMaskShader.setUniform(offset, data.origin);
-            partMaskShader.setUniform(mmvp, inGetCamera().matrix * puppet.transform.matrix * matrix);
+            partMaskShader.setUniform(mMvpModel, mModel);
+            partMaskShader.setUniform(mMvpViewProjection, mViewProjection);
             partMaskShader.setUniform(mthreshold, clamp(offsetMaskThreshold + maskAlphaThreshold, 0, 1));
 
             // Make sure the equation is correct
@@ -635,15 +653,7 @@ public:
             this.textures[i] = textures[i];
         }
 
-        version(InDoesRender) {
-            glGenBuffers(1, &uvbo);
-
-            mvp = partShader.getUniformLocation("mvp");
-            gopacity = partShader.getUniformLocation("opacity");
-            
-            mmvp = partMaskShader.getUniformLocation("mvp");
-            mthreshold = partMaskShader.getUniformLocation("threshold");
-        }
+        version(InDoesRender) glGenBuffers(1, &uvbo);
 
         this.updateUVs();
     }
@@ -885,9 +895,11 @@ void inDrawTextureAtPart(Texture texture, Part part) {
     incDrawableBindVAO();
 
     partShader.use();
-    partShader.setUniform(mvp, 
-        inGetCamera().matrix * 
+    partShader.setUniform(mvpModel, 
         mat4.translation(vec3(part.transform.matrix() * vec4(1, 1, 1, 1)))
+    );
+    partShader.setUniform(mvpViewProjection, 
+        inGetCamera().matrix
     );
     partShader.setUniform(gopacity, part.opacity);
     partShader.setUniform(gMultColor, part.tint);
@@ -942,10 +954,12 @@ void inDrawTextureAtPosition(Texture texture, vec2 position, float opacity = 1, 
     incDrawableBindVAO();
 
     partShader.use();
-    partShader.setUniform(mvp, 
-        inGetCamera().matrix * 
+    partShader.setUniform(mvpModel, 
         mat4.scaling(1, 1, 1) * 
         mat4.translation(vec3(position, 0))
+    );
+    partShader.setUniform(mvpViewProjection, 
+        inGetCamera().matrix
     );
     partShader.setUniform(gopacity, opacity);
     partShader.setUniform(gMultColor, color);

@@ -18,6 +18,7 @@
 #endif
 
 in vec2 texUVs;
+in vec4 vertexCoord;
 
 // Handle layout qualifiers for advanced blending specially
 #ifdef GL_KHR_blend_equation_advanced 
