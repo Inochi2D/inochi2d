@@ -206,7 +206,6 @@ public:
             serializer.serializeValue(name);
             serializer.putKey("bindings");
             serializer.serializeValue(bindings);
-            this.serializeSelf(serializer);
         serializer.structEnd(state);
     }
 

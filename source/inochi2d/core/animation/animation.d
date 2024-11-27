@@ -73,8 +73,6 @@ public:
             serializer.serializeValue(additive);
             serializer.putKey("length");
             serializer.serializeValue(length);
-            serializer.putKey("timestep");
-            serializer.serializeValue(timestep);
             serializer.putKey("leadIn");
             serializer.serializeValue(leadIn);
             serializer.putKey("leadOut");
