@@ -13,13 +13,9 @@ layout(location = 0) in vec2 verts;
 layout(location = 1) in vec2 uvs;
 
 out vec2 texUVs;
-out vec3 viewPosition;
-out vec3 fragPosition;
 
 void main() {
-    fragPosition = vec3(verts.x, verts.y, 0);
-    viewPosition = (mvpModel * vec4(fragPosition, 1.0)).xyz;
+    vec3 vpos = vec3(verts.x, verts.y, 0);
+    gl_Position = mvpProjection * mvpView * mvpModel * vec4(vpos, 1.0);
     texUVs = uvs;
-
-    gl_Position = mvpProjection * mvpView * mvpModel * vec4(fragPosition, 1.0);
 }

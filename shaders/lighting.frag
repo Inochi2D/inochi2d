@@ -6,16 +6,14 @@
 */
 #version 330
 in vec2 texUVs;
-in vec3 viewPosition;
-in vec3 fragPosition;
 
 layout(location = 0) out vec4 outAlbedo;
 layout(location = 1) out vec4 outEmissive;
 layout(location = 2) out vec4 outBump;
 
 uniform vec3 ambientLight;
+uniform vec3 inLightDir;
 uniform vec3 lightColor;
-uniform vec3 lightDirection;
 uniform vec2 fbSize;
 
 uniform sampler2D albedo;
@@ -48,8 +46,13 @@ vec4 bloom(sampler2D sp, vec2 uv, vec2 scale) {
 // This function takes a light and shadow color
 // This allows coloring the shadowed parts.
 vec4 normalMapping(vec3 bump, vec4 albedo, vec3 light, vec3 ambientLight) {
-    vec3 lightDir = vec3(lightDirection.xy, clamp(-lightDirection.z, -1, 1));
-    vec3 viewDir = vec3(0, 0, -1);
+    vec3 lightDir = normalize(vec3(inLightDir.xy, 1));
+    vec3 viewDir = -lightDir;
+
+    // Allows setting strength of light.
+    lightDir *= inLightDir.z;
+    viewDir *= inLightDir.z;
+
     vec3 halfwayDir = normalize(lightDir + viewDir);
     vec3 normal = normalize((bump * 2.0) - 1.0);
 

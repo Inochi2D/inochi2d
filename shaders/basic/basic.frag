@@ -38,6 +38,7 @@ void main() {
     vec4 origin = mvpModel * vec4(0, 0, 0, 1);
     vec4 bumpAngle = texture(bumpmap, texUVs) * 2.0 - 1.0;
     vec4 normal = mvpModel * (vec4(-bumpAngle.x, bumpAngle.yz, 1.0));
+    normal.z = abs(normal.z); // It should always somewhat face the camera.
     normal = normalize(normal-origin) * 0.5 + 0.5;
 
     // Out color math

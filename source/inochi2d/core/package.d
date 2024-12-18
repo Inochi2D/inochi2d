@@ -123,8 +123,8 @@ private {
 
 
         // Light direction
-        GLint lightDirectionUniform = shaderToUse.getUniform("lightDirection");
-        if (lightDirectionUniform != -1) shaderToUse.shader.setUniform(lightDirectionUniform, inSceneLightDirection);
+        GLint lightDirUniform = shaderToUse.getUniform("inLightDir");
+        if (lightDirUniform != -1) shaderToUse.shader.setUniform(lightDirUniform, inSceneLightDir);
 
         // Colored light
         GLint lightColorUniform = shaderToUse.getUniform("lightColor");
@@ -242,12 +242,7 @@ vec3 inSceneAmbientLight = vec3(0.1, 0.1, 0.2);
 vec3 inSceneLightColor = vec3(0.65, 0.54, 0.54);
 
 /// Unit vector describing the direction of the light
-vec3 inSceneLightDirection = vec3(0, 0, 1);
-
-/// Sets the light direction in 2D.
-void inSceneSetLightDirection(float radians) {
-    inSceneLightDirection = vec3(cos(radians), sin(radians), inSceneLightDirection.z);
-}
+vec3 inSceneLightDir = vec3(0, 0, 1);
 
 /**
     Begins rendering to the framebuffer
