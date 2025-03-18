@@ -10,43 +10,71 @@ import std.string;
 import bindbc.opengl;
 
 /**
+    The type of a shader uniform
+*/
+enum ShaderUniformType {
+    f32     = GL_FLOAT,
+    vec2    = GL_FLOAT_VEC2,
+    vec3    = GL_FLOAT_VEC3,
+    vec4    = GL_FLOAT_VEC4,
+    i32     = GL_INT,
+    ivec2   = GL_INT_VEC2,
+    ivec3   = GL_INT_VEC3,
+    ivec4   = GL_INT_VEC4,
+    boolean = GL_BOOL,
+    mat2    = GL_FLOAT_MAT2,
+    mat3    = GL_FLOAT_MAT3,
+    mat4    = GL_FLOAT_MAT4,
+
+    // Special types
+    texture1D   = GL_SAMPLER_1D,
+    texture2D   = GL_SAMPLER_2D,
+    texture3D   = GL_SAMPLER_3D,
+    textureCube = GL_SAMPLER_CUBE,
+}
+
+/**
     A shader
 */
 class Shader {
 private:
+    string fragSource;
+    string vertSource;
     string name;
+    string[string] defines;
+
     GLuint shaderProgram;
     GLuint fragShader;
     GLuint vertShader;
 
-    void compileShaders(string vertex, string fragment) {
+    string definesToStr() {
+        import std.format : format;
 
-        // Compile vertex shader
-        vertShader = glCreateShader(GL_VERTEX_SHADER);
-        auto c_vert = vertex.toStringz;
-        glShaderSource(vertShader, 1, &c_vert, null);
-        glCompileShader(vertShader);
-        verifyShader(vertShader);
-
-        // Compile fragment shader
-        fragShader = glCreateShader(GL_FRAGMENT_SHADER);
-        auto c_frag = fragment.toStringz;
-        glShaderSource(fragShader, 1, &c_frag, null);
-        glCompileShader(fragShader);
-        verifyShader(fragShader);
-
-        // Attach and link them
-        shaderProgram = glCreateProgram();
-        glAttachShader(shaderProgram, vertShader);
-        glAttachShader(shaderProgram, fragShader);
-        glLinkProgram(shaderProgram);
-        verifyProgram();
+        string out_;
+        foreach(key, value; defines) {
+            out_ ~= "#define %s %s\n".format(key, value.length > 0 ? value : "");
+        }
+        return out_;
     }
 
-    void verifyShader(GLuint shader) {
+    GLuint compileShader(string defines, string source, GLenum shaderType) {
 
-        string shaderType = shader == fragShader ? "fragment" : "vertex";
+        // Create C-compatible array.
+        const(char)*[2] srcArr = [
+            defines.ptr,
+            source.ptr
+        ];
 
+        const(GLint)[2] srcLength = [
+            cast(GLint)defines.length,
+            cast(GLint)source.length
+        ];
+
+        auto shader = glCreateShader(shaderType);
+        glShaderSource(shader, cast(int)srcArr.length, srcArr.ptr, srcLength.ptr);
+        glCompileShader(shader);
+
+        string shaderTypeName = shader == GL_VERTEX_SHADER ? "vertex" : "fragment";
         int compileStatus;
         glGetShaderiv(shader, GL_COMPILE_STATUS, &compileStatus);
         if (compileStatus == GL_FALSE) {
@@ -60,12 +88,30 @@ private:
                 char[] log = new char[logLength];
                 glGetShaderInfoLog(shader, logLength, null, log.ptr);
 
-                throw new Exception("Compilation error for %s->%s:\n\n%s".format(name, shaderType, cast(string)log));
+                throw new Exception("Compilation error for %s->%s:\n\n%s".format(name, shaderTypeName, cast(string)log));
             }
         }
+        return shader;
     }
 
-    void verifyProgram() {
+    void compileShaders() {
+        this.destroyProgram();
+
+        string defstr = definesToStr();
+
+        // Compile shaders
+        vertShader = compileShader(defstr, vertSource, GL_VERTEX_SHADER);
+        fragShader = compileShader(defstr, fragSource, GL_FRAGMENT_SHADER);
+
+        // Attach and link them
+        linkProgram();
+    }
+
+    void linkProgram() {
+        shaderProgram = glCreateProgram();
+        glAttachShader(shaderProgram, vertShader);
+        glAttachShader(shaderProgram, fragShader);
+        glLinkProgram(shaderProgram);
 
         int linkStatus;
         glGetProgramiv(shaderProgram, GL_LINK_STATUS, &linkStatus);
@@ -85,18 +131,28 @@ private:
         }
     }
 
+    void destroyProgram() {
+        if (shaderProgram != 0) {
+            glDetachShader(shaderProgram, vertShader);
+            glDetachShader(shaderProgram, fragShader);
+            glDeleteProgram(shaderProgram);
+            
+            glDeleteShader(fragShader);
+            glDeleteShader(vertShader);
+
+            shaderProgram = 0;
+            fragShader = 0;
+            vertShader = 0;
+        }
+    }
+
 public:
 
     /**
         Destructor
     */
     ~this() {
-        glDetachShader(shaderProgram, vertShader);
-        glDetachShader(shaderProgram, fragShader);
-        glDeleteProgram(shaderProgram);
-        
-        glDeleteShader(fragShader);
-        glDeleteShader(vertShader);
+        this.destroyProgram();
     }
 
     /**
@@ -104,7 +160,61 @@ public:
     */
     this(string name, string vertex, string fragment) {
         this.name = name;
-        compileShaders(vertex, fragment);
+        this.vertSource = vertex;
+        this.fragSource = fragment;
+    }
+
+    /**
+        (Re-) compiles the shader.
+    */
+    ref auto Shader compile() {
+        this.compileShaders();
+        return this;
+    }
+
+    /**
+        Sets a compile-time variable.
+    */
+    ref auto Shader define(T)(string key, T value) {
+        import std.conv : text;
+        this.defines[key] = value.text;
+        return this;
+    }
+
+    /**
+        Sets a compile-time variable if a condition is met.
+    */
+    ref auto Shader defineIf(T, Y)(Y condition, string key, T value) {
+        if (condition)
+            this.define(key, value);
+        
+        return this;
+    }
+
+    /**
+        Sets a compile-time variable.
+    */
+    ref auto Shader define(string key) {
+        this.defines[key] = null;
+        return this;
+    }
+
+    /**
+        Sets a compile-time variable if a condition is met.
+    */
+    ref auto Shader defineIf(Y)(Y condition, string key) {
+        if (condition)
+            this.define(key);
+        
+        return this;
+    }
+
+    /**
+        Removes a compile-time variable.
+    */
+    ref auto Shader remove(string key) {
+        this.defines.remove(key);
+        return this;
     }
 
     /**
