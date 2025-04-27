@@ -18,7 +18,7 @@ jobs:
     name: 'Build Library'
     strategy:
       matrix:
-        os: [macOS-latest]
+        os: [macOS-latest, ubuntu-latest, windows-latest]
         arch: [x86_64, arm64]
         dc: [ldc-beta, dmd-master]
         build: [debug, release]
