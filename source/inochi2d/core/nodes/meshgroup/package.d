@@ -340,7 +340,7 @@ public:
                     auto nodeDeform = nodeBinding.values[x][y].vertexOffsets[].dup;
                     Tuple!(vec2[], mat4*) filterResult = filterChildren(vertices, nodeDeform, &matrix);
                     if (filterResult[0] !is null) {
-                        nodeBinding.values[x][y].vertexOffsets.data[0..filterResult[0].length] = filterResult[0][0..$];
+                        nodeBinding.values[x][y].vertexOffsets[0..filterResult[0].length] = filterResult[0][0..$];
                         nodeBinding.getIsSet()[x][y] = true;
                     }
                 } else if (translateChildren && !isComposite) {

@@ -244,6 +244,9 @@ vec3 inSceneLightColor = vec3(0.65, 0.54, 0.54);
 /// Unit vector describing the direction of the light
 vec3 inSceneLightDir = vec3(0, 0, 1);
 
+/// Use depth-buffer for masking.
+bool inDepthBufferMasks = true;
+
 /**
     Begins rendering to the framebuffer
 */
