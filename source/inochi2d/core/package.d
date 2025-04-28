@@ -17,10 +17,11 @@ public import inochi2d.core.param;
 public import inochi2d.core.automation;
 public import inochi2d.core.animation;
 public import inochi2d.integration;
+import inochi2d.fmt.serialize;
 import inochi2d.core.dbg;
 
 import bindbc.opengl;
-import inochi2d.math;
+import inochi2d.core.math;
 import std.stdio;
 
 version(Windows) {
@@ -181,10 +182,9 @@ package(inochi2d) {
         inInitMeshGroup();
         version(InDoesRender) inInitDebug();
 
-        inParameterSetFactory((data) {
-            import fghj : deserializeValue;
+        inParameterSetFactory((ref JSONValue data) {
             Parameter param = new Parameter;
-            data.deserializeValue(param);
+            data.deserialize(param);
             return param;
         });
 

@@ -7,11 +7,12 @@
     Authors: Luna Nielsen
 */
 module inochi2d.core.nodes.composite;
+import inochi2d.core.nodes.drawable;
 import inochi2d.core.nodes.common;
 import inochi2d.core.nodes;
 import inochi2d.fmt;
 import inochi2d.core;
-import inochi2d.math;
+import inochi2d.core.math;
 import bindbc.opengl;
 import std.exception;
 import std.algorithm.sorting;
@@ -93,15 +94,19 @@ private:
         incCompositePrepareRender();
         
         vec3 clampedColor = tint;
-        if (!offsetTint.x.isNaN) clampedColor.x = clamp(tint.x*offsetTint.x, 0, 1);
-        if (!offsetTint.y.isNaN) clampedColor.y = clamp(tint.y*offsetTint.y, 0, 1);
-        if (!offsetTint.z.isNaN) clampedColor.z = clamp(tint.z*offsetTint.z, 0, 1);
+        if (offsetTint.isFinite) {
+            clampedColor.x = clamp(tint.x*offsetTint.x, 0, 1);
+            clampedColor.y = clamp(tint.y*offsetTint.y, 0, 1);
+            clampedColor.z = clamp(tint.z*offsetTint.z, 0, 1);
+        } 
         cShader.setUniform(gMultColor, clampedColor);
 
         clampedColor = screenTint;
-        if (!offsetScreenTint.x.isNaN) clampedColor.x = clamp(screenTint.x+offsetScreenTint.x, 0, 1);
-        if (!offsetScreenTint.y.isNaN) clampedColor.y = clamp(screenTint.y+offsetScreenTint.y, 0, 1);
-        if (!offsetScreenTint.z.isNaN) clampedColor.z = clamp(screenTint.z+offsetScreenTint.z, 0, 1);
+        if (offsetScreenTint.isFinite) {
+            clampedColor.x = clamp(screenTint.x+offsetScreenTint.x, 0, 1);
+            clampedColor.y = clamp(screenTint.y+offsetScreenTint.y, 0, 1);
+            clampedColor.z = clamp(screenTint.z+offsetScreenTint.z, 0, 1);
+        } 
         cShader.setUniform(gScreenColor, clampedColor);
         inSetBlendMode(blendingMode, true);
 
@@ -169,55 +174,28 @@ protected:
     }
 
     override
-    void serializeSelfImpl(ref InochiSerializer serializer, bool recursive=true) {
-        super.serializeSelfImpl(serializer, recursive);
-
-        serializer.putKey("blend_mode");
-        serializer.serializeValue(blendingMode);
-
-        serializer.putKey("tint");
-        tint.serialize(serializer);
-
-        serializer.putKey("screenTint");
-        screenTint.serialize(serializer);
-
-        serializer.putKey("mask_threshold");
-        serializer.putValue(threshold);
-
-        serializer.putKey("opacity");
-        serializer.putValue(opacity);
-
-        serializer.putKey("propagate_meshgroup");
-        serializer.serializeValue(propagateMeshGroup);
-
-        if (masks.length > 0) {
-            serializer.putKey("masks");
-            auto state = serializer.listBegin();
-                foreach(m; masks) {
-                    serializer.elemBegin;
-                    serializer.serializeValue(m);
-                }
-            serializer.listEnd(state);
-
-        }
+    void serializeSelfImpl(ref JSONValue object, bool recursive=true) {
+        super.serializeSelfImpl(object, recursive);
+        object["blend_mode"] = blendingMode;
+        object["tint"] = tint.serialize();
+        object["screenTint"] = screenTint.serialize();
+        object["mask_threshold"] = threshold;
+        object["opacity"] = opacity;
+        object["propagate_meshgroup"] = propagateMeshGroup;
+        object["masks"] = masks.serialize();
     }
 
     override
-    SerdeException deserializeFromFghj(Fghj data) {
-
-        // Older models may not have these tags
-        if (!data["opacity"].isEmpty) data["opacity"].deserializeValue(this.opacity);
-        if (!data["mask_threshold"].isEmpty) data["mask_threshold"].deserializeValue(this.threshold);
-        if (!data["tint"].isEmpty) deserialize(this.tint, data["tint"]);
-        if (!data["screenTint"].isEmpty) deserialize(this.screenTint, data["screenTint"]);
-        if (!data["blend_mode"].isEmpty) data["blend_mode"].deserializeValue(this.blendingMode);
-        if (!data["masks"].isEmpty) data["masks"].deserializeValue(this.masks);
-        if (!data["propagate_meshgroup"].isEmpty)
-            data["propagate_meshgroup"].deserializeValue(propagateMeshGroup);
-        else // falls back to legacy default
-            propagateMeshGroup = false;
-
-        return super.deserializeFromFghj(data);
+    void onDeserialize(ref JSONValue object) {
+        object.tryGetRef(opacity, "opacity");
+        object.tryGetRef(threshold, "mask_threshold");
+        object.tryGetRef(tint, "tint");
+        object.tryGetRef(screenTint, "screenTint");
+        object.tryGetRef(blendingMode, "blend_mode");
+        object.tryGetRef(masks, "masks");
+        object.tryGetRef(propagateMeshGroup, "propagate_meshgroup", false);
+        
+        super.onDeserialize(object);
     }
 
     //
@@ -325,7 +303,7 @@ public:
     float getDefaultValue(string key) {
         // Skip our list of our parent already handled it
         float def = super.getDefaultValue(key);
-        if (!isNaN(def)) return def;
+        if (def.isFinite) return def;
 
         switch(key) {
             case "opacity":

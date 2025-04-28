@@ -7,9 +7,10 @@
     Authors: Luna Nielsen
 */
 module inochi2d.core.meshdata;
-import inochi2d.math;
+import inochi2d.core.math;
 import inochi2d.core.texture;
 import inochi2d.fmt.serialize;
+import std.sumtype;
 
 /**
     Mesh data
@@ -23,7 +24,6 @@ struct MeshData {
     /**
         Base uvs
     */
-    @Optional
     vec2[] uvs;
 
     /**
@@ -34,10 +34,8 @@ struct MeshData {
     /**
         Origin of the mesh
     */
-    @Optional
     vec2 origin = vec2(0, 0);
 
-    @Optional
     float[][] gridAxes;
 
     /**
@@ -152,87 +150,26 @@ struct MeshData {
         return newData;
     }
 
-    void serialize(S)(ref S serializer) {
-        auto state = serializer.structBegin();
-            serializer.putKey("verts");
-            auto arr = serializer.listBegin();
-                foreach(vertex; vertices) {
-                    serializer.elemBegin;
-                    serializer.serializeValue(vertex.x);
-                    serializer.elemBegin;
-                    serializer.serializeValue(vertex.y);
-                }
-            serializer.listEnd(arr);
-
-            if (uvs.length > 0) {
-                serializer.putKey("uvs");
-                arr = serializer.listBegin();
-                    foreach(uv; uvs) {
-                        serializer.elemBegin;
-                        serializer.serializeValue(uv.x);
-                        serializer.elemBegin;
-                        serializer.serializeValue(uv.y);
-                    }
-                serializer.listEnd(arr);
-            }
-
-            serializer.putKey("indices");
-            serializer.serializeValue(indices);
-
-            serializer.putKey("origin");
-            origin.serialize(serializer);
-            if (isGrid()) {
-                serializer.putKey("grid_axes");
-                serializer.serializeValue(gridAxes);
-            }
-        serializer.structEnd(state);
+    void onSerialize(ref JSONValue object) {
+        object["origin"] = origin.serialize();
+        object["verts"] = vertices.serialize();
+        object["uvs"] = uvs.serialize();
+        object["indices"] = indices.serialize();
+        object["grid_axes"] = gridAxes.serialize();
     }
 
-    SerdeException deserializeFromFghj(Fghj data) {
+    void onDeserialize(ref JSONValue object) {
         import std.stdio : writeln;
-        import std.algorithm.searching: count;
-        if (data.isEmpty) return null;
+        import std.algorithm.searching : count;
 
-        auto elements = data["verts"].byElement;
-        while(!elements.empty) {
-            float x;
-            float y;
-            elements.front.deserializeValue(x);
-            elements.popFront;
-            elements.front.deserializeValue(y);
-            elements.popFront;
-            vertices ~= vec2(x, y);
-        }
+        if (object.isNull) 
+            return;
 
-        if (!data["uvs"].isEmpty) {
-            elements = data["uvs"].byElement;
-            while(!elements.empty) {
-                float x;
-                float y;
-                elements.front.deserializeValue(x);
-                elements.popFront;
-                elements.front.deserializeValue(y);
-                elements.popFront;
-                uvs ~= vec2(x, y);
-            }
-        }
-
-        if (!data["origin"].isEmpty) {
-            origin.deserialize(data["origin"]);
-        }
-
-        gridAxes.length = 0;
-        if (!data["grid_axes"].isEmpty) {
-            data["grid_axes"].deserializeValue(gridAxes);
-        }
-
-        foreach(indiceData; data["indices"].byElement) {
-            ushort indice;
-            indiceData.deserializeValue(indice);
-            
-            indices ~= indice;
-        }
-        return null;
+        object.tryGetRef(origin, "origin");
+        object.tryGetRef(vertices, "verts");
+        object.tryGetRef(uvs, "uvs");
+        object.tryGetRef(indices, "indices");
+        object.tryGetRef(gridAxes, "grid_axes");
     }
 
 

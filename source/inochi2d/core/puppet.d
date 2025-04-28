@@ -1,7 +1,7 @@
 module inochi2d.core.puppet;
 import inochi2d.fmt.serialize;
 import inochi2d.core;
-import inochi2d.math;
+import inochi2d.core.math;
 import std.algorithm.sorting;
 import std.algorithm.mutation : SwapStrategy;
 import std.exception;
@@ -76,44 +76,63 @@ class PuppetUsageRights {
     /**
         Who is allowed to use the puppet?
     */
-    @Optional
     PuppetAllowedUsers allowedUsers = PuppetAllowedUsers.OnlyAuthor;
 
     /**
         Whether violence content is allowed
     */
-    @Optional
     bool allowViolence = false;
 
     /**
         Whether sexual content is allowed
     */
-    @Optional
     bool allowSexual = false;
 
     /**
         Whether commerical use is allowed
     */
-    @Optional
     bool allowCommercial = false;
 
     /**
         Whether a model may be redistributed
     */
-    @Optional
     PuppetAllowedRedistribution allowRedistribution = PuppetAllowedRedistribution.Prohibited;
 
     /**
         Whether a model may be modified
     */
-    @Optional
     PuppetAllowedModification allowModification = PuppetAllowedModification.Prohibited;
 
     /**
         Whether the author(s) must be attributed for use.
     */
-    @Optional
     bool requireAttribution = false;
+    
+    /**
+        Serializes the type.
+    */
+    void onSerialize(ref JSONValue object) {
+        object["allowedUsers"] = this.allowedUsers;
+        object["allowViolence"] = this.allowViolence;
+        object["allowSexual"] = this.allowSexual;
+        object["allowCommercial"] = this.allowCommercial;
+        object["allowRedistribution"] = this.allowRedistribution;
+        object["allowModification"] = this.allowModification;
+        object["requireAttribution"] = this.requireAttribution;
+    }
+    
+    /**
+        Deserializes the type.
+    */
+    void onDeserialize(ref JSONValue object) {
+        object.tryGetRef(allowedUsers, "allowedUsers");
+        object.tryGetRef(allowViolence, "allowViolence");
+        object.tryGetRef(allowSexual, "allowSexual");
+        object.tryGetRef(allowCommercial, "allowCommercial");
+        object.tryGetRef(allowRedistribution, "allowRedistribution");
+        object.tryGetRef(allowModification, "allowModification");
+        object.tryGetRef(requireAttribution, "requireAttribution");
+    }
 }
 
 /**
@@ -125,88 +144,133 @@ class PuppetMeta {
         Name of the puppet
     */
     string name;
+
     /**
         Version of the Inochi2D spec that was used for creating this model
     */
-    @Name("version")
-    string version_ = "1.0-alpha";
+    string version_ = "0.8.x";
 
     /**
         Rigger(s) of the puppet
     */
-    @Optional
     string rigger;
 
     /**
         Artist(s) of the puppet
     */
-    @Optional
     string artist;
 
     /**
         Usage Rights of the puppet
     */
-    @Optional
     PuppetUsageRights rights;
 
     /**
         Copyright string
     */
-    @Optional
     string copyright;
 
     /**
         URL of license
     */
-    @Optional
     string licenseURL;
 
     /**
         Contact information of the first author
     */
-    @Optional
     string contact;
 
     /**
         Link to the origin of this puppet
     */
-    @Optional
     string reference;
 
     /**
         Texture ID of this puppet's thumbnail
     */
-    @Optional
     uint thumbnailId = NO_THUMBNAIL;
 
     /**
         Whether the puppet should preserve pixel borders.
         This feature is mainly useful for puppets which use pixel art.
     */
-    @Optional
     bool preservePixels = false;
+    
+    /**
+        Serializes the type.
+    */
+    void onSerialize(ref JSONValue object) {
+        object["name"] = this.name;
+        object["version"] = this.version_;
+        object["rigger"] = this.rigger;
+        object["artist"] = this.artist;
+        object["rights"] = this.rights.serialize();
+        object["copyright"] = this.copyright;
+        object["licenseURL"] = this.licenseURL;
+        object["contact"] = this.contact;
+        object["reference"] = this.reference;
+        object["thumbnailId"] = this.thumbnailId;
+        object["preservePixels"] = this.preservePixels;
+    }
+    
+    /**
+        Deserializes the type.
+    */
+    void onDeserialize(ref JSONValue object) {
+        object.tryGetRef(name, "name");
+        object.tryGetRef(version_, "version");
+        object.tryGetRef(rigger, "rigger");
+        object.tryGetRef(artist, "artist");
+        object.tryGetRef(rights, "rights");
+        object.tryGetRef(copyright, "copyright");
+        object.tryGetRef(licenseURL, "licenseURL");
+        object.tryGetRef(contact, "contact");
+        object.tryGetRef(reference, "reference");
+        object.tryGetRef(thumbnailId, "thumbnailId");
+        object.tryGetRef(preservePixels, "preservePixels");
+    }
 }
 
 /**
     Puppet physics settings
 */
-class PuppetPhysics {
-    @Optional
+class PuppetPhysics : ISerializable, IDeserializable {
+    
+    /**
+        Pixels-per-meter for the physics system
+    */
     float pixelsPerMeter = 1000;
-
-    @Optional
+    
+    /**
+        Gravity for the physics system
+    */
     float gravity = 9.8;
+    
+    /**
+        Serializes the type.
+    */
+    void onSerialize(ref JSONValue object) {
+        object["pixelsPerMeter"] = pixelsPerMeter;
+        object["gravity"] = gravity;
+    }
+    
+    /**
+        Deserializes the type.
+    */
+    void onDeserialize(ref JSONValue object) {
+        object.tryGetRef(pixelsPerMeter, "pixelsPerMeter");
+        object.tryGetRef(gravity, "gravity");
+    }
 }
 
 /**
     A puppet
 */
-class Puppet {
+class Puppet : ISerializable, IDeserializable {
 private:
     /**
         An internal puppet root node
     */
-    @Ignore
     Node puppetRootNode;
 
     /**
@@ -214,7 +278,6 @@ private:
 
         for Z sorting
     */
-    @Ignore
     Node[] rootParts;
 
     /**
@@ -329,57 +392,46 @@ public:
     /**
         Meta information about this puppet
     */
-    @Name("meta")
     PuppetMeta meta;
 
     /**
         Global physics settings for this puppet
     */
-    @Name("physics")
     PuppetPhysics physics;
 
     /**
         The root node of the puppet
     */
-    @Name("nodes", "Root Node")
     Node root;
 
     /**
         Parameters
     */
-    @Name("param", "Parameters")
-    @Optional
     Parameter[] parameters;
 
     /**
         Parameters
     */
-    @Name("automation", "Automation")
-    @Optional
     Automation[] automation;
 
     /**
         INP Texture slots for this puppet
     */
-    @Ignore
     Texture[] textureSlots;
 
     /**
         Extended vendor data
     */
-    @Ignore
     ubyte[][string] extData;
 
     /**
         Whether parameters should be rendered
     */
-    @Ignore
     bool renderParameters = true;
 
     /**
         Whether drivers should run
     */
-    @Ignore
     bool enableDrivers = true;
 
     /**
@@ -695,60 +747,93 @@ public:
         return toStringBranch(root, 0);
     }
 
-
-    void serializeSelf(ref InochiSerializer serializer) {
-        serializer.putKey("meta");
-        serializer.serializeValue(meta);
-        serializer.putKey("physics");
-        serializer.serializeValue(physics);
-        serializer.putKey("nodes");
-        serializer.serializeValue(root);
-        serializer.putKey("param");
-        serializer.serializeValue(parameters);
-        serializer.putKey("automation");
-        serializer.serializeValue(automation);
-        serializer.putKey("animations");
-        serializer.serializeValue(animations);
+    /**
+        Serializes a puppet.
+    */
+    JSONValue serialize() {
+        JSONValue object = JSONValue.emptyObject;
+        this.onSerialize(object);
+        return object;
     }
 
     /**
-        Serializes a puppet
+        Serializes a puppet into an existing object.
     */
-    void serialize(ref InochiSerializer serializer) {
-        auto state = serializer.structBegin;
-        serializeSelf(serializer);
-        serializer.structEnd(state);
+    void onSerialize(ref JSONValue object) {
+
+        // Meta Info
+        object["meta"] = JSONValue.emptyObject;
+        object["meta"]["name"] = meta.name;
+        object["meta"]["version"] = meta.version_;
+        object["meta"]["rigger"] = meta.rigger;
+        object["meta"]["artist"] = meta.artist;
+        object["meta"]["copyright"] = meta.copyright;
+        object["meta"]["licenseURL"] = meta.licenseURL;
+        object["meta"]["contact"] = meta.contact;
+        object["meta"]["reference"] = meta.reference;
+        object["meta"]["thumbnailId"] = meta.thumbnailId;
+        object["meta"]["preservePixels"] = meta.preservePixels;
+        
+        // Meta Rights Info
+        object["meta"]["rights"] = JSONValue.emptyObject;
+        object["meta"]["rights"]["allowedUsers"] = meta.rights.allowedUsers;
+        object["meta"]["rights"]["allowViolence"] = meta.rights.allowViolence;
+        object["meta"]["rights"]["allowSexual"] = meta.rights.allowSexual;
+        object["meta"]["rights"]["allowCommercial"] = meta.rights.allowCommercial;
+        object["meta"]["rights"]["allowRedistribution"] = meta.rights.allowRedistribution;
+        object["meta"]["rights"]["allowModification"] = meta.rights.allowModification;
+        object["meta"]["rights"]["requireAttribution"] = meta.rights.requireAttribution;
+
+        // Physics Info
+        object["physics"] = JSONValue.emptyObject;
+        object["physics"]["pixelsPerMeter"] = physics.pixelsPerMeter;
+        object["physics"]["gravity"] = physics.gravity;
+
+        // Create objects for nodes, params, automation and animation.
+        object["nodes"] = root.serialize();
+        object["param"] = parameters.serialize();
+        object["automation"] = automation.serialize();
+        object["animations"] = animations.serialize();
     }
 
     /**
         Deserializes a puppet
     */
-    SerdeException deserializeFromFghj(Fghj data) {
-        if (auto exc = data["meta"].deserializeValue(this.meta)) return exc;
-        if (!data["physics"].isEmpty)
-            if (auto exc = data["physics"].deserializeValue(this.physics)) return exc;
-        if (auto exc = data["nodes"].deserializeValue(this.root)) return exc;
+    static Puppet deserialize(ref JSONValue object) {
+        Puppet p = new Puppet();
+        p.onDeserialize(object);
+        return p;
+    }
 
-        // Allow parameter loading to be overridden (for Inochi Creator)
-        foreach(key; data["param"].byElement) {
-            this.parameters ~= inParameterCreate(key);
-        }
+    /**
+        Deserializes a puppet
+    */
+    void onDeserialize(ref JSONValue object) {
+        
+        // Invalid type.
+        if (!object.isObject)
+            return;
+
+        object.tryGetRef(meta, "meta");
+        object.tryGetRef(physics, "physics");
+        object.tryGetRef(root, "nodes");
+        object.tryGetRef(parameters, "param");
+        object.tryGetRef(animations, "animations");
 
         // Deserialize automation
-        foreach(key; data["automation"].byElement) {
-            string type;
-            if (auto exc = key["type"].deserializeValue(type)) return exc;
-
-            if (inHasAutomationType(type)) {
-                auto auto_ = inInstantiateAutomation(type, this);
-                auto_.deserializeFromFghj(key);
-                this.automation ~= auto_;
+        if (object.isArray("automation")) {
+            foreach(element; object["automation"].array) {
+                if (string type = element.tryGet!string("type", null)) {
+                    if (inHasAutomationType(type)) {
+                        auto auto_ = inInstantiateAutomation(type, this);
+                        element.deserialize(auto_);
+                        this.automation ~= auto_;
+                    }
+                }
             }
         }
-        if (!data["animations"].isEmpty) data["animations"].deserializeValue(animations);
-        this.finalizeDeserialization(data);
 
-        return null;
+        this.finalizeDeserialization(object);
     }
 
 
@@ -787,7 +872,7 @@ public:
     /**
         Finalizer
     */
-    void finalizeDeserialization(Fghj data) {
+    void finalizeDeserialization(JSONValue data) {
         // reconstruct object path so that object is located at final position
         reconstruct();
         finalize();

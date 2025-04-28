@@ -281,12 +281,9 @@ enum MaskingMode {
 struct MaskBinding {
 public:
     import inochi2d.core.nodes.drawable : Drawable;
-    @Name("source")
     uint maskSrcUUID;
 
-    @Name("mode")
     MaskingMode mode;
     
-    @Ignore
     Drawable maskSrc;
 }

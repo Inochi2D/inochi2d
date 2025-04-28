@@ -18,15 +18,6 @@ import std.format;
 import imagefmt;
 import inochi2d.fmt.io;
 
-private bool isLoadingINP_ = false;
-
-/**
-    Gets whether the current loading state is set to INP loading
-*/
-bool inIsINPMode() {
-    return isLoadingINP_;
-}
-
 /**
     Loads a puppet from a file
 */
@@ -58,15 +49,8 @@ T inLoadPuppet(T = Puppet)(string file) if (is(T : Puppet)) {
     Loads a puppet from memory
 */
 Puppet inLoadPuppetFromMemory(ubyte[] data) {
-    return deserialize!Puppet(cast(string)data);
-}
-
-/**
-    Loads a JSON based puppet
-*/
-Puppet inLoadJSONPuppet(string data) {
-    isLoadingINP_ = false;
-    return inLoadJsonDataFromMemory!Puppet(data);
+    JSONValue json = parseJSON(cast(string)data);
+    return Puppet.deserialize(json);
 }
 
 /**
@@ -74,7 +58,6 @@ Puppet inLoadJSONPuppet(string data) {
 */
 T inLoadINPPuppet(T = Puppet)(ubyte[] buffer) if (is(T : Puppet)) {
     size_t bufferOffset = 0;
-    isLoadingINP_ = true;
 
     enforce(inVerifyMagicBytes(buffer), "Invalid data format for INP puppet");
     bufferOffset += 8; // Magic bytes are 8 bytes
@@ -268,8 +251,6 @@ ubyte[] inWriteINPPuppetMemory(Puppet p) {
     import inochi2d.ver : IN_VERSION;
     import std.range : appender;
     import std.json : JSONValue;
-
-    isLoadingINP_ = true;
     auto app = appender!(ubyte[]);
 
     // Write the current used Inochi2D version to the version_ meta tag.
@@ -326,12 +307,3 @@ void inWriteINPPuppet(Puppet p, string file) {
 enum IN_TEX_PNG = 0u; /// PNG encoded Inochi2D texture
 enum IN_TEX_TGA = 1u; /// TGA encoded Inochi2D texture
 enum IN_TEX_BC7 = 2u; /// BC7 encoded Inochi2D texture
-
-/**
-    Writes a puppet to file
-*/
-void inWriteJSONPuppet(Puppet p, string file) {
-    import std.file : write;
-    isLoadingINP_ = false;
-    write(file, inToJson(p));
-}

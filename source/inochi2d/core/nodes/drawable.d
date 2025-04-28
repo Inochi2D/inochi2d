@@ -10,7 +10,7 @@ module inochi2d.core.nodes.drawable;
 public import inochi2d.core.nodes.defstack;
 import inochi2d.integration;
 import inochi2d.fmt.serialize;
-import inochi2d.math;
+import inochi2d.core.math;
 import bindbc.opengl;
 import std.exception;
 import inochi2d.core.dbg;
@@ -134,24 +134,19 @@ protected:
         Allows serializing self data (with pretty serializer)
     */
     override
-    void serializeSelfImpl(ref InochiSerializer serializer, bool recursive=true) {
-        super.serializeSelfImpl(serializer, recursive);
-        serializer.putKey("mesh");
-        serializer.serializeValue(data);
+    void serializeSelfImpl(ref JSONValue object, bool recursive=true) {
+        super.serializeSelfImpl(object, recursive);
+        object["mesh"] = data.serialize();
     }
 
     override
-    SerdeException deserializeFromFghj(Fghj data) {
-        import std.stdio : writeln;
-        super.deserializeFromFghj(data);
-        if (auto exc = data["mesh"].deserializeValue(this.data)) return exc;
-
-        this.vertices = this.data.vertices.dup;
+    void onDeserialize(ref JSONValue object) {
+        super.onDeserialize(object);
+        object.tryGetRef(data, "mesh");
 
         // Update indices and vertices
         this.updateIndices();
         this.updateVertices();
-        return null;
     }
 
     void onDeformPushed(ref Deformation deform) { }
@@ -441,44 +436,42 @@ public:
     }
 }
 
-version (InDoesRender) {
-    /**
-        Begins a mask
+/**
+    Begins a mask
 
-        This causes the next draw calls until inBeginMaskContent/inBeginDodgeContent or inEndMask 
-        to be written to the current mask.
+    This causes the next draw calls until inBeginMaskContent/inBeginDodgeContent or inEndMask 
+    to be written to the current mask.
 
-        This also clears whatever old mask there was.
-    */
-    void inBeginMask(bool hasMasks) {
+    This also clears whatever old mask there was.
+*/
+void inBeginMask(bool hasMasks) {
 
-        // Enable and clear the stencil buffer so we can write our mask to it
-        glEnable(GL_STENCIL_TEST);
-        glClearStencil(hasMasks ? 0 : 1);
-        glClear(GL_STENCIL_BUFFER_BIT);
-    }
+    // Enable and clear the stencil buffer so we can write our mask to it
+    glEnable(GL_STENCIL_TEST);
+    glClearStencil(hasMasks ? 0 : 1);
+    glClear(GL_STENCIL_BUFFER_BIT);
+}
 
-    /**
-        End masking
+/**
+    End masking
 
-        Once masking is ended content will no longer be masked by the defined mask.
-    */
-    void inEndMask() {
+    Once masking is ended content will no longer be masked by the defined mask.
+*/
+void inEndMask() {
 
-        // We're done stencil testing, disable it again so that we don't accidentally mask more stuff out
-        glStencilMask(0xFF);
-        glStencilFunc(GL_ALWAYS, 1, 0xFF);   
-        glDisable(GL_STENCIL_TEST);
-    }
+    // We're done stencil testing, disable it again so that we don't accidentally mask more stuff out
+    glStencilMask(0xFF);
+    glStencilFunc(GL_ALWAYS, 1, 0xFF);   
+    glDisable(GL_STENCIL_TEST);
+}
 
-    /**
-        Starts masking content
+/**
+    Starts masking content
 
-        NOTE: This have to be run within a inBeginMask and inEndMask block!
-    */
-    void inBeginMaskContent() {
+    NOTE: This have to be run within a inBeginMask and inEndMask block!
+*/
+void inBeginMaskContent() {
 
-        glStencilFunc(GL_EQUAL, 1, 0xFF);
-        glStencilMask(0x00);
-    }
+    glStencilFunc(GL_EQUAL, 1, 0xFF);
+    glStencilMask(0x00);
 }

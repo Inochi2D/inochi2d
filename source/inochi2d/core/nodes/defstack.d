@@ -1,6 +1,6 @@
 module inochi2d.core.nodes.defstack;
 import inochi2d.core;
-import inochi2d.math;
+import inochi2d.core.math;
 import inochi2d;
 import std.exception : enforce;
 import nulib.collections.vector;
@@ -169,26 +169,16 @@ struct Deformation {
         }, this, other);
     }
 
-    void serialize(S)(ref S serializer) {
-        import inochi2d.math.serialization : serialize;
-        auto state = serializer.listBegin();
-            foreach(offset; vertexOffsets) {
-                serializer.elemBegin;
-                offset.serialize(serializer);
-            }
-        serializer.listEnd(state);
+    void onSerialize(ref JSONValue data) {
+        foreach(offset; vertexOffsets) {
+            data ~= offset.serialize();
+        }
     }
 
-    SerdeException deserializeFromFghj(Fghj data) {
-        import inochi2d.math.serialization : deserialize;
-        foreach(elem; data.byElement()) {
-            vec2 offset;
-            offset.deserialize(elem);
-
-            vertexOffsets ~= offset;
+    void onDeserialize(ref JSONValue data) {
+        foreach(ref element; data.array) {
+            this.vertexOffsets ~= element.deserialize!vec2();
         }
-
-        return null;
     }
 }
 

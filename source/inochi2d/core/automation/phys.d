@@ -22,25 +22,19 @@ struct VerletNode {
     /**
         Serializes a parameter
     */
-    void serialize(S)(ref S serializer) {
-        auto state = serializer.structBegin;
-            serializer.putKey("distance");
-            serializer.putValue(distance);
-            serializer.putKey("position");
-            position.serialize(serializer);
-            serializer.putKey("old_position");
-            oldPosition.serialize(serializer);
-        serializer.structEnd(state);
+    void serialize(ref JSONValue object) {
+        object["distance"] = distance;
+        object["position"] = position.serialize();
+        object["oldPosition"] = oldPosition.serialize();
     }
 
     /**
         Deserializes a parameter
     */
-    SerdeException deserializeFromFghj(Fghj data) {
-        data["distance"].deserializeValue(distance);
-        position.deserialize(data["position"]);
-        oldPosition.deserialize(data["old_position"]);
-        return null;
+    void deserialize(ref JSONValue object) {
+        object.tryGetRef(distance, "distance");
+        object.tryGetRef(position, "position");
+        object.tryGetRef(oldPosition, "old_position");
     }
 }
 
@@ -114,23 +108,19 @@ protected:
     }
 
     override
-    void serializeSelf(ref InochiSerializer serializer) {
-        serializer.putKey("nodes");
-        serializer.serializeValue(nodes);
-        serializer.putKey("damping");
-        serializer.putValue(damping);
-        serializer.putKey("bounciness");
-        serializer.putValue(bounciness);
-        serializer.putKey("gravity");
-        serializer.putValue(gravity);
+    void serializeSelf(ref JSONValue object) {
+        object["nodes"] = nodes.serialize();
+        object["damping"] = damping;
+        object["bounciness"] = bounciness;
+        object["gravity"] = gravity;
     }
 
     override
-    void deserializeSelf(Fghj data) {
-        data["nodes"].deserializeValue(nodes);
-        data["damping"].deserializeValue(damping);
-        data["bounciness"].deserializeValue(bounciness);
-        data["gravity"].deserializeValue(gravity);
+    void deserializeSelf(ref JSONValue object) {
+        object.tryGetRef(nodes, "nodes");
+        object.tryGetRef(damping, "damping");
+        object.tryGetRef(bounciness, "bounciness");
+        object.tryGetRef(gravity, "gravity");
     }
 public:
 

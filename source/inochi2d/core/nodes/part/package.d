@@ -11,7 +11,7 @@ import inochi2d.integration;
 import inochi2d.fmt;
 import inochi2d.core.nodes.drawable;
 import inochi2d.core;
-import inochi2d.math;
+import inochi2d.core.math;
 import bindbc.opengl;
 import std.exception;
 import std.algorithm.mutation : copy;
@@ -404,150 +404,79 @@ protected:
         Allows serializing self data (with pretty serializer)
     */
     override
-    void serializeSelfImpl(ref InochiSerializer serializer, bool recursive = true) {
-        super.serializeSelfImpl(serializer, recursive);
-        version (InDoesRender) {
-            if (inIsINPMode()) {
-                serializer.putKey("textures");
-                auto state = serializer.listBegin();
-                    foreach(ref texture; textures) {
-                        if (texture) {
-                            ptrdiff_t index = puppet.getTextureSlotIndexFor(texture);
-                            if (index >= 0) {
-                                serializer.elemBegin;
-                                serializer.putValue(cast(size_t)index);
-                            } else {
-                                serializer.elemBegin;
-                                serializer.putValue(cast(size_t)NO_TEXTURE);
-                            }
-                        } else {
-                            serializer.elemBegin;
-                            serializer.putValue(cast(size_t)NO_TEXTURE);
-                        }
-                    }
-                serializer.listEnd(state);
+    void serializeSelfImpl(ref JSONValue object, bool recursive = true) {
+        super.serializeSelfImpl(object, recursive);
+
+        object["textures"] = JSONValue.emptyArray;
+        foreach(ref texture; textures) {
+            if (texture) {
+                ptrdiff_t index = puppet.getTextureSlotIndexFor(texture);
+                object["textures"] ~= JSONValue(index >= 0 ? index : NO_TEXTURE);
+            } else {
+                object["textures"] ~= JSONValue(NO_TEXTURE);
             }
         }
 
-        serializer.putKey("blend_mode");
-        serializer.serializeValue(blendingMode);
-        
-        serializer.putKey("tint");
-        tint.serialize(serializer);
-
-        serializer.putKey("screenTint");
-        screenTint.serialize(serializer);
-
-        serializer.putKey("emissionStrength");
-        serializer.serializeValue(emissionStrength);
-
-        if (masks.length > 0) {
-            serializer.putKey("masks");
-            auto state = serializer.listBegin();
-                foreach(m; masks) {
-                    serializer.elemBegin;
-                    serializer.serializeValue(m);
-                }
-            serializer.listEnd(state);
-        }
-
-        serializer.putKey("mask_threshold");
-        serializer.putValue(maskAlphaThreshold);
-
-        serializer.putKey("opacity");
-        serializer.putValue(opacity);
+        object["blend_mode"] = blendingMode;
+        object["tint"] = tint.serialize();
+        object["screenTint"] = screenTint.serialize();
+        object["emissionStrength"] = emissionStrength;
+        object["masks"] = masks.serialize();
+        object["mask_threshold"] = maskAlphaThreshold;
+        object["opacity"] = opacity;
     }
 
     override
-    SerdeException deserializeFromFghj(Fghj data) {
-        super.deserializeFromFghj(data);
+    void onDeserialize(ref JSONValue object) {
+        super.onDeserialize(object);
+        if (object.isArray("textures")) {
+            size_t i = 0;
+            foreach(ref JSONValue element; object["textures"].array) {
 
-    
-        version(InRenderless) {
-            if (inIsINPMode()) {
-                foreach(texElement; data["textures"].byElement) {
-                    uint textureId;
-                    texElement.deserializeValue(textureId);
-                    if (textureId == NO_TEXTURE) continue;
+                // uint max = no texture set
+                uint textureId = element.tryGet!uint(NO_TEXTURE);
+                if (textureId == NO_TEXTURE) continue;
 
-                    textureIds ~= textureId;
-                }
-            } else {
-                assert(0, "Raw Inochi2D JSON not supported in renderless mode");
-            }
-            
-            // Do nothing in this instance
-        } else {
-            if (inIsINPMode()) {
-
-                size_t i;
-                foreach(texElement; data["textures"].byElement) {
-                    uint textureId;
-                    texElement.deserializeValue(textureId);
-
-                    // uint max = no texture set
-                    if (textureId == NO_TEXTURE) continue;
-
-                    textureIds ~= textureId;
-                    this.textures[i++] = inGetTextureFromId(textureId);
-                }
-            } else {
-                enforce(0, "Loading from texture path is deprecated.");
+                textureIds ~= textureId;
+                this.textures[i++] = inGetTextureFromId(textureId);
             }
         }
+        
+        object.tryGetRef(opacity, "opacity");
+        object.tryGetRef(maskAlphaThreshold, "mask_threshold");
+        object.tryGetRef(tint, "tint");
+        object.tryGetRef(screenTint, "screenTint");
+        object.tryGetRef(tint, "tint");
+        object.tryGetRef(emissionStrength, "emissionStrength");
+        object.tryGetRef(blendingMode, "blend_mode");
+        object.tryGetRef(masks, "masks");
 
-        data["opacity"].deserializeValue(this.opacity);
-        data["mask_threshold"].deserializeValue(this.maskAlphaThreshold);
+        if (object.isArray("masked_by")) {
 
-        // Older models may not have tint
-        if (!data["tint"].isEmpty) deserialize(tint, data["tint"]);
-
-        // Older models may not have screen tint
-        if (!data["screenTint"].isEmpty) deserialize(screenTint, data["screenTint"]);
-
-        // Older models may not have emission
-        if (!data["emissionStrength"].isEmpty) deserialize(tint, data["emissionStrength"]);
-
-        // Older models may not have blend mode
-        if (!data["blend_mode"].isEmpty) data["blend_mode"].deserializeValue(this.blendingMode);
-
-        if (!data["masked_by"].isEmpty) {
-            MaskingMode mode;
-            data["mask_mode"].deserializeValue(mode);
-
-            // Go every masked part
-            foreach(imask; data["masked_by"].byElement) {
-                uint uuid;
-                if (auto exc = imask.deserializeValue(uuid)) return exc;
+            // Go to every masked part
+            MaskingMode mode = object.tryGet!MaskingMode("mask_mode");
+            foreach(imask; object["masked_by"].array) {
+                uint uuid = imask.tryGet!uint();
                 this.masks ~= MaskBinding(uuid, mode, null);
             }
         }
 
-        if (!data["masks"].isEmpty) {
-            data["masks"].deserializeValue(this.masks);
-        }
-
         // Update indices and vertices
         this.updateUVs();
-        return null;
     }
 
     override
-    void serializePartial(ref InochiSerializer serializer, bool recursive=true) {
-        super.serializePartial(serializer, recursive);
-        serializer.putKey("textureUUIDs");
-        auto state = serializer.listBegin();
-            foreach(ref texture; textures) {
-                uint uuid;
-                if (texture !is null) {
-                    uuid = texture.getRuntimeUUID();                                    
-                } else {
-                    uuid = InInvalidUUID;
-                }
-                serializer.elemBegin;
-                serializer.putValue(cast(size_t)uuid);
-            }
-        serializer.listEnd(state);
+    void serializePartial(ref JSONValue object, bool recursive=true) {
+        super.serializePartial(object, recursive);
+
+        object["textureUUIDs"] = JSONValue.emptyArray;
+        foreach(ref texture; textures) {
+            uint uuid = texture !is null ? 
+                texture.getRuntimeUUID() : 
+                InInvalidUUID;
+
+            object["textureUUIDs"] ~= JSONValue(uuid);
+        }
     }
 
     //

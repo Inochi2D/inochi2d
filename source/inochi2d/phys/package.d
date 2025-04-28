@@ -1,4 +1,4 @@
-/*
+/**
     Inochi2D Puppet Physics
 
     Copyright © 2020, Inochi2D Project

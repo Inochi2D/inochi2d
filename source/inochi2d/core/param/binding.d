@@ -8,9 +8,8 @@
 */
 module inochi2d.core.param.binding;
 import inochi2d.fmt.serialize;
-import inochi2d.math.serialization;
+import inochi2d.core.math;
 import inochi2d.core;
-import inochi2d.math;
 import std.exception;
 import std.array;
 import std.algorithm.mutation;
@@ -34,7 +33,7 @@ struct BindTarget {
 /**
     A binding to a parameter, of a given value type
 */
-abstract class ParameterBinding {
+abstract class ParameterBinding : ISerializable, IDeserializable {
 
     /**
         Restructure object before finalization
@@ -169,12 +168,12 @@ abstract class ParameterBinding {
     /**
         Serialize
     */
-    void serializeSelf(ref InochiSerializer serializer);
+    void onSerialize(ref JSONValue data);
 
     /**
         Deserialize
     */
-    SerdeException deserializeFromFghj(Fghj data);
+    void onDeserialize(ref JSONValue data);
 }
 
 /**
@@ -280,36 +279,24 @@ public:
         Serializes a binding
     */
     override
-    void serializeSelf(ref InochiSerializer serializer) {
-        auto state = serializer.structBegin();
-            serializer.putKey("node");
-            serializer.putValue(target.node.uuid);
-            serializer.putKey("param_name");
-            serializer.putValue(target.paramName);
-            serializer.putKey("values");
-            serializer.serializeValue(values);
-            serializer.putKey("isSet");
-            serializer.serializeValue(isSet_);
-            serializer.putKey("interpolate_mode");
-            serializer.serializeValue(interpolateMode_);
-        serializer.structEnd(state);
+    void onSerialize(ref JSONValue object) {
+        object["node"] = target.node.uuid;
+        object["param_name"] = target.paramName;
+        object["values"] = values.serialize();
+        object["isSet"] = isSet_.serialize();
+        object["interpolate_mode"] = interpolateMode_;
     }
 
     /**
         Deserializes a binding
     */
     override
-    SerdeException deserializeFromFghj(Fghj data) {
-        data["node"].deserializeValue(this.nodeRef);
-        data["param_name"].deserializeValue(this.target.paramName);
-        data["values"].deserializeValue(this.values);
-        data["isSet"].deserializeValue(this.isSet_);
-        auto mode = data["interpolate_mode"];
-        if (mode != Fghj.init) {
-            mode.deserializeValue(this.interpolateMode_);
-        } else {
-            this.interpolateMode_ = InterpolateMode.Linear;
-        }
+    void onDeserialize(ref JSONValue object) {
+        object.tryGetRef(nodeRef, "node");
+        object.tryGetRef(target.paramName, "param_name");
+        object.tryGetRef(values, "values");
+        object.tryGetRef(isSet_, "isSet");
+        object.tryGetRef(interpolateMode_, "interpolate_mode");
 
         uint xCount = parameter.axisPointCount(0);
         uint yCount = parameter.axisPointCount(1);
@@ -323,8 +310,6 @@ public:
         foreach(i; this.isSet_) {
             enforce(i.length == yCount, "Mismatched Y isSet_ count");
         }
-
-        return null;
     }
 
     override
@@ -335,10 +320,7 @@ public:
     */
     override
     void finalize(Puppet puppet) {
-//        writefln("finalize binding %s", this.getName());
-
         this.target.node = puppet.find(nodeRef);
-//        writefln("node for %d = %x", nodeRef, &(target.node));
     }
 
     /**

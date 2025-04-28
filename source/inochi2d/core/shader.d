@@ -5,7 +5,7 @@
     Authors: Luna Nielsen
 */
 module inochi2d.core.shader;
-import inochi2d.math;
+import inochi2d.core.math;
 import std.string;
 import bindbc.opengl;
 
@@ -218,40 +218,58 @@ public:
     }
 
     /**
-        Use the shader
+        Tells OpenGL to use the shader
     */
     void use() {
         glUseProgram(shaderProgram);
     }
 
+    /**
+        Gets the location of a uniform value
+
+        Params:
+            name = The name of the uniform to get
+        
+        Returns:
+            The GLSL ID of the uniform.
+    */
     GLint getUniformLocation(string name) {
         return glGetUniformLocation(shaderProgram, name.ptr);
     }
 
+    /**
+        Sets a uniform
+    */
     void setUniform(GLint uniform, bool value) {
         glUniform1i(uniform, cast(int)value);
     }
 
+    /// ditto
     void setUniform(GLint uniform, int value) {
         glUniform1i(uniform, value);
     }
 
+    /// ditto
     void setUniform(GLint uniform, float value) {
         glUniform1f(uniform, value);
     }
 
+    /// ditto
     void setUniform(GLint uniform, vec2 value) {
         glUniform2f(uniform, value.x, value.y);
     }
 
+    /// ditto
     void setUniform(GLint uniform, vec3 value) {
         glUniform3f(uniform, value.x, value.y, value.z);
     }
 
+    /// ditto
     void setUniform(GLint uniform, vec4 value) {
         glUniform4f(uniform, value.x, value.y, value.z, value.w);
     }
 
+    /// ditto
     void setUniform(GLint uniform, mat4 value) {
         glUniformMatrix4fv(uniform, 1, GL_TRUE, value.ptr);
     }

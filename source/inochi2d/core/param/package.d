@@ -8,9 +8,8 @@
 */
 module inochi2d.core.param;
 import inochi2d.fmt.serialize;
-import inochi2d.math.serialization;
+import inochi2d.core.math;
 import inochi2d.core;
-import inochi2d.math;
 import std.exception;
 import std.array;
 import std.algorithm.mutation;
@@ -23,43 +22,33 @@ enum ParamMergeMode {
     /**
         Parameters are merged additively
     */
-    @serdeFlexible
-    @serdeKeys("Additive", "additive")
-    Additive,
+    additive,
 
     /**
         Parameters are merged with a weighted average
     */
-    @serdeFlexible
-    @serdeKeys("Weighted", "weighted")
-    Weighted,
+    weighted,
 
     /**
         Parameters are merged multiplicatively
     */
-    @serdeFlexible
-    @serdeKeys("Multiplicative", "multiplicative")
-    Multiplicative,
+    multiplicative,
 
     /**
         Forces parameter to be given value
     */
-    @serdeFlexible
-    @serdeKeys("Forced", "forced")
-    Forced,
+    forced,
 
     /**
         Merge mode is passthrough
     */
-    @serdeFlexible
-    @serdeKeys("Passthrough", "passthrough")
-    Passthrough,
+    passthrough,
 }
 
 /**
     A parameter
 */
-class Parameter {
+class Parameter : ISerializable, IDeserializable {
 private:
     struct Combinator {
         vec2[] ivalues;
@@ -113,30 +102,21 @@ private:
     Combinator iadd;
     Combinator imul;
 protected:
-    void serializeSelf(ref InochiSerializer serializer) {
-        serializer.putKey("uuid");
-        serializer.putValue(uuid);
-        serializer.putKey("name");
-        serializer.putValue(name);
-        serializer.putKey("is_vec2");
-        serializer.putValue(isVec2);
-        serializer.putKey("min");
-        min.serialize(serializer);
-        serializer.putKey("max");
-        max.serialize(serializer);
-        serializer.putKey("defaults");
-        defaults.serialize(serializer);
-        serializer.putKey("axis_points");
-        serializer.serializeValue(axisPoints);
-        serializer.putKey("merge_mode");
-        serializer.serializeValue(mergeMode);
-        serializer.putKey("bindings");
-        auto arrstate = serializer.listBegin();
-            foreach(binding; bindings) {
-                serializer.elemBegin();
-                binding.serializeSelf(serializer);
-            }
-        serializer.listEnd(arrstate);
+    void serializeSelf(ref JSONValue object) {
+        object["uuid"] = uuid;
+        object["name"] = name;
+        object["is_vec2"] = isVec2;
+        object["is_vec2"] = isVec2;
+        object["min"] = min.serialize();
+        object["max"] = max.serialize();
+        object["defaults"] = defaults.serialize();
+        object["axis_points"] = axisPoints.serialize();
+        object["merge_mode"] = mergeMode.serialize();
+
+        object["bindings"] = JSONValue.emptyArray;
+        foreach(ref binding; bindings) {
+            object["bindings"] ~= binding.serialize();
+        }
     }
 
 public:
@@ -281,47 +261,41 @@ public:
     /**
         Serializes a parameter
     */
-    void serialize(ref InochiSerializer serializer) {
-        auto state = serializer.structBegin;
-        serializeSelf(serializer);
-        serializer.structEnd(state);
+    void onSerialize(ref JSONValue object) {
+        this.serializeSelf(object);
     }
 
     /**
         Deserializes a parameter
     */
-    SerdeException deserializeFromFghj(Fghj data) {
-        data["uuid"].deserializeValue(this.uuid);
-        data["name"].deserializeValue(this.name);
-        if (!data["is_vec2"].isEmpty) data["is_vec2"].deserializeValue(this.isVec2);
-        if (!data["min"].isEmpty) min.deserialize(data["min"]);
-        if (!data["max"].isEmpty) max.deserialize(data["max"]);
-        if (!data["axis_points"].isEmpty) data["axis_points"].deserializeValue(this.axisPoints);
-        if (!data["defaults"].isEmpty) defaults.deserialize(data["defaults"]);
-        if (!data["merge_mode"].isEmpty) data["merge_mode"].deserializeValue(this.mergeMode);
+    void onDeserialize(ref JSONValue object) {
+        object.tryGetRef(uuid, "uuid");
+        object.tryGetRef(name, "name");
+        object.tryGetRef(isVec2, "is_vec2");
+        object.tryGetRef(min, "min");
+        object.tryGetRef(max, "max");
+        object.tryGetRef(axisPoints, "axis_points");
+        object.tryGetRef(defaults, "defaults");
+        object.tryGetRef(mergeMode, "merge_mode");
 
-        if (!data["bindings"].isEmpty) {
-            foreach(Fghj child; data["bindings"].byElement) {
+        if (object.isObject("bindings")) {
+            foreach(JSONValue child; object["bindings"].object) {
                 
                 // Skip empty children
-                if (child["param_name"].isEmpty) continue;
+                if (string paramName = child.tryGet!string("param_name", null)) {
 
-                string paramName;
-                child["param_name"].deserializeValue(paramName);
-
-                if (paramName == "deform") {
-                    auto binding = new DeformationParameterBinding(this);
-                    binding.deserializeFromFghj(child);
-                    bindings ~= binding;
-                } else {
-                    auto binding = new ValueParameterBinding(this);
-                    binding.deserializeFromFghj(child);
-                    bindings ~= binding;
+                    if (paramName == "deform") {
+                        auto binding = new DeformationParameterBinding(this);
+                        child.deserialize(binding);
+                        bindings ~= binding;
+                    } else {
+                        auto binding = new ValueParameterBinding(this);
+                        child.deserialize(binding);
+                        bindings ~= binding;
+                    }
                 }
             }
         }
-
-        return null;
     }
 
     void reconstruct(Puppet puppet) {
@@ -384,41 +358,46 @@ public:
         imul.clear();
     }
 
-    void pushIOffset(vec2 offset, ParamMergeMode mode = ParamMergeMode.Passthrough, float weight=1) {
-        if (mode == ParamMergeMode.Passthrough) mode = mergeMode;
-        switch(mode) {
-            case ParamMergeMode.Forced:
+    void pushIOffset(vec2 offset, ParamMergeMode mode = ParamMergeMode.passthrough, float weight=1) {
+        if (mode == ParamMergeMode.passthrough)
+            mode = mergeMode;
+        
+        switch(mode) with(ParamMergeMode) {
+            case forced:
                 this.value = offset;
                 break;
-            case ParamMergeMode.Additive:
+            case additive:
                 iadd.add(offset, 1);
                 break;
-            case ParamMergeMode.Multiplicative:
+            case multiplicative:
                 imul.add(offset, 1);
                 break;
-            case ParamMergeMode.Weighted:
+            case weighted:
                 imul.add(offset, weight);
                 break;
             default: break;
         }
     }
 
-    void pushIOffsetAxis(int axis, float offset, ParamMergeMode mode = ParamMergeMode.Passthrough, float weight=1) {
-        if (mode == ParamMergeMode.Passthrough) mode = mergeMode;
-        switch(mode) {
-            case ParamMergeMode.Forced:
+    void pushIOffsetAxis(int axis, float offset, ParamMergeMode mode = ParamMergeMode.passthrough, float weight=1) {
+        if (mode == ParamMergeMode.passthrough)
+            mode = mergeMode;
+        
+        switch(mode) with(ParamMergeMode) {
+            case forced:
                 this.value.vector[axis] = offset;
                 break;
-            case ParamMergeMode.Additive:
+            case additive:
                 iadd.add(axis, offset, 1);
                 break;
-            case ParamMergeMode.Multiplicative:
+            case multiplicative:
                 imul.add(axis, offset, 1);
                 break;
-            case ParamMergeMode.Weighted:
+            case weighted:
                 imul.add(axis, offset, weight);
                 break;
             default: break;
+
         }
     }
 
@@ -725,13 +704,13 @@ public:
 }
 
 private {
-    Parameter delegate(Fghj) createFunc;
+    Parameter delegate(ref JSONValue) createFunc;
 }
 
-Parameter inParameterCreate(Fghj data) {
+Parameter inParameterCreate(JSONValue data) {
     return createFunc(data);
 }
 
-void inParameterSetFactory(Parameter delegate(Fghj) createFunc_) {
+void inParameterSetFactory(Parameter delegate(ref JSONValue) createFunc_) {
     createFunc = createFunc_;
 }

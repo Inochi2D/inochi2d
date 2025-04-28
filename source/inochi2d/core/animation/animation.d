@@ -1,6 +1,6 @@
 module inochi2d.core.animation.animation;
-import inochi2d.core;
 import inochi2d.fmt.serialize;
+import inochi2d.core;
 import inmath;
 import inmath.interpolate;
 
@@ -65,45 +65,33 @@ public:
     /**
         Serialization function
     */
-    void serialize(ref InochiSerializer serializer) {
-        auto obj = serializer.structBegin();
-            serializer.putKey("timestep");
-            serializer.serializeValue(timestep);
-            serializer.putKey("additive");
-            serializer.serializeValue(additive);
-            serializer.putKey("length");
-            serializer.serializeValue(length);
-            serializer.putKey("leadIn");
-            serializer.serializeValue(leadIn);
-            serializer.putKey("leadOut");
-            serializer.serializeValue(leadOut);
-            serializer.putKey("animationWeight");
-            serializer.serializeValue(animationWeight);
+    void onSerialize(ref JSONValue object) {
+        object["timestep"] = timestep;
+        object["additive"] = additive;
+        object["length"] = length;
+        object["leadIn"] = leadIn;
+        object["leadOut"] = leadOut;
+        object["animationWeight"] = animationWeight;
 
-            serializer.putKey("lanes");
-            auto state = serializer.listBegin;
-            foreach(lane; lanes) {
-                if (lane.paramRef.targetParam) {
-                    serializer.elemBegin;
-                    serializer.serializeValue(lane);
-                }
+        object["lanes"] = JSONValue.emptyArray;
+        foreach(ref AnimationLane lane; lanes) {
+            if (lane.paramRef.targetParam) {
+                object["lanes"] ~= lane.serialize();
             }
-            serializer.listEnd(state);
-        serializer.structEnd(obj);
+        }
     }
 
     /**
         Deserialization function
     */
-    SerdeException deserializeFromFghj(Fghj data) {
-        data["timestep"].deserializeValue(this.timestep);
-        data["additive"].deserializeValue(this.additive);
-        if (!data["animationWeight"].isEmpty) data["animationWeight"].deserializeValue(this.animationWeight);
-        data["length"].deserializeValue(this.length);
-        data["leadIn"].deserializeValue(this.leadIn);
-        data["leadOut"].deserializeValue(this.leadOut);
-        data["lanes"].deserializeValue(this.lanes);
-        return null;
+    void onDeserialize(ref JSONValue object) {
+        object.tryGetRef(timestep, "timestep", timestep.init);
+        object.tryGetRef(additive, "additive", additive.init);
+        object.tryGetRef(animationWeight, "animationWeight", animationWeight.init);
+        object.tryGetRef(length, "length", length.init);
+        object.tryGetRef(leadIn, "leadIn", leadIn.init);
+        object.tryGetRef(leadOut, "leadOut", leadOut.init);
+        object.tryGetRef(lanes, "lanes", lanes.init);
     }
 }
 
@@ -138,39 +126,27 @@ public:
     /**
         Serialization function
     */
-    void serialize(ref InochiSerializer serializer) {
-        auto obj = serializer.structBegin();
-            serializer.putKey("interpolation");
-            serializer.serializeValue(interpolation);
-
-            if (paramRef) {
-                serializer.putKey("uuid");
-                serializer.putValue(paramRef.targetParam.uuid);
-                serializer.putKey("target");
-                serializer.putValue(paramRef.targetAxis);
-            }
-
-            serializer.putKey("keyframes");
-            serializer.serializeValue(frames);
-
-            serializer.putKey("merge_mode");
-            serializer.serializeValue(mergeMode);
-        serializer.structEnd(obj);
+    void onSerialize(ref JSONValue object) {
+        object["interpolation"] = interpolation;
+        object["keyframes"] = frames.serialize();
+        object["merge_mode"] = mergeMode;
+        if (paramRef) {
+            object["uuid"] = paramRef.targetParam.uuid;
+            object["target"] = paramRef.targetAxis;
+        }
     }
 
     /**
         Deserialization function
     */
-    SerdeException deserializeFromFghj(Fghj data) {
-        data["interpolation"].deserializeValue(this.interpolation);
-        data["uuid"].deserializeValue(refuuid);
-
+    void onDeserialize(ref JSONValue object) {
         this.paramRef = new AnimationParameterRef(null, 0);
-        data["target"].deserializeValue(this.paramRef.targetAxis);
 
-        data["keyframes"].deserializeValue(this.frames);
-        if (!data["merge_mode"].isEmpty) data["merge_mode"].deserializeValue(this.mergeMode);
-        return null;
+        object.tryGetRef(interpolation, "interpolation");
+        object.tryGetRef(refuuid, "uuid");
+        object.tryGetRef(paramRef.targetAxis, "target");
+        object.tryGetRef(frames, "keyframes");
+        object.tryGetRef(mergeMode, "merge_mode", mergeMode.init);
     }
 
     /**
@@ -186,7 +162,7 @@ public:
     /**
         Merging mode of the lane
     */
-    ParamMergeMode mergeMode = ParamMergeMode.Forced;
+    ParamMergeMode mergeMode = ParamMergeMode.forced;
 
     /**
         Gets the interpolated state of a frame of animation 

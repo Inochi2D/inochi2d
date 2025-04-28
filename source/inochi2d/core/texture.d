@@ -5,7 +5,7 @@
     Authors: Luna Nielsen
 */
 module inochi2d.core.texture;
-import inochi2d.math;
+import inochi2d.core.math;
 import std.exception;
 import std.format;
 import bindbc.opengl;

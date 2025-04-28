@@ -1,14 +1,17 @@
-/*
+/**
+    Inochi2D Physics Subsystem
+
     Copyright © 2022, Inochi2D Project
     Distributed under the 2-Clause BSD License, see LICENSE file.
 
-    Author Asahi Lina
+    Author: Asahi Lina
 */
 module inochi2d.phys.system;
 import inochi2d;
 import std.math : isFinite;
 
-abstract class PhysicsSystem {
+abstract
+class PhysicsSystem {
 private:
     ulong[float*] variableMap;
     float*[] refs;

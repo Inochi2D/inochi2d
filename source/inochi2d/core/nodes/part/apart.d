@@ -1,7 +1,7 @@
 module inochi2d.core.nodes.part.apart;
 import inochi2d.core.nodes.part;
 import inochi2d.core;
-import inochi2d.math;
+import inochi2d.core.math;
 
 /**
     Parts which contain spritesheet animation

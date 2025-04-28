@@ -10,7 +10,7 @@ module inochi2d.core.nodes.shapes;
 import inochi2d.core.nodes.part;
 import inochi2d.core.nodes;
 import inochi2d.core;
-import inochi2d.math;
+import inochi2d.core.math;
 
 /**
     A Shape Node

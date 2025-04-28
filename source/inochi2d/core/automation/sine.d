@@ -40,17 +40,15 @@ protected:
     }
 
     override
-    void serializeSelf(ref InochiSerializer serializer) {
-        serializer.putKey("speed");
-        serializer.putValue(speed);
-        serializer.putKey("sine_type");
-        serializer.putValue(cast(int)sineType);
+    void serializeSelf(ref JSONValue object) {
+        object["speed"] = speed;
+        object["sine_type"] = sineType;
     }
 
     override
-    void deserializeSelf(Fghj data) {
-        data["speed"].deserializeValue(speed);
-        data["sine_type"].deserializeValue(sineType);
+    void deserializeSelf(ref JSONValue object) {
+        object.tryGetRef(speed, "speed");
+        object.tryGetRef(sineType, "sine_type");
     }
 public:
 

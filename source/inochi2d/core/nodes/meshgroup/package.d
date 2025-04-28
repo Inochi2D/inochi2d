@@ -10,8 +10,7 @@ module inochi2d.core.nodes.meshgroup;
 import inochi2d.core.nodes.drawable;
 import inochi2d.integration;
 import inochi2d.fmt.serialize;
-import inochi2d.math;
-import inochi2d.math.triangle;
+import inochi2d.core.math;
 import std.exception;
 import inochi2d.core.dbg;
 import inochi2d.core;
@@ -254,28 +253,19 @@ public:
     }
 
     override
-    void serializeSelfImpl(ref InochiSerializer serializer, bool recursive = true) {
-        super.serializeSelfImpl(serializer, recursive);
+    void serializeSelfImpl(ref JSONValue object, bool recursive = true) {
+        super.serializeSelfImpl(object, recursive);
 
-        serializer.putKey("dynamic_deformation");
-        serializer.serializeValue(dynamic);
-
-        serializer.putKey("translate_children");
-        serializer.serializeValue(translateChildren);
+        object["dynamic_deformation"] = dynamic;
+        object["translate_children"] = translateChildren;
     }
 
     override
-    SerdeException deserializeFromFghj(Fghj data) {
-        super.deserializeFromFghj(data);
+    void onDeserialize(ref JSONValue object) {
+        super.onDeserialize(object);
 
-        if (!data["dynamic_deformation"].isEmpty) 
-            data["dynamic_deformation"].deserializeValue(dynamic);
-
-        translateChildren = false;
-        if (!data["translate_children"].isEmpty)
-            data["translate_children"].deserializeValue(translateChildren);
-
-        return null;
+        object.tryGetRef(dynamic, "dynamic_deformation");
+        object.tryGetRef(translateChildren, "translate_children");
     }
 
     override

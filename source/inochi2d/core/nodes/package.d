@@ -7,11 +7,11 @@
     Authors: Luna Nielsen
 */
 module inochi2d.core.nodes;
-import inochi2d.math;
-import inochi2d.fmt.serialize;
-import inochi2d.math.serialization;
+import inochi2d.core.math;
+import inochi2d.core.math;
 import inochi2d.core.dbg;
 import inochi2d.core;
+import inochi2d.fmt.serialize;
 
 public import inochi2d.core.nodes.part;
 public import inochi2d.core.nodes.drawable;
@@ -71,28 +71,21 @@ void inClearUUIDs() {
     A node in the Inochi2D rendering tree
 */
 @TypeId("Node")
-class Node : ISerializable {
+class Node : ISerializable, IDeserializable {
 private:
 
-    @Ignore
     Puppet puppet_;
 
-    @Ignore
     Node parent_;
     
-    @Ignore
     Node[] children_;
     
-    @Ignore
     uint uuid_;
     
-    @Name("zsort")
     float zsort_ = 0;
 
-    @Name("lockToRoot")
     bool lockToRoot_;
 
-    @Ignore
     string nodePath_;
 
 protected:
@@ -116,53 +109,34 @@ protected:
         if (parent !is null) parent.resetMask();
     }
 
-    void serializeSelfImpl(ref InochiSerializer serializer, bool recursive=true) {
+    void serializeSelfImpl(ref JSONValue object, bool recursive=true) {
+        object["uuid"] = uuid;
+        object["name"] = name;
+        object["type"] = typeId;
+        object["enabled"] = enabled;
+        object["zsort"] = zsort_;
+        object["transform"] = zsort_;
+        object["lockToRoot"] = lockToRoot_;
         
-        serializer.putKey("uuid");
-        serializer.putValue(uuid);
+        // Skip iterating children if we're not doing a recursive
+        // serialization.
+        if (!recursive) return;
         
-        serializer.putKey("name");
-        serializer.putValue(name);
-        
-        serializer.putKey("type");
-        serializer.putValue(typeId);
-        
-        serializer.putKey("enabled");
-        serializer.putValue(enabled);
-        
-        serializer.putKey("zsort");
-        serializer.putValue(zsort_);
-        
-        serializer.putKey("transform");
-        serializer.serializeValue(this.localTransform);
-        
-        serializer.putKey("lockToRoot");
-        serializer.serializeValue(this.lockToRoot_);
-        
-        if (recursive && children.length > 0) {
-            serializer.putKey("children");
-            auto childArray = serializer.listBegin();
-            foreach(child; children) {
+        object["children"] = JSONValue.emptyArray;
+        foreach(child; children) {
 
-                // Skip Temporary nodes
-                if (cast(TmpNode)child) continue;
-
-                // Serialize permanent nodes
-                serializer.elemBegin;
-                serializer.serializeValue(child);
-            }
-            serializer.listEnd(childArray);
+            // Skip Temporary nodes
+            if (cast(TmpNode)child) continue;
+            object["children"] ~= child.serialize();
         }
     }
 
-    void serializeSelf(ref InochiSerializer serializer) {
-        serializeSelfImpl(serializer, true);
+    void serializeSelf(ref JSONValue object) {
+        this.serializeSelfImpl(object, true);
     }
 
-    @Ignore
     mat4* oneTimeTransform = null;
 
-    @Ignore
     class MatrixHolder {
     public:
         this(mat4 matrix) {
@@ -347,16 +321,13 @@ public:
     /**
         The cached world space transform of the node
     */
-    @Ignore
     Transform globalTransform;
 
-    @Ignore
     bool recalculateTransform = true;
 
     /**
         The transform in world space
     */
-    @Ignore
     Transform transform(bool ignoreParam=false)() {
         if (recalculateTransform) {
             localTransform.update();
@@ -390,7 +361,6 @@ public:
     /**
         The transform in world space without locking
     */
-    @Ignore
     Transform transformLocal() {
         localTransform.update();
         
@@ -400,7 +370,6 @@ public:
     /**
         The transform in world space without locking
     */
-    @Ignore
     Transform transformNoLock() {
         localTransform.update();
         
@@ -785,55 +754,46 @@ public:
     /**
         Allows serializing a node (with pretty serializer)
     */
-    void serialize(S)(ref S serializer) {
-        auto state = serializer.structBegin();
-            this.serializeSelf(serializer);
-        serializer.structEnd(state);
+    void onSerialize(ref JSONValue object) {
+        this.serializeSelf(object);
     }
 
     /**
-        Deserializes node from Fghj formatted JSON data.
+        Deserializes node from JSONValue formatted JSON data.
     */
-    SerdeException deserializeFromFghj(Fghj data) {
-
-        if (auto exc = data["uuid"].deserializeValue(this.uuid_)) return exc;
-
-        if (!data["name"].isEmpty) {
-            if (auto exc = data["name"].deserializeValue(this.name)) return exc;
-        }
-
-        if (auto exc = data["enabled"].deserializeValue(this.enabled)) return exc;
-
-        if (auto exc = data["zsort"].deserializeValue(this.zsort_)) return exc;
-        
-        if (auto exc = data["transform"].deserializeValue(this.localTransform)) return exc;
-        
-        if (!data["lockToRoot"].isEmpty) {
-            if (auto exc = data["lockToRoot"].deserializeValue(this.lockToRoot_)) return exc;
-        }
+    void onDeserialize(ref JSONValue object) {
+        object.tryGetRef(uuid_, "uuid");
+        object.tryGetRef(name, "name");
+        object.tryGetRef(enabled, "enabled");
+        object.tryGetRef(zsort_, "zsort");
+        object.tryGetRef(localTransform, "transform");
+        object.tryGetRef(lockToRoot, "lockToRoot");
 
         // Pre-populate our children with the correct types
-        foreach(child; data["children"].byElement) {
-            
-            // Fetch type from json
-            string type;
-            if (auto exc = child["type"].deserializeValue(type)) return exc;
-            
-            // Skips unknown node types
-            // TODO: A logging system that shows a warning for this?
-            if (!inHasNodeType(type)) continue;
+        if (object.isArray("children")) {
+            foreach(child; object["children"].array) {
+                
+                // Fetch type from json
+                if (string type = child.tryGet!string("type", null)) {
+                
+                    // Skips unknown node types
+                    // TODO: A logging system that shows a warning for this?
+                    if (!inHasNodeType(type))
+                        continue;
 
-            // instantiate it
-            Node n = inInstantiateNode(type, this);
-            if (auto exc = child.deserializeValue(n)) return exc;
+                    // NOTE:    inInstantiateNode implicitly handles setting the
+                    //          Parent-child relationship, so we don't need to do
+                    //          anything else besides pass it onto the child's
+                    //          deserializer.
+                    Node n = inInstantiateNode(type, this);
+                    child.deserialize(n);
+                }
+            }
         }
-
-
-        return null;
     }
 
-    void serializePartial(ref InochiSerializer serializer, bool recursive = true) {
-        serializeSelfImpl(serializer, recursive);
+    void serializePartial(ref JSONValue object, bool recursive = true) {
+        this.serializeSelfImpl(object, recursive);
     }
 
     /**

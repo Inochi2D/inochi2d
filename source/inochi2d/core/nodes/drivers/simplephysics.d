@@ -14,7 +14,7 @@ import inochi2d.core.nodes.common;
 import inochi2d.fmt;
 import inochi2d.core.dbg;
 //import inochi2d.core;
-import inochi2d.math;
+import inochi2d.core.math;
 import inochi2d.phys;
 import inochi2d;
 import std.exception;
@@ -204,28 +204,20 @@ class SimplePhysics : Driver {
 private:
     this() { }
 
-    @Name("param")
     uint paramRef = InInvalidUUID;
 
-    @Ignore
     Parameter param_;
 
-    @Ignore
     float offsetGravity = 1.0;
 
-    @Ignore
     float offsetLength = 0;
 
-    @Ignore
     float offsetFrequency = 1;
 
-    @Ignore
     float offsetAngleDamping = 0.5;
 
-    @Ignore
     float offsetLengthDamping = 0.5;
 
-    @Ignore
     vec2 offsetOutputScale = vec2(1, 1);
 
 protected:
@@ -236,56 +228,33 @@ protected:
         Allows serializing self data (with pretty serializer)
     */
     override
-    void serializeSelfImpl(ref InochiSerializer serializer, bool recursive=true) {
-        super.serializeSelfImpl(serializer, recursive);
-        serializer.putKey("param");
-        serializer.serializeValue(paramRef);
-        serializer.putKey("model_type");
-        serializer.serializeValue(modelType_);
-        serializer.putKey("map_mode");
-        serializer.serializeValue(mapMode);
-        serializer.putKey("gravity");
-        serializer.serializeValue(gravity);
-        serializer.putKey("length");
-        serializer.serializeValue(length);
-        serializer.putKey("frequency");
-        serializer.serializeValue(frequency);
-        serializer.putKey("angle_damping");
-        serializer.serializeValue(angleDamping);
-        serializer.putKey("length_damping");
-        serializer.serializeValue(lengthDamping);
-        serializer.putKey("output_scale");
-        outputScale.serialize(serializer);
-        serializer.putKey("local_only");
-        serializer.serializeValue(localOnly);
+    void serializeSelfImpl(ref JSONValue object, bool recursive=true) {
+        super.serializeSelfImpl(object, recursive);
+        object["param"] = paramRef;
+        object["model_type"] = modelType_;
+        object["map_mode"] = mapMode;
+        object["gravity"] = gravity;
+        object["length"] = length;
+        object["frequency"] = frequency;
+        object["angle_damping"] = angleDamping;
+        object["length_damping"] = lengthDamping;
+        object["output_scale"] = outputScale.serialize();
+        object["local_only"] = localOnly;
     }
 
     override
-    SerdeException deserializeFromFghj(Fghj data) {
-        super.deserializeFromFghj(data);
-
-        if (!data["param"].isEmpty)
-            if (auto exc = data["param"].deserializeValue(this.paramRef)) return exc;
-        if (!data["model_type"].isEmpty)
-            if (auto exc = data["model_type"].deserializeValue(this.modelType_)) return exc;
-        if (!data["map_mode"].isEmpty)
-            if (auto exc = data["map_mode"].deserializeValue(this.mapMode)) return exc;
-        if (!data["gravity"].isEmpty)
-            if (auto exc = data["gravity"].deserializeValue(this.gravity)) return exc;
-        if (!data["length"].isEmpty)
-            if (auto exc = data["length"].deserializeValue(this.length)) return exc;
-        if (!data["frequency"].isEmpty)
-            if (auto exc = data["frequency"].deserializeValue(this.frequency)) return exc;
-        if (!data["angle_damping"].isEmpty)
-            if (auto exc = data["angle_damping"].deserializeValue(this.angleDamping)) return exc;
-        if (!data["length_damping"].isEmpty)
-            if (auto exc = data["length_damping"].deserializeValue(this.lengthDamping)) return exc;
-        if (!data["output_scale"].isEmpty)
-            if (auto exc = outputScale.deserialize(data["output_scale"])) return exc;
-        if (!data["local_only"].isEmpty)
-            if (auto exc = data["local_only"].deserializeValue(this.localOnly)) return exc;
-
-        return null;
+    void onDeserialize(ref JSONValue object) {
+        super.onDeserialize(object);
+        object.tryGetRef(paramRef, "param");
+        object.tryGetRef(modelType_, "model_type");
+        object.tryGetRef(mapMode, "map_mode");
+        object.tryGetRef(gravity, "gravity");
+        object.tryGetRef(length, "length");
+        object.tryGetRef(frequency, "frequency");
+        object.tryGetRef(angleDamping, "angle_damping");
+        object.tryGetRef(lengthDamping, "length_damping");
+        object.tryGetRef(outputScale, "output_scale");
+        object.tryGetRef(localOnly, "local_only");
     }
 
 public:
@@ -323,20 +292,14 @@ public:
     float lengthDamping = 0.5;
     vec2 outputScale = vec2(1, 1);
 
-    @Ignore
     vec2 prevAnchor = vec2(0, 0);
-    @Ignore
     mat4 prevTransMat;
-    @Ignore
     bool prevAnchorSet = false;
 
-    @Ignore
     vec2 anchor = vec2(0, 0);
 
-    @Ignore
     vec2 output;
 
-    @Ignore
     PhysicsSystem system;
 
     /**
@@ -486,7 +449,7 @@ public:
             default: assert(0);
         }
 
-        param.pushIOffset(vec2(paramVal.x * oscale.x, paramVal.y * oscale.y), ParamMergeMode.Forced);
+        param.pushIOffset(vec2(paramVal.x * oscale.x, paramVal.y * oscale.y), ParamMergeMode.forced);
         param.update();
     }
 
@@ -563,7 +526,7 @@ public:
     float getDefaultValue(string key) {
         // Skip our list of our parent already handled it
         float def = super.getDefaultValue(key);
-        if (!isNaN(def)) return def;
+        if (def.isFinite) return def;
 
         switch(key) {
             case "gravity":

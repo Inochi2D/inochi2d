@@ -1,12 +1,17 @@
-/*
-    Copyright © 2020, Inochi2D Project
-    Distributed under the 2-Clause BSD License, see LICENSE file.
+/**
+    Inochi2D
+
+    Copyright: 
+        Copyright © 2020-2025, Inochi2D Project
     
+    License:
+        $(LINK2 https://github.com/Inochi2D/inochi2d/blob/main/LICENSE, BSD 2-clause License)
+
     Authors: Luna Nielsen
 */
 module inochi2d;
-//public import inochi2d.inochi2d;
-public import inochi2d.math;
+
+public import inochi2d.core.math;
 public import inochi2d.phys;
 public import inochi2d.fmt;
 public import inochi2d.core;

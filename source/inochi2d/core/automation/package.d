@@ -5,7 +5,9 @@
     Authors: Luna Nielsen
 */
 module inochi2d.core.automation;
-import inochi2d.math.serialization;
+import inochi2d.fmt.serialize;
+import inochi2d.core.math;
+import inochi2d.core;
 import inochi2d;
 
 /**
@@ -74,25 +76,19 @@ struct AutomationBinding {
     /**
         Serializes a parameter
     */
-    void serialize(S)(ref S serializer) {
-        auto state = serializer.structBegin;
-            serializer.putKey("param");
-            serializer.putValue(param.name);
-            serializer.putKey("axis");
-            serializer.putValue(axis);
-            serializer.putKey("range");
-            range.serialize(serializer);
-        serializer.structEnd(state);
+    void onSerialize(ref JSONValue object) {
+        object["param"] = this.paramId;
+        object["axis"] = axis;
+        object["range"] = range.serialize();
     }
 
     /**
         Deserializes a parameter
     */
-    SerdeException deserializeFromFghj(Fghj data) {
-        data["param"].deserializeValue(this.paramId);
-        data["axis"].deserializeValue(this.axis);
-        this.range.deserialize(data["axis"]);
-        return null;
+    void onDeserialize(ref JSONValue object) {
+        object.tryGetRef(paramId, "param");
+        object.tryGetRef(axis, "axis");
+        object.tryGetRef(range, "range");
     }
 
     void reconstruct(Puppet puppet) { }
@@ -110,12 +106,10 @@ struct AutomationBinding {
 
 class Automation {
 private:
-    @Ignore
     Puppet parent;
 
 protected:
 
-    @Ignore
     AutomationBinding[] bindings;
 
     /**
@@ -136,8 +130,8 @@ protected:
     */
     void onUpdate() { }
 
-    void serializeSelf(ref InochiSerializer serializer) { }
-    void deserializeSelf(Fghj data) { }
+    void serializeSelf(ref JSONValue object) { }
+    void deserializeSelf(ref JSONValue object) { }
 
 public:
     /**
@@ -198,25 +192,21 @@ public:
     /**
         Serializes a parameter
     */
-    void serialize(S)(ref S serializer) {
-        auto state = serializer.structBegin;
-            serializer.putKey("type");
-            serializer.serializeValue(typeId);
-            serializer.putKey("name");
-            serializer.serializeValue(name);
-            serializer.putKey("bindings");
-            serializer.serializeValue(bindings);
-        serializer.structEnd(state);
+    void onSerialize(ref JSONValue object) {
+        object["type"] = typeId;
+        object["name"] = name;
+        object["bindings"] = bindings.serialize();
     }
 
     /**
         Deserializes a parameter
     */
-    SerdeException deserializeFromFghj(Fghj data) {
-        data["name"].deserializeValue(this.name);
-        data["bindings"].deserializeValue(this.bindings);
-        this.deserializeSelf(data);
-        return null;
+    void onDeserialize(ref JSONValue object) {
+        object.tryGetRef(typeId, "type");
+        object.tryGetRef(name, "name");
+        object.tryGetRef(bindings, "bindings");
+
+        this.deserializeSelf(object);
     }
 }
 
