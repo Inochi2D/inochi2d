@@ -256,6 +256,18 @@ T tryGet(T)(auto ref JSONValue data, string key, T defaultValue = T.init) {
 /**
     Attempts to get a value from a JSON object by its key and type.
 */
+void tryGetRef(T)(ref JSONValue object, ref T dst, string key) if (__traits(isFloating, T)) {
+    if (!object.hasKey(key, toJsonType!T)) {
+        dst = 0.0;
+        return;
+    }
+    
+    object[key].deserialize(dst);
+}
+
+/**
+    Attempts to get a value from a JSON object by its key and type.
+*/
 void tryGetRef(T)(ref JSONValue object, ref T dst, string key, T defaultValue = T.init) {
     if (!object.hasKey(key, toJsonType!T)) {
         dst = defaultValue;
