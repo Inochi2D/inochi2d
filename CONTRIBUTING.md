@@ -54,10 +54,21 @@ Raise a pull request on our [Github project](https://github.com/Inochi2D/inochi2
 * We will not accept pull requests that aim to support other 2d puppet formats within Inochi2D.
 * Please do not submit code that is stolen from propriatary software.
 
+### On Generative AI
+While we can't prevent people from submitting code written using generative AI, we strongly advise against it. If you do insist on using generative AI please ensure you understand the code you submit
+fully. Any code submitted that you do not yourself understand and can't easily fix will be rejected.
+
+Repeat attempts to submit broken, untested code with signs of being "vibe coded" may result in your
+permissions to submit code to the Inochi2D repositories to be revoked.
+
 [Return to top](#top)
 
 ## Contribute documentation
 To change the code-level documentation, raise a pull request on our [Github project](https://github.com/Inochi2D/inochi2d) and follow the template.
+
+### On Generative AI
+Documentation is important, and so is the correctness of said documentation; no documentation is better than misleading or wrong documentation. Using AI tools to generate documentation often hits snags like this, and as such, if you insist on using AI tools to assist in documentation writing, please confirm
+its accuracy before submission. As with code, repeat attempts to submit documentation which is misleading may result in your pull-request priviledges being revoked.
 
 [Return to top](#top)
 
