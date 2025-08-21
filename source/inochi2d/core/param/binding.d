@@ -168,12 +168,12 @@ abstract class ParameterBinding : ISerializable, IDeserializable {
     /**
         Serialize
     */
-    void onSerialize(ref JSONValue data);
+    abstract void onSerialize(ref JSONValue data);
 
     /**
         Deserialize
     */
-    void onDeserialize(ref JSONValue data);
+    abstract void onDeserialize(ref JSONValue data);
 }
 
 /**
