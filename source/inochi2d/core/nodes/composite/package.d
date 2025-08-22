@@ -33,28 +33,27 @@ package(inochi2d) {
     void inInitComposite() {
         inRegisterNodeType!Composite;
 
-        version(InDoesRender) {
-            cShader = new Shader("composite",
-                import("basic/composite.vert"),
-                import("basic/composite.frag")
-            );
+        cShader = new Shader("composite",
+            import("basic/composite.vert"),
+            import("basic/composite.frag")
+        );
 
-            cShader.use();
-            gopacity = cShader.getUniformLocation("opacity");
-            gMultColor = cShader.getUniformLocation("multColor");
-            gScreenColor = cShader.getUniformLocation("screenColor");
-            cShader.setUniform(cShader.getUniformLocation("albedo"), 0);
-            cShader.setUniform(cShader.getUniformLocation("emissive"), 1);
-            cShader.setUniform(cShader.getUniformLocation("bumpmap"), 2);
+        cShader.use();
+        gopacity = cShader.getUniformLocation("opacity");
+        gMultColor = cShader.getUniformLocation("multColor");
+        gScreenColor = cShader.getUniformLocation("screenColor");
+        cShader.setUniform(cShader.getUniformLocation("albedo"), 0);
+        cShader.setUniform(cShader.getUniformLocation("emissive"), 1);
+        cShader.setUniform(cShader.getUniformLocation("bumpmap"), 2);
 
-            cShaderMask = new Shader("composite (mask)",
-                import("basic/composite.vert"),
-                import("basic/composite-mask.frag")
-            );
-            cShaderMask.use();
-            mthreshold = cShader.getUniformLocation("threshold");
-            mopacity = cShader.getUniformLocation("opacity");
-        }
+        cShaderMask = new Shader("composite (mask)",
+            import("basic/composite.vert"),
+            import("basic/composite-mask.frag")
+        );
+
+        cShaderMask.use();
+        mthreshold = cShader.getUniformLocation("threshold");
+        mopacity = cShader.getUniformLocation("opacity");
     }
 }
 

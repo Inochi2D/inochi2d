@@ -1,33 +1,12 @@
-module inochi2d.fmt.serialize;
+module inochi2d.fmt.serde;
 import inochi2d.core.math;
 import inochi2d.core;
 import inmath.util;
-public import std.json;
-import std.array : appender, Appender;
-import std.functional : forward;
-import std.range.primitives : put;
+import std.traits;
 
-/**
-    Interface for classes that can be serialized to JSON with custom code
-*/
-interface ISerializable {
-
-    /**
-        Custom serializer function
-    */
-    void onSerialize(ref JSONValue object);
-}
-
-/**
-    Interface for classes that can be deserialized to JSON with custom code
-*/
-interface IDeserializable {
-
-    /**
-        Custom deserializer function
-    */
-    void onDeserialize(ref JSONValue object);
-}
+public import std.json : JSONValue, JSONType, parseJSON, toJSON;
+public import inochi2d.fmt.serde.deserializers;
+public import inochi2d.fmt.serde.serializers;
 
 /**
     Loads JSON data from file
@@ -41,7 +20,8 @@ T inLoadJsonData(T)(string file) {
     Loads JSON data from memory
 */
 T inLoadJsonDataFromMemory(T)(string data) {
-    return Puppet.deserialize(parseJson(cast(string)data));
+    JSONValue v = parseJSON(cast(string)data);
+    return Puppet.deserialize(v);
 }
 
 /**
@@ -68,24 +48,11 @@ string inToJsonPretty(ISerializable item) {
 //
 
 /**
-    Whether type T can be serialized.
-*/
-enum isSerializable(T) =
-    is(T : ISerializable) || 
-    is(typeof((ref JSONValue obj) { T a; a.onSerialize(obj); }));
-
-/**
-    Whether type T can be deserialized.
-*/
-enum isDeserializable(T) =
-    is(T : IDeserializable) ||  
-    is(typeof((ref JSONValue obj) { T a; a.onDeserialize(obj); }));
-
-/**
     Converts the given type to an equivalent json type.
 */
 JSONType toJsonType(T)() {
     import std.traits : isAggregateType, isArray, isAssociativeArray;
+    
     static if (is(T : string) || is(T : wstring) || is(T : dstring)) {
         return JSONType.string;
     } else static if (is(T : bool)) {
@@ -117,69 +84,42 @@ JSONType toJsonType(T)() {
 */
 pragma(inline, true)
 T deserialize(T)(ref JSONValue data) {
-    T tmp;
+    static if (is(T == class))
+        T tmp = new T;
+    else
+        T tmp;
+    
     data.deserialize(tmp);
     return tmp;
 }
 
 void deserialize(T)(ref JSONValue data, ref T destination) {
-    import std.traits : 
-        isAggregateType, isArray, 
-        isAssociativeArray, isStaticArray;
-    import std.traits : KeyType, ValueType;
-    import std.range : ElementType;
-    enum JSONType JType = toJsonType!T;
+    import inochi2d.fmt.serde.deserializers;
+    import inochi2d.core.math;
 
     static if (is(T == JSONValue)) {
         destination = data;
-    } else {
-
-        // Early return for mismatched types.
-        if (data.type != JType || data.type == JSONType.null_)
-            return;
-        
-        static if (isDeserializable!T) {
+    } else static if (isDeserializable!T) {
+        static if (is(typeof((ref JSONValue obj) { T a; a.onDeserialize(obj); })))
             destination.onDeserialize(data);
-        } else static if (isAssociativeArray!T && is(KeyType!T == string)) {
-            alias VType = ValueType!T;
-            enum JSONType VJType = toJsonType!VType;
-
-            static if (VJType != JSONType.null_) {
-                foreach(key, value; data.object) {
-                    VType tmp;
-                    value.deserialize(tmp);
-                    destination[key] = tmp;
-                }
-            }
-        } else static if (is(T : string)) {
-            destination = cast(T)data.get!string;
-        } else static if (isStaticArray!T) {
-            alias VType = ElementType!T;
-            enum JSONType VJType = toJsonType!VType;
-
-            static if (VJType != JSONType.null_) {
-                foreach(i, value; data.array) {
-                    VType tmp;
-                    value.deserialize(tmp);
-                    destination[i] = tmp;
-                }
-            }
-        } else static if (isArray!T) {
-            alias VType = ElementType!T;
-            enum JSONType VJType = toJsonType!VType;
-
-            static if (VJType != JSONType.null_) {
-                foreach(value; data.array) {
-                    VType tmp;
-                    value.deserialize(tmp);
-                    destination ~= tmp;
-                }
-            }
-        } else {
-            destination = data.get!T;
-        }
+        else
+            onDeserialize!T(destination, data);
+    } else static if (is(T : string)) {
+        destination = cast(T)data.str;
+    } else static if (is(T == bool)) {
+        destination = data.boolean;  
+    } else static if (__traits(isFloating, T)) {
+        destination = cast(T)data.get!float;
+    } else static if (__traits(isIntegral, T)) {
+        static if (__traits(isUnsigned, T))
+            destination = cast(T)data.get!ulong;
+        else 
+            destination = cast(T)data.get!long;
+    } else {
+        destination = data.get!T;
     }
 }
+
 
 /**
     Serializes a given type
@@ -197,7 +137,7 @@ JSONValue serialize(T)(auto ref T toSerialize) {
     } else static if (JType == JSONType.object) {
         static if (isAggregateType!T) {
 
-            JSONValue obj = JSONValue.emptyObject;
+            JSONValue obj;
             toSerialize.onSerialize(obj);
             return obj;
         } else static if (isAssociativeArray!T && is(KeyType!T == string)) {
@@ -222,12 +162,14 @@ JSONValue serialize(T)(auto ref T toSerialize) {
         static if (EJType != JSONType.null_) {
             JSONValue arr = JSONValue.emptyArray;
             foreach(ref element; toSerialize) {
-                arr ~= serialize(element);
+                arr.array ~= serialize(element);
             }
             return arr;
         } else {
             return JSONValue.emptyArray;
         }
+    } else static if (__traits(isFloating, T)) { 
+        return JSONValue(isFinite(toSerialize) ? toSerialize : 0);  
     } else {
         return JSONValue(toSerialize);
     }
@@ -240,7 +182,7 @@ T tryGet(T)(auto ref JSONValue data, T defaultValue = T.init) {
     if (data.type != toJsonType!T)
         return defaultValue;
     
-    return data.get!T();
+    return data.deserialize!T();
 }
 
 /**
@@ -250,7 +192,7 @@ T tryGet(T)(auto ref JSONValue data, string key, T defaultValue = T.init) {
     if (!data.hasKey(key, toJsonType!T))
         return defaultValue;
     
-    return data[key].get!T();
+    return data[key].deserialize!T();
 }
 
 /**
@@ -262,7 +204,7 @@ void tryGetRef(T)(ref JSONValue object, ref T dst, string key) if (__traits(isFl
         return;
     }
     
-    object[key].deserialize(dst);
+    object[key].deserialize!T(dst);
 }
 
 /**
@@ -274,7 +216,7 @@ void tryGetRef(T)(ref JSONValue object, ref T dst, string key, T defaultValue = 
         return;
     }
     
-    object[key].deserialize(dst);
+    object[key].deserialize!T(dst);
 }
 
 /**
@@ -283,7 +225,7 @@ void tryGetRef(T)(ref JSONValue object, ref T dst, string key, T defaultValue = 
 */
 pragma(inline, true)
 bool hasKey()(auto ref JSONValue data, string key) {
-    if (!data.isObject)
+    if (!data.isJsonObject)
         return false;
 
     return (key in data) !is null;
@@ -305,7 +247,7 @@ bool hasKey()(auto ref JSONValue data, string key, JSONType type) {
     Gets whether the provided JSON data is an object.
 */
 pragma(inline, true)
-bool isObject()(auto ref JSONValue data) {
+bool isJsonObject()(auto ref JSONValue data) {
     return data.type == JSONType.object;
 }
 
@@ -313,18 +255,18 @@ bool isObject()(auto ref JSONValue data) {
     Gets whether the specified object member is an object.
 */
 pragma(inline, true)
-bool isObject()(auto ref JSONValue data, string key) {
+bool isJsonObject()(auto ref JSONValue data, string key) {
     if (!data.hasKey(key))
         return false;
     
-    return data["key"].type == JSONType.object;
+    return data[key].type == JSONType.object;
 }
 
 /**
     Gets whether the provided JSON data is an array.
 */
 pragma(inline, true)
-bool isArray()(auto ref JSONValue data) {
+bool isJsonArray()(auto ref JSONValue data) {
     return data.type == JSONType.array;
 }
 
@@ -332,12 +274,23 @@ bool isArray()(auto ref JSONValue data) {
     Gets whether the specified object member is an array.
 */
 pragma(inline, true)
-bool isArray()(auto ref JSONValue data, string key) {
-    if (!data.isObject)
+bool isJsonArray()(auto ref JSONValue data, string key) {
+    if (!data.isJsonObject)
         return false;
 
     if (key !in data)
         return false;
     
-    return data["key"].type == JSONType.array;
+    return data[key].type == JSONType.array;
+}
+
+/**
+    Gets whether the provided JSON data is a scalar.
+*/
+pragma(inline, true)
+bool isScalar()(auto ref JSONValue data) {
+    return 
+        data.type == JSONType.integer ||
+        data.type == JSONType.uinteger ||
+        data.type == JSONType.float_;
 }

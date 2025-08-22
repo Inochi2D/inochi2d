@@ -8,7 +8,7 @@
 */
 module inochi2d.core.nodes.common;
 import bindbc.opengl;
-import inochi2d.fmt.serialize;
+import inochi2d.fmt.serde;
 import bindbc.opengl.context;
 import std.string;
 
@@ -286,4 +286,21 @@ public:
     MaskingMode mode;
     
     Drawable maskSrc;
+
+
+    /**
+        Serialization function
+    */
+    void onSerialize(ref JSONValue object) {
+        object["uuid"] = maskSrcUUID;
+        object["mode"] = mode;
+    }
+
+    /**
+        Deserialization function
+    */
+    void onDeserialize(ref JSONValue object) {
+        object.tryGetRef(maskSrcUUID, "uuid");
+        object.tryGetRef(mode, "mode");
+    }
 }

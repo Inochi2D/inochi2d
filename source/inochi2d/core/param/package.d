@@ -7,7 +7,7 @@
     - Asahi Lina
 */
 module inochi2d.core.param;
-import inochi2d.fmt.serialize;
+import inochi2d.fmt.serde;
 import inochi2d.core.math;
 import inochi2d.core;
 import std.exception;
@@ -278,7 +278,7 @@ public:
         object.tryGetRef(defaults, "defaults");
         object.tryGetRef(mergeMode, "merge_mode");
 
-        if (object.isObject("bindings")) {
+        if (object.isJsonObject("bindings")) {
             foreach(JSONValue child; object["bindings"].object) {
                 
                 // Skip empty children

@@ -9,7 +9,7 @@
 module inochi2d.core.meshdata;
 import inochi2d.core.math;
 import inochi2d.core.texture;
-import inochi2d.fmt.serialize;
+import inochi2d.fmt.serde;
 import std.sumtype;
 
 /**
@@ -159,9 +159,7 @@ struct MeshData {
     }
 
     void onDeserialize(ref JSONValue object) {
-        import std.stdio : writeln;
-        import std.algorithm.searching : count;
-
+        
         if (object.isNull) 
             return;
 

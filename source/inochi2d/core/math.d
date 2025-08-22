@@ -12,7 +12,7 @@
         Asahi Lina
 */
 module inochi2d.core.math;
-import inochi2d.fmt.serialize;
+import inochi2d.fmt.serde;
 import inochi2d.core.meshdata;
 import inochi2d.core;
 public import inmath.linalg;
@@ -324,28 +324,11 @@ alias vec4us = Vector!(ushort, 4); /// ditto
     Returns:
         The serialized vector
 */
-void onSerialize(T)(ref T value, ref JSONValue dst) if(isVector!T) {
+void onSerialize(T)(ref T value, ref JSONValue dst)
+if(isVector!T) {
     dst = JSONValue.emptyArray;
     static foreach(i; 0..T.dimension) {
-        dst ~= JSONValue(value.vector[i]);
-    }
-}
-
-/**
-    Deserializes a provided vector.
-
-    Params:
-        dst =   The destination vector
-        value = The JSON to deserialize from
-    
-    Returns:
-        The deserialized vector
-*/
-void onDeserialize(T)(ref T dst, ref JSONValue value) if (isVector!T) {
-    foreach(i, element; value.array) {
-
-        if (i >= dst.dimension) break;
-        dst.vector[i] = element.get!(T.vt);
+        dst.array ~= JSONValue(isFinite(value.vector[i]) ? value.vector[i] : 0);
     }
 }
 

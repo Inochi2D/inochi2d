@@ -225,7 +225,7 @@ public:
     /**
         Creates a texture from a ShallowTexture
     */
-    this(ShallowTexture shallow) {
+    this(ref ShallowTexture shallow) {
         this(shallow.data, shallow.width, shallow.height, shallow.channels, shallow.convChannels);
     }
 

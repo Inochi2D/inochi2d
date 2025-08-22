@@ -1,5 +1,5 @@
 module inochi2d.core.animation.animation;
-import inochi2d.fmt.serialize;
+import inochi2d.fmt.serde;
 import inochi2d.core;
 import inmath;
 import inmath.interpolate;
@@ -270,4 +270,22 @@ struct Keyframe {
         Interpolation tension for cubic/inout
     */
     float tension = 0.5;
+
+    /**
+        Serialization function
+    */
+    void onSerialize(ref JSONValue object) {
+        object["frame"] = frame;
+        object["value"] = value;
+        object["tension"] = tension;
+    }
+
+    /**
+        Deserialization function
+    */
+    void onDeserialize(ref JSONValue object) {
+        object.tryGetRef(frame, "frame");
+        object.tryGetRef(value, "value");
+        object.tryGetRef(tension, "tension");
+    }
 }

@@ -9,7 +9,7 @@
 module inochi2d.core.nodes.drawable;
 public import inochi2d.core.nodes.defstack;
 import inochi2d.integration;
-import inochi2d.fmt.serialize;
+import inochi2d.fmt.serde;
 import inochi2d.core.math;
 import bindbc.opengl;
 import std.exception;
@@ -21,7 +21,7 @@ private GLuint drawableVAO;
 
 package(inochi2d) {
     void inInitDrawable() {
-        version(InDoesRender) glGenVertexArrays(1, &drawableVAO);
+        glGenVertexArrays(1, &drawableVAO);
     }
 
 
@@ -57,19 +57,16 @@ abstract class Drawable : Node {
 private:
 
     void updateIndices() {
-        version (InDoesRender) {
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, data.indices.length*ushort.sizeof, data.indices.ptr, GL_STATIC_DRAW);
-        }
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, data.indices.length*ushort.sizeof, data.indices.ptr, GL_STATIC_DRAW);
     }
 
     void updateVertices() {
-        version (InDoesRender) {
 
-            // Important check since the user can change this every frame
-            glBindBuffer(GL_ARRAY_BUFFER, vbo);
-            glBufferData(GL_ARRAY_BUFFER, data.vertices.length*vec2.sizeof, data.vertices.ptr, GL_DYNAMIC_DRAW);
-        }
+        // Important check since the user can change this every frame
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, data.vertices.length*vec2.sizeof, data.vertices.ptr, GL_DYNAMIC_DRAW);
+        
 
         // Zero-fill the deformation delta
         this.deformation.length = vertices.length;
@@ -88,10 +85,8 @@ protected:
         );
         postProcess();
 
-        version (InDoesRender) {
-            glBindBuffer(GL_ARRAY_BUFFER, dbo);
-            glBufferData(GL_ARRAY_BUFFER, deformation.length*vec2.sizeof, deformation.ptr, GL_DYNAMIC_DRAW);
-        }
+        glBindBuffer(GL_ARRAY_BUFFER, dbo);
+        glBufferData(GL_ARRAY_BUFFER, deformation.length*vec2.sizeof, deformation.ptr, GL_DYNAMIC_DRAW);
 
         this.updateBounds();
     }
@@ -123,11 +118,9 @@ protected:
         Binds Index Buffer for rendering
     */
     final void bindIndex() {
-        version (InDoesRender) {
-            // Bind element array and draw our mesh
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-            glDrawElements(GL_TRIANGLES, cast(int)data.indices.length, GL_UNSIGNED_SHORT, null);
-        }
+        // Bind element array and draw our mesh
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+        glDrawElements(GL_TRIANGLES, cast(int)data.indices.length, GL_UNSIGNED_SHORT, null);
     }
 
     /**
@@ -202,13 +195,10 @@ public:
     this(Node parent = null) {
         super(parent);
 
-        version(InDoesRender) {
-
-            // Generate the buffers
-            glGenBuffers(1, &vbo);
-            glGenBuffers(1, &ibo);
-            glGenBuffers(1, &dbo);
-        }
+        // Generate the buffers
+        glGenBuffers(1, &vbo);
+        glGenBuffers(1, &ibo);
+        glGenBuffers(1, &dbo);
 
         // Create deformation stack
         this.deformStack = DeformationStack(this);
@@ -232,13 +222,10 @@ public:
         // Set the deformable points to their initial position
         this.vertices = data.vertices.dup;
 
-        version(InDoesRender) {
-            
-            // Generate the buffers
-            glGenBuffers(1, &vbo);
-            glGenBuffers(1, &ibo);
-            glGenBuffers(1, &dbo);
-        }
+        // Generate the buffers
+        glGenBuffers(1, &vbo);
+        glGenBuffers(1, &ibo);
+        glGenBuffers(1, &dbo);
 
         // Update indices and vertices
         this.updateIndices();
@@ -361,56 +348,55 @@ public:
         inDbgLineWidth(1);
     }
     
-    version (InDoesRender) {
-        /**
-            Draws line of mesh
-        */
-        void drawMeshLines() {
-            if (vertices.length == 0) return;
+    /**
+        Draws line of mesh
+    */
+    void drawMeshLines() {
+        if (vertices.length == 0) return;
 
-            auto trans = getDynamicMatrix();
+        auto trans = getDynamicMatrix();
 
-            ushort[] indices = data.indices;
+        ushort[] indices = data.indices;
 
-            vec3[] points = new vec3[indices.length*2];
-            foreach(i; 0..indices.length/3) {
-                size_t ix = i*3;
-                size_t iy = ix*2;
-                auto indice = indices[ix];
+        vec3[] points = new vec3[indices.length*2];
+        foreach(i; 0..indices.length/3) {
+            size_t ix = i*3;
+            size_t iy = ix*2;
+            auto indice = indices[ix];
 
-                points[iy+0] = vec3(vertices[indice]-data.origin+deformation[indice], 0);
-                points[iy+1] = vec3(vertices[indices[ix+1]]-data.origin+deformation[indices[ix+1]], 0);
+            points[iy+0] = vec3(vertices[indice]-data.origin+deformation[indice], 0);
+            points[iy+1] = vec3(vertices[indices[ix+1]]-data.origin+deformation[indices[ix+1]], 0);
 
-                points[iy+2] = vec3(vertices[indices[ix+1]]-data.origin+deformation[indices[ix+1]], 0);
-                points[iy+3] = vec3(vertices[indices[ix+2]]-data.origin+deformation[indices[ix+2]], 0);
+            points[iy+2] = vec3(vertices[indices[ix+1]]-data.origin+deformation[indices[ix+1]], 0);
+            points[iy+3] = vec3(vertices[indices[ix+2]]-data.origin+deformation[indices[ix+2]], 0);
 
-                points[iy+4] = vec3(vertices[indices[ix+2]]-data.origin+deformation[indices[ix+2]], 0);
-                points[iy+5] = vec3(vertices[indice]-data.origin+deformation[indice], 0);
-            }
-
-            inDbgSetBuffer(points);
-            inDbgDrawLines(vec4(.5, .5, .5, 1), trans);
+            points[iy+4] = vec3(vertices[indices[ix+2]]-data.origin+deformation[indices[ix+2]], 0);
+            points[iy+5] = vec3(vertices[indice]-data.origin+deformation[indice], 0);
         }
 
-        /**
-            Draws the points of the mesh
-        */
-        void drawMeshPoints() {
-            if (vertices.length == 0) return;
-
-            auto trans = getDynamicMatrix();
-            vec3[] points = new vec3[vertices.length];
-            foreach(i, point; vertices) {
-                points[i] = vec3(point-data.origin+deformation[i], 0);
-            }
-
-            inDbgSetBuffer(points);
-            inDbgPointsSize(8);
-            inDbgDrawPoints(vec4(0, 0, 0, 1), trans);
-            inDbgPointsSize(4);
-            inDbgDrawPoints(vec4(1, 1, 1, 1), trans);
-        }
+        inDbgSetBuffer(points);
+        inDbgDrawLines(vec4(.5, .5, .5, 1), trans);
     }
+
+    /**
+        Draws the points of the mesh
+    */
+    void drawMeshPoints() {
+        if (vertices.length == 0) return;
+
+        auto trans = getDynamicMatrix();
+        vec3[] points = new vec3[vertices.length];
+        foreach(i, point; vertices) {
+            points[i] = vec3(point-data.origin+deformation[i], 0);
+        }
+
+        inDbgSetBuffer(points);
+        inDbgPointsSize(8);
+        inDbgDrawPoints(vec4(0, 0, 0, 1), trans);
+        inDbgPointsSize(4);
+        inDbgDrawPoints(vec4(1, 1, 1, 1), trans);
+    }
+    
 
     /**
         Returns the mesh data for this Part.

@@ -162,6 +162,7 @@ public:
         this.name = name;
         this.vertSource = vertex;
         this.fragSource = fragment;
+        this.compile();
     }
 
     /**

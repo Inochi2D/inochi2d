@@ -1,5 +1,5 @@
 module inochi2d.core.puppet;
-import inochi2d.fmt.serialize;
+import inochi2d.fmt.serde;
 import inochi2d.core;
 import inochi2d.core.math;
 import std.algorithm.sorting;
@@ -775,14 +775,16 @@ public:
         object["meta"]["preservePixels"] = meta.preservePixels;
         
         // Meta Rights Info
-        object["meta"]["rights"] = JSONValue.emptyObject;
-        object["meta"]["rights"]["allowedUsers"] = meta.rights.allowedUsers;
-        object["meta"]["rights"]["allowViolence"] = meta.rights.allowViolence;
-        object["meta"]["rights"]["allowSexual"] = meta.rights.allowSexual;
-        object["meta"]["rights"]["allowCommercial"] = meta.rights.allowCommercial;
-        object["meta"]["rights"]["allowRedistribution"] = meta.rights.allowRedistribution;
-        object["meta"]["rights"]["allowModification"] = meta.rights.allowModification;
-        object["meta"]["rights"]["requireAttribution"] = meta.rights.requireAttribution;
+        if (meta.rights) {
+            object["meta"]["rights"] = JSONValue.emptyObject;
+            object["meta"]["rights"]["allowedUsers"] = meta.rights.allowedUsers;
+            object["meta"]["rights"]["allowViolence"] = meta.rights.allowViolence;
+            object["meta"]["rights"]["allowSexual"] = meta.rights.allowSexual;
+            object["meta"]["rights"]["allowCommercial"] = meta.rights.allowCommercial;
+            object["meta"]["rights"]["allowRedistribution"] = meta.rights.allowRedistribution;
+            object["meta"]["rights"]["allowModification"] = meta.rights.allowModification;
+            object["meta"]["rights"]["requireAttribution"] = meta.rights.requireAttribution;
+        }
 
         // Physics Info
         object["physics"] = JSONValue.emptyObject;
@@ -811,7 +813,7 @@ public:
     void onDeserialize(ref JSONValue object) {
         
         // Invalid type.
-        if (!object.isObject)
+        if (!object.isJsonObject)
             return;
 
         object.tryGetRef(meta, "meta");
@@ -821,7 +823,7 @@ public:
         object.tryGetRef(animations, "animations");
 
         // Deserialize automation
-        if (object.isArray("automation")) {
+        if (object.isJsonArray("automation")) {
             foreach(element; object["automation"].array) {
                 if (string type = element.tryGet!string("type", null)) {
                     if (inHasAutomationType(type)) {

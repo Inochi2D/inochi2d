@@ -446,7 +446,8 @@ public:
                 float a = atan2(-localAngle.x, localAngle.y) / PI;
                 paramVal = vec2(relLength, a);
                 break;
-            default: assert(0);
+            default:
+                break;
         }
 
         param.pushIOffset(vec2(paramVal.x * oscale.x, paramVal.y * oscale.y), ParamMergeMode.forced);
@@ -465,7 +466,7 @@ public:
                 system = new SpringPendulum(this);
                 break;
             default:
-                assert(0);
+                break;
         }
     }
 

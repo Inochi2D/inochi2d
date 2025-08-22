@@ -5,8 +5,8 @@
     Authors: Luna Nielsen
 */
 #version 330
-in vec2 texUVs;
 
+in vec2 texUVs;
 out vec4 outColor;
 
 uniform sampler2D fbo;

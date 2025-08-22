@@ -11,7 +11,7 @@ import inochi2d.core.math;
 import inochi2d.core.math;
 import inochi2d.core.dbg;
 import inochi2d.core;
-import inochi2d.fmt.serialize;
+import inochi2d.fmt.serde;
 
 public import inochi2d.core.nodes.part;
 public import inochi2d.core.nodes.drawable;
@@ -127,7 +127,7 @@ protected:
 
             // Skip Temporary nodes
             if (cast(TmpNode)child) continue;
-            object["children"] ~= child.serialize();
+            object["children"].array ~= child.serialize();
         }
     }
 
@@ -770,7 +770,7 @@ public:
         object.tryGetRef(lockToRoot, "lockToRoot");
 
         // Pre-populate our children with the correct types
-        if (object.isArray("children")) {
+        if (object.isJsonArray("children")) {
             foreach(child; object["children"].array) {
                 
                 // Fetch type from json

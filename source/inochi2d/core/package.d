@@ -17,7 +17,7 @@ public import inochi2d.core.param;
 public import inochi2d.core.automation;
 public import inochi2d.core.animation;
 public import inochi2d.integration;
-import inochi2d.fmt.serialize;
+import inochi2d.fmt.serde;
 import inochi2d.core.dbg;
 
 import bindbc.opengl;
@@ -40,6 +40,7 @@ public:
         this.shader = shader;
 
         shader.use();
+        shader.compile();
         shader.setUniform(shader.getUniformLocation("albedo"), 0);
         shader.setUniform(shader.getUniformLocation("emissive"), 1);
         shader.setUniform(shader.getUniformLocation("bumpmap"), 2);
@@ -84,6 +85,8 @@ private {
     GLuint cfBump;
     GLuint cfStencil;
 
+    GLint lastFBO;
+
     vec4 inClearColor;
 
     PostProcessingShader basicSceneShader;
@@ -121,7 +124,6 @@ private {
         // Ambient light
         GLint ambientLightUniform = shaderToUse.getUniform("ambientLight");
         if (ambientLightUniform != -1) shaderToUse.shader.setUniform(ambientLightUniform, inSceneAmbientLight);
-
 
         // Light direction
         GLint lightDirUniform = shaderToUse.getUniform("inLightDir");
@@ -180,7 +182,7 @@ package(inochi2d) {
         inInitPart();
         inInitComposite();
         inInitMeshGroup();
-        version(InDoesRender) inInitDebug();
+        inInitDebug();
 
         inParameterSetFactory((ref JSONValue data) {
             Parameter param = new Parameter;
@@ -193,28 +195,28 @@ package(inochi2d) {
 
         inClearColor = vec4(0, 0, 0, 0);
 
-        version (InDoesRender) {
-            
-            // Shader for scene
-            basicSceneShader = PostProcessingShader(new Shader("scene", import("scene.vert"), import("scene.frag")));
-            glGenVertexArrays(1, &sceneVAO);
-            glGenBuffers(1, &sceneVBO);
+        // Shader for scene
+        basicSceneShader = PostProcessingShader(new Shader("scene", import("scene.vert"), import("scene.frag")));
+        glGenVertexArrays(1, &sceneVAO);
+        glGenBuffers(1, &sceneVBO);
 
-            // Generate the framebuffer we'll be using to render the model and composites
-            glGenFramebuffers(1, &fBuffer);
-            glGenFramebuffers(1, &cfBuffer);
-            
-            // Generate the color and stencil-depth textures needed
-            // Note: we're not using the depth buffer but OpenGL 3.4 does not support stencil-only buffers
-            glGenTextures(1, &fAlbedo);
-            glGenTextures(1, &fEmissive);
-            glGenTextures(1, &fBump);
-            glGenTextures(1, &fStencil);
+        // Generate the framebuffer we'll be using to render the model and composites
+        glGenFramebuffers(1, &fBuffer);
+        glGenFramebuffers(1, &cfBuffer);
+        
+        // Generate the color and stencil-depth textures needed
+        // Note: we're not using the depth buffer but OpenGL 3.4 does not support stencil-only buffers
+        glGenTextures(1, &fAlbedo);
+        glGenTextures(1, &fEmissive);
+        glGenTextures(1, &fBump);
+        glGenTextures(1, &fStencil);
 
-            glGenTextures(1, &cfAlbedo);
-            glGenTextures(1, &cfEmissive);
-            glGenTextures(1, &cfBump);
-            glGenTextures(1, &cfStencil);
+        glGenTextures(1, &cfAlbedo);
+        glGenTextures(1, &cfEmissive);
+        glGenTextures(1, &cfBump);
+        glGenTextures(1, &cfStencil);
+
+        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &lastFBO);
 
             // Attach textures to framebuffer
             glBindFramebuffer(GL_FRAMEBUFFER, fBuffer);
@@ -229,9 +231,8 @@ package(inochi2d) {
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, cfBump, 0);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, cfStencil, 0);
 
-            // go back to default fb
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        }
+        // go back to default fb
+        glBindFramebuffer(GL_FRAMEBUFFER, lastFBO);
     }
 }
 
@@ -251,6 +252,8 @@ bool inDepthBufferMasks = true;
     Begins rendering to the framebuffer
 */
 void inBeginScene() {
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &lastFBO);
+
     glBindVertexArray(sceneVAO);
     glEnable(GL_BLEND);
     glEnablei(GL_BLEND, 0);
@@ -325,7 +328,7 @@ void inEndComposite() {
     Ends rendering to the framebuffer
 */
 void inEndScene() {
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, lastFBO);
 
     glDisablei(GL_BLEND, 0);
     glDisablei(GL_BLEND, 1);
@@ -409,7 +412,7 @@ void inPostProcessScene() {
         );
     }
     
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, lastFBO);
 }
 
 /**
@@ -511,26 +514,26 @@ void inSetViewport(int width, int height) nothrow {
     inViewportWidth = width;
     inViewportHeight = height;
 
-    version(InDoesRender) {
-        // Render Framebuffer
-        glBindTexture(GL_TEXTURE_2D, fAlbedo);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        
-        glBindTexture(GL_TEXTURE_2D, fEmissive);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_FLOAT, null);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        
-        glBindTexture(GL_TEXTURE_2D, fBump);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        
-        glBindTexture(GL_TEXTURE_2D, fStencil);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, null);
+    // Render Framebuffer
+    glBindTexture(GL_TEXTURE_2D, fAlbedo);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    glBindTexture(GL_TEXTURE_2D, fEmissive);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_FLOAT, null);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    glBindTexture(GL_TEXTURE_2D, fBump);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    glBindTexture(GL_TEXTURE_2D, fStencil);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, null);
 
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &lastFBO);
         glBindFramebuffer(GL_FRAMEBUFFER, fBuffer);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fAlbedo, 0);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, fEmissive, 0);
@@ -562,11 +565,10 @@ void inSetViewport(int width, int height) nothrow {
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, cfEmissive, 0);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, cfBump, 0);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, cfStencil, 0);
-        
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-        glViewport(0, 0, width, height);
-    }
+    glBindFramebuffer(GL_FRAMEBUFFER, lastFBO);
+    glViewport(0, 0, width, height);
+    
 }
 
 /**

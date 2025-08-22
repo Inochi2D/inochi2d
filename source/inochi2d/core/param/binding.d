@@ -7,7 +7,7 @@
     - Asahi Lina
 */
 module inochi2d.core.param.binding;
-import inochi2d.fmt.serialize;
+import inochi2d.fmt.serde;
 import inochi2d.core.math;
 import inochi2d.core;
 import std.exception;

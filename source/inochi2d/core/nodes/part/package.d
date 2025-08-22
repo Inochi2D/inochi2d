@@ -70,59 +70,57 @@ package(inochi2d) {
 
     void inInitPart() {
         inRegisterNodeType!Part;
+        partShader = new Shader("part", import("basic/basic.vert"), import("basic/basic.frag"));
+        partShaderStage1 = new Shader("part (stage 1)", import("basic/basic.vert"), import("basic/basic-stage1.frag"));
+        partShaderStage2 = new Shader("part (stage 2)", import("basic/basic.vert"), import("basic/basic-stage2.frag"));
+        partMaskShader = new Shader("part (mask)", import("basic/basic.vert"), import("basic/basic-mask.frag"));
 
-        version(InDoesRender) {
-            partShader = new Shader("part", import("basic/basic.vert"), import("basic/basic.frag"));
-            partShaderStage1 = new Shader("part (stage 1)", import("basic/basic.vert"), import("basic/basic-stage1.frag"));
-            partShaderStage2 = new Shader("part (stage 2)", import("basic/basic.vert"), import("basic/basic-stage2.frag"));
-            partMaskShader = new Shader("part (mask)", import("basic/basic.vert"), import("basic/basic-mask.frag"));
+        incDrawableBindVAO();
 
-            incDrawableBindVAO();
+        partShader.use();
+        partShader.setUniform(partShader.getUniformLocation("albedo"), 0);
+        partShader.setUniform(partShader.getUniformLocation("emissive"), 1);
+        partShader.setUniform(partShader.getUniformLocation("bumpmap"), 2);
+        mvpModel = partShader.getUniformLocation("mvpModel");
+        mvpViewProjection = partShader.getUniformLocation("mvpViewProjection");
+        offset = partShader.getUniformLocation("offset");
+        gopacity = partShader.getUniformLocation("opacity");
+        gMultColor = partShader.getUniformLocation("multColor");
+        gScreenColor = partShader.getUniformLocation("screenColor");
+        gEmissionStrength = partShader.getUniformLocation("emissionStrength");
+        
+        partShaderStage1.use();
+        partShaderStage1.setUniform(partShader.getUniformLocation("albedo"), 0);
+        gs1MvpModel = partShaderStage1.getUniformLocation("mvpModel");
+        gs1MvpViewProjection = partShaderStage1.getUniformLocation("mvpViewProjection");
+        gs1offset = partShaderStage1.getUniformLocation("offset");
+        gs1opacity = partShaderStage1.getUniformLocation("opacity");
+        gs1MultColor = partShaderStage1.getUniformLocation("multColor");
+        gs1ScreenColor = partShaderStage1.getUniformLocation("screenColor");
 
-            partShader.use();
-            partShader.setUniform(partShader.getUniformLocation("albedo"), 0);
-            partShader.setUniform(partShader.getUniformLocation("emissive"), 1);
-            partShader.setUniform(partShader.getUniformLocation("bumpmap"), 2);
-            mvpModel = partShader.getUniformLocation("mvpModel");
-            mvpViewProjection = partShader.getUniformLocation("mvpViewProjection");
-            offset = partShader.getUniformLocation("offset");
-            gopacity = partShader.getUniformLocation("opacity");
-            gMultColor = partShader.getUniformLocation("multColor");
-            gScreenColor = partShader.getUniformLocation("screenColor");
-            gEmissionStrength = partShader.getUniformLocation("emissionStrength");
-            
-            partShaderStage1.use();
-            partShaderStage1.setUniform(partShader.getUniformLocation("albedo"), 0);
-            gs1MvpModel = partShaderStage1.getUniformLocation("mvpModel");
-            gs1MvpViewProjection = partShaderStage1.getUniformLocation("mvpViewProjection");
-            gs1offset = partShaderStage1.getUniformLocation("offset");
-            gs1opacity = partShaderStage1.getUniformLocation("opacity");
-            gs1MultColor = partShaderStage1.getUniformLocation("multColor");
-            gs1ScreenColor = partShaderStage1.getUniformLocation("screenColor");
+        partShaderStage2.use();
+        partShaderStage2.setUniform(partShaderStage2.getUniformLocation("emissive"), 1);
+        partShaderStage2.setUniform(partShaderStage2.getUniformLocation("bumpmap"), 2);
+        gs2MvpModel = partShaderStage1.getUniformLocation("mvpModel");
+        gs2MvpViewProjection = partShaderStage1.getUniformLocation("mvpViewProjection");
+        gs2offset = partShaderStage2.getUniformLocation("offset");
+        gs2opacity = partShaderStage2.getUniformLocation("opacity");
+        gs2MultColor = partShaderStage2.getUniformLocation("multColor");
+        gs2ScreenColor = partShaderStage2.getUniformLocation("screenColor");
+        gs2EmissionStrength = partShaderStage2.getUniformLocation("emissionStrength");
 
-            partShaderStage2.use();
-            partShaderStage2.setUniform(partShaderStage2.getUniformLocation("emissive"), 1);
-            partShaderStage2.setUniform(partShaderStage2.getUniformLocation("bumpmap"), 2);
-            gs2MvpModel = partShaderStage1.getUniformLocation("mvpModel");
-            gs2MvpViewProjection = partShaderStage1.getUniformLocation("mvpViewProjection");
-            gs2offset = partShaderStage2.getUniformLocation("offset");
-            gs2opacity = partShaderStage2.getUniformLocation("opacity");
-            gs2MultColor = partShaderStage2.getUniformLocation("multColor");
-            gs2ScreenColor = partShaderStage2.getUniformLocation("screenColor");
-            gs2EmissionStrength = partShaderStage2.getUniformLocation("emissionStrength");
-
-            partMaskShader.use();
-            partMaskShader.setUniform(partMaskShader.getUniformLocation("albedo"), 0);
-            partMaskShader.setUniform(partMaskShader.getUniformLocation("emissive"), 1);
-            partMaskShader.setUniform(partMaskShader.getUniformLocation("bumpmap"), 2);
-            mMvpModel = partMaskShader.getUniformLocation("mvpModel");
-            mMvpViewProjection = partMaskShader.getUniformLocation("mvpViewProjection");
-            mthreshold = partMaskShader.getUniformLocation("threshold");
-            
-            glGenBuffers(1, &sVertexBuffer);
-            glGenBuffers(1, &sUVBuffer);
-            glGenBuffers(1, &sElementBuffer);
-        }
+        partMaskShader.use();
+        partMaskShader.setUniform(partMaskShader.getUniformLocation("albedo"), 0);
+        partMaskShader.setUniform(partMaskShader.getUniformLocation("emissive"), 1);
+        partMaskShader.setUniform(partMaskShader.getUniformLocation("bumpmap"), 2);
+        mMvpModel = partMaskShader.getUniformLocation("mvpModel");
+        mMvpViewProjection = partMaskShader.getUniformLocation("mvpViewProjection");
+        mthreshold = partMaskShader.getUniformLocation("threshold");
+        
+        glGenBuffers(1, &sVertexBuffer);
+        glGenBuffers(1, &sUVBuffer);
+        glGenBuffers(1, &sElementBuffer);
+        
     }
 }
 
@@ -195,10 +193,8 @@ private:
     GLuint uvbo;
 
     void updateUVs() {
-        version(InDoesRender) {
-            glBindBuffer(GL_ARRAY_BUFFER, uvbo);
-            glBufferData(GL_ARRAY_BUFFER, data.uvs.length*vec2.sizeof, data.uvs.ptr, GL_STATIC_DRAW);
-        }
+        glBindBuffer(GL_ARRAY_BUFFER, uvbo);
+        glBufferData(GL_ARRAY_BUFFER, data.uvs.length*vec2.sizeof, data.uvs.ptr, GL_STATIC_DRAW);
     }
 
     void setupShaderStage(int stage, mat4 matrix) {
@@ -411,9 +407,9 @@ protected:
         foreach(ref texture; textures) {
             if (texture) {
                 ptrdiff_t index = puppet.getTextureSlotIndexFor(texture);
-                object["textures"] ~= JSONValue(index >= 0 ? index : NO_TEXTURE);
+                object["textures"].array ~= JSONValue(index >= 0 ? index : NO_TEXTURE);
             } else {
-                object["textures"] ~= JSONValue(NO_TEXTURE);
+                object["textures"].array ~= JSONValue(NO_TEXTURE);
             }
         }
 
@@ -429,7 +425,7 @@ protected:
     override
     void onDeserialize(ref JSONValue object) {
         super.onDeserialize(object);
-        if (object.isArray("textures")) {
+        if (object.isJsonArray("textures")) {
             size_t i = 0;
             foreach(ref JSONValue element; object["textures"].array) {
 
@@ -451,7 +447,7 @@ protected:
         object.tryGetRef(blendingMode, "blend_mode");
         object.tryGetRef(masks, "masks");
 
-        if (object.isArray("masked_by")) {
+        if (object.isJsonArray("masked_by")) {
 
             // Go to every masked part
             MaskingMode mode = object.tryGet!MaskingMode("mask_mode");
@@ -569,7 +565,7 @@ public:
     this(Node parent = null) {
         super(parent);
         
-        version(InDoesRender) glGenBuffers(1, &uvbo);
+        glGenBuffers(1, &uvbo);
     }
 
     /**
@@ -582,7 +578,7 @@ public:
             this.textures[i] = textures[i];
         }
 
-        version(InDoesRender) glGenBuffers(1, &uvbo);
+        glGenBuffers(1, &uvbo);
 
         this.updateUVs();
     }
@@ -751,32 +747,29 @@ public:
 
     override
     void drawOne() {
-        version (InDoesRender) {
-            if (!enabled) return;
-            if (!data.isReady) return; // Yeah, don't even try
-            
-            size_t cMasks = maskCount;
+        if (!enabled) return;
+        if (!data.isReady) return; // Yeah, don't even try
+        
+        size_t cMasks = maskCount;
 
-            if (masks.length > 0) {
-                import std.stdio : writeln;
-                inBeginMask(cMasks > 0);
+        if (masks.length > 0) {
+            inBeginMask(cMasks > 0);
 
-                foreach(ref mask; masks) {
-                    mask.maskSrc.renderMask(mask.mode == MaskingMode.DodgeMask);
-                }
-
-                inBeginMaskContent();
-
-                // We are the content
-                this.drawSelf();
-
-                inEndMask();
-                return;
+            foreach(ref mask; masks) {
+                mask.maskSrc.renderMask(mask.mode == MaskingMode.DodgeMask);
             }
 
-            // No masks, draw normally
+            inBeginMaskContent();
+
+            // We are the content
             this.drawSelf();
+
+            inEndMask();
+            return;
         }
+
+        // No masks, draw normally
+        this.drawSelf();
         super.drawOne();
     }
 

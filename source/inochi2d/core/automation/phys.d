@@ -22,7 +22,7 @@ struct VerletNode {
     /**
         Serializes a parameter
     */
-    void serialize(ref JSONValue object) {
+    void onSerialize(ref JSONValue object) {
         object["distance"] = distance;
         object["position"] = position.serialize();
         object["oldPosition"] = oldPosition.serialize();
@@ -31,7 +31,7 @@ struct VerletNode {
     /**
         Deserializes a parameter
     */
-    void deserialize(ref JSONValue object) {
+    void onDeserialize(ref JSONValue object) {
         object.tryGetRef(distance, "distance");
         object.tryGetRef(position, "position");
         object.tryGetRef(oldPosition, "old_position");
