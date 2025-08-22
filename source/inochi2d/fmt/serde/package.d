@@ -100,12 +100,18 @@ void deserialize(T)(ref JSONValue data, ref T destination) {
     static if (is(T == JSONValue)) {
         destination = data;
     } else static if (isDeserializable!T) {
+        static if (is(T == class) && is(typeof((ref T a) { a = new T; }))) {
+            if (!destination)
+                destination = new T;
+        }
+
         static if (is(typeof((ref JSONValue obj) { T a; a.onDeserialize(obj); })))
             destination.onDeserialize(data);
         else
             onDeserialize!T(destination, data);
     } else static if (is(T : string)) {
-        destination = cast(T)data.str;
+        if (!data.isNull)
+            destination = cast(T)data.str;
     } else static if (is(T == bool)) {
         destination = data.boolean;  
     } else static if (__traits(isFloating, T)) {
@@ -179,6 +185,14 @@ JSONValue serialize(T)(auto ref T toSerialize) {
     Attempts to get a value from a JSON object by its key and type.
 */
 T tryGet(T)(auto ref JSONValue data, T defaultValue = T.init) {
+    static if (__traits(isFloating, T))
+        defaultValue = 0.0;
+    
+    static if (__traits(isScalar, T)) {
+        if (data.isScalar)
+            return cast(T)data.get!float();
+        return defaultValue;
+    }
     if (data.type != toJsonType!T)
         return defaultValue;
     
@@ -189,7 +203,7 @@ T tryGet(T)(auto ref JSONValue data, T defaultValue = T.init) {
     Attempts to get a value from a JSON object by its key and type.
 */
 T tryGet(T)(auto ref JSONValue data, string key, T defaultValue = T.init) {
-    if (!data.hasKey(key, toJsonType!T))
+    if (!data.hasKey(key))
         return defaultValue;
     
     return data[key].deserialize!T();
@@ -211,7 +225,7 @@ void tryGetRef(T)(ref JSONValue object, ref T dst, string key) if (__traits(isFl
     Attempts to get a value from a JSON object by its key and type.
 */
 void tryGetRef(T)(ref JSONValue object, ref T dst, string key, T defaultValue = T.init) {
-    if (!object.hasKey(key, toJsonType!T)) {
+    if (!object.hasKey(key)) {
         dst = defaultValue;
         return;
     }

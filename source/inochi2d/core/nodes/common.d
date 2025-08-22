@@ -212,6 +212,30 @@ enum BlendMode {
     SliceFromLower
 }
 
+BlendMode toBlendMode(string name) {
+    switch(name) with(BlendMode) {
+        default: return Normal;
+        case "Multiply": return Multiply;
+        case "Screen": return Screen;
+        case "Overlay": return Overlay;
+        case "Darken": return Darken;
+        case "Lighten": return Lighten;
+        case "ColorDodge": return ColorDodge;
+        case "LinearDodge": return LinearDodge;
+        case "AddGlow": return AddGlow;
+        case "ColorBurn": return ColorBurn;
+        case "HardLight": return HardLight;
+        case "SoftLight": return SoftLight;
+        case "Difference": return Difference;
+        case "Exclusion": return Exclusion;
+        case "Subtract": return Subtract;
+        case "Inverse": return Inverse;
+        case "DestinationIn": return DestinationIn;
+        case "ClipToLower": return ClipToLower;
+        case "SliceFromLower": return SliceFromLower;
+    }
+}
+
 bool inIsAdvancedBlendMode(BlendMode mode) {
     if (!inAdvancedBlending) return false;
     switch(mode) {
@@ -275,6 +299,14 @@ enum MaskingMode {
     DodgeMask
 }
 
+MaskingMode toMaskingMode(string name) {
+    switch(name) with(MaskingMode) {
+        default: return Mask;
+        case "Mask": return Mask;
+        case "DodgeMask": return DodgeMask;
+    }
+}
+
 /**
     A binding between a mask and a mode
 */
@@ -301,6 +333,6 @@ public:
     */
     void onDeserialize(ref JSONValue object) {
         object.tryGetRef(maskSrcUUID, "uuid");
-        object.tryGetRef(mode, "mode");
+        mode = object.tryGet!string("mode").toMaskingMode;
     }
 }

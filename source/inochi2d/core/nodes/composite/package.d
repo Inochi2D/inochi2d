@@ -190,9 +190,9 @@ protected:
         object.tryGetRef(threshold, "mask_threshold");
         object.tryGetRef(tint, "tint");
         object.tryGetRef(screenTint, "screenTint");
-        object.tryGetRef(blendingMode, "blend_mode");
         object.tryGetRef(masks, "masks");
         object.tryGetRef(propagateMeshGroup, "propagate_meshgroup", false);
+        blendingMode = object.tryGet!string("blend_mode", "Normal").toBlendMode();
         
         super.onDeserialize(object);
     }

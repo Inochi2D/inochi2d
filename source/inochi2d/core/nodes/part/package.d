@@ -426,15 +426,15 @@ protected:
     void onDeserialize(ref JSONValue object) {
         super.onDeserialize(object);
         if (object.isJsonArray("textures")) {
-            size_t i = 0;
-            foreach(ref JSONValue element; object["textures"].array) {
+            import std.stdio : writeln;
+            foreach(i, ref JSONValue element; object["textures"].array) {
 
                 // uint max = no texture set
                 uint textureId = element.tryGet!uint(NO_TEXTURE);
                 if (textureId == NO_TEXTURE) continue;
 
                 textureIds ~= textureId;
-                this.textures[i++] = inGetTextureFromId(textureId);
+                this.textures[i] = inGetTextureFromId(textureId);
             }
         }
         
@@ -444,13 +444,13 @@ protected:
         object.tryGetRef(screenTint, "screenTint");
         object.tryGetRef(tint, "tint");
         object.tryGetRef(emissionStrength, "emissionStrength");
-        object.tryGetRef(blendingMode, "blend_mode");
         object.tryGetRef(masks, "masks");
 
+        blendingMode = object.tryGet!string("blend_mode", "Normal").toBlendMode();
         if (object.isJsonArray("masked_by")) {
 
             // Go to every masked part
-            MaskingMode mode = object.tryGet!MaskingMode("mask_mode");
+            MaskingMode mode = object.tryGet!string("mask_mode").toMaskingMode;
             foreach(imask; object["masked_by"].array) {
                 uint uuid = imask.tryGet!uint();
                 this.masks ~= MaskBinding(uuid, mode, null);
