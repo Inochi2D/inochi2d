@@ -9,7 +9,6 @@
 module inochi2d.fmt;
 import inochi2d.fmt.binfmt;
 public import inochi2d.fmt.serde;
-import inochi2d.integration;
 import inochi2d.core;
 import std.bitmanip : nativeToBigEndian;
 import std.exception;

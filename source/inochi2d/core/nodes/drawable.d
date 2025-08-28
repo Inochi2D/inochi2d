@@ -8,7 +8,6 @@
 */
 module inochi2d.core.nodes.drawable;
 public import inochi2d.core.nodes.defstack;
-import inochi2d.integration;
 import inochi2d.fmt.serde;
 import inochi2d.core.math;
 import bindbc.opengl;

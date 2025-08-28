@@ -7,7 +7,6 @@
     Authors: Luna Nielsen
 */
 module inochi2d.core.nodes.part;
-import inochi2d.integration;
 import inochi2d.fmt;
 import inochi2d.core.nodes.drawable;
 import inochi2d.core;

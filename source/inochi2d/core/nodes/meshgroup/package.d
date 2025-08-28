@@ -8,7 +8,6 @@
 */
 module inochi2d.core.nodes.meshgroup;
 import inochi2d.core.nodes.drawable;
-import inochi2d.integration;
 import inochi2d.fmt.serde;
 import inochi2d.core.math;
 import std.exception;

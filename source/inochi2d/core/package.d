@@ -16,7 +16,6 @@ public import inochi2d.core.meshdata;
 public import inochi2d.core.param;
 public import inochi2d.core.automation;
 public import inochi2d.core.animation;
-public import inochi2d.integration;
 import inochi2d.fmt.serde;
 import inochi2d.core.dbg;
 
