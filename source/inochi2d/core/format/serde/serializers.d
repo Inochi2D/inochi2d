@@ -1,4 +1,4 @@
-module inochi2d.fmt.serde.serializers;
+module inochi2d.core.format.serde.serializers;
 import inochi2d.core.math;
 import inochi2d.core;
 import inmath.util;

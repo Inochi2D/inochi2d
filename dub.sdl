@@ -6,15 +6,12 @@ license "BSD 2-clause"
 
 // Internally needed libraries.
 dependency "imagefmt" version="~>2.1.0"
-dependency "i2d-opengl" version="~>1.0.0"
 dependency "inmath" version=">=1.3.0"
 
 // Numem
 dependency "nulib" version=">=0.2.7"
 dependency "numem" version=">=1.3.2"
 dependency "numem:hookset-libc" version="*"
-
-versions "GL_32" "GL_ARB_gl_spirv" "GL_KHR_blend_equation_advanced" "GL_ARB_texture_filter_anisotropic"
 stringImportPaths "shaders/"
 
 // Base configuration.

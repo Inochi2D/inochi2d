@@ -1,21 +1,22 @@
-/*
-    Inochi2D Puppet file format
+/**
+    Inochi2D INP Binary Format
 
-    Copyright © 2020, Inochi2D Project
+    Copyright © 2020-2025, Inochi2D Project
     Distributed under the 2-Clause BSD License, see LICENSE file.
     
     Authors: Luna Nielsen
 */
-module inochi2d.fmt;
-import inochi2d.fmt.binfmt;
-public import inochi2d.fmt.serde;
+module inochi2d.core.format.inp;
+import inochi2d.core.format.inp.binfmt;
+import inochi2d.core.format.inp.io;
 import inochi2d.core;
 import std.bitmanip : nativeToBigEndian;
 import std.exception;
 import std.path;
 import std.format;
 import imagefmt;
-import inochi2d.fmt.io;
+
+public import inochi2d.core.format.serde;
 
 /**
     Loads a puppet from a file
@@ -245,7 +246,7 @@ ubyte[] inWriteINPPuppetMemory(Puppet p) {
     app ~= nativeToBigEndian(cast(uint)p.textureSlots.length)[0..4];
     foreach(texture; p.textureSlots) {
         int e;
-        ubyte[] tex = write_image_mem(IF_TGA, texture.width, texture.height, texture.getTextureData(), texture.channels, e);
+        ubyte[] tex = write_image_mem(IF_TGA, texture.width, texture.height, cast(ubyte[])texture.pixels, texture.channels, e);
         app ~= nativeToBigEndian(cast(uint)tex.length)[0..4];
         app ~= (cast(ubyte)IN_TEX_TGA);
         app ~= (tex);

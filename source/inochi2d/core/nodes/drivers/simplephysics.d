@@ -11,9 +11,8 @@ private {
 import inochi2d.core.nodes.drivers;
 import inochi2d.core.nodes.common;
 //import inochi2d.core.nodes;
-import inochi2d.fmt;
-import inochi2d.core.dbg;
 //import inochi2d.core;
+import inochi2d.core.format;
 import inochi2d.core.math;
 import inochi2d.phys;
 import inochi2d;
@@ -91,18 +90,6 @@ public:
     }
 
     override
-    void drawDebug(mat4 trans = mat4.identity) {
-        vec3[] points = [
-            vec3(driver.anchor.x, driver.anchor.y, 0),
-            vec3(bob.x, bob.y, 0),
-        ];
-
-        inDbgSetBuffer(points);
-        inDbgLineWidth(3);
-        inDbgDrawLines(vec4(1, 0, 1, 1), trans);
-    }
-
-    override
     void updateAnchor() {
         bob = driver.anchor + vec2(0, driver.getLength());
     }
@@ -177,19 +164,7 @@ public:
 
         driver.output = bob;
     }
-
-    override
-    void drawDebug(mat4 trans = mat4.identity) {
-        vec3[] points = [
-            vec3(driver.anchor.x, driver.anchor.y, 0),
-            vec3(bob.x, bob.y, 0),
-        ];
-
-        inDbgSetBuffer(points);
-        inDbgLineWidth(3);
-        inDbgDrawLines(vec4(1, 0, 1, 1), trans);
-    }
-
+    
     override
     void updateAnchor() {
         bob = driver.anchor + vec2(0, driver.getLength());

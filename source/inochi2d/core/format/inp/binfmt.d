@@ -1,4 +1,4 @@
-module inochi2d.fmt.binfmt;
+module inochi2d.core.format.inp.binfmt;
 import std.bitmanip;
 
 /**

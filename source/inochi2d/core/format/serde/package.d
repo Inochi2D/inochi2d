@@ -1,12 +1,12 @@
-module inochi2d.fmt.serde;
+module inochi2d.core.format.serde;
 import inochi2d.core.math;
 import inochi2d.core;
 import inmath.util;
 import std.traits;
 
 public import std.json : JSONValue, JSONType, parseJSON, toJSON;
-public import inochi2d.fmt.serde.deserializers;
-public import inochi2d.fmt.serde.serializers;
+public import inochi2d.core.format.serde.deserializers;
+public import inochi2d.core.format.serde.serializers;
 
 /**
     Loads JSON data from file
@@ -94,7 +94,7 @@ T deserialize(T)(ref JSONValue data) {
 }
 
 void deserialize(T)(ref JSONValue data, ref T destination) {
-    import inochi2d.fmt.serde.deserializers;
+    import inochi2d.core.format.serde.deserializers;
     import inochi2d.core.math;
 
     static if (is(T == JSONValue)) {

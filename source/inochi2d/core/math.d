@@ -12,7 +12,6 @@
         Asahi Lina
 */
 module inochi2d.core.math;
-import inochi2d.fmt.serde;
 import inochi2d.core.meshdata;
 import inochi2d.core;
 public import inmath.linalg;
@@ -23,12 +22,36 @@ public import inmath.interpolate;
 public import std.math : isFinite;
 import std.algorithm;
 import std.json;
+import numem;
+
+/**
+    A camera
+*/
+abstract
+class Camera : NuRefCounted {
+
+    /**
+        Size of the camera's viewport.
+    */
+    vec2 size = vec2(1, 1);
+    
+    /**
+        The view-projection matrix for the camera.
+    */
+    abstract @property mat4 matrix();
+
+    /**
+        Updates the state of the camera.
+    */
+    abstract void update();
+}
 
 /**
     An orthographic camera
 */
-class Camera {
+class Camera2D : Camera {
 private:
+@nogc:
     mat4 projection;
 
 public:
@@ -44,50 +67,34 @@ public:
     float rotation = 0f;
 
     /**
-        Size of the camera
+        Scale to apply to the camera's viewport.
     */
     vec2 scale = vec2(1, 1);
 
     /**
-        Gets the real size of the camera
-    */
-    @property vec2 realSize() {
-        int width, height;
-        inGetViewport(width, height);
-
-        return vec2(cast(float)width/scale.x, cast(float)height/scale.y);
-    }
-
-    deprecated("Use Camera.realSize instead.")
-    alias getRealSize = realSize;
-
-    /**
         Gets the center offset of the camera
     */
-    @property vec2 centerOffset() {
-        vec2 realSize = realSize();
-        return realSize/2;
-    }
-
-    deprecated("Use Camera.centerOffset instead.")
-    alias getCenterOffset = centerOffset;
+    @property vec2 centerOffset() => size/2.0;
 
     /**
         Matrix for this camera
     */
-    @property mat4 matrix() {
+    override
+    @property mat4 matrix() => projection;
+
+    /**
+        Updates the state of the camera.
+    */
+    override
+    void update() {
         if(!position.isFinite) position = vec2(0);
         if(!scale.isFinite) scale = vec2(1);
         if(!rotation.isFinite) rotation = 0;
-
-        vec2 realSize_ = this.realSize;
-        if(!realSize_.isFinite) return mat4.identity;
         
-        vec2 origin = vec2(realSize_.x/2, realSize_.y/2);
+        vec2 origin = vec2(size.x/2, size.y/2);
         vec3 pos = vec3(position.x, position.y, -(ushort.max/2));
-
-        return 
-            mat4.orthographic(0f, realSize.x, realSize.y, 0, 0, ushort.max) * 
+        projection =
+            mat4.orthographic(0f, size.x, size.y, 0, 0, ushort.max) * 
             mat4.translation(origin.x, origin.y, 0) *
             mat4.zRotation(rotation) *
             mat4.translation(pos);
@@ -123,7 +130,7 @@ public:
     /**
         Calculates offset to other vector.
     */
-    Transform calcOffset(Transform other) {
+    Transform calcOffset(Transform other) @nogc {
         Transform tnew;
 
         tnew.translation = this.translation+other.translation;
@@ -137,7 +144,7 @@ public:
     /**
         Returns the result of 2 transforms multiplied together
     */
-    Transform opBinary(string op : "*")(Transform other) {
+    Transform opBinary(string op : "*")(Transform other) @nogc {
         Transform tnew;
 
         mat4 strs = other.trs * this.trs;
@@ -157,14 +164,14 @@ public:
     /**
         Gets the matrix for this transform
     */
-    mat4 matrix() {
+    mat4 matrix() @nogc {
         return trs;
     }
 
     /**
         Updates the internal matrix of this transform
     */
-    void update() {
+    void update() @nogc {
         trs = 
             mat4.translation(this.translation) *
             quat.eulerRotation(this.rotation.x, this.rotation.y, this.rotation.z).toMatrix!(4, 4) *
@@ -174,7 +181,7 @@ public:
     /**
         Clears the vector
     */
-    void clear() {
+    void clear() @nogc {
         translation = vec3(0);
         rotation = vec3(0);
         scale = vec2(1, 1);

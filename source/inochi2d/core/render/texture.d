@@ -7,59 +7,15 @@
     Authors: Luna Nielsen
 */
 module inochi2d.core.render.texture;
+import inochi2d.core.render.resource;
 import nulib.io.stream;
 import inmath;
 import numem;
 
 /**
-    Filtering mode for texture
-*/
-enum Filtering {
-    
-    /**
-        Linear filtering will try to smooth out textures
-    */
-    linear,
-
-    /**
-        Point filtering will try to preserve pixel edges.
-        Due to texture sampling being float based this is imprecise.
-    */
-    point
-}
-
-/**
-    Current status of a texture
-*/
-enum TextureStatus : int {
-
-    /**
-        No active request for the given texture.
-    */
-    ok = 0,
-    
-    /**
-        A new texture is requested to be created and passed
-        to the Inochi2D rendering engine.
-    */
-    wantsCreate = 1,
-    
-    /**
-        A texture is requested to be updated, either in contents,
-        or in overall dimensions.
-    */
-    wantsUpdates = 2,
-    
-    /**
-        A texture is requested to be deleted.
-    */
-    wantsDeletion = 3
-}
-
-/**
     Format of texture data.
 */
-enum InTextureFormat : uint {
+enum TextureFormat : uint {
 
     /**
         None or unknown encoding.
@@ -80,9 +36,14 @@ enum InTextureFormat : uint {
 /**
     A texture.
 */
-class Texture : NuRefCounted {
+class Texture : Resource {
 public:
 @nogc:
+
+    /**
+        Texture data.
+    */
+    TextureData data;
 
     /**
         Creates a new texture.
@@ -92,7 +53,7 @@ public:
             height = The requested height of the texture,
             format = The requested format of the texture,
     */
-    static Texture create(uint width, uint height, InTextureFormat format) {
+    static Texture create(uint width, uint height, TextureFormat format) {
         return nogc_new!Texture(width, height, format);
     }
 
@@ -104,72 +65,60 @@ public:
     */
     static Texture createForData(TextureData data) {
         Texture tex = Texture.create(data.size.x, data.size.y, data.format);
-        tex.updates = nu_malloca!TextureData(1);
-        tex.updates[0] = data;
+        tex.data = data;
         return tex;
     }
 
     /**
-        Constructs a new texture.
-    */
-    this(uint width, uint height, InTextureFormat format) {
-        this.width = width;
-        this.height = height;
-        this.format = format;
-        this.status = TextureStatus.wantsCreate;
-    }
-
-    /**
-        Current status of the texture
-    */
-    TextureStatus status;
-
-    /**
         Format of the texture.
     */
-    InTextureFormat format;
+    final @property TextureFormat format() => data.format;
 
     /**
         Width of the texture in pixels.
     */
-    uint width;
+    final @property uint width() => data.width;
     
     /**
         Height of the texture in pixels.
     */
-    uint height;
-    
-    /**
-        Platform ID of the texture.
-    */
-    void* id;
+    final @property uint height() => data.height;
 
     /**
-        Updates to texture.
+        Channel count of the texture.
     */
-    TextureData[] updates;
+    final @property uint channels() => data.channels;
 
     /**
-        Enqueues an update to the texture.
+        Pixel data of the texture.
     */
-    void update(TextureData data) {
-        this.status = TextureStatus.wantsUpdates;
-        this.updates = updates.nu_resize(updates.length+1);
-        this.updates[$-1] = data;
+    final @property void[] pixels() => data.data;
+
+    /**
+        Constructs a new texture.
+    */
+    this(uint width, uint height, TextureFormat format) {
+        data.width = width;
+        data.height = height;
+        data.format = format;
+        this.status = ResourceStatus.wantsCreate;
+    }
+
+    void resize(uint width, uint height) {
+        data.width = width;
+        data.height = height;
+        this.status = ResourceStatus.wantsUpdates;
     }
 
     /**
         Marks all requested texture updates as finalized.
     */
+    override
     void finalize() {
-        this.status = TextureStatus.ok;
-        
-        /// First free all the texture data associated
-        /// with the updates, then clear the updates array.
-        foreach(ref update; updates)
-            update.free();
-        
-        nu_freea(updates);
+        this.status = 
+            status == ResourceStatus.wantsDeletion ? 
+                status : 
+                ResourceStatus.ok;
     }
 }
 
@@ -179,10 +128,26 @@ public:
 struct TextureData {
 public:
 @nogc:
-    InTextureFormat format;
-    vec2i position;
-    vec2i size;
+    uint width;
+    uint height;
+    TextureFormat format;
     void[] data;
+
+    /**
+        Amount of color channels in the image.
+    */
+    @property uint channels() {
+        final switch(format) {
+            case TextureFormat.rgba8Unorm:
+                return 4;
+
+            case TextureFormat.r8:
+                return 1;
+
+            case TextureFormat.none:
+                return 0;
+        }
+    }
 
     /**
         Loads a texture from a stream.
@@ -197,17 +162,18 @@ public:
         TextureData result;
         try {
             enforce(stream.read(tmpbuffer) >= 0, "Failed reading texture data from stream!");
+            stream.close();
 
             IFInfo info = read_info(tmpbuffer);
             enforce(info.e, IF_ERROR[info.e]);
 
-            result.size.x = info.w;
-            result.size.y = info.h;
+            result.width = info.w;
+            result.height = info.h;
 
             // Only read RGBA8 or R8 data.
             IFImage img = read_image(tmpbuffer, info.c == 1 ? 1 : 4, 8);
             result.data = cast(void[])img.buf8;
-            result.format = info.c == 1 ? InTextureFormat.r8 : InTextureFormat.rgba8Unorm;
+            result.format = info.c == 1 ? TextureFormat.r8 : TextureFormat.rgba8Unorm;
 
             return result;
         } catch(Exception ex) {
@@ -221,7 +187,7 @@ public:
     */
     void premultiply() {
         final switch(format) {
-            case InTextureFormat.rgba8Unorm:
+            case TextureFormat.rgba8Unorm:
                 ubyte[] dataView = cast(ubyte[])data;
                 foreach(i; 0..data.length/4) {
 
@@ -232,8 +198,8 @@ public:
                 }
                 return;
             
-            case InTextureFormat.none:
-            case InTextureFormat.r8:
+            case TextureFormat.none:
+            case TextureFormat.r8:
                 return;
         }
     }
@@ -258,9 +224,9 @@ public:
         the GPU.
     */
     void free() {
-        this.format = InTextureFormat.none;
-        this.size = vec2i.init;
-        this.position = vec2i.init;
+        this.format = TextureFormat.none;
+        this.width = 0;
+        this.height = 0;
         nu_freea(data);
     }
 }

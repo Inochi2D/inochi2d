@@ -1,7 +1,8 @@
 module inochi2d.core.puppet;
-import inochi2d.fmt.serde;
-import inochi2d.core;
+import inochi2d.core.format;
+import inochi2d.core.render;
 import inochi2d.core.math;
+import inochi2d.core;
 import std.algorithm.sorting;
 import std.algorithm.mutation : SwapStrategy;
 import std.exception;
@@ -268,6 +269,12 @@ class PuppetPhysics : ISerializable, IDeserializable {
 */
 class Puppet : ISerializable, IDeserializable {
 private:
+
+    /**
+        Resource cache for the puppet.
+    */
+    ResourceCache resourceCache;
+
     /**
         An internal puppet root node
     */
@@ -329,7 +336,7 @@ private:
         }
     }
 
-    final void scanParts(bool reparent = false)(ref Node node) {
+    void scanParts(bool reparent = false)(ref Node node) {
 
         // We want rootParts to be cleared so that we
         // don't draw the same part multiple times
@@ -410,11 +417,6 @@ public:
     Parameter[] parameters;
 
     /**
-        Parameters
-    */
-    Automation[] automation;
-
-    /**
         INP Texture slots for this puppet
     */
     Texture[] textureSlots;
@@ -472,12 +474,6 @@ public:
     */
     final void update() {
         transform.update();
-
-        // Update Automators
-        foreach(auto_; automation) {
-            auto_.update();
-        }
-
         root.beginUpdate();
 
         if (renderParameters) {
@@ -511,10 +507,6 @@ public:
         foreach(driver; drivers) {
             driver.reset();
         }
-
-        // Update so that the timestep gets reset.
-        import inochi2d : inUpdate;
-        inUpdate();
     }
 
     /**
@@ -821,20 +813,6 @@ public:
         object.tryGetRef(root, "nodes");
         object.tryGetRef(parameters, "param");
         object.tryGetRef(animations, "animations");
-
-        // Deserialize automation
-        if (object.isJsonArray("automation")) {
-            foreach(element; object["automation"].array) {
-                if (string type = element.tryGet!string("type", null)) {
-                    if (inHasAutomationType(type)) {
-                        auto auto_ = inInstantiateAutomation(type, this);
-                        element.deserialize(auto_);
-                        this.automation ~= auto_;
-                    }
-                }
-            }
-        }
-
         this.finalizeDeserialization(object);
     }
 
@@ -843,9 +821,6 @@ public:
         this.root.reconstruct();
         foreach(parameter; parameters.dup) {
             parameter.reconstruct(this);
-        }
-        foreach(automation_; automation.dup) {
-            automation_.reconstruct(this);
         }
         foreach(ref animation; animations.dup) {
             animation.reconstruct(this);
@@ -862,15 +837,13 @@ public:
         foreach(parameter; parameters) {
             parameter.finalize(this);
         }
-        foreach(automation_; automation) {
-            automation_.finalize(this);
-        }
         foreach(ref animation; animations) {
             animation.finalize(this);
         }
         this.scanParts!true(this.root);
         this.selfSort();
     }
+
     /**
         Finalizer
     */

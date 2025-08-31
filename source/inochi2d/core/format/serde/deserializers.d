@@ -1,5 +1,5 @@
-module inochi2d.fmt.serde.deserializers;
-import inochi2d.fmt.serde;
+module inochi2d.core.format.serde.deserializers;
+import inochi2d.core.format.serde;
 import inochi2d.core.math;
 import inochi2d.core;
 import inmath.util;

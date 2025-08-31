@@ -8,11 +8,9 @@
 */
 module inochi2d.core.nodes.meshgroup;
 import inochi2d.core.nodes.drawable;
-import inochi2d.fmt.serde;
 import inochi2d.core.math;
-import std.exception;
-import inochi2d.core.dbg;
 import inochi2d.core;
+import std.exception;
 import std.typecons: tuple, Tuple;
 import std.stdio;
 

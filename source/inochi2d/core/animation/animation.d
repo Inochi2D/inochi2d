@@ -1,5 +1,5 @@
 module inochi2d.core.animation.animation;
-import inochi2d.fmt.serde;
+import inochi2d.core.format.serde;
 import inochi2d.core;
 import inmath;
 import inmath.interpolate;

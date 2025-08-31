@@ -8,8 +8,8 @@
 */
 module inochi2d.core.meshdata;
 import inochi2d.core.math;
-import inochi2d.core.texture;
-import inochi2d.fmt.serde;
+import inochi2d.core.render;
+import inochi2d.core.format;
 import std.sumtype;
 
 /**
@@ -339,10 +339,5 @@ struct MeshData {
             }
         }
         return true;
-    }
-
-    void dbg() {
-        import std.stdio : writefln;
-        writefln("%s %s %s", vertices.length, uvs.length, indices.length);
     }
 }

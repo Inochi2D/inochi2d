@@ -4,7 +4,7 @@
     
     Authors: Luna Nielsen
 */
-module inochi2d.fmt.io;
+module inochi2d.core.format.inp.io;
 import std.bitmanip;
 import std.string;
 

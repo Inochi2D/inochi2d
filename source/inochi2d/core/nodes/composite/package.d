@@ -10,50 +10,15 @@ module inochi2d.core.nodes.composite;
 import inochi2d.core.nodes.drawable;
 import inochi2d.core.nodes.common;
 import inochi2d.core.nodes;
-import inochi2d.fmt;
-import inochi2d.core;
 import inochi2d.core.math;
-import bindbc.opengl;
+import inochi2d.core;
+
 import std.exception;
 import std.algorithm.sorting;
-
-private {
-    Shader cShader;
-    Shader cShaderMask;
-
-    GLint gopacity;
-    GLint gMultColor;
-    GLint gScreenColor;
-
-    GLint mthreshold;
-    GLint mopacity;
-}
 
 package(inochi2d) {
     void inInitComposite() {
         inRegisterNodeType!Composite;
-
-        cShader = new Shader("composite",
-            import("basic/composite.vert"),
-            import("basic/composite.frag")
-        );
-
-        cShader.use();
-        gopacity = cShader.getUniformLocation("opacity");
-        gMultColor = cShader.getUniformLocation("multColor");
-        gScreenColor = cShader.getUniformLocation("screenColor");
-        cShader.setUniform(cShader.getUniformLocation("albedo"), 0);
-        cShader.setUniform(cShader.getUniformLocation("emissive"), 1);
-        cShader.setUniform(cShader.getUniformLocation("bumpmap"), 2);
-
-        cShaderMask = new Shader("composite (mask)",
-            import("basic/composite.vert"),
-            import("basic/composite-mask.frag")
-        );
-
-        cShaderMask.use();
-        mthreshold = cShader.getUniformLocation("threshold");
-        mopacity = cShader.getUniformLocation("opacity");
     }
 }
 
@@ -71,13 +36,9 @@ private:
         // Optimization: Nothing to be drawn, skip context switching
         if (subParts.length == 0) return;
 
-        inBeginComposite();
-
-            foreach(Part child; subParts) {
-                child.drawOne();
-            }
-
-        inEndComposite();
+        foreach(Part child; subParts) {
+            child.drawOne();
+        }
     }
 
     /*
@@ -86,31 +47,6 @@ private:
     void drawSelf() {
         if (subParts.length == 0) return;
 
-        glDrawBuffers(3, [GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2].ptr);
-
-        cShader.use();
-        cShader.setUniform(gopacity, clamp(offsetOpacity * opacity, 0, 1));
-        incCompositePrepareRender();
-        
-        vec3 clampedColor = tint;
-        if (offsetTint.isFinite) {
-            clampedColor.x = clamp(tint.x*offsetTint.x, 0, 1);
-            clampedColor.y = clamp(tint.y*offsetTint.y, 0, 1);
-            clampedColor.z = clamp(tint.z*offsetTint.z, 0, 1);
-        } 
-        cShader.setUniform(gMultColor, clampedColor);
-
-        clampedColor = screenTint;
-        if (offsetScreenTint.isFinite) {
-            clampedColor.x = clamp(screenTint.x+offsetScreenTint.x, 0, 1);
-            clampedColor.y = clamp(screenTint.y+offsetScreenTint.y, 0, 1);
-            clampedColor.z = clamp(screenTint.z+offsetScreenTint.z, 0, 1);
-        } 
-        cShader.setUniform(gScreenColor, clampedColor);
-        inSetBlendMode(blendingMode, true);
-
-        // Bind the texture
-        glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 
     void selfSort() {
@@ -146,30 +82,7 @@ protected:
     Part[] subParts;
     
     void renderMask() {
-        inBeginComposite();
 
-            // Enable writing to stencil buffer and disable writing to color buffer
-            glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-            glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-            glStencilFunc(GL_ALWAYS, 1, 0xFF);
-            glStencilMask(0xFF);
-
-            foreach(Part child; subParts) {
-                child.drawOneDirect(true);
-            }
-
-            // Disable writing to stencil buffer and enable writing to color buffer
-            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-        inEndComposite();
-
-        cShaderMask.use();
-        cShaderMask.setUniform(mopacity, opacity);
-        cShaderMask.setUniform(mthreshold, threshold);
-        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, inGetCompositeImage());
-        glDrawArrays(GL_TRIANGLES, 0, 6);
     }
 
     override
@@ -404,18 +317,18 @@ public:
         size_t cMasks = maskCount;
 
         if (masks.length > 0) {
-            inBeginMask(cMasks > 0);
+            // inBeginMask(cMasks > 0);
 
             foreach(ref mask; masks) {
                 mask.maskSrc.renderMask(mask.mode == MaskingMode.DodgeMask);
             }
 
-            inBeginMaskContent();
+            // inBeginMaskContent();
 
             // We are the content
             this.drawSelf();
 
-            inEndMask();
+            // inEndMask();
             return;
         }
 
