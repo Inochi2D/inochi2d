@@ -14,7 +14,7 @@ import inochi2d.core.nodes.common;
 //import inochi2d.core;
 import inochi2d.core.format;
 import inochi2d.core.math;
-import inochi2d.phys;
+import inochi2d.core.phys;
 import inochi2d;
 import std.exception;
 import std.algorithm.sorting;

@@ -15,6 +15,7 @@ public import inochi2d.core.meshdata;
 public import inochi2d.core.param;
 public import inochi2d.core.animation;
 public import inochi2d.core.format;
+public import inochi2d.core.phys;
 
 
 import inochi2d.core.math;

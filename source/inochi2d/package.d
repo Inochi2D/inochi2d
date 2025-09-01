@@ -11,7 +11,5 @@
 */
 module inochi2d;
 
-public import inochi2d.core.math;
-public import inochi2d.phys;
 public import inochi2d.core;
 public import inochi2d.ver;

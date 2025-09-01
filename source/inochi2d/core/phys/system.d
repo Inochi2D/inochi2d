@@ -6,9 +6,10 @@
 
     Author: Asahi Lina
 */
-module inochi2d.phys.system;
+module inochi2d.core.phys.system;
 import inochi2d;
 import std.math : isFinite;
+import inmath;
 
 abstract
 class PhysicsSystem {
