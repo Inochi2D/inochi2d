@@ -50,7 +50,7 @@ public:
         return false;
     }
 
-    abstract void updateDriver();
+    abstract void update(float delta);
 
     abstract void reset();
 

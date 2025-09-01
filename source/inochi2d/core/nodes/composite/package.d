@@ -31,13 +31,13 @@ private:
 
     this() { }
 
-    void drawContents() {
+    void drawContents(float delta) {
 
         // Optimization: Nothing to be drawn, skip context switching
         if (subParts.length == 0) return;
 
         foreach(Part child; subParts) {
-            child.drawOne();
+            child.drawOne(delta);
         }
     }
 
@@ -308,11 +308,11 @@ public:
     }
 
     override
-    void drawOne() {
+    void drawOne(float delta) {
         if (!enabled) return;
         
         this.selfSort();
-        this.drawContents();
+        this.drawContents(delta);
 
         size_t cMasks = maskCount;
 
@@ -333,14 +333,14 @@ public:
         }
 
         // No masks, draw normally
-        super.drawOne();
+        super.drawOne(delta);
         this.drawSelf();
     }
 
     override
-    void draw() {
+    void draw(float delta) {
         if (!enabled) return;
-        this.drawOne();
+        this.drawOne(delta);
     }
 
     override

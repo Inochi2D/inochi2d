@@ -472,7 +472,7 @@ public:
     /**
         Updates the nodes
     */
-    final void update() {
+    final void update(float delta) {
         transform.update();
         root.beginUpdate();
 
@@ -492,7 +492,7 @@ public:
         if (renderParameters && enableDrivers) {
             // Update parameter/node driver nodes (e.g. physics)
             foreach(driver; drivers) {
-                driver.updateDriver();
+                driver.update(delta);
             }
         }
 
@@ -546,12 +546,12 @@ public:
     /**
         Draws the puppet
     */
-    final void draw() {
+    final void draw(float delta) {
         this.selfSort();
 
         foreach(rootPart; rootParts) {
             if (!rootPart.renderEnabled) continue;
-            rootPart.drawOne();
+            rootPart.drawOne(delta);
         }
     }
 
@@ -581,10 +581,10 @@ public:
     */
     final void updateTextureState() {
 
-        // Update filtering mode for texture slots
-        foreach(texutre; textureSlots) {
-            texutre.setFiltering(meta.preservePixels ? Filtering.Point : Filtering.Linear);
-        }
+        // // Update filtering mode for texture slots
+        // foreach(texutre; textureSlots) {
+        //     texture.setFiltering(meta.preservePixels ? Filtering.nearest : Filtering.linear);
+        // }
     }
 
     /**
@@ -655,8 +655,8 @@ public:
     */
     final Texture findTextureByRuntimeUUID(uint uuid) {
         foreach(ref slot; textureSlots) {
-            if (slot.getRuntimeUUID())
-                return slot;
+            // if (slot.getRuntimeUUID())
+            //     return slot;
         }
         return null;
     }
@@ -786,7 +786,6 @@ public:
         // Create objects for nodes, params, automation and animation.
         object["nodes"] = root.serialize();
         object["param"] = parameters.serialize();
-        object["automation"] = automation.serialize();
         object["animations"] = animations.serialize();
     }
 

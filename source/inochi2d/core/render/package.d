@@ -43,7 +43,7 @@ public:
     Buffer createBuffer(uint length, BufferUsage usage) {
         auto result = nogc_new!Buffer(length, usage);
     
-        resources_ ~= result;
+        resources_ ~= cast(Resource)result;
         return result;
     }
 
@@ -61,7 +61,7 @@ public:
 
         MemoryStream mstream = nogc_new!MemoryStream(data);
         auto result = Texture.createForData(TextureData.load(mstream));
-        resources_ ~= result;
+        resources_ ~= cast(Resource)result;
         return result;
     }
 

@@ -222,8 +222,8 @@ public:
         Draws the drawable
     */
     override
-    void drawOne() {
-        super.drawOne();
+    void drawOne(float delta) {
+        super.drawOne(delta);
     }
 
     /**

@@ -82,6 +82,6 @@ public:
         this.status = 
             status == ResourceStatus.wantsDeletion ? 
                 status : 
-                TextureStatus.ok;
+                ResourceStatus.ok;
     }
 }

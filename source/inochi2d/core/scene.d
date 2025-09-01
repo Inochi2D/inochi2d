@@ -70,12 +70,11 @@ public:
         every puppet in the scene.
     */
     void update(float delta) {
-
-        foreach(puppet; puppets) {
-            puppet.update(delta);
-            puppet.draw(delta);
-        }
-        resourceCache.finalize();
+        
+        // foreach(puppet; puppets) {
+        //     puppet.update(delta);
+        //     puppet.draw(delta);
+        // }
     }
 
     /**

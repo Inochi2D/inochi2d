@@ -136,8 +136,8 @@ public:
    }
 
     override
-    void draw() {
-        super.draw();
+    void draw(float delta) {
+        super.draw(delta);
     }
 
 

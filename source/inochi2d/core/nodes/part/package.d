@@ -28,7 +28,8 @@ public import inochi2d.core.meshdata;
     for real-time use when you want to add/remove parts on the fly
 */
 Part inCreateSimplePart(string file, Node parent = null) {
-    return inCreateSimplePart(ShallowTexture(file), parent, file);
+    // return inCreateSimplePart(TextureData.load(file), parent, file);
+    return null;
 }
 
 /**
@@ -38,7 +39,7 @@ Part inCreateSimplePart(string file, Node parent = null) {
     for real-time use when you want to add/remove parts on the fly
 */
 Part inCreateSimplePart(TextureData texture, Node parent = null, string name = "New Part") {
-	return inCreateSimplePart(new Texture(texture), parent, name);
+	return inCreateSimplePart(Texture.createForData(texture), parent, name);
 }
 
 /**
@@ -128,7 +129,7 @@ protected:
                 if (textureId == NO_TEXTURE) continue;
 
                 textureIds ~= textureId;
-                this.textures[i] = inGetTextureFromId(textureId);
+                // this.textures[i] = inGetTextureFromId(textureId);
             }
         }
         
@@ -159,14 +160,14 @@ protected:
     void serializePartial(ref JSONValue object, bool recursive=true) {
         super.serializePartial(object, recursive);
 
-        object["textureUUIDs"] = JSONValue.emptyArray;
-        foreach(ref texture; textures) {
-            uint uuid = texture !is null ? 
-                texture.getRuntimeUUID() : 
-                InInvalidUUID;
+        // object["textureUUIDs"] = JSONValue.emptyArray;
+        // foreach(ref texture; textures) {
+        //     uint uuid = texture !is null ? 
+        //         texture.getRuntimeUUID() : 
+        //         InInvalidUUID;
 
-            object["textureUUIDs"] ~= JSONValue(uuid);
-        }
+        //     object["textureUUIDs"] ~= JSONValue(uuid);
+        // }
     }
 
     //
@@ -270,7 +271,7 @@ public:
             this.textures[i] = textures[i];
         }
         
-        this.updateUVs();
+        // this.updateUVs();
     }
     
     override
@@ -414,17 +415,17 @@ public:
     }
 
     override
-    void draw() {
+    void draw(float delta) {
         if (!enabled) return;
-        this.drawOne();
+        this.drawOne(delta);
 
         foreach(child; children) {
-            child.draw();
+            child.draw(delta);
         }
     }
 
     override
-    void drawOne() {
+    void drawOne(float delta) {
         if (!enabled) return;
         if (!data.isReady) return; // Yeah, don't even try
         
@@ -448,7 +449,7 @@ public:
 
         // No masks, draw normally
         // this.drawSelf();
-        super.drawOne();
+        super.drawOne(delta);
     }
 
     override

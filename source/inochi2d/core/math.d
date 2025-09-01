@@ -38,12 +38,12 @@ class Camera : NuRefCounted {
     /**
         The view-projection matrix for the camera.
     */
-    abstract @property mat4 matrix();
+    abstract @property mat4 matrix() @nogc;
 
     /**
         Updates the state of the camera.
     */
-    abstract void update();
+    abstract void update() @nogc;
 }
 
 /**
@@ -80,13 +80,13 @@ public:
         Matrix for this camera
     */
     override
-    @property mat4 matrix() => projection;
+    @property mat4 matrix() @nogc => projection;
 
     /**
         Updates the state of the camera.
     */
     override
-    void update() {
+    void update() @nogc {
         if(!position.isFinite) position = vec2(0);
         if(!scale.isFinite) scale = vec2(1);
         if(!rotation.isFinite) rotation = 0;

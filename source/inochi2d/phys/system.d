@@ -134,10 +134,5 @@ public:
         Updates the anchor for the physics system
     */
     abstract void updateAnchor();
-
-    /**
-        Draw debug
-    */
-    abstract void drawDebug(mat4 trans = mat4.identity);
 }
 

@@ -164,7 +164,7 @@ public:
 
         driver.output = bob;
     }
-    
+
     override
     void updateAnchor() {
         bob = driver.anchor + vec2(0, driver.getLength());
@@ -315,11 +315,11 @@ public:
     }
 
     override
-    void updateDriver() {
+    void update(float delta) {
         
         // Timestep is limited to 10 seconds, as if you
         // Are getting 0.1 FPS, you have bigger issues to deal with.
-        float h = min(deltaTime(), 10);
+        float h = min(delta, 10);
 
         updateInputs();
 
@@ -450,11 +450,6 @@ public:
         param_ = puppet.findParameter(paramRef);
         super.finalize();
         reset();
-    }
-
-    override
-    void drawDebug() {
-        system.drawDebug();
     }
 
     Parameter param() {

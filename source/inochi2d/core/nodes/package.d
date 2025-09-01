@@ -677,19 +677,18 @@ public:
     /**
         Draws this node and it's subnodes
     */
-    void draw() {
+    void draw(float delta) {
         if (!renderEnabled) return;
 
         foreach(child; children) {
-            child.draw();
+            child.draw(delta);
         }
     }
 
     /**
         Draws this node.
     */
-    void drawOne() { }
-
+    void drawOne(float delta) { }
 
     void reconstruct() {
         foreach(child; children.dup) {

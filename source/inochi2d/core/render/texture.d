@@ -25,12 +25,28 @@ enum TextureFormat : uint {
     /**
         RGBA8 data.
     */
-    rgba8Unorm,
+    rgba8Unorm = 1,
 
     /**
         Red-channel only mask data.
     */
-    r8,
+    r8 = 2,
+}
+
+/**
+    Texture filtering mode
+*/
+enum Filtering : uint {
+
+    /**
+        Linear texture interpolation.
+    */
+    linear,
+
+    /**
+        Nearest texture interpolation.
+    */
+    nearest
 }
 
 /**
@@ -64,10 +80,15 @@ public:
             data = The data to use for creation.
     */
     static Texture createForData(TextureData data) {
-        Texture tex = Texture.create(data.size.x, data.size.y, data.format);
+        Texture tex = nogc_new!Texture(data.width, data.height, data.format);
         tex.data = data;
         return tex;
     }
+
+    /**
+        Length of the resource's data allocation in bytes.
+    */
+    override @property uint length() => data.width * data.height * data.channels;
 
     /**
         Format of the texture.
@@ -213,7 +234,7 @@ public:
     void dump(string file) {
         import imagefmt : write_image;
         if (data.length > 0) {
-            write_image(file, size.x, size.y, cast(ubyte[])data, 4);
+            write_image(file, width, height, cast(ubyte[])data, 4);
         }
     }
 
