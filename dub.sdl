@@ -17,7 +17,7 @@ dependency "numem:hookset-libc" version="*"
 stringImportPaths "shaders/"
 
 // Engine Support Modules
-subPackage "modules/gdextension"
+// subPackage "modules/gdextension"
 
 // Base configuration.
 configuration "lib" {

@@ -419,7 +419,7 @@ public:
     /**
         INP Texture slots for this puppet
     */
-    Texture[] textureSlots;
+    TextureCache textureCache;
 
     /**
         Extended vendor data
@@ -630,46 +630,14 @@ public:
         Adds a texture to a new slot if it doesn't already exist within this puppet
     */
     final uint addTextureToSlot(Texture texture) {
-        import std.algorithm.searching : canFind;
-
-        // Add texture if we can't find it.
-        if (!textureSlots.canFind(texture)) textureSlots ~= texture;
-        return cast(uint)textureSlots.length-1;
-    }
-
-    /**
-        Populate texture slots with all visible textures in the model
-    */
-    final void populateTextureSlots() {
-        if (textureSlots.length > 0) textureSlots.length = 0;
-        
-        foreach(part; getAllParts) {
-            foreach(texture; part.textures) {
-                if (texture) this.addTextureToSlot(texture);
-            }
-        }
-    }
-
-    /**
-        Finds a texture by its runtime UUID
-    */
-    final Texture findTextureByRuntimeUUID(uint uuid) {
-        foreach(ref slot; textureSlots) {
-            // if (slot.getRuntimeUUID())
-            //     return slot;
-        }
-        return null;
+        return textureCache.add(texture);
     }
 
     /**
         Sets thumbnail of this puppet
     */
     final void setThumbnail(Texture texture) {
-        if (this.meta.thumbnailId == NO_THUMBNAIL) {
-            this.meta.thumbnailId = this.addTextureToSlot(texture);
-        } else {
-            textureSlots[this.meta.thumbnailId] = texture;
-        }
+        this.meta.thumbnailId = textureCache.add(texture);
     }
 
     /**
@@ -678,19 +646,7 @@ public:
         returns -1 if none was found
     */
     final ptrdiff_t getTextureSlotIndexFor(Texture texture) {
-        import std.algorithm.searching : countUntil;
-        return textureSlots.countUntil(texture);
-    }
-
-    /**
-        Clears this puppet's thumbnail
-
-        By default it does not delete the texture assigned, pass in true to delete texture
-    */
-    final void clearThumbnail(bool deleteTexture = false) {
-        import std.algorithm.mutation : remove;
-        if (deleteTexture) textureSlots = remove(textureSlots, this.meta.thumbnailId);
-        this.meta.thumbnailId = NO_THUMBNAIL;
+        return textureCache.find(texture);
     }
 
     /**

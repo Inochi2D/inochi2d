@@ -15,6 +15,7 @@ import std.exception;
 import std.path;
 import std.format;
 import imagefmt;
+import numem.lifetime;
 
 public import inochi2d.core.format.serde;
 
@@ -40,7 +41,6 @@ T inLoadPuppet(T = Puppet)(string file) if (is(T : Puppet)) {
                 throw new Exception("Invalid file format of %s at path %s".format(extension(file), file));
         }
     } catch(Exception ex) {
-        inEndTextureLoading!false();
         throw ex;
     }
 }
@@ -67,35 +67,24 @@ T inLoadINPPuppet(T = Puppet)(ubyte[] buffer) if (is(T : Puppet)) {
     inInterpretDataFromBuffer(buffer[bufferOffset..bufferOffset+=4], puppetDataLength);
 
     string puppetData = cast(string)buffer[bufferOffset..bufferOffset+=puppetDataLength];
-
     enforce(inVerifySection(buffer[bufferOffset..bufferOffset+=8], TEX_SECTION), "Expected Texture Blob section, got nothing!");
-
-    // Load textures in to memory
-    inBeginTextureLoading();
 
     // Get amount of slots
     uint slotCount;
     inInterpretDataFromBuffer(buffer[bufferOffset..bufferOffset+=4], slotCount);
 
-    Texture[] slots;
+    TextureCache textureCache = nogc_new!TextureCache();
     foreach(i; 0..slotCount) {
         
         uint textureLength;
         inInterpretDataFromBuffer(buffer[bufferOffset..bufferOffset+=4], textureLength);
 
         ubyte textureType = buffer[bufferOffset++];
-        if (textureLength == 0) {
-            inAddTextureBinary(ShallowTexture([], 0, 0, 4));
-        } else inAddTextureBinary(ShallowTexture(buffer[bufferOffset..bufferOffset+=textureLength]));
-    
-        // Readd to puppet so that stuff doesn't break if we re-save the puppet
-        slots ~= inGetLatestTexture();
+        textureCache.add(Texture.createForData(TextureData.load(buffer[bufferOffset..bufferOffset+=textureLength].nu_dup)));
     }
 
     T puppet = inLoadJsonDataFromMemory!T(puppetData);
-    puppet.textureSlots = slots;
-    puppet.updateTextureState();
-    inEndTextureLoading();
+    puppet.textureCache = textureCache;
 
     if (buffer.length >= bufferOffset + 8 && inVerifySection(buffer[bufferOffset..bufferOffset+=8], EXT_SECTION)) {
         uint sectionCount;
@@ -243,8 +232,8 @@ ubyte[] inWriteINPPuppetMemory(Puppet p) {
     
     // Begin texture section
     app ~= TEX_SECTION;
-    app ~= nativeToBigEndian(cast(uint)p.textureSlots.length)[0..4];
-    foreach(texture; p.textureSlots) {
+    app ~= nativeToBigEndian(cast(uint)p.textureCache.size)[0..4];
+    foreach(texture; p.textureCache.cache) {
         int e;
         ubyte[] tex = write_image_mem(IF_TGA, texture.width, texture.height, cast(ubyte[])texture.pixels, texture.channels, e);
         app ~= nativeToBigEndian(cast(uint)tex.length)[0..4];

@@ -172,6 +172,11 @@ public:
         }
     }
 
+    static TextureData load(ubyte[] data) {
+        import nulib.io.stream.memstream : MemoryStream;
+        return TextureData.load(nogc_new!MemoryStream(data));
+    }
+
     /**
         Loads a texture from a stream.
 
@@ -185,10 +190,10 @@ public:
         TextureData result;
         try {
             enforce(stream.read(tmpbuffer) >= 0, "Failed reading texture data from stream!");
-            stream.close();
+            nogc_delete(stream);
 
             IFInfo info = read_info(tmpbuffer);
-            enforce(info.e, IF_ERROR[info.e]);
+            enforce(info.e == 0, IF_ERROR[info.e]);
 
             result.width = info.w;
             result.height = info.h;
@@ -274,5 +279,97 @@ public:
     */
     void free() {
         nu_freea(data);
+    }
+}
+
+/**
+    A cache of textures in use by a model.
+*/
+final
+class TextureCache : NuRefCounted {
+private:
+@nogc:
+    Texture[] textures;
+
+public:
+
+    // Destructor
+    ~this() {
+        foreach(texture; textures) {
+            texture.release();
+        }
+        nu_freea(textures);
+    }
+
+    /**
+        Size of the texture cache in elements.
+    */
+    @property size_t size() => textures.length;
+
+    /**
+        The cached textures.
+    */
+    @property Texture[] cache() => textures[0..$];
+
+    /**
+        Adds a texture to the cache, adding a retain count
+        to the texture. Texture caches only allow a single
+        instance of a texture to be stored within.
+
+        Params:
+            texture = The texture to add to the cache.
+
+        Returns:
+            The texture slot position of the added texture.
+    */
+    uint add(Texture texture) {
+        ptrdiff_t idx = find(texture);
+        if (idx == -1) {
+            textures = textures.nu_resize(textures.length+1);
+            textures[$-1] = texture;
+            texture.retain();
+
+            return cast(uint)(textures.length-1);
+        }
+        return cast(uint)idx;
+    }
+
+    /**
+        Prunes all textures from the cache, only leaving behind
+        textures referenced from outside of the cache.
+
+        Any texture that is unused will be freed.
+    */
+    void prune() {
+        size_t alive = 0;
+        foreach(i; 0..textures.length) {
+            if (auto tex = textures[i].released()) {
+
+                // Avoid copy semantics, moving the alive texture
+                // back to the lowest slot now available.
+                // Then restore its refcount held by the cache.
+                (cast(void*[])textures)[alive++] = cast(void*)tex;
+                tex.retain();
+            }
+        }
+        textures = textures.nu_resize(alive);
+    }
+    
+    /**
+        Finds the slot of a given texture within the cache.
+
+        Params:
+            texture = The texture to look for.
+        
+        Returns:
+            A non-negative number on success,
+            $(D -1) if the texture was not found.
+    */
+    ptrdiff_t find(Texture texture) {
+        foreach(i; 0..textures.length) {
+            if (textures[i] is texture)
+                return i;
+        }
+        return -1;
     }
 }
