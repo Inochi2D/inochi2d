@@ -20,7 +20,12 @@ stringImportPaths "shaders/"
 // subPackage "modules/gdextension"
 
 // Base configuration.
-configuration "lib" {
+configuration "static" {
+    targetType "library"
+}
+
+configuration "dynamic" {
+    toolchainRequirements dmd="no" gdc="no" ldc=">=1.40.0"
     targetType "dynamicLibrary"
 }
 
