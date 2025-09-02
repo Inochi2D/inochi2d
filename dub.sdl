@@ -21,7 +21,7 @@ stringImportPaths "shaders/"
 
 // Base configuration.
 configuration "lib" {
-    targetType "library"
+    targetType "dynamicLibrary"
 }
 
 // Unit tests

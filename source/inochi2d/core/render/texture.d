@@ -80,15 +80,13 @@ public:
             data = The data to use for creation.
     */
     static Texture createForData(TextureData data) {
-        Texture tex = nogc_new!Texture(data.width, data.height, data.format);
-        tex.data = data;
-        return tex;
+        return nogc_new!Texture(data);
     }
 
     /**
         Length of the resource's data allocation in bytes.
     */
-    override @property uint length() => data.width * data.height * data.channels;
+    override @property uint length() => cast(uint)data.data.length;
 
     /**
         Format of the texture.
@@ -122,6 +120,14 @@ public:
         data.width = width;
         data.height = height;
         data.format = format;
+        this.status = ResourceStatus.wantsCreate;
+    }
+
+    /**
+        Constructs a new texture.
+    */
+    this(TextureData data) {
+        this.data = data;
         this.status = ResourceStatus.wantsCreate;
     }
 
@@ -269,6 +275,24 @@ public:
 
         this.width = width;
         this.height = height;
+    }
+
+    /**
+        Flip the texture vertically.
+    */
+    void vflip() {
+        if (data.length > 0) {
+            size_t stride = width*channels;
+            void[] tmp = nu_malloca!ubyte(stride);
+            foreach(y; 0..height/2) {
+                void[] top = data[stride*y..(stride*y)+stride];
+                void[] bottom = data[stride*(height-(y+1))..(stride*(height-(y+1)))+stride];
+
+                tmp[0..stride] = top[0..stride];
+                top[0..stride] = bottom[0..stride];
+                bottom[0..stride] = tmp[0..stride];
+            }
+        }
     }
 
     /**

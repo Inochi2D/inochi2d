@@ -108,3 +108,90 @@ void in_resource_set_id(in_resource_t* obj, void* value) {
 void in_resource_finalize(in_resource_t* obj) {
     (cast(Resource)obj).finalize();
 }
+
+//
+//              TEXTURES
+//
+
+/**
+    A texture.
+*/
+struct in_texture_t;
+
+/**
+    Creates a texture from a resource.
+
+    Params:
+        obj = The resource object.
+    
+    Returns:
+        The texture object that is represented by the
+        resource, or $(D null) if the resource is not
+        a texture.
+*/
+in_texture_t* in_texture_from_resource(in_resource_t* obj) {
+    return cast(in_texture_t*)(cast(Texture)(cast(Resource)obj));
+}
+
+/**
+    Gets the width of the texture in pixels.
+
+    Params:
+        obj = The texture object.
+
+    Returns:
+        The width of the texture in pixels.
+*/
+uint in_texture_get_width(in_texture_t* obj) {
+    return (cast(Texture)obj).width;
+}
+
+/**
+    Gets the height of the texture in pixels.
+
+    Params:
+        obj = The texture object.
+
+    Returns:
+        The height of the texture in pixels.
+*/
+uint in_texture_get_height(in_texture_t* obj) {
+    return (cast(Texture)obj).height;
+}
+
+/**
+    Gets the channels of the texture.
+
+    Params:
+        obj = The texture object.
+
+    Returns:
+        The channel count of the texture.
+*/
+uint in_texture_get_channels(in_texture_t* obj) {
+    return (cast(Texture)obj).channels;
+}
+
+/**
+    Flips the texture's data vertically.
+    Some engines read in a different direction from Inochi2D.
+
+    Params:
+        obj = The texture object.
+*/
+void in_texture_flip_vertically(in_texture_t* obj) {
+    (cast(Texture)obj).data.vflip();
+}
+
+/**
+    Gets the pixels of the texture.
+
+    Params:
+        obj = The texture object.
+
+    Returns:
+        The pixels of the texture.
+*/
+void* in_texture_get_pixels(in_texture_t* obj) {
+    return (cast(Texture)obj).pixels.ptr;
+}

@@ -84,8 +84,7 @@ enum TextureUsage : size_t {
 */
 @TypeId("Part")
 class Part : Drawable {
-private:    
-
+private:
 protected:
 
     override
@@ -124,11 +123,13 @@ protected:
             import std.stdio : writeln;
             foreach(i, ref JSONValue element; object["textures"].array) {
 
-                // uint max = no texture set
                 uint textureId = element.tryGet!uint(NO_TEXTURE);
                 if (textureId == NO_TEXTURE) continue;
 
+                // TODO: Abstract this to properly handle refcounts.
                 this.textures[i] = puppet.textureCache.get(textureId);
+                if (this.textures[i])
+                    this.textures[i].retain();
             }
         }
         
