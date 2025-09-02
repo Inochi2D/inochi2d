@@ -354,6 +354,22 @@ public:
         }
         textures = textures.nu_resize(alive);
     }
+
+    /**
+        Tries to get a texture from the cache.
+
+        Params:
+            slotId = The texture slot ID to try to fetch.
+        
+        Returns:
+            The given texture if found, $(D null) otherwise.
+    */
+    Texture get(uint slotId) {
+        if (slotId < size)
+            return textures[slotId];
+        
+        return null;
+    }
     
     /**
         Finds the slot of a given texture within the cache.

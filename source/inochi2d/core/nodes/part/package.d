@@ -128,8 +128,7 @@ protected:
                 uint textureId = element.tryGet!uint(NO_TEXTURE);
                 if (textureId == NO_TEXTURE) continue;
 
-                textureIds ~= textureId;
-                // this.textures[i] = inGetTextureFromId(textureId);
+                this.textures[i] = puppet.textureCache.get(textureId);
             }
         }
         
@@ -159,15 +158,6 @@ protected:
     override
     void serializePartial(ref JSONValue object, bool recursive=true) {
         super.serializePartial(object, recursive);
-
-        // object["textureUUIDs"] = JSONValue.emptyArray;
-        // foreach(ref texture; textures) {
-        //     uint uuid = texture !is null ? 
-        //         texture.getRuntimeUUID() : 
-        //         InInvalidUUID;
-
-        //     object["textureUUIDs"] ~= JSONValue(uuid);
-        // }
     }
 
     //
@@ -199,11 +189,6 @@ public:
         TODO: use more than texture 0
     */
     Texture[TextureUsage.COUNT] textures;
-
-    /**
-        List of texture IDs
-    */
-    int[] textureIds;
 
     /**
         List of masks to apply

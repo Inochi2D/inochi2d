@@ -178,7 +178,6 @@ public:
     */
     MaskBinding[] masks;
 
-
     /**
         Constructs a new mask
     */
