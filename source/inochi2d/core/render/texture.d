@@ -125,10 +125,12 @@ public:
         this.status = ResourceStatus.wantsCreate;
     }
 
+    /**
+        Resizes the texture.
+    */
     void resize(uint width, uint height) {
-        data.width = width;
-        data.height = height;
         this.status = ResourceStatus.wantsUpdates;
+        data.resize(width, height);
     }
 
     /**
@@ -239,15 +241,38 @@ public:
     }
 
     /**
+        Resizes the texture data, ensuring that if any data is supplied
+        it is updated to fit within the new target size.
+    */
+    void resize(uint width, uint height) {
+        if (data.length > 0) {
+            void[] newData = nu_malloca!ubyte(width*height*channels);
+
+            // Copy as many horizontal lines as requested
+            // into our new buffer.
+            size_t oldStride = this.width*channels;
+            size_t newStride = width*channels;
+            size_t cStride = min(oldStride, newStride);
+            foreach(y; 0..min(this.height, height)) {
+                newData[newStride*y..(newStride*y)+newStride] = data[oldStride*y..(oldStride*y)+cStride];
+            }
+
+            // Data has been copied over, now replace the old array.
+            nu_freea(data);
+            data = newData;
+        }
+
+        this.width = width;
+        this.height = height;
+    }
+
+    /**
         Frees the texture and all the data associated with it.
 
         This does not free any data that has been transferred to
         the GPU.
     */
     void free() {
-        this.format = TextureFormat.none;
-        this.width = 0;
-        this.height = 0;
         nu_freea(data);
     }
 }
