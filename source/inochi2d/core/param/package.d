@@ -46,6 +46,37 @@ enum ParamMergeMode {
 }
 
 /**
+    Gets a parameter merge mode from its string name
+*/
+ParamMergeMode toMergeMode(string value) @nogc {
+    switch(value) {
+
+        case "additive":
+        case "Additive":
+            return ParamMergeMode.additive;
+
+        case "weighted":
+        case "Weighted":
+            return ParamMergeMode.weighted;
+
+        case "multiplicative":
+        case "Multiplicative":
+            return ParamMergeMode.multiplicative;
+
+        case "forced":
+        case "Forced":
+            return ParamMergeMode.forced;
+
+        case "passthrough":
+        case "Passthrough":
+            return ParamMergeMode.passthrough;
+        
+        default:
+            return ParamMergeMode.passthrough;
+    }
+}
+
+/**
     A parameter
 */
 class Parameter : ISerializable, IDeserializable {
@@ -276,7 +307,7 @@ public:
         object.tryGetRef(max, "max");
         object.tryGetRef(axisPoints, "axis_points");
         object.tryGetRef(defaults, "defaults");
-        object.tryGetRef(mergeMode, "merge_mode");
+        mergeMode = object.tryGet!string("merge_mode").toMergeMode();
 
         if (object.isJsonObject("bindings")) {
             foreach(JSONValue child; object["bindings"].object) {
