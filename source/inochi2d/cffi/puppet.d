@@ -328,6 +328,21 @@ in_texture_t* in_texture_cache_get_texture(in_texture_cache_t* obj, uint slot) {
 }
 
 /**
+    Gets a texture from the cache.
+
+    Params:
+        obj = The texture cache object.
+        count = Where to store the texture count.
+
+    Returns:
+        A puppet-owned array of textures.
+*/
+in_texture_t** in_texture_cache_get_textures(in_texture_cache_t* obj, ref uint count) {
+    count = cast(uint)(cast(TextureCache)obj).size;
+    return cast(in_texture_t**)(cast(TextureCache)obj).cache.ptr;
+}
+
+/**
     Prunes the texture cache of unreferenced textures.
 
     Params:
