@@ -10,7 +10,6 @@ module inochi2d.cffi;
 import numem;
 
 extern(C) export @nogc:
-
 /**
     Retains a reference to a Inochi2D Object.
 

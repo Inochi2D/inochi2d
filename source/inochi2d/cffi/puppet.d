@@ -8,6 +8,7 @@
 */
 module inochi2d.cffi.puppet;
 import inochi2d.cffi.render;
+import inochi2d.cffi.eh;
 import inochi2d.core.puppet;
 import inochi2d.core.render;
 import inochi2d.core.format;
@@ -33,15 +34,25 @@ struct in_puppet_t;
     
     Returns:
         A new puppet instance, or $(D null) on failure.
+    
+    See_Also:
+        $(D in_get_last_error)
 */
 in_puppet_t* in_puppet_load(const(char)* file) {
     import core.memory : GC;
 
+    __in_clear_error();
+
     string path = cast(string)file[0..nu_strlen(file)];
     return cast(in_puppet_t*)assumeNoGC((string file) {
-        Puppet p = assumeNoGC(&inLoadPuppet!Puppet, file);
-        GC.addRoot(cast(void*)p);
-        return p;
+        try {
+            Puppet p = assumeNoGC(&inLoadPuppet!Puppet, file);
+            GC.addRoot(cast(void*)p);
+            return p;
+        } catch (Exception ex) {
+            __in_set_error(ex);
+            return null;
+        }
     }, path);
 }
 
@@ -54,13 +65,24 @@ in_puppet_t* in_puppet_load(const(char)* file) {
     
     Returns:
         A new puppet instance, or $(D null) on failure.
+    
+    See_Also:
+        $(D in_get_last_error)
 */
 in_puppet_t* in_puppet_load_from_memory(const(ubyte)* data, uint length) {
     import core.memory : GC;
+    
+    __in_clear_error();
+
     return cast(in_puppet_t*)assumeNoGC((ubyte[] buffer) {
-        Puppet p = assumeNoGC(&inLoadINPPuppet!Puppet, buffer);
-        GC.addRoot(cast(void*)p);
-        return p;
+        try {
+            Puppet p = assumeNoGC(&inLoadINPPuppet!Puppet, buffer);
+            GC.addRoot(cast(void*)p);
+            return p;
+        } catch (Exception ex) {
+            __in_set_error(ex);
+            return null;
+        }
     }, cast(ubyte[])data[0..length]);
 }
 
