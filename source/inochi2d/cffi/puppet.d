@@ -108,6 +108,93 @@ void in_puppet_free(in_puppet_t* obj) {
 }
 
 /**
+    Gets the name of a puppet.
+
+    Params:
+        obj = The puppet object.
+
+    Returns:
+        The name of the puppet as specified by
+        its author.
+*/
+const(char)* in_puppet_get_name(in_puppet_t* obj) {
+    return ((cast(Puppet)obj).meta !is null) ? (cast(Puppet)obj).meta.name.ptr : null;
+}
+
+/**
+    Gets whether to calculate physics for the puppet.
+
+    Params:
+        obj = The puppet object.
+
+    Returns:
+        Whether physics are enabled.
+*/
+bool in_puppet_get_physics_enabled(in_puppet_t* obj) {
+    return (cast(Puppet)obj).enableDrivers;
+}
+
+/**
+    Sets whether to calculate physics for the puppet.
+
+    Params:
+        obj =   The puppet object.
+        value = The value to set.
+*/
+void in_puppet_set_physics_enabled(in_puppet_t* obj, bool value) {
+    (cast(Puppet)obj).enableDrivers = value;
+}
+
+/**
+    Gets the pixel-to-meter unit mapping for the physics system.
+
+    Params:
+        obj = The puppet object.
+
+    Returns:
+        A value describing how many pixels count as a meter.
+*/
+float in_puppet_get_pixels_per_meter(in_puppet_t* obj) {
+    return (cast(Puppet)obj).physics.pixelsPerMeter;
+}
+
+/**
+    Sets the pixel-to-meter unit mapping for the physics system.
+
+    Params:
+        obj =   The puppet object.
+        value = The value to set.
+*/
+void in_puppet_set_pixels_per_meter(in_puppet_t* obj, float value) {
+    (cast(Puppet)obj).physics.pixelsPerMeter = value;
+}
+
+/**
+    Gets the gravity constant for the puppet.
+
+    Params:
+        obj = The puppet object.
+
+    Returns:
+        A value describing how many meters a second gravity
+        pulls on the puppet. Normally is 9.8.
+*/
+float in_puppet_get_gravity(in_puppet_t* obj) {
+    return (cast(Puppet)obj).physics.gravity;
+}
+
+/**
+    Sets the gravity constant for the puppet.
+
+    Params:
+        obj =   The puppet object.
+        value = The value to set.
+*/
+void in_puppet_set_gravity(in_puppet_t* obj, float value) {
+    (cast(Puppet)obj).physics.gravity = value;
+}
+
+/**
     Updates a puppet.
 
     Params:

@@ -10,6 +10,7 @@ import std.format;
 import std.file;
 import std.path : extension;
 import std.json;
+import nulib;
 
 /**
     Magic value meaning that the model has no thumbnail
@@ -144,22 +145,22 @@ class PuppetMeta {
     /**
         Name of the puppet
     */
-    string name;
+    nstring name;
 
     /**
         Version of the Inochi2D spec that was used for creating this model
     */
-    string version_ = "0.8.x";
+    nstring version_ = "0.8.x";
 
     /**
         Rigger(s) of the puppet
     */
-    string rigger;
+    nstring rigger;
 
     /**
         Artist(s) of the puppet
     */
-    string artist;
+    nstring artist;
 
     /**
         Usage Rights of the puppet
@@ -169,22 +170,22 @@ class PuppetMeta {
     /**
         Copyright string
     */
-    string copyright;
+    nstring copyright;
 
     /**
         URL of license
     */
-    string licenseURL;
+    nstring licenseURL;
 
     /**
         Contact information of the first author
     */
-    string contact;
+    nstring contact;
 
     /**
         Link to the origin of this puppet
     */
-    string reference;
+    nstring reference;
 
     /**
         Texture ID of this puppet's thumbnail
