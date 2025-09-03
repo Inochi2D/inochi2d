@@ -12,8 +12,11 @@ import inochi2d.cffi.eh;
 import inochi2d.core.puppet;
 import inochi2d.core.render;
 import inochi2d.core.format;
+import inochi2d.core.param;
 import numem;
 import nulib.string;
+import inochi2d.cffi;
+import inmath;
 
 extern(C) export @nogc:
 
@@ -127,6 +130,16 @@ void in_puppet_draw(in_puppet_t* obj, float delta) {
 }
 
 /**
+    Resets the physics state for the puppet.
+
+    Params:
+        obj = The puppet object.
+*/
+void in_puppet_reset_drivers(in_puppet_t* obj) {
+    assumeNoThrowNoGC(&(cast(Puppet)obj).resetDrivers);
+}
+
+/**
     Gets the texture cache belonging to the puppet.
 
     Params:
@@ -137,6 +150,144 @@ void in_puppet_draw(in_puppet_t* obj, float delta) {
 */
 in_texture_cache_t* in_puppet_get_texture_cache(in_puppet_t* obj) {
     return cast(in_texture_cache_t*)(cast(Puppet)obj).textureCache;
+}
+
+/**
+    Gets the parameters of the puppet.
+
+    Params:
+        obj = The puppet object.
+        count = Where to store the parameter element count.
+    
+    Returns:
+        A puppet-owned array of parameters.
+*/
+in_parameter_t** in_puppet_get_parameters(in_puppet_t* obj, ref uint count) {
+    count = cast(uint)(cast(Puppet)obj).parameters.length;
+    return cast(in_parameter_t**)(cast(Puppet)obj).parameters.ptr;
+}
+
+//
+//              PARAMETERS
+//
+
+struct in_parameter_t;
+
+/**
+    Gets the name of the parameter.
+    
+    Params:
+        obj = The parameter object.
+    
+    Returns:
+        The name of the parameter.
+*/
+const(char)* in_parameter_get_name(in_parameter_t* obj) {
+    return (cast(Parameter)obj).name.ptr;
+}
+
+/**
+    Gets whether the parameter is active.
+    
+    Params:
+        obj = The parameter object.
+    
+    Returns:
+        $(D true) if the parameter is active,
+        $(D false) otherwise.
+*/
+bool in_parameter_get_active(in_parameter_t* obj) {
+    return (cast(Parameter)obj).active;
+}
+
+/**
+    Gets how many dimensions the parameter has.
+    
+    Params:
+        obj = The parameter object.
+    
+    Returns:
+        A number which indicates how many dimensions
+        the parameter has.
+*/
+uint in_parameter_get_dimensions(in_parameter_t* obj) {
+    return (cast(Parameter)obj).isVec2+1;
+}
+
+/**
+    Gets the parameter's minimum value.
+    
+    Params:
+        obj = The parameter object.
+    
+    Returns:
+        The parameter's minimum value.
+*/
+in_vec2_t in_parameter_get_min_value(in_parameter_t* obj) {
+    return reinterpret_cast!in_vec2_t((cast(Parameter)obj).min);
+}
+
+/**
+    Gets the parameter's maximum value.
+    
+    Params:
+        obj = The parameter object.
+    
+    Returns:
+        The parameter's maximum value.
+*/
+in_vec2_t in_parameter_get_max_value(in_parameter_t* obj) {
+    return reinterpret_cast!in_vec2_t((cast(Parameter)obj).max);
+}
+
+/**
+    Gets the parameter's current value.
+    
+    Params:
+        obj = The parameter object.
+    
+    Returns:
+        The parameter's current value.
+*/
+in_vec2_t in_parameter_get_value(in_parameter_t* obj) {
+    return reinterpret_cast!in_vec2_t((cast(Parameter)obj).value);
+}
+
+/**
+    Sets the parameter's current value.
+    
+    Params:
+        obj =   The parameter object.
+        value = The value to set.
+*/
+void in_parameter_set_value(in_parameter_t* obj, in_vec2_t value) {
+    (cast(Parameter)obj).value = reinterpret_cast!vec2(value);
+}
+
+/**
+    Gets the parameter's current value normalized to
+    a range of 0..1
+    
+    Params:
+        obj = The parameter object.
+    
+    Returns:
+        The parameter's current normalized value.
+*/
+in_vec2_t in_parameter_get_normalized_value(in_parameter_t* obj) {
+    return reinterpret_cast!in_vec2_t((cast(Parameter)obj).normalizedValue);
+}
+
+/**
+    Sets the parameter's current value normalized to
+    a range of 0..1
+    
+    Params:
+        obj =   The parameter object.
+        value = The value to set.
+*/
+void in_parameter_set_normalized_value(in_parameter_t* obj, in_vec2_t value) {
+    (cast(Parameter)obj).normalizedValue = reinterpret_cast!vec2(value);
 }
 
 //

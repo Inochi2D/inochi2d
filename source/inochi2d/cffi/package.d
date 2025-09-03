@@ -10,6 +10,7 @@ module inochi2d.cffi;
 import numem;
 
 extern(C) export @nogc:
+
 /**
     Retains a reference to a Inochi2D Object.
 
@@ -34,4 +35,12 @@ void* in_retain(void* obj) {
 */
 void* in_release(void* obj) {
     return cast(void*)(cast(NuRefCounted)obj).release();
+}
+
+/**
+    2D Vector
+*/
+struct in_vec2_t {
+    float x;
+    float y;
 }

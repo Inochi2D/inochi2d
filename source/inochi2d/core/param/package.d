@@ -14,6 +14,7 @@ import std.exception;
 import std.array;
 import std.algorithm.mutation;
 import std.stdio;
+import nulib.string;
 
 public import inochi2d.core.param.binding;
 
@@ -159,14 +160,14 @@ public:
     /**
         Name of the parameter
     */
-    string name;
+    nstring name;
 
     /**
         Optimized indexable name generated at runtime
 
         DO NOT SERIALIZE THIS.
     */
-    string indexableName;
+    nstring indexableName;
 
     /**
         Whether this parameter updates the model
@@ -219,17 +220,10 @@ public:
     ParameterBinding[] bindings;
 
     /**
-        Gets the value normalized to the internal range (0.0->1.0)
+        The value normalized to the internal range (0.0->1.0)
     */
-    vec2 normalizedValue() {
-        return this.mapValue(value);
-    }
-
-    /**
-        Sets the value normalized up from the internal range (0.0->1.0)
-        to the user defined range.
-    */
-    void normalizedValue(vec2 value) {
+    @property vec2 normalizedValue() @nogc => this.mapValue(value);
+    @property void normalizedValue(vec2 value) @nogc {
         this.value = vec2(
             value.x * (max.x-min.x) + min.x,
             value.y * (max.y-min.y) + min.y
@@ -550,7 +544,7 @@ public:
     /**
         Maps an input value to an offset (0.0->1.0)
     */
-    vec2 mapValue(vec2 value) {
+    vec2 mapValue(vec2 value) @nogc {
         vec2 range = max - min;
         vec2 tmp = (value - min);
         vec2 off = vec2(tmp.x / range.x, tmp.y / range.y);
@@ -565,7 +559,7 @@ public:
     /**
         Maps an offset (0.0->1.0) to a value
     */
-    vec2 unmapValue(vec2 offset) {
+    vec2 unmapValue(vec2 offset) @nogc {
         vec2 range = max - min;
         return vec2(range.x * offset.x, range.y * offset.y) + min;
     }
