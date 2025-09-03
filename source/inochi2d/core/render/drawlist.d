@@ -1,0 +1,236 @@
+/**
+    Inochi2D DrawList Interface
+
+    Copyright © 2020-2025, Inochi2D Project
+    Distributed under the 2-Clause BSD License, see LICENSE file.
+    
+    Authors: Luna Nielsen
+*/
+module inochi2d.core.render.drawlist;
+import inochi2d.core.render.state;
+import inmath;
+import nulib;
+import numem;
+import inochi2d.core.render.texture;
+import inochi2d.core.nodes.common;
+
+/**
+    A draw list containing the rendering state and commands
+    to submit to the GPU.
+*/
+final
+class DrawList : NuObject {
+private:
+@nogc:
+
+    // Working set
+    DrawCmd        _ccmd;
+    uint           _cidx;
+
+    // Draw Commands
+    vector!DrawCmd _cmds;
+    uint           _cmdp;
+
+    // Vertex Data
+    vector!VtxData _vtxs;
+    uint           _vtxp;
+
+    // Index Data
+    vector!uint    _idxs;
+    uint           _idxp;
+
+    // Stacks
+    stack!(Texture[IN_MAX_ATTACHMENTS]) _targetsStack;
+
+public:
+
+    /**
+        Command Buffer
+    */
+    @property DrawCmd[] commands() => _cmds[0.._cmdp];
+
+    /**
+        Vertex data
+    */
+    @property VtxData[] vertices() => _vtxs[0.._vtxp];
+
+    /**
+        Index data
+    */
+    @property uint[] indices() => _idxs[0.._idxp];
+
+    /**
+        Pushes render targets to the draw list's stack.
+    */
+    void pushTargets(Texture[IN_MAX_ATTACHMENTS] targets) {
+        if (!_ccmd.isEmpty)
+            this.next();
+        
+        _targetsStack.push(targets);
+    }
+
+    /**
+        Sets sources for the current draw call.
+    */
+    void setSources(Texture[IN_MAX_ATTACHMENTS] sources) {
+        if (!_ccmd.isEmpty) {
+            foreach(i; 0..IN_MAX_ATTACHMENTS) {
+                if (sources[i] !is _ccmd.sources[i]) {
+                    this.next();
+                    break;
+                }
+            }
+        }
+        
+        _ccmd.sources = sources;
+    }
+
+    /**
+        Sets the blending mode for the current draw call.
+    */
+    void setBlending(BlendMode blendMode) {
+        if (!_ccmd.isEmpty && _ccmd.blendMode != blendMode)
+            this.next();
+        
+        _ccmd.blendMode = blendMode;
+    }
+
+    /**
+        Sets the masking mode for the current draw call.
+    */
+    void setMasking(MaskingMode maskMode) {
+        if (!_ccmd.isEmpty && maskMode != MaskingMode.none &&_ccmd.maskMode != maskMode)
+            this.next();
+        
+        _ccmd.maskMode = maskMode;
+    }
+
+    /**
+        Pushes mesh data to the current draw call.
+
+        Params:
+            vtx = Vertex data to push.
+            idx = Index data to push.
+    */
+    void pushMesh(VtxData[] vtx, uint[] idx) {
+        
+        // Invalid vertex buffer check.
+        if (vtx.length < 3)
+            return;
+
+        // Invalid index buffer check.
+        if (idx.length != 0 && (idx.length % 3) != 0)
+            return;
+
+        // Resize if stuff doesn't fit.
+        if (_vtxp+vtx.length > _vtxs.length)
+            _vtxs.resize(_vtxp+vtx.length);
+        if (_idxp+idx.length > _idxs.length)
+            _idxs.resize(_idxp+idx.length);
+
+        // Meshes supply their own index data, as such
+        // we offset it here to fit within our buffer.
+        idx[0..$] += _cidx;
+
+        _vtxs[_vtxp.._vtxp+vtx.length] = vtx[0..$];
+        _idxs[_idxp.._idxp+idx.length] = idx[0..$];
+        _vtxp += vtx.length;
+        _idxp += idx.length;
+        _cidx += idx.length;
+        _ccmd.elemCount += idx.length;
+    }
+
+    /**
+        Pushes the next draw command
+    */
+    void next() {
+        if (_cmds.empty || _ccmd.isEmpty)
+            return;
+
+        if (_cmdp >= _cmds.length)
+            _cmds ~= _ccmd;
+        else
+            _cmds[_cmdp] = _ccmd;
+
+        _cmdp++;
+        _ccmd = DrawCmd.init;
+        _ccmd.idxOffset = _idxp;
+        _ccmd.vtxOffset = _vtxp;
+        _targetsStack.tryPeek(0, _ccmd.targets);
+    }
+
+    /**
+        Pops the top render target from the list's stack.
+    */
+    void popTargets() {
+        if (!_ccmd.isEmpty)
+            this.next();
+        
+        if (!_targetsStack.empty)
+            _targetsStack.pop();
+    }
+
+    /**
+        Clears the draw list, making it ready for a new pass.
+    */
+    void clear() {
+        _vtxp = 0;
+        _idxp = 0;
+        _cmdp = 0;
+        _cidx = 0;
+        _ccmd = DrawCmd.init;
+        _targetsStack.clear();
+    }
+}
+
+/**
+    Maximum number of texture attachments.
+*/
+enum IN_MAX_ATTACHMENTS = 8;
+
+/**
+    A drawing command that is sent to the GPU.
+*/
+struct DrawCmd {
+@nogc:
+
+    /**
+        Render targets
+    */
+    Texture[IN_MAX_ATTACHMENTS] targets;
+
+    /**
+        Source textures
+    */
+    Texture[IN_MAX_ATTACHMENTS] sources;
+
+    /**
+        Blending mode to apply
+    */
+    BlendMode blendMode;
+
+    /**
+        Masking mode to apply.
+    */
+    MaskingMode maskMode;
+
+    /**
+        Vertex offset.
+    */
+    uint vtxOffset;
+
+    /**
+        Index offset.
+    */
+    uint idxOffset;
+
+    /**
+        Number of indices.
+    */
+    uint elemCount;
+
+    /**
+        Whether the command is empty.
+    */
+    @property bool isEmpty() => elemCount == 0;
+}

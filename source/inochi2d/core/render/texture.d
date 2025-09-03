@@ -34,22 +34,6 @@ enum TextureFormat : uint {
 }
 
 /**
-    Texture filtering mode
-*/
-enum Filtering : uint {
-
-    /**
-        Linear texture interpolation.
-    */
-    linear,
-
-    /**
-        Nearest texture interpolation.
-    */
-    nearest
-}
-
-/**
     A texture.
 */
 class Texture : Resource {
@@ -120,7 +104,6 @@ public:
         data.width = width;
         data.height = height;
         data.format = format;
-        this.status = ResourceStatus.wantsCreate;
     }
 
     /**
@@ -128,26 +111,13 @@ public:
     */
     this(TextureData data) {
         this.data = data;
-        this.status = ResourceStatus.wantsCreate;
     }
 
     /**
         Resizes the texture.
     */
     void resize(uint width, uint height) {
-        this.status = ResourceStatus.wantsUpdates;
         data.resize(width, height);
-    }
-
-    /**
-        Marks all requested texture updates as finalized.
-    */
-    override
-    void finalize() {
-        this.status = 
-            status == ResourceStatus.wantsDeletion ? 
-                status : 
-                ResourceStatus.ok;
     }
 }
 

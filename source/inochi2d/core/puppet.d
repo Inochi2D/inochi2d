@@ -272,11 +272,6 @@ class Puppet : ISerializable, IDeserializable {
 private:
 
     /**
-        Resource cache for the puppet.
-    */
-    ResourceCache resourceCache;
-
-    /**
         An internal puppet root node
     */
     Node puppetRootNode;

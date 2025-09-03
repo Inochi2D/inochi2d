@@ -1,0 +1,179 @@
+/**
+    Inochi2D Render State
+
+    Copyright © 2020-2025, Inochi2D Project
+    Distributed under the 2-Clause BSD License, see LICENSE file.
+    
+    Authors: Luna Nielsen
+*/
+module inochi2d.core.render.state;
+import inmath;
+
+/**
+    Vertex Data that gets submitted to the GPU.
+*/
+struct VtxData {
+    vec2 vtx;
+    vec2 uv;
+}
+
+/*
+    INFORMATION ABOUT BLENDING MODES
+    Blending is a complicated topic, especially once we get to mobile devices and games consoles.
+
+    The following blending modes are supported in Standard mode:
+        Normal
+        Multiply
+        Screen
+        Overlay
+        Darken
+        Lighten
+        Color Dodge
+        Linear Dodge
+        Add (Glow)
+        Color Burn
+        Hard Light
+        Soft Light
+        Difference
+        Exclusion
+        Subtract
+        Inverse
+        Destination In
+        Clip To Lower
+        Slice from Lower
+    Some of these blending modes behave better on Tiling GPUs.
+
+    The following blending modes are supported in Core mode:
+        Normal
+        Multiply
+        Screen
+        Lighten
+        Color Dodge
+        Linear Dodge
+        Add (Glow)
+        Inverse
+        Destination In
+        Clip to Lower
+        Slice from Lower
+    Tiling GPUs on older mobile devices don't have great drivers, we shouldn't tempt fate.
+*/
+
+/**
+    Blending modes
+*/
+enum BlendMode {
+    // Normal blending mode
+    normal,
+
+    // Multiply blending mode
+    multiply,
+
+    // Screen
+    screen,
+
+    // Overlay
+    overlay,
+
+    // Darken
+    darken,
+
+    // Lighten
+    lighten,
+    
+    // Color Dodge
+    colorDodge,
+
+    // Linear Dodge
+    linearDodge,
+
+    // Add (Glow)
+    addGlow,
+
+    // Color Burn
+    colorBurn,
+
+    // Hard Light
+    hardLight,
+
+    // Soft Light
+    softLight,
+
+    // Difference
+    difference,
+
+    // Exclusion
+    exclusion,
+
+    // Subtract
+    subtract,
+
+    // Inverse
+    inverse,
+
+    // Destination In
+    destinationIn,
+
+    // Clip to Lower
+    // Special blending mode that clips the drawable
+    // to a lower rendered area.
+    clipToLower,
+
+    // Slice from Lower
+    // Special blending mode that slices the drawable
+    // via a lower rendered area.
+    // Basically inverse ClipToLower
+    sliceFromLower
+}
+
+BlendMode toBlendMode(string name) {
+    switch(name) with(BlendMode) {
+        default: return normal;
+        case "Multiply": return multiply;
+        case "Screen": return screen;
+        case "Overlay": return overlay;
+        case "Darken": return darken;
+        case "Lighten": return lighten;
+        case "ColorDodge": return colorDodge;
+        case "LinearDodge": return linearDodge;
+        case "AddGlow": return addGlow;
+        case "ColorBurn": return colorBurn;
+        case "HardLight": return hardLight;
+        case "SoftLight": return softLight;
+        case "Difference": return difference;
+        case "Exclusion": return exclusion;
+        case "Subtract": return subtract;
+        case "Inverse": return inverse;
+        case "DestinationIn": return destinationIn;
+        case "ClipToLower": return clipToLower;
+        case "SliceFromLower": return sliceFromLower;
+    }
+}
+
+/**
+    Masking mode
+*/
+enum MaskingMode : uint {
+
+    /**
+        No masking is happening.
+    */
+    none = 0,
+
+    /**
+        The part should be masked by the drawables specified
+    */
+    mask = 1,
+
+    /**
+        The path should be dodge masked by the drawables specified
+    */
+    dodge = 2
+}
+
+MaskingMode toMaskingMode(string name) {
+    switch(name) with(MaskingMode) {
+        default: return none;
+        case "Mask": return mask;
+        case "DodgeMask": return dodge;
+    }
+}

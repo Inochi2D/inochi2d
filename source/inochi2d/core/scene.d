@@ -23,7 +23,6 @@ final
 class Scene : NuRefCounted {
 private:
 @nogc:
-    ResourceCache resourceCache;
     vector!Puppet puppets;
     recti viewport_;
 
@@ -33,11 +32,6 @@ public:
         The active camera for the scene.
     */
     Camera camera;
-
-    /**
-        The resource cache that new GPU-objects are allocated from.
-    */
-    @property ResourceCache cache() => resourceCache;
 
     /**
         The viewport for the scene.
@@ -53,7 +47,6 @@ public:
 
     // Destructor
     ~this() {
-        nogc_delete(resourceCache);
         nogc_delete(camera);
     }
 
@@ -61,7 +54,6 @@ public:
         Constructor.
     */
     this() {
-        this.resourceCache = nogc_new!ResourceCache();
         this.camera = nogc_new!Camera2D();
     }
 
@@ -70,11 +62,10 @@ public:
         every puppet in the scene.
     */
     void update(float delta) {
-        
-        // foreach(puppet; puppets) {
-        //     puppet.update(delta);
-        //     puppet.draw(delta);
-        // }
+        foreach(puppet; puppets) {
+            assumeNoGC(&puppet.update, delta);
+            assumeNoGC(&puppet.draw, delta);
+        }
     }
 
     /**

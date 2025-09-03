@@ -16,6 +16,8 @@ import inochi2d.core;
 import std.exception;
 import std.algorithm.sorting;
 
+public import inochi2d.core.render.state;
+
 package(inochi2d) {
     void inInitComposite() {
         inRegisterNodeType!Composite;
@@ -123,13 +125,13 @@ protected:
     // TODO: Cache this
     size_t maskCount() {
         size_t c;
-        foreach(m; masks) if (m.mode == MaskingMode.Mask) c++;
+        foreach(m; masks) if (m.mode == MaskingMode.mask) c++;
         return c;
     }
 
     size_t dodgeCount() {
         size_t c;
-        foreach(m; masks) if (m.mode == MaskingMode.DodgeMask) c++;
+        foreach(m; masks) if (m.mode == MaskingMode.dodge) c++;
         return c;
     }
 
@@ -319,7 +321,7 @@ public:
             // inBeginMask(cMasks > 0);
 
             foreach(ref mask; masks) {
-                mask.maskSrc.renderMask(mask.mode == MaskingMode.DodgeMask);
+                mask.maskSrc.renderMask(mask.mode == MaskingMode.dodge);
             }
 
             // inBeginMaskContent();

@@ -17,6 +17,7 @@ import std.algorithm.mutation : copy;
 import std.math : isNaN;
 
 public import inochi2d.core.nodes.common;
+public import inochi2d.core.render.state;
 public import inochi2d.core.meshdata;
 
 /**
@@ -173,13 +174,13 @@ protected:
     // TODO: Cache this
     size_t maskCount() {
         size_t c;
-        foreach(m; masks) if (m.mode == MaskingMode.Mask) c++;
+        foreach(m; masks) if (m.mode == MaskingMode.mask) c++;
         return c;
     }
 
     size_t dodgeCount() {
         size_t c;
-        foreach(m; masks) if (m.mode == MaskingMode.DodgeMask) c++;
+        foreach(m; masks) if (m.mode == MaskingMode.dodge) c++;
         return c;
     }
 
@@ -199,7 +200,7 @@ public:
     /**
         Blending mode
     */
-    BlendMode blendingMode = BlendMode.Normal;
+    BlendMode blendingMode = BlendMode.normal;
     
     /**
         Alpha Threshold for the masking system, the higher the more opaque pixels will be discarded in the masking process

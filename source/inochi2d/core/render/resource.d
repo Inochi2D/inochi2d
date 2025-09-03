@@ -10,33 +10,6 @@ module inochi2d.core.render.resource;
 import numem;
 
 /**
-    Current status of a resource
-*/
-enum ResourceStatus : int {
-
-    /**
-        Resource is ready for use.
-    */
-    ok = 0,
-    
-    /**
-        A new resource should be created and an ID allocated to it
-        by the rendering API.
-    */
-    wantsCreate = 1,
-    
-    /**
-        A resource wants updates to its data or shape.
-    */
-    wantsUpdates = 2,
-    
-    /**
-        A resource requests that it be deleted.
-    */
-    wantsDeletion = 3
-}
-
-/**
     An ID managed by the backend rendering API.
 */
 alias ResourceID = void*;
@@ -55,26 +28,8 @@ public:
     abstract @property uint length();
 
     /**
-        Current status of the resource.
-    */
-    ResourceStatus status;
-
-    /**
         ID of a resource, differs based on the underlying
         rendering API.
     */
     ResourceID id;
-
-    /**
-        Finalizes a resource update.
-    */
-    abstract void finalize();
-
-    /**
-        Requests the deletion of this resource.
-    */
-    final
-    void requestDelete() {
-        this.status = ResourceStatus.wantsDeletion;
-    }
 }

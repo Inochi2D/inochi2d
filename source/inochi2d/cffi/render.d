@@ -52,30 +52,6 @@ uint in_resource_get_length(in_resource_t* obj) {
 }
 
 /**
-    Gets the status of the resource.
-
-    Params:
-        obj = The resource object.
-    
-    Returns:
-        The status of the object.
-*/
-uint in_resource_get_status(in_resource_t* obj) {
-    return cast(uint)(cast(Resource)obj).status;
-}
-
-/**
-    Sets the status of the resource.
-
-    Params:
-        obj = The resource object.
-        value = The value to set.
-*/
-void in_resource_set_status(in_resource_t* obj, uint value) {
-    (cast(Resource)obj).status = cast(ResourceStatus)value;
-}
-
-/**
     Gets the renderer ID of the resource.
 
     Params:
@@ -97,16 +73,6 @@ void* in_resource_get_id(in_resource_t* obj) {
 */
 void in_resource_set_id(in_resource_t* obj, void* value) {
     (cast(Resource)obj).id = value;
-}
-
-/**
-    Finalizes a resource update.
-
-    Params:
-        obj = The resource object.
-*/
-void in_resource_finalize(in_resource_t* obj) {
-    (cast(Resource)obj).finalize();
 }
 
 //
