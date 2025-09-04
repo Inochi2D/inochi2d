@@ -838,13 +838,6 @@ public:
         return animations;
     }
 
-    void applyDeformToChildren() {
-        auto nodes = findNodesType!MeshGroup(root);
-        foreach (node; nodes) {
-            node.applyDeformToChildren(parameters);
-        }
-    }
-
     /**
         Gets the combined bounds of the puppet
     */

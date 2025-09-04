@@ -14,7 +14,7 @@ import inochi2d.core;
 public import inochi2d.core.nodes.part;
 public import inochi2d.core.nodes.drawable;
 public import inochi2d.core.nodes.composite;
-public import inochi2d.core.nodes.meshgroup;
+public import inochi2d.core.nodes.deformer;
 public import inochi2d.core.nodes.drivers; 
 import std.typecons: tuple, Tuple;
 
@@ -144,39 +144,39 @@ protected:
     }
     MatrixHolder overrideTransformMatrix = null;
 
-    Tuple!(vec2[], mat4*) delegate(vec2[], vec2[], mat4*) preProcessFilter  = null;
-    Tuple!(vec2[], mat4*) delegate(vec2[], vec2[], mat4*) postProcessFilter = null;
+    // Tuple!(vec2[], mat4*) delegate(vec2[], vec2[], mat4*) preProcessFilter  = null;
+    // Tuple!(vec2[], mat4*) delegate(vec2[], vec2[], mat4*) postProcessFilter = null;
 
     import std.stdio;
     void preProcess() {
-        if (preProcessed)
-            return;
-        preProcessed = true;
-        if (preProcessFilter !is null) {
-            overrideTransformMatrix = null;
-            mat4 matrix = this.parent? this.parent.transform.matrix: mat4.identity;
-            auto filterResult = preProcessFilter([localTransform.translation.xy], [offsetTransform.translation.xy], &matrix);
-            if (filterResult[0] !is null && filterResult[0].length > 0) {
-                offsetTransform.translation = vec3(filterResult[0][0], offsetTransform.translation.z);
-                transformChanged();
-            } 
-        }
+        // if (preProcessed)
+        //     return;
+        // preProcessed = true;
+        // if (preProcessFilter !is null) {
+        //     overrideTransformMatrix = null;
+        //     mat4 matrix = this.parent ? this.parent.transform.matrix : mat4.identity;
+        //     auto filterResult = preProcessFilter([localTransform.translation.xy], [offsetTransform.translation.xy], &matrix);
+        //     if (filterResult[0] !is null && filterResult[0].length > 0) {
+        //         offsetTransform.translation = vec3(filterResult[0][0], offsetTransform.translation.z);
+        //         transformChanged();
+        //     } 
+        // }
     }
 
     void postProcess() {
-        if (postProcessed)
-            return;
-        postProcessed = true;
-        if (postProcessFilter !is null) {
-            overrideTransformMatrix = null;
-            mat4 matrix = this.parent? this.parent.transform.matrix: mat4.identity;
-            auto filterResult = postProcessFilter([localTransform.translation.xy], [offsetTransform.translation.xy], &matrix);
-            if (filterResult[0] !is null && filterResult[0].length > 0) {
-                offsetTransform.translation = vec3(filterResult[0][0], offsetTransform.translation.z);
-                transformChanged();
-                overrideTransformMatrix = new MatrixHolder(transform.matrix);
-            } 
-        }
+        // if (postProcessed)
+        //     return;
+        // postProcessed = true;
+        // if (postProcessFilter !is null) {
+        //     overrideTransformMatrix = null;
+        //     mat4 matrix = this.parent? this.parent.transform.matrix: mat4.identity;
+        //     auto filterResult = postProcessFilter([localTransform.translation.xy], [offsetTransform.translation.xy], &matrix);
+        //     if (filterResult[0] !is null && filterResult[0].length > 0) {
+        //         offsetTransform.translation = vec3(filterResult[0][0], offsetTransform.translation.z);
+        //         transformChanged();
+        //         overrideTransformMatrix = new MatrixHolder(transform.matrix);
+        //     } 
+        // }
     }
 
 package(inochi2d):
@@ -877,22 +877,10 @@ public:
      * set new Parent
      */
     void reparent(Node parent, ulong pOffset) {
-        void unsetGroup(Node node) {
-            node.postProcessFilter = null;
-            node.preProcessFilter  = null;
-            auto group = cast(MeshGroup)node;
-            if (group is null) {
-                foreach (child; node.children) {
-                    unsetGroup(child);
-                }
-            }
-        }
-
-        unsetGroup(this);
-
         if (parent !is null)
             setRelativeTo(parent);
         insertInto(parent, pOffset);
+        
         auto c = this;
         for (auto p = parent; p !is null; p = p.parent, c = c.parent) {
             p.setupChild(c);

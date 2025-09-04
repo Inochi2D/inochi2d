@@ -68,7 +68,7 @@ abstract class ParameterBinding : ISerializable, IDeserializable {
     /**
         Resets value at specified keypoint to default
     */
-    abstract  void reset(vec2u point);
+    abstract void reset(vec2u point);
 
     /**
         Returns whether the specified keypoint is set
@@ -255,9 +255,10 @@ public:
     override
     uint getSetCount() {
         uint count = 0;
-        foreach(x; 0..isSet_.length) {
-            foreach(y; 0..isSet_[x].length) {
-                if (isSet_[x][y]) count++;
+        foreach (x; 0 .. isSet_.length) {
+            foreach (y; 0 .. isSet_[x].length) {
+                if (isSet_[x][y])
+                    count++;
             }
         }
         return count;
@@ -302,18 +303,19 @@ public:
         uint yCount = parameter.axisPointCount(1);
 
         enforce(this.values.length == xCount, "Mismatched X value count");
-        foreach(i; this.values) {
+        foreach (i; this.values) {
             enforce(i.length == yCount, "Mismatched Y value count");
         }
 
         enforce(this.isSet_.length == xCount, "Mismatched X isSet_ count");
-        foreach(i; this.isSet_) {
+        foreach (i; this.isSet_) {
             enforce(i.length == yCount, "Mismatched Y isSet_ count");
         }
     }
 
     override
-    void reconstruct(Puppet puppet) { }
+    void reconstruct(Puppet puppet) {
+    }
 
     /**
         Finalize loading of parameter
@@ -333,12 +335,12 @@ public:
 
         values.length = xCount;
         isSet_.length = xCount;
-        foreach(x; 0..xCount) {
+        foreach (x; 0 .. xCount) {
             isSet_[x].length = 0;
             isSet_[x].length = yCount;
 
             values[x].length = yCount;
-            foreach(y; 0..yCount) {
+            foreach (y; 0 .. yCount) {
                 clearValue(values[x][y]);
             }
         }
@@ -361,7 +363,7 @@ public:
     void setValue(vec2u point, T value) {
         values[point.x][point.y] = value;
         isSet_[point.x][point.y] = true;
-        
+
         reInterpolate();
     }
 
@@ -413,8 +415,10 @@ public:
             values.reverse();
             isSet_.reverse();
         } else {
-            foreach(ref i; values) i.reverse();
-            foreach(ref i; isSet_) i.reverse();
+            foreach (ref i; values)
+                i.reverse();
+            foreach (ref i; isSet_)
+                i.reverse();
         }
     }
 
@@ -432,10 +436,11 @@ public:
         uint totalCount = xCount * yCount;
 
         // Initialize validity map to user-set points
-        foreach(x; 0..xCount) {
+        foreach (x; 0 .. xCount) {
             valid ~= isSet_[x].dup;
-            foreach(y; 0..yCount) {
-                if (isSet_[x][y]) validCount++;
+            foreach (y; 0 .. yCount) {
+                if (isSet_[x][y])
+                    validCount++;
             }
         }
 
@@ -455,7 +460,7 @@ public:
         // Used by extendAndIntersect for x/y factor
         float[][] interpDistance;
         interpDistance.length = xCount;
-        foreach(x; 0..xCount) {
+        foreach (x; 0 .. xCount) {
             interpDistance[x].length = yCount;
         }
 
@@ -464,29 +469,47 @@ public:
 
         // Helpers to handle interpolation across both axes more easily
         uint majorCnt() {
-            if (yMajor) return yCount;
-            else return xCount;
+            if (yMajor)
+                return yCount;
+            else
+                return xCount;
         }
+
         uint minorCnt() {
-            if (yMajor) return xCount;
-            else return yCount;
+            if (yMajor)
+                return xCount;
+            else
+                return yCount;
         }
+
         bool isValid(uint maj, uint min) {
-            if (yMajor) return valid[min][maj];
-            else return valid[maj][min];
+            if (yMajor)
+                return valid[min][maj];
+            else
+                return valid[maj][min];
         }
+
         bool isNewlySet(uint maj, uint min) {
-            if (yMajor) return newlySet[min][maj];
-            else return newlySet[maj][min];
+            if (yMajor)
+                return newlySet[min][maj];
+            else
+                return newlySet[maj][min];
         }
+
         T get(uint maj, uint min) {
-            if (yMajor) return values[min][maj];
-            else return values[maj][min];
+            if (yMajor)
+                return values[min][maj];
+            else
+                return values[maj][min];
         }
+
         float getDistance(uint maj, uint min) {
-            if (yMajor) return interpDistance[min][maj];
-            else return interpDistance[maj][min];
+            if (yMajor)
+                return interpDistance[min][maj];
+            else
+                return interpDistance[maj][min];
         }
+
         void reset(uint maj, uint min, T val, float distance = 0) {
             if (yMajor) {
                 //debug writefln("set (%d, %d) -> %s", min, maj, val);
@@ -502,15 +525,22 @@ public:
                 newlySet[maj][min] = true;
             }
         }
+
         void set(uint maj, uint min, T val, float distance = 0) {
             reset(maj, min, val, distance);
-            if (yMajor) commitPoints ~= vec2u(min, maj);
-            else commitPoints ~= vec2u(maj, min);
+            if (yMajor)
+                commitPoints ~= vec2u(min, maj);
+            else
+                commitPoints ~= vec2u(maj, min);
         }
+
         float axisPoint(uint idx) {
-            if (yMajor) return parameter.axisPoints[0][idx];
-            else return parameter.axisPoints[1][idx];
+            if (yMajor)
+                return parameter.axisPoints[0][idx];
+            else
+                return parameter.axisPoints[1][idx];
         }
+
         T interp(uint maj, uint left, uint mid, uint right) {
             float leftOff = axisPoint(left);
             float midOff = axisPoint(mid);
@@ -526,32 +556,38 @@ public:
             yMajor = secondPass;
             bool detectedIntersections = false;
 
-            foreach(i; 0..majorCnt()) {
+            foreach (i; 0 .. majorCnt()) {
                 uint l = 0;
                 uint cnt = minorCnt();
 
                 // Find first element set
-                for(; l < cnt && !isValid(i, l); l++) {}
+                for (; l < cnt && !isValid(i, l); l++) {
+                }
 
                 // Empty row, we're done
-                if (l >= cnt) continue;
+                if (l >= cnt)
+                    continue;
 
                 while (true) {
                     // Advance until before a missing element
-                    for(; l < cnt - 1 && isValid(i, l + 1); l++) {}
+                    for (; l < cnt - 1 && isValid(i, l + 1); l++) {
+                    }
 
                     // Reached right side, done
-                    if (l >= (cnt - 1)) break;
+                    if (l >= (cnt - 1))
+                        break;
 
                     // Find next set element
                     uint r = l + 1;
-                    for(; r < cnt && !isValid(i, r); r++) {}
+                    for (; r < cnt && !isValid(i, r); r++) {
+                    }
 
                     // If we ran off the edge, we're done
-                    if (r >= cnt) break;
+                    if (r >= cnt)
+                        break;
 
                     // Interpolate between the pair of valid elements
-                    foreach (m; (l + 1)..r) {
+                    foreach (m; (l + 1) .. r) {
                         T val = interp(i, l, m, r);
 
                         // If we're running the second stage of intersecting 1D interpolation
@@ -579,7 +615,8 @@ public:
         }
 
         void extrapolateCorners() {
-            if (yCount <= 1 || xCount <= 1) return;
+            if (yCount <= 1 || xCount <= 1)
+                return;
 
             void extrapolateCorner(uint baseX, uint baseY, uint offX, uint offY) {
                 T base = values[baseX][baseY];
@@ -589,8 +626,8 @@ public:
                 commitPoints ~= vec2u(baseX + offX, baseY + offY);
             }
 
-            foreach(x; 0..xCount - 1) {
-                foreach(y; 0..yCount - 1) {
+            foreach (x; 0 .. xCount - 1) {
+                foreach (y; 0 .. yCount - 1) {
                     if (valid[x][y] && valid[x + 1][y] && valid[x][y + 1] && !valid[x + 1][y + 1])
                         extrapolateCorner(x, y, 1, 1);
                     else if (valid[x][y] && valid[x + 1][y] && !valid[x][y + 1] && valid[x + 1][y + 1])
@@ -629,35 +666,38 @@ public:
                 }
             }
 
-            foreach(i; 0..majorCnt()) {
+            foreach (i; 0 .. majorCnt()) {
                 uint j;
                 uint cnt = minorCnt();
 
                 // Find first element set
-                for(j = 0; j < cnt && !isValid(i, j); j++) {}
+                for (j = 0; j < cnt && !isValid(i, j); j++) {
+                }
 
                 // Empty row, we're done
-                if (j >= cnt) continue;
+                if (j >= cnt)
+                    continue;
 
                 // Replicate leftwards
                 T val = get(i, j);
                 float origin = axisPoint(j);
-                foreach(k; 0..j)
+                foreach (k; 0 .. j)
                     setOrAverage(i, k, val, origin);
 
                 // Find last element set
-                for(j = cnt - 1; j < cnt && !isValid(i, j); j--) {}
+                for (j = cnt - 1; j < cnt && !isValid(i, j); j--) {
+                }
 
                 // Replicate rightwards
                 val = get(i, j);
                 origin = axisPoint(j);
-                foreach(k; (j + 1)..cnt)
+                foreach (k; (j + 1) .. cnt)
                     setOrAverage(i, k, val, origin);
             }
         }
 
         while (true) {
-            foreach(i; commitPoints) {
+            foreach (i; commitPoints) {
                 assert(!valid[i.x][i.y], "trying to double-set a point");
                 valid[i.x][i.y] = true;
                 validCount++;
@@ -665,10 +705,11 @@ public:
             commitPoints.length = 0;
 
             // Are we done?
-            if (validCount == totalCount) break;
+            if (validCount == totalCount)
+                break;
 
             // Reset the newlySet array
-            foreach(x; 0..xCount) {
+            foreach (x; 0 .. xCount) {
                 newlySet[x].length = 0;
                 newlySet[x].length = yCount;
             }
@@ -681,12 +722,14 @@ public:
             // If that happens, the next loop will re-try normal 1D interpolation.
             interpolate1D2D(true);
             // Did we get work done? If so, commit and loop
-            if (commitPoints.length > 0) continue;
+            if (commitPoints.length > 0)
+                continue;
 
             // Now try corner extrapolation
             extrapolateCorners();
             // Did we get work done? If so, commit and loop
-            if (commitPoints.length > 0) continue;
+            if (commitPoints.length > 0)
+                continue;
 
             // Running out of options. Expand out points in both axes outwards, but if
             // two expansions intersect then compute the average and commit only intersections.
@@ -695,7 +738,8 @@ public:
             extendAndIntersect(false);
             extendAndIntersect(true);
             // Did we get work done? If so, commit and loop
-            if (commitPoints.length > 0) continue;
+            if (commitPoints.length > 0)
+                continue;
 
             // Should never happen
             break;
@@ -707,13 +751,14 @@ public:
 
     T interpolate(vec2u leftKeypoint, vec2 offset) {
         switch (interpolateMode_) {
-            case InterpolateMode.Nearest:
-                return interpolateNearest(leftKeypoint, offset);
-            case InterpolateMode.Linear:
-                return interpolateLinear(leftKeypoint, offset);
-            case InterpolateMode.Cubic:
-                return interpolateCubic(leftKeypoint, offset);
-            default: assert(0);
+        case InterpolateMode.Nearest:
+            return interpolateNearest(leftKeypoint, offset);
+        case InterpolateMode.Linear:
+            return interpolateLinear(leftKeypoint, offset);
+        case InterpolateMode.Cubic:
+            return interpolateCubic(leftKeypoint, offset);
+        default:
+            assert(0);
         }
     }
 
@@ -752,18 +797,18 @@ public:
             T p01, p02, p03, p04;
             T[4] pOut;
 
-            size_t xlen = values.length-1;
-            size_t ylen = values[0].length-1;
-            ptrdiff_t xkp = cast(ptrdiff_t)leftKeypoint.x;
-            ptrdiff_t ykp = cast(ptrdiff_t)leftKeypoint.y;
+            size_t xlen = values.length - 1;
+            size_t ylen = values[0].length - 1;
+            ptrdiff_t xkp = cast(ptrdiff_t) leftKeypoint.x;
+            ptrdiff_t ykp = cast(ptrdiff_t) leftKeypoint.y;
 
-            foreach(y; 0..4) {
-                size_t yp = clamp(ykp+y-1, 0, ylen);
+            foreach (y; 0 .. 4) {
+                size_t yp = clamp(ykp + y - 1, 0, ylen);
 
-                p01 = values[max(xkp-1, 0)][yp];
+                p01 = values[max(xkp - 1, 0)][yp];
                 p02 = values[xkp][yp];
-                p03 = values[xkp+1][yp];  
-                p04 = values[min(xkp+2, xlen)][yp];
+                p03 = values[xkp + 1][yp];
+                p04 = values[min(xkp + 2, xlen)][yp];
                 pOut[y] = cubic(p01, p02, p03, p04, xt);
             }
 
@@ -773,12 +818,12 @@ public:
         if (parameter.isVec2) {
             return bicubicInterp(leftKeypoint, offset.x, offset.y);
         } else {
-            ptrdiff_t xkp = cast(ptrdiff_t)leftKeypoint.x;
-            size_t xlen = values.length-1;
+            ptrdiff_t xkp = cast(ptrdiff_t) leftKeypoint.x;
+            size_t xlen = values.length - 1;
 
             p0 = values[max(xkp - 1, 0)][0];
             p1 = values[xkp][0];
-            p2 = values[xkp + 1][0];     
+            p2 = values[xkp + 1][0];
             p3 = values[min(xkp + 2, xlen)][0];
             return cubic(p0, p1, p2, p3, offset.x);
         }
@@ -801,10 +846,10 @@ public:
             isSet_.insertInPlace(index, cast(bool[])[]);
             isSet_[index].length = yCount;
         } else if (axis == 1) {
-            foreach(ref i; this.values) {
+            foreach (ref i; this.values) {
                 i.insertInPlace(index, T.init);
             }
-            foreach(ref i; this.isSet_) {
+            foreach (ref i; this.isSet_) {
                 i.insertInPlace(index, false);
             }
         }
@@ -829,14 +874,14 @@ public:
                 isSet_.insertInPlace(newindex, swap);
             }
         } else if (axis == 1) {
-            foreach(ref i; this.values) {
+            foreach (ref i; this.values) {
                 {
                     auto swap = i[oldindex];
                     i = i.remove(oldindex);
                     i.insertInPlace(newindex, swap);
                 }
             }
-            foreach(i; this.isSet_) {
+            foreach (i; this.isSet_) {
                 {
                     auto swap = i[oldindex];
                     i = i.remove(oldindex);
@@ -856,10 +901,10 @@ public:
             values = values.remove(index);
             isSet_ = isSet_.remove(index);
         } else if (axis == 1) {
-            foreach(i; 0..this.values.length) {
+            foreach (i; 0 .. this.values.length) {
                 values[i] = values[i].remove(index);
             }
-            foreach(i; 0..this.isSet_.length) {
+            foreach (i; 0 .. this.isSet_.length) {
                 isSet_[i] = isSet_[i].remove(index);
             }
         }
@@ -867,21 +912,26 @@ public:
         reInterpolate();
     }
 
-    override void scaleValueAt(vec2u index, int axis, float scale)
-    {
+    override void scaleValueAt(vec2u index, int axis, float scale) {
         /* Default to just scalar scale */
         setValue(index, getValue(index) * scale);
     }
 
-    override void extrapolateValueAt(vec2u index, int axis)
-    {
+    override void extrapolateValueAt(vec2u index, int axis) {
         vec2 offset = parameter.getKeypointOffset(index);
 
         switch (axis) {
-            case -1: offset = vec2(1, 1) - offset; break;
-            case 0: offset.x = 1 - offset.x; break;
-            case 1: offset.y = 1 - offset.y; break;
-            default: assert(false, "bad axis");
+        case -1:
+            offset = vec2(1, 1) - offset;
+            break;
+        case 0:
+            offset.x = 1 - offset.x;
+            break;
+        case 1:
+            offset.y = 1 - offset.y;
+            break;
+        default:
+            assert(false, "bad axis");
         }
 
         vec2u srcIndex;
@@ -894,8 +944,7 @@ public:
         scaleValueAt(index, axis, -1);
     }
 
-    override void copyKeypointToBinding(vec2u src, ParameterBinding other, vec2u dest)
-    {
+    override void copyKeypointToBinding(vec2u src, ParameterBinding other, vec2u dest) {
         if (!isSet(src)) {
             other.unset(dest);
         } else if (auto o = cast(ParameterBindingImpl!T)(other)) {
@@ -905,8 +954,7 @@ public:
         }
     }
 
-    override void swapKeypointWithBinding(vec2u src, ParameterBinding other, vec2u dest)
-    {
+    override void swapKeypointWithBinding(vec2u src, ParameterBinding other, vec2u dest) {
         if (auto o = cast(ParameterBindingImpl!T)(other)) {
             bool thisSet = isSet(src);
             bool otherSet = other.isSet(dest);
@@ -965,14 +1013,12 @@ class ValueParameterBinding : ParameterBindingImpl!float {
         val = target.node.getDefaultValue(target.paramName);
     }
 
-    override void scaleValueAt(vec2u index, int axis, float scale)
-    {
+    override void scaleValueAt(vec2u index, int axis, float scale) {
         /* Nodes know how to do axis-aware scaling */
         setValue(index, target.node.scaleValue(target.paramName, getValue(index), axis, scale));
     }
 
-    override bool isCompatibleWithNode(Node other)
-    {
+    override bool isCompatibleWithNode(Node other) {
         return other.hasParam(this.target.paramName);
     }
 }
@@ -996,40 +1042,45 @@ class DeformationParameterBinding : ParameterBindingImpl!Deformation {
     void applyToTarget(Deformation value) {
         enforce(this.target.paramName == "deform");
 
-        if (Drawable d = cast(Drawable)target.node) {
-            d.deformStack.push(value);
+        if (IDeformable df = cast(IDeformable) target.node) {
+            df.deform(value.vertexOffsets);
         }
     }
 
     override
     void clearValue(ref Deformation val) {
         // Reset deformation to identity, with the right vertex count
-        if (Drawable d = cast(Drawable)target.node) {
-            val.clear(d.vertices.length);
+        if (IDeformable df = cast(IDeformable) target.node) {
+            val.clear(df.deformPoints.length);
         }
     }
 
     override
-    void scaleValueAt(vec2u index, int axis, float scale)
-    {
+    void scaleValueAt(vec2u index, int axis, float scale) {
         vec2 vecScale;
 
         switch (axis) {
-            case -1: vecScale = vec2(scale, scale); break;
-            case 0: vecScale = vec2(scale, 1); break;
-            case 1: vecScale = vec2(1, scale); break;
-            default: assert(false, "Bad axis");
+        case -1:
+            vecScale = vec2(scale, scale);
+            break;
+        case 0:
+            vecScale = vec2(scale, 1);
+            break;
+        case 1:
+            vecScale = vec2(1, scale);
+            break;
+        default:
+            assert(false, "Bad axis");
         }
 
         /* Default to just scalar scale */
         setValue(index, getValue(index) * vecScale);
     }
 
-    override bool isCompatibleWithNode(Node other)
-    {
-        if (Drawable d = cast(Drawable)target.node) {
-            if (Drawable o = cast(Drawable)other) {
-                return d.vertices.length == o.vertices.length;
+    override bool isCompatibleWithNode(Node other) {
+        if (IDeformable a = cast(IDeformable) target.node) {
+            if (IDeformable b = cast(IDeformable) other) {
+                return a.deformPoints.length == a.deformPoints.length;
             } else {
                 return false;
             }
@@ -1042,7 +1093,7 @@ class DeformationParameterBinding : ParameterBindingImpl!Deformation {
 @("TestInterpolation")
 unittest {
     void printArray(float[][] arr) {
-        foreach(row; arr) {
+        foreach (row; arr) {
             writefln(" %s", row);
         }
     }
@@ -1056,9 +1107,9 @@ unittest {
         // Assign values to ValueParameterBinding and consider NaN as !isSet_
         bind.values = input;
         bind.isSet_.length = input.length;
-        foreach(x; 0..input.length) {
+        foreach (x; 0 .. input.length) {
             bind.isSet_[x].length = input[0].length;
-            foreach(y; 0..input[0].length) {
+            foreach (y; 0 .. input[0].length) {
                 bind.isSet_[x][y] = !isNaN(input[x][y]);
             }
         }
@@ -1068,8 +1119,8 @@ unittest {
 
         // Check results with a fudge factor for rounding error
         const float epsilon = 0.0001;
-        foreach(x; 0..bind.values.length) {
-            foreach(y; 0..bind.values[0].length) {
+        foreach (x; 0 .. bind.values.length) {
+            foreach (y; 0 .. bind.values[0].length) {
                 float delta = abs(expect[x][y] - bind.values[x][y]);
                 if (isNaN(delta) || delta > epsilon) {
                     debug writefln("Output mismatch at %d, %d", x, y);
@@ -1090,12 +1141,12 @@ unittest {
         axisPoints[0].length = input.length;
         axisPoints[1].length = input[0].length;
         if (input.length > 1) {
-            foreach(x; 0..input.length) {
+            foreach (x; 0 .. input.length) {
                 axisPoints[0][x] = x / cast(float)(input.length - 1);
             }
         }
         if (input[0].length > 1) {
-            foreach(y; 0..input[0].length) {
+            foreach (y; 0 .. input[0].length) {
 
                 axisPoints[1][y] = y / cast(float)(input[0].length - 1);
             }
@@ -1107,13 +1158,13 @@ unittest {
     float x = float.init;
 
     runTestUniform(
-        [[1f], [ x], [ x], [4f]],
+        [[1f], [x], [x], [4f]],
         [[1f], [2f], [3f], [4f]],
         "1d-uniform-interpolation"
     );
 
     runTest(
-        [[0f], [ x], [ x], [4f]],
+        [[0f], [x], [x], [4f]],
         [[0f], [1f], [3f], [4f]],
         [[0f, 0.25f, 0.75f, 1f], [0f]],
         "1d-nonuniform-interpolation"
@@ -1121,113 +1172,113 @@ unittest {
 
     runTestUniform(
         [
-            [ 4,  x,  x, 10],
-            [ x,  x,  x,  x],
-            [ x,  x,  x,  x],
-            [ 1,  x,  x,  7]
-        ],
+        [4, x, x, 10],
+        [x, x, x, x],
+        [x, x, x, x],
+        [1, x, x, 7]
+    ],
         [
-            [ 4,  6,  8, 10],
-            [ 3,  5,  7,  9],
-            [ 2,  4,  6,  8],
-            [ 1,  3,  5,  7]
-        ],
+        [4, 6, 8, 10],
+        [3, 5, 7, 9],
+        [2, 4, 6, 8],
+        [1, 3, 5, 7]
+    ],
         "square-interpolation"
     );
 
     runTestUniform(
         [
-            [ 4,  x,  x,  x],
-            [ x,  x,  x,  x],
-            [ x,  x,  x,  x],
-            [ 1,  x,  x,  7]
-        ],
+        [4, x, x, x],
+        [x, x, x, x],
+        [x, x, x, x],
+        [1, x, x, 7]
+    ],
         [
-            [ 4,  6,  8, 10],
-            [ 3,  5,  7,  9],
-            [ 2,  4,  6,  8],
-            [ 1,  3,  5,  7]
-        ],
+        [4, 6, 8, 10],
+        [3, 5, 7, 9],
+        [2, 4, 6, 8],
+        [1, 3, 5, 7]
+    ],
         "corner-extrapolation"
     );
 
     runTestUniform(
         [
-            [ 9,  x,  x,  0],
-            [ x,  x,  x,  x],
-            [ x,  x,  x,  x],
-            [ 0,  x,  x,  9]
-        ],
+        [9, x, x, 0],
+        [x, x, x, x],
+        [x, x, x, x],
+        [0, x, x, 9]
+    ],
         [
-            [ 9,  6,  3,  0],
-            [ 6,  5,  4,  3],
-            [ 3,  4,  5,  6],
-            [ 0,  3,  6,  9]
-        ],
+        [9, 6, 3, 0],
+        [6, 5, 4, 3],
+        [3, 4, 5, 6],
+        [0, 3, 6, 9]
+    ],
         "cross-interpolation"
     );
 
     runTestUniform(
         [
-            [ x,  x,  2,  x,  x],
-            [ x,  x,  x,  x,  x],
-            [ 0,  x,  x,  x,  4],
-            [ x,  x,  x,  x,  x],
-            [ x,  x, 10,  x,  x]
-        ],
+        [x, x, 2, x, x],
+        [x, x, x, x, x],
+        [0, x, x, x, 4],
+        [x, x, x, x, x],
+        [x, x, 10, x, x]
+    ],
         [
-            [-2,  0,  2,  2,  2],
-            [-1,  1,  3,  3,  3],
-            [ 0,  2,  4,  4,  4],
-            [ 3,  5,  7,  7,  7],
-            [ 6,  8, 10, 10, 10]
-        ],
+        [-2, 0, 2, 2, 2],
+        [-1, 1, 3, 3, 3],
+        [0, 2, 4, 4, 4],
+        [3, 5, 7, 7, 7],
+        [6, 8, 10, 10, 10]
+    ],
         "diamond-interpolation"
     );
 
     runTestUniform(
         [
-            [ x,  x,  x,  x],
-            [ x,  3,  4,  x],
-            [ x,  1,  2,  x],
-            [ x,  x,  x,  x]
-        ],
+        [x, x, x, x],
+        [x, 3, 4, x],
+        [x, 1, 2, x],
+        [x, x, x, x]
+    ],
         [
-            [ 3,  3,  4,  4],
-            [ 3,  3,  4,  4],
-            [ 1,  1,  2,  2],
-            [ 1,  1,  2,  2]
-        ],
+        [3, 3, 4, 4],
+        [3, 3, 4, 4],
+        [1, 1, 2, 2],
+        [1, 1, 2, 2]
+    ],
         "edge-expansion"
     );
 
     runTestUniform(
         [
-            [ x,  x,  x,  x],
-            [ x,  x,  4,  x],
-            [ x,  x,  x,  x],
-            [ 0,  x,  x,  x]
-        ],
+        [x, x, x, x],
+        [x, x, 4, x],
+        [x, x, x, x],
+        [0, x, x, x]
+    ],
         [
-            [ 2,  3,  4,  4],
-            [ 2,  3,  4,  4],
-            [ 1,  2,  3,  3],
-            [ 0,  1,  2,  2]
-        ],
+        [2, 3, 4, 4],
+        [2, 3, 4, 4],
+        [1, 2, 3, 3],
+        [0, 1, 2, 2]
+    ],
         "intersecting-expansion"
     );
 
     runTestUniform(
         [
-            [ x,  5,  x],
-            [ x,  x,  x],
-            [ 0,  x,  x]
-        ],
+        [x, 5, x],
+        [x, x, x],
+        [0, x, x]
+    ],
         [
-            [ 4,  5,  5],
-            [ 2,  3,  3],
-            [ 0,  1,  1]
-        ],
+        [4, 5, 5],
+        [2, 3, 3],
+        [0, 1, 1]
+    ],
         "nondiagonal-gradient"
     );
 }

@@ -1,10 +1,35 @@
-module inochi2d.core.nodes.defstack;
+/**
+    Deformation information.
+*/
+module inochi2d.core.math.deform;
 import inochi2d.core;
 import inochi2d.core.math;
 import inochi2d;
 import std.exception : enforce;
 import nulib.collections.vector;
 import numem;
+
+/**
+    Interface implemented by types which can be deformed.
+*/
+interface IDeformable {
+public:
+
+    /**
+        The points which may be deformed by the deformer.
+    */
+    @property vec2[] deformPoints();
+
+    /**
+        Deforms the IDeformable.
+
+        Params:
+            deformed =  The deformation delta.
+            absolute =  Whether the deformation is absolute,
+                        replacing the original deformation.
+    */
+    void deform(vec2[] deformed, bool absolute = false);
+}
 
 /**
     A deformation
@@ -179,39 +204,5 @@ struct Deformation {
         foreach(ref element; data.array) {
             this.vertexOffsets ~= element.deserialize!vec2();
         }
-    }
-}
-
-/**
-    A stack of local deformations to apply to the mesh
-*/
-struct DeformationStack {
-private:
-    Drawable parent;
-
-public:
-    this(Drawable parent) {
-        this.parent = parent;
-    }
-
-    /**
-        Push deformation on to stack
-    */
-    void push(ref Deformation deformation) {
-        enforce(this.parent.deformation.length == deformation.vertexOffsets.length, "Mismatched lengths");
-        foreach(i; 0..this.parent.deformation.length) {
-            this.parent.deformation[i] += deformation.vertexOffsets[i];
-        }
-        this.parent.notifyDeformPushed(deformation);
-    }
-    
-    void preUpdate() {
-        foreach(i; 0..this.parent.deformation.length) {
-            this.parent.deformation[i] = vec2(0);
-        }
-    }
-
-    void update() {
-        parent.refreshDeform();
     }
 }

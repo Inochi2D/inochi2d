@@ -85,7 +85,7 @@ public:
             }
 
             // Make sure our vertices buffer is ready
-            vec2[] vertices = new vec2[part.vertices.length];
+            vec2[] vertices = new vec2[part.mesh.vertices.length];
             foreach(i; 0..vertices.length) {
                 vertices[i] = vec2(0);
             }

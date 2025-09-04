@@ -11,7 +11,7 @@ module inochi2d.core;
 public import inochi2d.core.render;
 public import inochi2d.core.nodes;
 public import inochi2d.core.puppet;
-public import inochi2d.core.meshdata;
+public import inochi2d.core.mesh;
 public import inochi2d.core.param;
 public import inochi2d.core.animation;
 public import inochi2d.core.format;

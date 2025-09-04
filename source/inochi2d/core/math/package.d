@@ -12,7 +12,6 @@
         Asahi Lina
 */
 module inochi2d.core.math;
-import inochi2d.core.meshdata;
 import inochi2d.core;
 public import inmath.linalg;
 public import inmath.util;
@@ -23,6 +22,8 @@ public import std.math : isFinite;
 import std.algorithm;
 import std.json;
 import numem;
+
+public import inochi2d.core.math.deform;
 
 /**
     A camera

@@ -18,7 +18,7 @@ import std.math : isNaN;
 
 public import inochi2d.core.nodes.common;
 public import inochi2d.core.render.state;
-public import inochi2d.core.meshdata;
+public import inochi2d.core.mesh;
 
 /**
     Creates a simple part that is sized after the texture given
@@ -395,11 +395,6 @@ public:
         offsetEmissionStrength = 1;
         super.beginUpdate();
     }
-    
-    override
-    void rebuffer(ref MeshData data) {
-        super.rebuffer(data);
-    }
 
     override
     void draw(float delta) {
@@ -414,10 +409,8 @@ public:
     override
     void drawOne(float delta) {
         if (!enabled) return;
-        if (!data.isReady) return; // Yeah, don't even try
         
         size_t cMasks = maskCount;
-
         if (masks.length > 0) {
             // inBeginMask(cMasks > 0);
 
