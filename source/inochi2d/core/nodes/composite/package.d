@@ -17,6 +17,7 @@ import std.exception;
 import std.algorithm.sorting;
 
 public import inochi2d.core.render.state;
+import numem;
 
 /**
     Composite Node
@@ -92,6 +93,34 @@ protected:
         blendingMode = object.tryGet!string("blend_mode", "Normal").toBlendMode();
         
         super.onDeserialize(object);
+    }
+
+    override
+    void finalize() {
+        super.finalize();
+        
+        MaskBinding[] validMasks;
+        foreach(i; 0..masks.length) {
+            if (Drawable nMask = puppet.find!Drawable(masks[i].maskSrcGUID)) {
+                masks[i].maskSrc = nMask;
+                validMasks ~= masks[i];
+            }
+        }
+
+        // Remove invalid masks
+        masks = validMasks;
+
+        // Textures should be allocated outside of the GC, the cache
+        // ends up owning them.
+        _depthStencil = nogc_new!Texture(32, 32, TextureFormat.depthStencil);
+        _depthStencil.retain();
+        puppet.textureCache.add(_depthStencil);
+        foreach(i; 0.._colors.length) {
+            _colors[i] = nogc_new!Texture(32, 32, TextureFormat.rgba8Unorm);
+            _colors[i].retain();
+
+            puppet.textureCache.add(_colors[i]);
+        }
     }
 
     //
@@ -300,29 +329,6 @@ public:
 
         //     // inEndMask();
             return;
-        }
-    }
-
-    override
-    void finalize() {
-        super.finalize();
-        
-        MaskBinding[] validMasks;
-        foreach(i; 0..masks.length) {
-            if (Drawable nMask = puppet.find!Drawable(masks[i].maskSrcGUID)) {
-                masks[i].maskSrc = nMask;
-                validMasks ~= masks[i];
-            }
-        }
-
-        // Remove invalid masks
-        masks = validMasks;
-
-        _depthStencil = new Texture(32, 32, TextureFormat.depthStencil);
-        puppet.textureCache.add(_depthStencil);
-        foreach(i; 0.._colors.length) {
-            _colors[i] = new Texture(32, 32, TextureFormat.rgba8Unorm);
-            puppet.textureCache.add(_colors[i]);
         }
     }
 

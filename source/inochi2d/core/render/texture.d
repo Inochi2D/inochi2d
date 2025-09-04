@@ -298,7 +298,7 @@ public:
 
     // Destructor
     ~this() {
-        foreach(texture; textures) {
+        foreach(ref texture; textures) {
             texture.release();
         }
         nu_freea(textures);
