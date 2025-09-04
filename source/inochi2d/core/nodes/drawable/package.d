@@ -91,14 +91,8 @@ public:
             absolute =  Whether the deformation is absolute,
                         replacing the original deformation.
     */
-    override void deform(vec2[] deformed, bool absolute) {
-        if (absolute) {
-            deformed_.reset();
-            deformed_.pushMatrix(transform.matrix);
-            deformed_.deform(deformed);
-        }
-        else
-            deformed_.deform(deformed);
+    override void deform(vec2[] deformed, bool absolute = false) {
+        deformed_.deform(deformed);
     }
 
     /**

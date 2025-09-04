@@ -44,9 +44,9 @@ T inLoadPuppet(T = Puppet)(string file) if (is(T : Puppet)) {
 /**
     Loads a puppet from memory
 */
-Puppet inLoadPuppetFromMemory(ubyte[] data) {
+Puppet inLoadPuppetFromMemory(ubyte[] data, TextureCache cache = null) {
     JSONValue json = parseJSON(cast(string)data);
-    return Puppet.deserialize(json);
+    return Puppet.deserialize(json, cache);
 }
 
 /**
@@ -79,9 +79,7 @@ T inLoadINPPuppet(T = Puppet)(ubyte[] buffer) if (is(T : Puppet)) {
         textureCache.add(Texture.createForData(TextureData.load(buffer[bufferOffset..bufferOffset+=textureLength].nu_dup)));
     }
 
-    T puppet = inLoadJsonDataFromMemory!T(puppetData);
-    puppet.textureCache = textureCache;
-
+    T puppet = inLoadJsonDataFromMemory!T(puppetData, textureCache);
     if (buffer.length >= bufferOffset + 8 && inVerifySection(buffer[bufferOffset..bufferOffset+=8], EXT_SECTION)) {
         uint sectionCount;
         inInterpretDataFromBuffer(buffer[bufferOffset..bufferOffset+=4], sectionCount);

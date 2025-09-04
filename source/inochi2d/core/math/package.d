@@ -70,7 +70,7 @@ public:
     /**
         Scale to apply to the camera's viewport.
     */
-    vec2 scale = vec2(1, 1);
+    float scale = 1;
 
     /**
         Gets the center offset of the camera
@@ -89,7 +89,7 @@ public:
     override
     void update() @nogc {
         if(!position.isFinite) position = vec2(0);
-        if(!scale.isFinite) scale = vec2(1);
+        if(!scale.isFinite) scale = 1;
         if(!rotation.isFinite) rotation = 0;
         
         vec2 origin = vec2(size.x/2, size.y/2);
@@ -98,6 +98,7 @@ public:
             mat4.orthographic(0f, size.x, size.y, 0, 0, ushort.max) * 
             mat4.translation(origin.x, origin.y, 0) *
             mat4.zRotation(rotation) *
+            mat4.scaling(scale, scale, 0) *
             mat4.translation(pos);
     }
 }

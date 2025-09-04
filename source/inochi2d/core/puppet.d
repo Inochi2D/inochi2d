@@ -459,16 +459,17 @@ public:
     /**
         Creates a new puppet from nothing ()
     */
-    this() { 
+    this(TextureCache cache = null) {
         this.puppetRootNode = new Node(this); 
-        this.meta = new PuppetMeta();
-        this.physics = new PuppetPhysics();
         this.root = new Node(this.puppetRootNode); 
         this.root.name = "Root";
+
+        this.meta = new PuppetMeta();
+        this.physics = new PuppetPhysics();
         this.transform = Transform(vec3(0, 0, 0));
 
+        this.textureCache = cache ? cache : nogc_new!TextureCache();
         this.drawList_ = nogc_new!DrawList();
-        this.textureCache = nogc_new!TextureCache();
     }
 
     /**
@@ -759,8 +760,8 @@ public:
     /**
         Deserializes a puppet
     */
-    static Puppet deserialize(ref JSONValue object) {
-        Puppet p = new Puppet();
+    static Puppet deserialize(ref JSONValue object, TextureCache cache) {
+        Puppet p = new Puppet(cache);
         p.onDeserialize(object);
         return p;
     }

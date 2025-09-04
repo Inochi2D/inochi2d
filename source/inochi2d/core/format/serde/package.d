@@ -19,9 +19,9 @@ T inLoadJsonData(T)(string file) {
 /**
     Loads JSON data from memory
 */
-T inLoadJsonDataFromMemory(T)(string data) {
+T inLoadJsonDataFromMemory(T)(string data, TextureCache cache) {
     JSONValue v = parseJSON(cast(string)data);
-    return Puppet.deserialize(v);
+    return Puppet.deserialize(v, cache);
 }
 
 /**

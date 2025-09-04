@@ -176,8 +176,8 @@ public:
         Pushes a matrix to the deformed mesh.
     */
     void pushMatrix(mat4 matrix) {
-        foreach(i; 0..deformed_.length) {
-            delta_[i] = delta_[i].mulv2m4(matrix);
+        foreach(i; 0..delta_.length) {
+            delta_[i] = delta_[i].mulvm4(matrix);
             deformed_[i].vtx = delta_[i];
         }
     }

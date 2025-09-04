@@ -68,7 +68,7 @@ protected:
     override
     void onDeserialize(ref JSONValue object) {
         super.onDeserialize(object);
-        
+
         if (object.isJsonArray("textures")) {
             import std.stdio : writeln;
             foreach(i, ref JSONValue element; object["textures"].array) {

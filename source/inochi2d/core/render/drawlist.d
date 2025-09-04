@@ -26,7 +26,6 @@ private:
 
     // Working set
     DrawCmd        _ccmd;
-    uint           _cidx;
 
     // Draw Commands
     vector!DrawCmd _cmds;
@@ -115,20 +114,19 @@ public:
 
         // Resize if stuff doesn't fit.
         if (_vtxp+vtx.length >= _vtxs.length)
-            _vtxs.resize(_vtxp+vtx.length);
+            _vtxs.resize(_vtxp+vtx.length+1);
         if (_idxp+idx.length >= _idxs.length)
-            _idxs.resize(_idxp+idx.length);
+            _idxs.resize(_idxp+idx.length+1);
 
         // Meshes supply their own index data, as such
         // we offset it here to fit within our buffer.
-        if (!useBaseVertex)
-            idx[0..$] += _cidx;
+        // if (!useBaseVertex)
+        //     idx[0..$] += _idxp;
 
         _vtxs[_vtxp.._vtxp+vtx.length] = vtx[0..$];
         _idxs[_idxp.._idxp+idx.length] = idx[0..$];
         _vtxp += vtx.length;
         _idxp += idx.length;
-        _cidx += idx.length;
         _ccmd.elemCount += idx.length;
     }
 
@@ -171,7 +169,6 @@ public:
         _vtxp = 0;
         _idxp = 0;
         _cmdp = 0;
-        _cidx = 0;
         _ccmd = DrawCmd.init;
         _targetsStack.clear();
     }

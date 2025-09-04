@@ -1046,7 +1046,7 @@ class DeformationParameterBinding : ParameterBindingImpl!Deformation {
         enforce(this.target.paramName == "deform");
 
         if (IDeformable df = cast(IDeformable) target.node) {
-            df.deform(value.vertexOffsets);
+            df.deform(value.vertexOffsets, false);
         }
     }
 

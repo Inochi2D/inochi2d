@@ -359,10 +359,7 @@ public:
             The given texture if found, $(D null) otherwise.
     */
     Texture get(uint slotId) {
-        if (slotId < size)
-            return textures[slotId];
-        
-        return null;
+        return slotId >= size ? null : textures[slotId];
     }
     
     /**
