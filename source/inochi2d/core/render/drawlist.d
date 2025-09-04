@@ -120,8 +120,8 @@ public:
 
         // Meshes supply their own index data, as such
         // we offset it here to fit within our buffer.
-        // if (!useBaseVertex)
-        //     idx[0..$] += _idxp;
+        if (!useBaseVertex)
+            idx[0..$] += _idxp;
 
         _vtxs[_vtxp.._vtxp+vtx.length] = vtx[0..$];
         _idxs[_idxp.._idxp+idx.length] = idx[0..$];
