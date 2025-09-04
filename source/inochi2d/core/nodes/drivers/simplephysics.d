@@ -178,22 +178,14 @@ public:
 @TypeId("SimplePhysics")
 class SimplePhysics : Driver {
 private:
-    this() { }
 
     GUID paramRef = GUID.nil;
-
     Parameter param_;
-
     float offsetGravity = 1.0;
-
     float offsetLength = 0;
-
     float offsetFrequency = 1;
-
     float offsetAngleDamping = 0.5;
-
     float offsetLengthDamping = 0.5;
-
     vec2 offsetOutputScale = vec2(1, 1);
 
 protected:
@@ -234,6 +226,13 @@ protected:
         object.tryGetRef(lengthDamping, "length_damping");
         object.tryGetRef(outputScale, "output_scale");
         object.tryGetRef(localOnly, "local_only");
+    }
+
+    override
+    void finalize() {
+        param_ = puppet.findParameter(paramRef);
+        super.finalize();
+        reset();
     }
 
 public:
@@ -308,18 +307,13 @@ public:
     }
 
     override
-    void update() {
-        super.update();
-    }
-
-    override
     Parameter[] getAffectedParameters() {
         if (param_ is null) return [];
         return [param_];
     }
 
     override
-    void update(float delta) {
+    void update(float delta, DrawList drawList) {
         
         // Timestep is limited to 10 seconds, as if you
         // Are getting 0.1 FPS, you have bigger issues to deal with.
@@ -372,7 +366,7 @@ public:
         // Figure out the relative length. We can work this out directly in global space.
         auto relLength = output.distance(anchor) / getLength();
 
-        vec2 paramVal;
+        vec2 paramVal = vec2.zero;
         switch (mapMode) {
             case ParamMapMode.XY:
                 auto localPosNorm = localAngle * relLength;
@@ -417,21 +411,13 @@ public:
         }
     }
 
-    override
-    void finalize() {
-        param_ = puppet.findParameter(paramRef);
-        super.finalize();
-        reset();
-    }
-
     Parameter param() {
         return param_;
     }
 
     void param(Parameter p) {
-        param_ = p;
-        if (p is null) paramRef = GUID.nil;
-        else paramRef = p.guid;
+        this.param_ = p;
+        this.paramRef = param_ ? param_.guid : GUID.nil;
     }
 
     float getScale() {
@@ -549,5 +535,3 @@ public:
     /// Gets the final length damping
     vec2 getOutputScale() { return outputScale * offsetOutputScale; }
 }
-
-mixin InNode!SimplePhysics;

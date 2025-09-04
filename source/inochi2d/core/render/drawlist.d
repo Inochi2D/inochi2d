@@ -25,19 +25,24 @@ private:
 @nogc:
 
     // Working set
-    DrawCmd        _ccmd;
+    DrawListAlloc           _call;
+    DrawCmd                 _ccmd;
 
     // Draw Commands
-    vector!DrawCmd _cmds;
-    uint           _cmdp;
+    vector!DrawCmd          _cmds;
+    uint                    _cmdp;
 
     // Vertex Data
-    vector!VtxData _vtxs;
-    uint           _vtxp;
+    vector!VtxData          _vtxs;
+    uint                    _vtxp;
 
     // Index Data
-    vector!uint    _idxs;
-    uint           _idxp;
+    vector!uint             _idxs;
+    uint                    _idxp;
+
+    // Buffer allocations
+    vector!DrawListAlloc    _allocs;
+    uint                    _allp;
 
     // Stacks
     stack!(Texture[IN_MAX_ATTACHMENTS]) _targetsStack;
@@ -63,6 +68,59 @@ public:
         Index data
     */
     @property uint[] indices() => _idxs[0.._idxp];
+
+    /**
+        Allocates the given mesh in the draw list, allowing its
+        contents to be reused in draw commands.
+
+        Params:
+            vtx = Vertex data to push.
+            idx = Index data to push.
+    
+        Returns:
+            A reference to the drawlist allocation on success,
+            $(D null) otherwise.
+    */
+    DrawListAlloc* allocate(VtxData[] vtx, uint[] idx) {
+        
+        // Invalid vertex buffer check.
+        if (vtx.length < 3)
+            return null;
+
+        // Invalid index buffer check.
+        if (idx.length != 0 && (idx.length % 3) != 0)
+            return null;
+
+        // Resize if stuff doesn't fit.
+        if (_vtxp+vtx.length >= _vtxs.length)
+            _vtxs.resize(_vtxp+vtx.length+1);
+        if (_idxp+idx.length >= _idxs.length)
+            _idxs.resize(_idxp+idx.length+1);
+
+        // Meshes supply their own index data, as such
+        // we offset it here to fit within our buffer.
+        if (!useBaseVertex)
+            idx[0..$] += _idxp;
+
+        _vtxs[_vtxp.._vtxp+vtx.length] = vtx[0..$];
+        _idxs[_idxp.._idxp+idx.length] = idx[0..$];
+        _vtxp += vtx.length;
+        _idxp += idx.length;
+
+        _call.elemCount = cast(uint)idx.length;
+
+        // Set up allocation.
+        if (_allp >= _allocs.length)
+            _allocs ~= _call;
+        else
+            _allocs[_allp] = _call;
+
+        // prepare next alloc
+        _call = DrawListAlloc.init;
+        _call.idxOffset = _idxp;
+        _call.vtxOffset = _vtxp;
+        return &_allocs[_allp++];
+    }
 
     /**
         Pushes render targets to the draw list's stack.
@@ -96,38 +154,17 @@ public:
     }
 
     /**
-        Pushes mesh data to the current draw call.
+        Sets the mesh data for the current draw command.
 
         Params:
-            vtx = Vertex data to push.
-            idx = Index data to push.
+            alloc = The vertex allocation cookie.
     */
-    void pushMesh(VtxData[] vtx, uint[] idx) {
+    void setMesh(DrawListAlloc* alloc) {
+        if (!alloc) return;
         
-        // Invalid vertex buffer check.
-        if (vtx.length < 3)
-            return;
-
-        // Invalid index buffer check.
-        if (idx.length != 0 && (idx.length % 3) != 0)
-            return;
-
-        // Resize if stuff doesn't fit.
-        if (_vtxp+vtx.length >= _vtxs.length)
-            _vtxs.resize(_vtxp+vtx.length+1);
-        if (_idxp+idx.length >= _idxs.length)
-            _idxs.resize(_idxp+idx.length+1);
-
-        // Meshes supply their own index data, as such
-        // we offset it here to fit within our buffer.
-        if (!useBaseVertex)
-            idx[0..$] += _idxp;
-
-        _vtxs[_vtxp.._vtxp+vtx.length] = vtx[0..$];
-        _idxs[_idxp.._idxp+idx.length] = idx[0..$];
-        _vtxp += vtx.length;
-        _idxp += idx.length;
-        _ccmd.elemCount += idx.length;
+        _ccmd.idxOffset = alloc.idxOffset;
+        _ccmd.vtxOffset = alloc.vtxOffset;
+        _ccmd.elemCount = alloc.elemCount;
     }
 
     /**
@@ -143,9 +180,6 @@ public:
             _cmds[_cmdp] = _ccmd;
 
         _cmdp++;
-        _ccmd = DrawCmd.init;
-        _ccmd.idxOffset = _idxp;
-        _ccmd.vtxOffset = _vtxp;
 
         if (!_targetsStack.empty)
             _targetsStack.tryPeek(0, _ccmd.targets);
@@ -169,7 +203,9 @@ public:
         _vtxp = 0;
         _idxp = 0;
         _cmdp = 0;
+        _allp = 0;
         _ccmd = DrawCmd.init;
+        _call = DrawListAlloc.init;
         _targetsStack.clear();
     }
 }
@@ -178,6 +214,27 @@ public:
     Maximum number of texture attachments.
 */
 enum IN_MAX_ATTACHMENTS = 8;
+
+/**
+    An allocation within the drawlist
+*/
+struct DrawListAlloc {
+
+    /**
+        Vertex offset.
+    */
+    uint vtxOffset;
+
+    /**
+        Index offset.
+    */
+    uint idxOffset;
+
+    /**
+        Number of indices.
+    */
+    uint elemCount;
+}
 
 /**
     A drawing command that is sent to the GPU.

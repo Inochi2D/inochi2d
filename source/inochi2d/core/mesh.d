@@ -229,6 +229,14 @@ struct MeshData {
         object.tryGetRef(vertices, "verts");
         object.tryGetRef(uvs, "uvs");
         object.tryGetRef(indices, "indices");
+
+        vec2 origin = object.tryGet!vec2("origin");
+        if (origin.isFinite) {
+            foreach(i; 0..vertices.length) {
+                vertices[i] += origin;
+            }
+        }
+
     }
 }
 

@@ -17,6 +17,7 @@ public import inochi2d.core.animation;
 public import inochi2d.core.format;
 public import inochi2d.core.phys;
 public import inochi2d.core.guid;
+public import inochi2d.core.math;
 
 
 import inochi2d.core.math;
@@ -28,36 +29,3 @@ import std.stdio;
     adding new subclasses that aren't in the base spec.
 */
 struct TypeId { string id; }
-
-/**
-    Different modes of interpolation between values.
-*/
-enum InterpolateMode {
-
-    /**
-        Round to nearest
-    */
-    Nearest,
-    
-    /**
-        Linear interpolation
-    */
-    Linear,
-
-    /**
-        Round to nearest
-    */
-    Stepped,
-
-    /**
-        Cubic interpolation
-    */
-    Cubic,
-
-    /**
-        Interpolation using beziér splines
-    */
-    Bezier,
-
-    COUNT
-}

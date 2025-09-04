@@ -363,3 +363,66 @@ bool areLineSegmentsIntersecting(vec2 p1, vec2 p2, vec2 p3, vec2 p4) {
     float uB = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / demoninator;
     return (uA > 0+epsilon && uA < 1-epsilon && uB > 0+epsilon && uB < 1-epsilon);
 }
+
+/**
+    Different modes of interpolation between values.
+*/
+enum InterpolateMode : uint {
+
+    /**
+        Round to nearest
+    */
+    nearest = 0,
+    
+    /**
+        Linear interpolation
+    */
+    linear = 1,
+
+    /**
+        Round to nearest
+    */
+    stepped = 2,
+
+    /**
+        Interpolation using quadratic interpolation
+    */
+    quadratic = 3,
+
+    /**
+        Cubic interpolation
+    */
+    cubic = 4,
+}
+
+/**
+    Converts a string key into a interpolation mode.
+*/
+InterpolateMode toInterpolateMode(string key) {
+    switch(key) {
+
+        case "nearest":
+        case "Nearest":
+            return InterpolateMode.nearest;
+
+        case "linear":
+        case "Linear":
+            return InterpolateMode.linear;
+
+        case "stepped":
+        case "Stepped":
+            return InterpolateMode.stepped;
+
+        case "bezier":
+        case "Bezier":
+        case "quadratic":
+            return InterpolateMode.quadratic;
+
+        case "cubic":
+        case "Cubic":
+            return InterpolateMode.cubic;
+        
+        default:
+            return InterpolateMode.linear;
+    }
+}

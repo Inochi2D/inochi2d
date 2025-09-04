@@ -66,6 +66,8 @@ if (isArray!T) {
 
             static if (__traits(isFloating, ET))
                 alias FT = float;
+            else static if (is(ET == bool))
+                alias FT = bool;
             else static if (__traits(isUnsigned, ET))
                 alias FT = size_t;
             else static if (__traits(isIntegral, ET))

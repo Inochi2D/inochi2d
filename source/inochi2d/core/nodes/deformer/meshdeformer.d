@@ -15,12 +15,6 @@ import std.exception;
 import std.typecons: tuple, Tuple;
 import std.stdio;
 
-package(inochi2d) {
-    void inInitMeshGroup() {
-        inRegisterNodeType!MeshDeformer;
-    }
-}
-
 /**
     A deformer which deforms child nodes stored within it,
 

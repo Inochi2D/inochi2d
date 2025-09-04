@@ -493,6 +493,7 @@ public:
         Updates the nodes
     */
     final void update(float delta) {
+        drawList_.clear();
         transform.update();
         root.beginUpdate();
 
@@ -512,12 +513,12 @@ public:
         if (renderParameters && enableDrivers) {
             // Update parameter/node driver nodes (e.g. physics)
             foreach(driver; drivers) {
-                driver.update(delta);
+                driver.update(delta, drawList_);
             }
         }
 
         // Update nodes
-        root.update();
+        root.update(delta, drawList_);
     }
 
     /**
@@ -567,7 +568,6 @@ public:
         Draws the puppet
     */
     final void draw(float delta) {
-        drawList_.clear();
         this.selfSort();
 
         foreach(rootPart; rootParts) {

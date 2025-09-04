@@ -65,5 +65,9 @@ public:
         super.deform(deformed, absolute);
     }
 
+    override void resetDeform() {
+        
+    }
+
     override string typeId() { return "LatticeDeformer"; }
 }

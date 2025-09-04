@@ -38,6 +38,7 @@ abstract class Drawable : Node, IDeformable {
 private:
     Mesh mesh_;
     DeformedMesh deformed_;
+    DrawListAlloc* drawListSlot;
 
 protected:
 
@@ -138,22 +139,24 @@ public:
 
     override
     void beginUpdate() {
-        this.resetDeform();
         super.beginUpdate();
+        this.resetDeform();
     }
 
     /**
         Updates the drawable
     */
     override
-    void update() {
-        super.update();
+    void update(float delta, DrawList drawList) {
+        super.update(delta, drawList);
+        this.drawListSlot = drawList.allocate(deformed_.vertices, deformed_.indices);
     }
+
 
     override
     void draw(float delta, DrawList drawList) {
         super.draw(delta, drawList);
-        drawList.pushMesh(deformed_.vertices, deformed_.indices);
+        drawList.setMesh(drawListSlot);
     }
 
     override

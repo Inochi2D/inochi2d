@@ -31,6 +31,7 @@ shared static this() @trusted {
     inRegisterNodeType!SimplePhysics;
     
     inRegisterNodeType!MeshDeformer;
+    inRegisterNodeType!LatticeDeformer;
 
     inRegisterNodeType!Composite;
     inRegisterNodeType!Part;
@@ -556,8 +557,6 @@ public:
     }
 
     void beginUpdate() {
-        preProcessed  = false;
-        postProcessed = false;
 
         offsetSort = 0;
         offsetTransform.clear();
@@ -571,10 +570,10 @@ public:
     /**
         Updates the node
     */
-    void update() {
+    void update(float delta, DrawList drawList) {
         if (!enabled) return;
         foreach(child; children) {
-            child.update();
+            child.update(delta, drawList);
         }
     }
 

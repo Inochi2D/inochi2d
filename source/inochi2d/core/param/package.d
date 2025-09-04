@@ -295,8 +295,8 @@ public:
         object.tryGetRef(defaults, "defaults");
         mergeMode = object.tryGet!string("merge_mode").toMergeMode();
 
-        if (object.isJsonObject("bindings")) {
-            foreach(JSONValue child; object["bindings"].object) {
+        if (object.isJsonArray("bindings")) {
+            foreach(JSONValue child; object["bindings"].array) {
                 
                 // Skip empty children
                 if (string paramName = child.tryGet!string("param_name", null)) {

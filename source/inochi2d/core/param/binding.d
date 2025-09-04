@@ -186,7 +186,7 @@ private:
     */
     GUID nodeRef;
 
-    InterpolateMode interpolateMode_ = InterpolateMode.Linear;
+    InterpolateMode interpolateMode_ = InterpolateMode.linear;
 
 public:
     /**
@@ -300,7 +300,8 @@ public:
         object.tryGetRef(target.paramName, "param_name");
         object.tryGetRef(values, "values");
         object.tryGetRef(isSet_, "isSet");
-        object.tryGetRef(interpolateMode_, "interpolate_mode");
+
+        interpolateMode_ = object.tryGet!string("interpolate_mode").toInterpolateMode();
 
         uint xCount = parameter.axisPointCount(0);
         uint yCount = parameter.axisPointCount(1);
@@ -316,16 +317,16 @@ public:
         }
     }
 
-    override
-    void reconstruct(Puppet puppet) {
-    }
-
     /**
         Finalize loading of parameter
     */
     override
     void finalize(Puppet puppet) {
         this.target.node = puppet.find(nodeRef);
+    }
+
+    override
+    void reconstruct(Puppet puppet) {
     }
 
     /**
@@ -754,11 +755,11 @@ public:
 
     T interpolate(vec2u leftKeypoint, vec2 offset) {
         switch (interpolateMode_) {
-        case InterpolateMode.Nearest:
+        case InterpolateMode.nearest:
             return interpolateNearest(leftKeypoint, offset);
-        case InterpolateMode.Linear:
+        case InterpolateMode.linear:
             return interpolateLinear(leftKeypoint, offset);
-        case InterpolateMode.Cubic:
+        case InterpolateMode.cubic:
             return interpolateCubic(leftKeypoint, offset);
         default:
             assert(0);

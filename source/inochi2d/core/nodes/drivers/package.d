@@ -34,8 +34,8 @@ public:
     }
 
     override
-    void update() {
-        super.update();
+    void update(float delta, DrawList drawList) {
+        super.update(delta, drawList);
     }
 
     Parameter[] getAffectedParameters() {
@@ -50,10 +50,5 @@ public:
         return false;
     }
 
-    abstract void update(float delta);
-
     abstract void reset();
-
-    void drawDebug() {
-    }
 }

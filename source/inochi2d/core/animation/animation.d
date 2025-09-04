@@ -199,19 +199,19 @@ public:
                 switch(interpolation) {
                     
                     // Nearest - Snap to the closest frame
-                    case InterpolateMode.Nearest:
+                    case InterpolateMode.nearest:
                         return t > 0.5 ? frames[i].value : frames[i-1].value;
 
                     // Stepped - Snap to the current active keyframe
-                    case InterpolateMode.Stepped:
+                    case InterpolateMode.stepped:
                         return frames[i-1].value;
 
                     // Linear - Linearly interpolate between frame A and B
-                    case InterpolateMode.Linear:
+                    case InterpolateMode.linear:
                         return lerp(frames[i-1].value, frames[i].value, t);
 
                     // Cubic - Smoothly in a curve between frame A and B
-                    case InterpolateMode.Cubic:
+                    case InterpolateMode.cubic:
                         float prev = frames[max(cast(ptrdiff_t)i-2, 0)].value;
                         float curr = frames[max(cast(ptrdiff_t)i-1, 0)].value;
                         float next1 = frames[min(cast(ptrdiff_t)i, frames.length-1)].value;
@@ -221,7 +221,7 @@ public:
                         return cubic(prev, curr, next1, next2, t);
                         
                     // Bezier - Allows the user to specify beziér curves.
-                    case InterpolateMode.Bezier:
+                    case InterpolateMode.quadratic:
                         // TODO: Switch formulae, Beziér curve
                         return lerp(frames[i-1].value, frames[i].value, clamp(hermite(0, 2*tension, 1, 2*tension, t), 0, 1));
 
