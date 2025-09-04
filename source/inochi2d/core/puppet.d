@@ -11,6 +11,7 @@ import std.file;
 import std.path : extension;
 import std.json;
 import nulib;
+import numem;
 
 /**
     Magic value meaning that the model has no thumbnail
@@ -270,6 +271,10 @@ class PuppetPhysics : ISerializable, IDeserializable {
 */
 class Puppet : ISerializable, IDeserializable {
 private:
+    /**
+        The drawlist that the puppet passes to its nodes.
+    */
+    DrawList drawList_;
 
     /**
         An internal puppet root node
@@ -392,6 +397,7 @@ private:
     }
 
 public:
+
     /**
         Meta information about this puppet
     */
@@ -440,15 +446,29 @@ public:
     Transform transform;
 
     /**
+        The active draw list for the puppet.
+    */
+    @property DrawList drawList() => drawList_;
+
+    // Destructor
+    ~this() {
+        nogc_delete(drawList_);
+        nogc_delete(textureCache);
+    }
+
+    /**
         Creates a new puppet from nothing ()
     */
     this() { 
         this.puppetRootNode = new Node(this); 
         this.meta = new PuppetMeta();
         this.physics = new PuppetPhysics();
-        root = new Node(this.puppetRootNode); 
-        root.name = "Root";
-        transform = Transform(vec3(0, 0, 0));
+        this.root = new Node(this.puppetRootNode); 
+        this.root.name = "Root";
+        this.transform = Transform(vec3(0, 0, 0));
+
+        this.drawList_ = nogc_new!DrawList();
+        this.textureCache = nogc_new!TextureCache();
     }
 
     /**
@@ -461,8 +481,11 @@ public:
         this.puppetRootNode = new Node(this);
         this.root.name = "Root";
         this.scanParts!true(this.root);
-        transform = Transform(vec3(0, 0, 0));
+        this.transform = Transform(vec3(0, 0, 0));
         this.selfSort();
+
+        this.drawList_ = nogc_new!DrawList();
+        this.textureCache = nogc_new!TextureCache();
     }
 
     /**
@@ -543,11 +566,14 @@ public:
         Draws the puppet
     */
     final void draw(float delta) {
+        drawList_.clear();
         this.selfSort();
 
         foreach(rootPart; rootParts) {
-            if (!rootPart.renderEnabled) continue;
-            rootPart.drawOne(delta);
+            if (!rootPart.renderEnabled) 
+                continue;
+            
+            rootPart.draw(delta, drawList_);
         }
     }
 
@@ -570,17 +596,6 @@ public:
     */
     final void rescanNodes() {
         this.scanParts!false(root);
-    }
-
-    /**
-        Updates the texture state for all texture slots.
-    */
-    final void updateTextureState() {
-
-        // // Update filtering mode for texture slots
-        // foreach(texutre; textureSlots) {
-        //     texture.setFiltering(meta.preservePixels ? Filtering.nearest : Filtering.linear);
-        // }
     }
 
     /**
@@ -607,7 +622,7 @@ public:
     /**
         Finds nodes based on their type
     */
-    final T[] findNodesType(T)(Node n) if (is(T : Node)) {
+    T[] findNodesType(T)(Node n) if (is(T : Node)) {
         T[] nodes;
 
         if (T item = cast(T)n) {
@@ -673,7 +688,7 @@ public:
 
             string iden = getLineSet();
 
-            string s = "%s[%s] %s <%s>\n".format(n.children.length > 0 ? "╭─" : "", n.typeId, n.name, n.guid);
+            string s = "%s[%s] %s <%s>\n".format(n.children.length > 0 ? "╭─" : "", n.typeId, n.name, n.guid.toString()[]);
             foreach(i, child; n.children) {
                 string term = "├→";
                 if (i == n.children.length-1) {

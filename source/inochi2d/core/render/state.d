@@ -9,14 +9,6 @@
 module inochi2d.core.render.state;
 import inmath;
 
-/**
-    Vertex Data that gets submitted to the GPU.
-*/
-struct VtxData {
-    vec2 vtx;
-    vec2 uv;
-}
-
 /*
     INFORMATION ABOUT BLENDING MODES
     Blending is a complicated topic, especially once we get to mobile devices and games consoles.

@@ -13,21 +13,29 @@ import inochi2d.core.guid;
 import inochi2d.core;
 import nulib.string;
 
-public import inochi2d.core.nodes.part;
 public import inochi2d.core.nodes.drawable;
 public import inochi2d.core.nodes.composite;
 public import inochi2d.core.nodes.deformer;
 public import inochi2d.core.nodes.drivers; 
 import std.typecons: tuple, Tuple;
+import core.attribute : standalone;
 
 //public import inochi2d.core.nodes.shapes; // This isn't mainline yet!
 
 import std.exception;
-package(inochi2d) {
-    void inInitNodes() {
-        inRegisterNodeType!Node;
-    }
+
+@standalone
+shared static this() @trusted {
+    inRegisterNodeType!Node;
+    
+    inRegisterNodeType!SimplePhysics;
+    
+    inRegisterNodeType!MeshDeformer;
+
+    inRegisterNodeType!Composite;
+    inRegisterNodeType!Part;
 }
+
 /**
     A node in the Inochi2D rendering tree
 */
@@ -521,18 +529,13 @@ public:
     /**
         Draws this node and it's subnodes
     */
-    void draw(float delta) {
+    void draw(float delta, DrawList drawList) {
         if (!renderEnabled) return;
 
         foreach(child; children) {
-            child.draw(delta);
+            child.draw(delta, drawList);
         }
     }
-
-    /**
-        Draws this node.
-    */
-    void drawOne(float delta) { }
 
     /**
         Reconstructs a child.

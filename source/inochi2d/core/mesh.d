@@ -9,8 +9,17 @@
 module inochi2d.core.mesh;
 import inochi2d.core.render.state;
 import inochi2d.core.format; // TODO: Replace
+import inochi2d.core.math.simd;
 import numem;
 import inmath;
+
+/**
+    Vertex Data that gets submitted to the GPU.
+*/
+struct VtxData {
+    vec2 vtx;
+    vec2 uv;
+}
 
 /**
     A collection of points connected to create a mesh.
@@ -23,8 +32,8 @@ private:
 @nogc:
     VtxData[]   _vtx;
     uint[]      _idx;
-
     vec2[]      _vto;
+
 public:
 
     /**
@@ -50,16 +59,21 @@ public:
     }
 
     /**
+        Creates an empty mesh.
+    */
+    this() { }
+
+    /**
         Creates a mesh from a encoded Inochi2D MeshData
         structure.
     */
     this(MeshData meshData) {
         this._vtx = nu_malloca!VtxData(meshData.vertices.length);
-        this._idx = nu_malloca!uint(meshData.indices.length);
+        this._idx = meshData.indices.nu_dup();
         this._vto = meshData.vertices.nu_dup();
 
         foreach(i; 0.._vtx.length) {
-            _vtx[i] = VtxData(meshData.vertices[i], meshData.uvs[i]);
+            this._vtx[i] = VtxData(meshData.vertices[i], meshData.uvs[i]);
         }
     }
 
@@ -69,6 +83,111 @@ public:
     */
     static Mesh fromMeshData(MeshData data) {
         return nogc_new!Mesh(data);
+    }
+
+    /**
+        Makes a clone of this mesh.
+
+        Returns:
+            A new mesh with the data cloned.
+    */
+    Mesh clone() {
+        Mesh result = nogc_new!Mesh();
+        result._vtx = this._vtx.nu_dup();
+        result._idx = this._idx.nu_dup();
+        result._vto = this._vto.nu_dup();
+        return result;
+    }
+
+    /**
+        Frees this mesh.
+    */
+    void free() {
+        auto self = this;
+        nogc_delete(self);
+    }
+}
+
+/**
+    A mesh which recieves deformation data from the outside.
+*/
+final
+class DeformedMesh : NuObject {
+private:
+@nogc:
+    Mesh parent_;
+    VtxData[] deformed_;
+    vec2[] delta_;
+
+public:
+
+    /**
+        The parent of the deformed mesh.
+    */
+    @property Mesh parent() => parent_;
+    @property void parent(Mesh value) {
+        this.parent_ = value;
+        this.deformed_ = deformed_.nu_resize(value.points.length);
+        this.delta_ = delta_.nu_resize(value.points.length);
+    }
+
+    /**
+        The deformed points of the mesh.
+    */
+    @property vec2[] points() => delta_;
+
+    /**
+        The deformed vertices of the mesh.
+    */
+    @property VtxData[] vertices() => deformed_;
+
+    /**
+        The indices for the mesh.
+    */
+    @property uint[] indices() => parent.indices;
+
+    // Destructor
+    ~this() {
+        nu_freea(deformed_);
+        nu_freea(delta_);
+    }
+
+    /**
+        Constructs a new DeformedMesh
+    */
+    this(Mesh parent) {
+        this.parent_ = parent;
+
+        this.deformed_ = nu_malloca!VtxData(parent.points.length);
+        this.delta_ = nu_malloca!vec2(parent.points.length);
+    }
+
+    /**
+        Deform the mesh by the given amount.
+    */
+    void deform(vec2[] by) {
+        foreach(i; 0..deformed_.length) {
+            delta_[i] += by[i];
+            deformed_[i].vtx = delta_[i];
+        }
+    }
+
+    /**
+        Pushes a matrix to the deformed mesh.
+    */
+    void pushMatrix(mat4 matrix) {
+        foreach(i; 0..deformed_.length) {
+            delta_[i] = delta_[i].mulv2m4(matrix);
+            deformed_[i].vtx = delta_[i];
+        }
+    }
+
+    /**
+        Resets the deformation.
+    */
+    void reset() {
+        this.deformed_[0..$] = parent_.vertices[0..$];
+        this.delta_[0..$] = parent_.points[0..$];
     }
 }
 

@@ -6,7 +6,7 @@
     
     Authors: Luna Nielsen
 */
-module inochi2d.core.nodes.part;
+module inochi2d.core.nodes.drawable.part;
 import inochi2d.core.nodes.drawable;
 import inochi2d.core.format;
 import inochi2d.core.math;
@@ -20,59 +20,7 @@ public import inochi2d.core.nodes.common;
 public import inochi2d.core.render.state;
 public import inochi2d.core.mesh;
 
-/**
-    Creates a simple part that is sized after the texture given
-    part is created based on file path given.
-    Supported file types are: png, tga and jpeg
-
-    This is unoptimal for normal use and should only be used
-    for real-time use when you want to add/remove parts on the fly
-*/
-Part inCreateSimplePart(string file, Node parent = null) {
-    // return inCreateSimplePart(TextureData.load(file), parent, file);
-    return null;
-}
-
-/**
-    Creates a simple part that is sized after the texture given
-
-    This is unoptimal for normal use and should only be used
-    for real-time use when you want to add/remove parts on the fly
-*/
-Part inCreateSimplePart(TextureData texture, Node parent = null, string name = "New Part") {
-	return inCreateSimplePart(Texture.createForData(texture), parent, name);
-}
-
-/**
-    Creates a simple part that is sized after the texture given
-
-    This is unoptimal for normal use and should only be used
-    for real-time use when you want to add/remove parts on the fly
-*/
-Part inCreateSimplePart(Texture tex, Node parent = null, string name = "New Part") {
-	MeshData data = MeshData([
-		vec2(-(tex.width/2), -(tex.height/2)),
-		vec2(-(tex.width/2), tex.height/2),
-		vec2(tex.width/2, -(tex.height/2)),
-		vec2(tex.width/2, tex.height/2),
-	], 
-	[
-		vec2(0, 0),
-		vec2(0, 1),
-		vec2(1, 0),
-		vec2(1, 1),
-	],
-	[
-		0, 1, 2,
-		2, 1, 3
-	]);
-	Part p = new Part(data, [tex], parent);
-	p.name = name;
-    return p;
-}
-
 enum NO_TEXTURE = uint.max;
-
 enum TextureUsage : size_t {
     Albedo,
     Emissive,
@@ -120,6 +68,7 @@ protected:
     override
     void onDeserialize(ref JSONValue object) {
         super.onDeserialize(object);
+        
         if (object.isJsonArray("textures")) {
             import std.stdio : writeln;
             foreach(i, ref JSONValue element; object["textures"].array) {
@@ -185,7 +134,7 @@ public:
 
         TODO: use more than texture 0
     */
-    Texture[TextureUsage.COUNT] textures;
+    Texture[IN_MAX_ATTACHMENTS] textures;
 
     /**
         List of masks to apply
@@ -392,46 +341,44 @@ public:
     }
 
     override
-    void draw(float delta) {
-        if (!enabled) return;
-        this.drawOne(delta);
-
-        foreach(child; children) {
-            child.draw(delta);
-        }
+    void draw(float delta, DrawList drawList) {
+        super.draw(delta, drawList);
+        drawList.setSources(textures);
+        drawList.setBlending(blendingMode);
+        drawList.next();
     }
 
-    override
-    void drawOne(float delta) {
-        if (!enabled) return;
+    // override
+    // void drawOne(float delta) {
+    //     if (!enabled) return;
         
-        size_t cMasks = maskCount;
-        if (masks.length > 0) {
-            // inBeginMask(cMasks > 0);
+    //     size_t cMasks = maskCount;
+    //     if (masks.length > 0) {
+    //         // inBeginMask(cMasks > 0);
 
-            // foreach(ref mask; masks) {
-            //     mask.maskSrc.renderMask(mask.mode == MaskingMode.DodgeMask);
-            // }
+    //         // foreach(ref mask; masks) {
+    //         //     mask.maskSrc.renderMask(mask.mode == MaskingMode.DodgeMask);
+    //         // }
 
-            // inBeginMaskContent();
+    //         // inBeginMaskContent();
 
-            // // We are the content
-            // this.drawSelf();
+    //         // // We are the content
+    //         // this.drawSelf();
 
-            // inEndMask();
-            return;
-        }
+    //         // inEndMask();
+    //         return;
+    //     }
 
-        // No masks, draw normally
-        // this.drawSelf();
-        super.drawOne(delta);
-    }
+    //     // No masks, draw normally
+    //     // this.drawSelf();
+    //     super.drawOne(delta);
+    // }
 
-    override
-    void drawOneDirect(bool forMasking) {
-        // if (forMasking) this.drawSelf!true();
-        // else this.drawSelf!false();
-    }
+    // override
+    // void drawOneDirect(bool forMasking) {
+    //     // if (forMasking) this.drawSelf!true();
+    //     // else this.drawSelf!false();
+    // }
 
     override
     void finalize() {

@@ -23,25 +23,21 @@ public import inochi2d.core.format.serde;
     Loads a puppet from a file
 */
 T inLoadPuppet(T = Puppet)(string file) if (is(T : Puppet)) {
-    try {
-        import std.file : read;
-        ubyte[] buffer = cast(ubyte[])read(file);
+    import std.file : read;
+    ubyte[] buffer = cast(ubyte[])read(file);
 
-        switch(extension(file)) {
+    switch(extension(file)) {
 
-            case ".inp":
-                enforce(inVerifyMagicBytes(buffer), "Invalid data format for INP puppet");
-                return inLoadINPPuppet!T(buffer);
+        case ".inp":
+            enforce(inVerifyMagicBytes(buffer), "Invalid data format for INP puppet");
+            return inLoadINPPuppet!T(buffer);
 
-            case ".inx":
-                enforce(inVerifyMagicBytes(buffer), "Invalid data format for Inochi Creator INX");
-                return inLoadINPPuppet!T(buffer);
+        case ".inx":
+            enforce(inVerifyMagicBytes(buffer), "Invalid data format for Inochi Creator INX");
+            return inLoadINPPuppet!T(buffer);
 
-            default:
-                throw new Exception("Invalid file format of %s at path %s".format(extension(file), file));
-        }
-    } catch(Exception ex) {
-        throw ex;
+        default:
+            throw new Exception("Invalid file format of %s at path %s".format(extension(file), file));
     }
 }
 

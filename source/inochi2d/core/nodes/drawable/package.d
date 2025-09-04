@@ -13,7 +13,17 @@ import std.exception;
 import inochi2d.core;
 import std.string;
 
+import inteli;
+import numem;
+
 public import inochi2d.core.mesh;
+public import inochi2d.core.nodes.drawable.part;
+public import inochi2d.core.nodes.drawable.apart;
+
+package(inochi2d)
+void inInitDrawable() {
+    inRegisterNodeType!Part;
+}
 
 /**
     Nodes that are meant to render something in to the Inochi2D scene
@@ -26,7 +36,8 @@ public import inochi2d.core.mesh;
 @TypeId("Drawable")
 abstract class Drawable : Node, IDeformable {
 private:
-    vec2[] _deformed;
+    Mesh mesh_;
+    DeformedMesh deformed_;
 
 protected:
 
@@ -37,14 +48,15 @@ protected:
     void onSerialize(ref JSONValue object, bool recursive=true) {
         super.onSerialize(object, recursive);
 
-        MeshData data = mesh.toMeshData();
+        MeshData data = mesh_.toMeshData();
         object["mesh"] = data.serialize();
     }
 
     override
     void onDeserialize(ref JSONValue object) {
         super.onDeserialize(object);
-        this.mesh = Mesh.fromMeshData(object.tryGet!MeshData("mesh"));
+        this.mesh_ = Mesh.fromMeshData(object.tryGet!MeshData("mesh"));
+        this.deformed_ = nogc_new!DeformedMesh(mesh_);
     }
 
 public:
@@ -52,9 +64,24 @@ public:
     abstract void renderMask(bool dodge = false);
 
     /**
+        The mesh of the drawable.
+    */
+    final @property Mesh mesh() @nogc => mesh_;
+    final @property void mesh(Mesh value) @nogc {
+        if (value is mesh_)
+            return;
+        
+        if (mesh_)
+            mesh_.release();
+
+        this.mesh_ = value.retained();
+        this.deformed_.parent = value;
+    }
+
+    /**
         The points which may be deformed by the deformer.
     */
-    override @property vec2[] deformPoints() => _deformed;
+    override @property vec2[] deformPoints() => deformed_.points;
 
     /**
         Deforms the IDeformable.
@@ -65,22 +92,26 @@ public:
                         replacing the original deformation.
     */
     override void deform(vec2[] deformed, bool absolute) {
-        import nulib.math : min;
-        
-        size_t m = min(deformPoints.length, deformed.length);
-        if (absolute)
-            deformPoints[0..m] = deformed[0..m];
+        if (absolute) {
+            deformed_.reset();
+            deformed_.pushMatrix(transform.matrix);
+            deformed_.deform(deformed);
+        }
         else
-            deformPoints[0..m] += deformed[0..m];
+            deformed_.deform(deformed);
     }
 
     /**
         Resets the deformation for the IDeformable.
     */
     override void resetDeform() {
-        if (this._deformed.length != this.mesh.vertices.length)
-            this._deformed.length = this.mesh.vertices.length;
-        this._deformed[0..$] = this.mesh.points[0..$];
+        deformed_.reset();
+        deformed_.pushMatrix(transform.matrix);
+    }
+
+    ~this() {
+        mesh_.release();
+        nogc_delete(deformed_);
     }
 
     /**
@@ -102,13 +133,14 @@ public:
     */
     this(MeshData data, GUID guid, Node parent = null) {
         super(guid, parent);
-        this.mesh = Mesh.fromMeshData(data);
+        
+        this.mesh_ = Mesh.fromMeshData(data);
+        this.deformed_ = nogc_new!DeformedMesh(mesh_);
     }
 
     /**
         The mesh of the model.
     */
-    Mesh mesh;
 
     override
     void beginUpdate() {
@@ -124,18 +156,11 @@ public:
         super.update();
     }
 
-    /**
-        Draws the drawable
-    */
     override
-    void drawOne(float delta) {
-        super.drawOne(delta);
+    void draw(float delta, DrawList drawList) {
+        super.draw(delta, drawList);
+        drawList.pushMesh(deformed_.vertices, deformed_.indices);
     }
-
-    /**
-        Draws the drawable without any processing
-    */
-    void drawOneDirect(bool forMasking) { }
 
     override
     string typeId() { return "Drawable"; }

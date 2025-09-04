@@ -13,6 +13,7 @@ import nulib;
 import numem;
 import inochi2d.core.render.texture;
 import inochi2d.core.nodes.common;
+import inochi2d.core.mesh;
 
 /**
     A draw list containing the rendering state and commands
@@ -45,6 +46,11 @@ private:
 public:
 
     /**
+        Whether to use base vertex specification.
+    */
+    bool useBaseVertex = true;
+
+    /**
         Command Buffer
     */
     @property DrawCmd[] commands() => _cmds[0.._cmdp];
@@ -73,15 +79,6 @@ public:
         Sets sources for the current draw call.
     */
     void setSources(Texture[IN_MAX_ATTACHMENTS] sources) {
-        if (!_ccmd.isEmpty) {
-            foreach(i; 0..IN_MAX_ATTACHMENTS) {
-                if (sources[i] !is _ccmd.sources[i]) {
-                    this.next();
-                    break;
-                }
-            }
-        }
-        
         _ccmd.sources = sources;
     }
 
@@ -89,9 +86,6 @@ public:
         Sets the blending mode for the current draw call.
     */
     void setBlending(BlendMode blendMode) {
-        if (!_ccmd.isEmpty && _ccmd.blendMode != blendMode)
-            this.next();
-        
         _ccmd.blendMode = blendMode;
     }
 
@@ -99,9 +93,6 @@ public:
         Sets the masking mode for the current draw call.
     */
     void setMasking(MaskingMode maskMode) {
-        if (!_ccmd.isEmpty && maskMode != MaskingMode.none &&_ccmd.maskMode != maskMode)
-            this.next();
-        
         _ccmd.maskMode = maskMode;
     }
 
@@ -123,14 +114,15 @@ public:
             return;
 
         // Resize if stuff doesn't fit.
-        if (_vtxp+vtx.length > _vtxs.length)
+        if (_vtxp+vtx.length >= _vtxs.length)
             _vtxs.resize(_vtxp+vtx.length);
-        if (_idxp+idx.length > _idxs.length)
+        if (_idxp+idx.length >= _idxs.length)
             _idxs.resize(_idxp+idx.length);
 
         // Meshes supply their own index data, as such
         // we offset it here to fit within our buffer.
-        idx[0..$] += _cidx;
+        if (!useBaseVertex)
+            idx[0..$] += _cidx;
 
         _vtxs[_vtxp.._vtxp+vtx.length] = vtx[0..$];
         _idxs[_idxp.._idxp+idx.length] = idx[0..$];
@@ -144,7 +136,7 @@ public:
         Pushes the next draw command
     */
     void next() {
-        if (_cmds.empty || _ccmd.isEmpty)
+        if (_ccmd.isEmpty)
             return;
 
         if (_cmdp >= _cmds.length)
@@ -156,7 +148,9 @@ public:
         _ccmd = DrawCmd.init;
         _ccmd.idxOffset = _idxp;
         _ccmd.vtxOffset = _vtxp;
-        _targetsStack.tryPeek(0, _ccmd.targets);
+
+        if (!_targetsStack.empty)
+            _targetsStack.tryPeek(0, _ccmd.targets);
     }
 
     /**

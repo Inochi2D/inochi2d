@@ -280,7 +280,7 @@ public:
     A cache of textures in use by a model.
 */
 final
-class TextureCache : NuRefCounted {
+class TextureCache : NuObject {
 private:
 @nogc:
     Texture[] textures;

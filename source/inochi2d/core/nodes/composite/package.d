@@ -18,12 +18,6 @@ import std.algorithm.sorting;
 
 public import inochi2d.core.render.state;
 
-package(inochi2d) {
-    void inInitComposite() {
-        inRegisterNodeType!Composite;
-    }
-}
-
 /**
     Composite Node
 */
@@ -33,13 +27,13 @@ private:
 
     this() { }
 
-    void drawContents(float delta) {
+    void drawContents(float delta, DrawList drawList) {
 
         // Optimization: Nothing to be drawn, skip context switching
         if (subParts.length == 0) return;
 
         foreach(Part child; subParts) {
-            child.drawOne(delta);
+            child.draw(delta, drawList);
         }
     }
 
@@ -297,11 +291,11 @@ public:
     }
 
     override
-    void drawOne(float delta) {
+    void draw(float delta, DrawList drawList) {
         if (!enabled) return;
         
         this.selfSort();
-        this.drawContents(delta);
+        this.drawContents(delta, drawList);
 
         size_t cMasks = maskCount;
 
@@ -320,16 +314,7 @@ public:
             // inEndMask();
             return;
         }
-
-        // No masks, draw normally
-        super.drawOne(delta);
         this.drawSelf();
-    }
-
-    override
-    void draw(float delta) {
-        if (!enabled) return;
-        this.drawOne(delta);
     }
 
     override
