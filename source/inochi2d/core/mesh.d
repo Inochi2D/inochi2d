@@ -176,8 +176,11 @@ public:
         Pushes a matrix to the deformed mesh.
     */
     void pushMatrix(mat4 matrix) {
+
+        // NOTE: SIMD is slower in this instance due to how multiple arrays
+        // are involved.
         foreach(i; 0..delta_.length) {
-            delta_[i] = delta_[i].mulvm4(matrix);
+            delta_[i] = (matrix * vec4(delta_[i], 0, 1)).xy;
             deformed_[i].vtx = delta_[i];
         }
     }

@@ -58,14 +58,13 @@ mat4 mulm4m4(mat4 a, mat4 b) @nogc nothrow pure {
         The result of multplying the vector with the matrix.
 */
 VecT mulvm4(VecT)(VecT a, mat4 b) @nogc nothrow pure if (isVector!VecT) {
-    __m128 tmp = _mm_set_ps(1, 0, 0, 0);
-    tmp[0..VecT.dimension] = a.vector[0..$];
+    __m128 vec = _mm_set_ps(1, 0, 0, 0);
+    vec[0..VecT.dimension] = a.vector[0..$];
     
     __m128 result;
     foreach(row; 0..4) {
 
         __m128 acc = _mm_setzero_ps();
-        __m128 vec = _mm_loadu_ps(cast(float*)&tmp[0]);
         __m128 mat = _mm_loadu_ps(&b.matrix[row][0]);
         acc = _mm_add_ps(acc, _mm_mul_ps(mat, vec));
 
