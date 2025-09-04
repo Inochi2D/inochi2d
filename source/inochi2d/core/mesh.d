@@ -24,7 +24,13 @@ private:
     VtxData[]   _vtx;
     uint[]      _idx;
 
+    vec2[]      _vto;
 public:
+
+    /**
+        The points of the vertices of the mesh.
+    */
+    @property vec2[] points() => _vto[0..$];
 
     /**
         The vertex data stored in the mesh.
@@ -40,6 +46,7 @@ public:
     ~this() {
         nu_freea(_vtx);
         nu_freea(_idx);
+        nu_freea(_vto);
     }
 
     /**
@@ -49,6 +56,7 @@ public:
     this(MeshData meshData) {
         this._vtx = nu_malloca!VtxData(meshData.vertices.length);
         this._idx = nu_malloca!uint(meshData.indices.length);
+        this._vto = meshData.vertices.nu_dup();
 
         foreach(i; 0.._vtx.length) {
             _vtx[i] = VtxData(meshData.vertices[i], meshData.uvs[i]);

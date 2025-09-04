@@ -29,6 +29,11 @@ public:
                         replacing the original deformation.
     */
     void deform(vec2[] deformed, bool absolute = false);
+
+    /**
+        Resets the deformation for the IDeformable.
+    */
+    void resetDeform();
 }
 
 /**

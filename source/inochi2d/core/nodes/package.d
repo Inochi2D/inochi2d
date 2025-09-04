@@ -71,24 +71,16 @@ void inClearUUIDs() {
 @TypeId("Node")
 class Node : ISerializable, IDeserializable {
 private:
-
     Puppet puppet_;
-
     Node parent_;
-    
     Node[] children_;
-    
     uint uuid_;
-    
     float zsort_ = 0;
-
     bool lockToRoot_;
-
     string nodePath_;
 
 protected:
-    this() { }
-
+    bool recalculateTransform = true;
     bool preProcessed  = false;
     bool postProcessed = false;
 
@@ -320,8 +312,6 @@ public:
         The cached world space transform of the node
     */
     Transform globalTransform;
-
-    bool recalculateTransform = true;
 
     /**
         The transform in world space
@@ -690,6 +680,9 @@ public:
     */
     void drawOne(float delta) { }
 
+    /**
+        Reconstructs a child.
+    */
     void reconstruct() {
         foreach(child; children.dup) {
             child.reconstruct();
@@ -874,20 +867,13 @@ public:
     }
 
     /** 
-     * set new Parent
-     */
+        Set new Parent
+    */
     void reparent(Node parent, ulong pOffset) {
         if (parent !is null)
             setRelativeTo(parent);
         insertInto(parent, pOffset);
-        
-        auto c = this;
-        for (auto p = parent; p !is null; p = p.parent, c = c.parent) {
-            p.setupChild(c);
-        }
     }
-
-    void setupChild(Node child) { }
 
     mat4 getDynamicMatrix() {
         if (overrideTransformMatrix !is null) {

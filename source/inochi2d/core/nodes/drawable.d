@@ -26,12 +26,9 @@ public import inochi2d.core.mesh;
 @TypeId("Drawable")
 abstract class Drawable : Node, IDeformable {
 private:
-    VtxData[] _deformed;
+    vec2[] _deformed;
 
 protected:
-    void updateDeform() {
-        postProcess();
-    }
 
     /**
         Allows serializing self data (with pretty serializer)
@@ -98,6 +95,38 @@ public:
     abstract void renderMask(bool dodge = false);
 
     /**
+        The points which may be deformed by the deformer.
+    */
+    override @property vec2[] deformPoints() => _deformed;
+
+    /**
+        Deforms the IDeformable.
+
+        Params:
+            deformed =  The deformation delta.
+            absolute =  Whether the deformation is absolute,
+                        replacing the original deformation.
+    */
+    override void deform(vec2[] deformed, bool absolute) {
+        import nulib.math : min;
+        
+        size_t m = min(deformPoints.length, deformed.length);
+        if (absolute)
+            deformPoints[0..m] = deformed[0..m];
+        else
+            deformPoints[0..m] += deformed[0..m];
+    }
+
+    /**
+        Resets the deformation for the IDeformable.
+    */
+    override void resetDeform() {
+        if (this._deformed.length != this.mesh.vertices.length)
+            this._deformed.length = this.mesh.vertices.length;
+        this._deformed[0..$] = this.mesh.points[0..$];
+    }
+
+    /**
         Constructs a new drawable surface
     */
     this(Node parent = null) {
@@ -126,10 +155,7 @@ public:
 
     override
     void beginUpdate() {
-        if (this._deformed.length != this.mesh.vertices.length)
-            this._deformed.length = this.mesh.vertices.length;
-        this._deformed[0..$] = this.mesh.vertices[0..$];
-
+        this.resetDeform();
         super.beginUpdate();
     }
 
@@ -138,9 +164,7 @@ public:
     */
     override
     void update() {
-        this.preProcess();
         super.update();
-        this.updateDeform();
     }
 
     /**
