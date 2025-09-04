@@ -92,18 +92,6 @@ protected:
         object.tryGetRef(masks, "masks");
 
         blendingMode = object.tryGet!string("blend_mode", "Normal").toBlendMode();
-        if (object.isJsonArray("masked_by")) {
-
-            // Go to every masked part
-            MaskingMode mode = object.tryGet!string("mask_mode").toMaskingMode;
-            foreach(imask; object["masked_by"].array) {
-                GUID guid = imask.tryGetGUID();
-                this.masks ~= MaskBinding(guid, mode, null);
-            }
-        }
-
-        // Update indices and vertices
-        // this.updateUVs();
     }
 
     //
@@ -201,13 +189,6 @@ public:
             if (i >= textures.length) break;
             this.textures[i] = textures[i];
         }
-        
-        // this.updateUVs();
-    }
-    
-    override
-    void renderMask(bool dodge = false) {
-
     }
 
     override
@@ -343,42 +324,28 @@ public:
     override
     void draw(float delta, DrawList drawList) {
         super.draw(delta, drawList);
+
+        if (masks.length > 0) {
+            foreach(ref mask; masks) {
+                mask.maskSrc.drawAsMask(delta, drawList, mask.mode);
+            }
+            drawList.setDrawState(DrawState.maskedDraw);
+        }
+
         drawList.setSources(textures);
         drawList.setBlending(blendingMode);
         drawList.next();
     }
 
-    // override
-    // void drawOne(float delta) {
-    //     if (!enabled) return;
-        
-    //     size_t cMasks = maskCount;
-    //     if (masks.length > 0) {
-    //         // inBeginMask(cMasks > 0);
+    override
+    void drawAsMask(float delta, DrawList drawList, MaskingMode mode) {
+        super.drawAsMask(delta, drawList, mode);
 
-    //         // foreach(ref mask; masks) {
-    //         //     mask.maskSrc.renderMask(mask.mode == MaskingMode.DodgeMask);
-    //         // }
-
-    //         // inBeginMaskContent();
-
-    //         // // We are the content
-    //         // this.drawSelf();
-
-    //         // inEndMask();
-    //         return;
-    //     }
-
-    //     // No masks, draw normally
-    //     // this.drawSelf();
-    //     super.drawOne(delta);
-    // }
-
-    // override
-    // void drawOneDirect(bool forMasking) {
-    //     // if (forMasking) this.drawSelf!true();
-    //     // else this.drawSelf!false();
-    // }
+        drawList.setSources(textures);
+        drawList.setBlending(blendingMode);
+        drawList.setDrawState(DrawState.defineMask);
+        drawList.next();
+    }
 
     override
     void finalize() {

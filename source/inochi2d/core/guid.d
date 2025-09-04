@@ -60,8 +60,8 @@ GUID inNewGUID() @nogc {
         A GUID.
 */
 GUID tryGetGUID(ref JSONValue obj, string uuidKey, string guidKey = "guid") {
-    import inochi2d.core.format.serde : hasKey, tryGet;
-    if (obj.hasKey(uuidKey))
+    import inochi2d.core.format.serde : hasKey, tryGet, isScalar;
+    if (obj.hasKey(uuidKey) && obj[uuidKey].isScalar)
         return obj.tryGet!uint(uuidKey).toGuid;
     else {
         return GUID(obj.tryGet!string(guidKey));

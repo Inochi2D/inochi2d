@@ -528,34 +528,8 @@ public:
     }
 
     /**
-        Draws this node and it's subnodes
+        Sets up the node for another rendering pass.
     */
-    void draw(float delta, DrawList drawList) {
-        if (!renderEnabled) return;
-
-        foreach(child; children) {
-            child.draw(delta, drawList);
-        }
-    }
-
-    /**
-        Reconstructs a child.
-    */
-    void reconstruct() {
-        foreach(child; children.dup) {
-            child.reconstruct();
-        }
-    }
-
-    /**
-        Finalizes this node and any children
-    */
-    void finalize() {
-        foreach(child; children) {
-            child.finalize();
-        }
-    }
-
     void beginUpdate() {
 
         offsetSort = 0;
@@ -574,6 +548,31 @@ public:
         if (!enabled) return;
         foreach(child; children) {
             child.update(delta, drawList);
+        }
+    }
+
+    /**
+        Draws this node and it's subnodes
+    */
+    void draw(float delta, DrawList drawList) {
+        if (!renderEnabled) return;
+    }
+
+    /**
+        Reconstructs a child.
+    */
+    void reconstruct() {
+        foreach(child; children.dup) {
+            child.reconstruct();
+        }
+    }
+
+    /**
+        Finalizes this node and any children
+    */
+    void finalize() {
+        foreach(child; children) {
+            child.finalize();
         }
     }
 

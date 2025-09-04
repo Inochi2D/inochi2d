@@ -26,7 +26,7 @@ public:
     */
     void onSerialize(ref JSONValue object, bool recursive = true) {
         auto srcGuid = maskSrcGUID.toString();
-        object["guid"] = srcGuid.dup;
+        object["source"] = srcGuid.dup;
         object["mode"] = mode;
     }
 
@@ -34,7 +34,7 @@ public:
         Deserialization function
     */
     void onDeserialize(ref JSONValue object) {
-        maskSrcGUID = object.tryGetGUID("uuid", "guid");
+        maskSrcGUID = object.tryGetGUID("source", "source");
         mode = object.tryGet!string("mode").toMaskingMode;
     }
 }

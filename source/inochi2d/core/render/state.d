@@ -159,7 +159,7 @@ enum MaskingMode : uint {
     /**
         The path should be dodge masked by the drawables specified
     */
-    dodge = 2
+    dodge = 2,
 }
 
 MaskingMode toMaskingMode(string name) {

@@ -233,7 +233,7 @@ struct MeshData {
         vec2 origin = object.tryGet!vec2("origin");
         if (origin.isFinite) {
             foreach(i; 0..vertices.length) {
-                vertices[i] += origin;
+                vertices[i] -= origin;
             }
         }
 

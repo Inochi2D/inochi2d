@@ -38,9 +38,14 @@ abstract class Drawable : Node, IDeformable {
 private:
     Mesh mesh_;
     DeformedMesh deformed_;
-    DrawListAlloc* drawListSlot;
 
 protected:
+
+    /**
+        The current active draw list slot for this
+        drawable.
+    */
+    DrawListAlloc* drawListSlot;
 
     /**
         Allows serializing self data (with pretty serializer)
@@ -61,8 +66,6 @@ protected:
     }
 
 public:
-
-    abstract void renderMask(bool dodge = false);
 
     /**
         The mesh of the drawable.
@@ -152,10 +155,19 @@ public:
         this.drawListSlot = drawList.allocate(deformed_.vertices, deformed_.indices);
     }
 
-
+    /**
+        Draws the drawable to the screen.
+    */
     override
     void draw(float delta, DrawList drawList) {
         super.draw(delta, drawList);
+        drawList.setMesh(drawListSlot);
+    }
+    
+    /**
+        Draws the drawable to the screen in masking mode.
+    */
+    void drawAsMask(float delta, DrawList drawList, MaskingMode mode) {
         drawList.setMesh(drawListSlot);
     }
 

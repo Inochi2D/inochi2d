@@ -298,20 +298,19 @@ public:
         this.drawContents(delta, drawList);
 
         size_t cMasks = maskCount;
-
         if (masks.length > 0) {
-            // inBeginMask(cMasks > 0);
+        //     // inBeginMask(cMasks > 0);
 
-            foreach(ref mask; masks) {
-                mask.maskSrc.renderMask(mask.mode == MaskingMode.dodge);
-            }
+        //     foreach(ref mask; masks) {
+        //         mask.maskSrc.renderMask(mask.mode == MaskingMode.dodge);
+        //     }
 
-            // inBeginMaskContent();
+        //     // inBeginMaskContent();
 
-            // We are the content
-            this.drawSelf();
+        //     // We are the content
+        //     this.drawSelf();
 
-            // inEndMask();
+        //     // inEndMask();
             return;
         }
         this.drawSelf();

@@ -168,6 +168,13 @@ public:
     }
 
     /**
+        Sets the active state for the current command.
+    */
+    void setDrawState(DrawState state) {
+        _ccmd.state = state;
+    }
+
+    /**
         Pushes the next draw command
     */
     void next() {
@@ -237,6 +244,29 @@ struct DrawListAlloc {
 }
 
 /**
+    Draw state flags.
+*/
+enum DrawState : uint {
+
+    /**
+        Normal drawing.
+    */
+    normal = 0,
+
+    /**
+        A masking run is being defined.
+    */
+    defineMask = 1,
+
+    /**
+        Use the mask to draw the current command,
+        reuse the mask if the next state also is
+        maskedDraw.
+    */
+    maskedDraw = 2,
+}
+
+/**
     A drawing command that is sent to the GPU.
 */
 struct DrawCmd {
@@ -251,6 +281,11 @@ struct DrawCmd {
         Source textures
     */
     Texture[IN_MAX_ATTACHMENTS] sources;
+
+    /**
+        The current state of the drawing command.
+    */
+    DrawState state;
 
     /**
         Blending mode to apply
