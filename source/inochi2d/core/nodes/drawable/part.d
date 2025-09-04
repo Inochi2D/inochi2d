@@ -166,6 +166,14 @@ public:
         return textures[0];
     }
 
+    /// Destructor
+    ~this() {
+        foreach(texture; textures) {
+            if (texture)
+                texture.release();
+        }
+    }
+
     /**
         Constructs a new part
     */

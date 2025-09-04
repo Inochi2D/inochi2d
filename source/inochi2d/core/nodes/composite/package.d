@@ -179,6 +179,15 @@ public:
     */
     MaskBinding[] masks;
 
+    /// Destructor
+    ~this() {
+        foreach(texture; _colors) {
+            if (texture)
+                texture.release();
+        }
+        _depthStencil.release();
+    }
+
     /**
         Constructs a new mask
     */
