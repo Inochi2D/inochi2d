@@ -9,6 +9,7 @@
 module inochi2d.cffi.render;
 import inochi2d.core.render;
 
+version(IN_DYNLIB):
 extern(C) export @nogc:
 
 /**

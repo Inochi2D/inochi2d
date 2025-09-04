@@ -87,8 +87,7 @@ GUID tryGetGUID(ref JSONValue obj) {
 private:
 
 __gshared Random __i2d_uuid_random;
-pragma(crt_constructor)
-void in_setup_guid() @nogc {
+shared static this() {
     import core.time : MonoTime;
     import numem : nogc_new;
 

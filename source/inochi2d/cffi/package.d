@@ -9,6 +9,7 @@
 module inochi2d.cffi;
 import numem;
 
+version(IN_DYNLIB):
 extern(C) export @nogc:
 
 /**

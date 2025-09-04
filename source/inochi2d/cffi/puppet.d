@@ -18,6 +18,7 @@ import nulib.string;
 import inochi2d.cffi;
 import inmath;
 
+version(IN_DYNLIB):
 extern(C) export @nogc:
 
 //

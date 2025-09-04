@@ -29,6 +29,8 @@ configuration "static" {
 configuration "dynamic" {
     toolchainRequirements dmd="no" gdc="no" ldc=">=1.40.0"
     targetType "dynamicLibrary"
+
+    versions "IN_DYNLIB"
 }
 
 // Unit tests

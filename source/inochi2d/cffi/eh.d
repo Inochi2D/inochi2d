@@ -9,6 +9,8 @@
 module inochi2d.cffi.eh;
 import numem;
 
+version(IN_DYNLIB):
+
 //
 //              ERROR HANDLING
 //
