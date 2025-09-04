@@ -31,6 +31,11 @@ enum TextureFormat : uint {
         Red-channel only mask data.
     */
     r8 = 2,
+
+    /**
+        Depth-stencil texture.
+    */
+    depthStencil = 3,
 }
 
 /**
@@ -137,6 +142,9 @@ public:
     */
     @property uint channels() {
         final switch(format) {
+            case TextureFormat.depthStencil:
+                return 4;
+
             case TextureFormat.rgba8Unorm:
                 return 4;
 
@@ -203,6 +211,7 @@ public:
                 return;
             
             case TextureFormat.none:
+            case TextureFormat.depthStencil:
             case TextureFormat.r8:
                 return;
         }
