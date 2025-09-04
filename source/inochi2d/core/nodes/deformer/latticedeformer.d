@@ -24,8 +24,8 @@ private:
 protected:
 
     override
-    void serializeSelfImpl(ref JSONValue object, bool recursive=true) {
-        super.serializeSelfImpl(object, recursive);
+    void onSerialize(ref JSONValue object, bool recursive=true) {
+        super.onSerialize(object, recursive);
         object["subdivisions"] = subdivs.serialize();
     }
 

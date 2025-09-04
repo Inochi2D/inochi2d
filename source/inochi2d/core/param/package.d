@@ -9,6 +9,7 @@
 module inochi2d.core.param;
 import inochi2d.core.format;
 import inochi2d.core.math;
+import inochi2d.core.guid;
 import inochi2d.core;
 import std.exception;
 import std.array;
@@ -133,29 +134,11 @@ private:
 
     Combinator iadd;
     Combinator imul;
-protected:
-    void serializeSelf(ref JSONValue object) {
-        object["uuid"] = uuid;
-        object["name"] = name;
-        object["is_vec2"] = isVec2;
-        object["is_vec2"] = isVec2;
-        object["min"] = min.serialize();
-        object["max"] = max.serialize();
-        object["defaults"] = defaults.serialize();
-        object["axis_points"] = axisPoints.serialize();
-        object["merge_mode"] = mergeMode.serialize();
-
-        object["bindings"] = JSONValue.emptyArray;
-        foreach(ref binding; bindings) {
-            object["bindings"] ~= binding.serialize();
-        }
-    }
-
 public:
     /**
         Unique ID of parameter
     */
-    uint uuid;
+    GUID guid;
 
     /**
         Name of the parameter
@@ -236,17 +219,10 @@ public:
     this() { }
 
     /**
-        Unload UUID on clear
-    */
-    ~this() {
-        inUnloadUUID(this.uuid);
-    }
-
-    /**
         Create new parameter
     */
     this(string name, bool isVec2) {
-        this.uuid = inCreateUUID();
+        this.guid = inNewGUID();
         this.name = name;
         this.isVec2 = isVec2;
         if (!isVec2)
@@ -286,15 +262,31 @@ public:
     /**
         Serializes a parameter
     */
-    void onSerialize(ref JSONValue object) {
-        this.serializeSelf(object);
+    void onSerialize(ref JSONValue object, bool recursive = true) {
+        
+        auto selfGuid = guid.toString();
+        object["guid"] = selfGuid.dup;
+        object["name"] = name;
+        object["is_vec2"] = isVec2;
+        object["is_vec2"] = isVec2;
+        object["min"] = min.serialize();
+        object["max"] = max.serialize();
+        object["defaults"] = defaults.serialize();
+        object["axis_points"] = axisPoints.serialize();
+        object["merge_mode"] = mergeMode.serialize();
+
+        object["bindings"] = JSONValue.emptyArray;
+        foreach(ref binding; bindings) {
+            object["bindings"] ~= binding.serialize();
+        }
     }
 
     /**
         Deserializes a parameter
     */
     void onDeserialize(ref JSONValue object) {
-        object.tryGetRef(uuid, "uuid");
+
+        this.guid = object.tryGetGUID("uuid", "guid");
         object.tryGetRef(name, "name");
         object.tryGetRef(isVec2, "is_vec2");
         object.tryGetRef(min, "min");
@@ -338,7 +330,7 @@ public:
 
         ParameterBinding[] validBindingList;
         foreach(i, binding; bindings) {
-            if (puppet.find!Node(binding.getNodeUUID())) {
+            if (puppet.find!Node(binding.getNodeGUID())) {
                 binding.finalize(puppet);
                 validBindingList ~= binding;
             }

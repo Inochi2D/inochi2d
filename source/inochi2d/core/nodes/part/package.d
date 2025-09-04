@@ -95,8 +95,8 @@ protected:
         Allows serializing self data (with pretty serializer)
     */
     override
-    void serializeSelfImpl(ref JSONValue object, bool recursive = true) {
-        super.serializeSelfImpl(object, recursive);
+    void onSerialize(ref JSONValue object, bool recursive = true) {
+        super.onSerialize(object, recursive);
 
         object["textures"] = JSONValue.emptyArray;
         foreach(ref texture; textures) {
@@ -148,18 +148,13 @@ protected:
             // Go to every masked part
             MaskingMode mode = object.tryGet!string("mask_mode").toMaskingMode;
             foreach(imask; object["masked_by"].array) {
-                uint uuid = imask.tryGet!uint();
-                this.masks ~= MaskBinding(uuid, mode, null);
+                GUID guid = imask.tryGetGUID();
+                this.masks ~= MaskBinding(guid, mode, null);
             }
         }
 
         // Update indices and vertices
         // this.updateUVs();
-    }
-
-    override
-    void serializePartial(ref JSONValue object, bool recursive=true) {
-        super.serializePartial(object, recursive);
     }
 
     //
@@ -238,7 +233,7 @@ public:
         Constructs a new part
     */
     this(MeshData data, Texture[] textures, Node parent = null) {
-        this(data, textures, inCreateUUID(), parent);
+        this(data, textures, inNewGUID(), parent);
     }
 
     /**
@@ -251,8 +246,8 @@ public:
     /**
         Constructs a new part
     */
-    this(MeshData data, Texture[] textures, uint uuid, Node parent = null) {
-        super(data, uuid, parent);
+    this(MeshData data, Texture[] textures, GUID guid, Node parent = null) {
+        super(data, guid, parent);
         foreach(i; 0..TextureUsage.COUNT) {
             if (i >= textures.length) break;
             this.textures[i] = textures[i];
@@ -366,7 +361,7 @@ public:
 
     bool isMaskedBy(Drawable drawable) {
         foreach(mask; masks) {
-            if (mask.maskSrc.uuid == drawable.uuid) return true;
+            if (mask.maskSrc.guid == drawable.guid) return true;
         }
         return false;
     }
@@ -374,14 +369,14 @@ public:
     ptrdiff_t getMaskIdx(Drawable drawable) {
         if (drawable is null) return -1;
         foreach(i, ref mask; masks) {
-            if (mask.maskSrc.uuid == drawable.uuid) return i;
+            if (mask.maskSrc.guid == drawable.guid) return i;
         }
         return -1;
     }
 
-    ptrdiff_t getMaskIdx(uint uuid) {
+    ptrdiff_t getMaskIdx(GUID guid) {
         foreach(i, ref mask; masks) {
-            if (mask.maskSrc.uuid == uuid) return i;
+            if (mask.maskSrc.guid == guid) return i;
         }
         return -1;
     }
@@ -444,7 +439,7 @@ public:
         
         MaskBinding[] validMasks;
         foreach(i; 0..masks.length) {
-            if (Drawable nMask = puppet.find!Drawable(masks[i].maskSrcUUID)) {
+            if (Drawable nMask = puppet.find!Drawable(masks[i].maskSrcGUID)) {
                 masks[i].maskSrc = nMask;
                 validMasks ~= masks[i];
             }
@@ -453,14 +448,4 @@ public:
         // Remove invalid masks
         masks = validMasks;
     }
-
-
-    override
-    void setOneTimeTransform(mat4* transform) {
-        super.setOneTimeTransform(transform);
-        foreach (m; masks) {
-            m.maskSrc.oneTimeTransform = transform;
-        }
-    }
-
 }

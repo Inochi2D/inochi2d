@@ -34,8 +34,8 @@ protected:
         Allows serializing self data (with pretty serializer)
     */
     override
-    void serializeSelfImpl(ref JSONValue object, bool recursive=true) {
-        super.serializeSelfImpl(object, recursive);
+    void onSerialize(ref JSONValue object, bool recursive=true) {
+        super.onSerialize(object, recursive);
 
         MeshData data = mesh.toMeshData();
         object["mesh"] = data.serialize();
@@ -45,49 +45,6 @@ protected:
     void onDeserialize(ref JSONValue object) {
         super.onDeserialize(object);
         this.mesh = Mesh.fromMeshData(object.tryGet!MeshData("mesh"));
-    }
-
-    void onDeformPushed(ref Deformation deform) { }
-
-    override
-    void preProcess() {
-        // if (preProcessed)
-        //     return;
-        // preProcessed = true;
-        // if (preProcessFilter !is null) {
-        //     overrideTransformMatrix = null;
-        //     mat4 matrix = this.transform.matrix;
-        //     auto filterResult = preProcessFilter(vertices, deformation, &matrix);
-        //     if (filterResult[0] !is null) {
-        //         deformation = filterResult[0];
-        //     } 
-        //     if (filterResult[1] !is null) {
-        //         overrideTransformMatrix = new MatrixHolder(*filterResult[1]);
-        //     }
-        // }
-    }
-
-    override
-    void postProcess() {
-        // if (postProcessed)
-        //     return;
-        // postProcessed = true;
-        // if (postProcessFilter !is null) {
-        //     overrideTransformMatrix = null;
-        //     mat4 matrix = this.transform.matrix;
-        //     auto filterResult = postProcessFilter(vertices, deformation, &matrix);
-        //     if (filterResult[0] !is null) {
-        //         deformation = filterResult[0];
-        //     } 
-        //     if (filterResult[1] !is null) {
-        //         overrideTransformMatrix = new MatrixHolder(*filterResult[1]);
-        //     }
-        // }
-    }
-
-package(inochi2d):
-    final void notifyDeformPushed(ref Deformation deform) {
-        onDeformPushed(deform);
     }
 
 public:
@@ -137,14 +94,14 @@ public:
         Constructs a new drawable surface
     */
     this(MeshData data, Node parent = null) {
-        this(data, inCreateUUID(), parent);
+        this(data, inNewGUID(), parent);
     }
 
     /**
         Constructs a new drawable surface
     */
-    this(MeshData data, uint uuid, Node parent = null) {
-        super(uuid, parent);
+    this(MeshData data, GUID guid, Node parent = null) {
+        super(guid, parent);
         this.mesh = Mesh.fromMeshData(data);
     }
 

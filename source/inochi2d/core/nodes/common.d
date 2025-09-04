@@ -7,27 +7,26 @@
     Authors: Luna Nielsen
 */
 module inochi2d.core.nodes.common;
+import inochi2d.core.nodes.drawable;
 import inochi2d.core.render.state;
 import inochi2d.core.format;
+import inochi2d.core;
 
 /**
     A binding between a mask and a mode
 */
 struct MaskBinding {
 public:
-    import inochi2d.core.nodes.drawable : Drawable;
-    uint maskSrcUUID;
-
+    GUID maskSrcGUID;
     MaskingMode mode;
-    
     Drawable maskSrc;
-
 
     /**
         Serialization function
     */
-    void onSerialize(ref JSONValue object) {
-        object["uuid"] = maskSrcUUID;
+    void onSerialize(ref JSONValue object, bool recursive = true) {
+        auto srcGuid = maskSrcGUID.toString();
+        object["guid"] = srcGuid.dup;
         object["mode"] = mode;
     }
 
@@ -35,7 +34,7 @@ public:
         Deserialization function
     */
     void onDeserialize(ref JSONValue object) {
-        object.tryGetRef(maskSrcUUID, "uuid");
+        maskSrcGUID = object.tryGetGUID("uuid", "guid");
         mode = object.tryGet!string("mode").toMaskingMode;
     }
 }

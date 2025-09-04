@@ -49,4 +49,9 @@ public:
         else
             deformPoints[0..m] += deformed[0..m];
     }
+
+    /**
+        Resets the deformation for the IDeformable.
+    */
+    abstract void resetDeform();
 }

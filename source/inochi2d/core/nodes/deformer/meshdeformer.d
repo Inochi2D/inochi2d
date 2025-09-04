@@ -1,4 +1,4 @@
-/*
+/**
     Inochi2D Mesh Deformer Node
 
     Copyright © 2020-2025, Inochi2D Project
@@ -27,7 +27,7 @@ package(inochi2d) {
 */
 @TypeId("MeshGroup")
 class MeshDeformer : Deformer {
-protected:
+private:
     ushort[] bitMask;
     vec4 bounds;
     Triangle[] triangles;
@@ -35,9 +35,34 @@ protected:
     mat4 forwardMatrix;
     mat4 inverseMatrix;
     bool translateChildren = true;
-
     bool precalculated = false;
+
+    vec2[] deformed_;
+protected:
+    /**
+        Allows serializing self data (with pretty serializer)
+    */
+    override
+    void onSerialize(ref JSONValue object, bool recursive=true) {
+        super.onSerialize(object, recursive);
+
+        MeshData data = mesh.toMeshData();
+        object["mesh"] = data.serialize();
+    }
+
+    override
+    void onDeserialize(ref JSONValue object) {
+        super.onDeserialize(object);
+
+        this.mesh = Mesh.fromMeshData(object.tryGet!MeshData("mesh"));
+        this.deformed_ = mesh.points.dup;
+    }
 public:
+
+    /**
+        The mesh
+    */
+    Mesh mesh;
 
     /**
         Constructs a new MeshGroup node
@@ -49,12 +74,12 @@ public:
     /**
         The control points of the deformer.
     */
-    override @property vec2[] controlPoints() => transformedVertices;
+    override @property vec2[] controlPoints() => deformed_;
     override @property void controlPoints(vec2[] value) {
         import nulib.math : min;
 
-        size_t m = min(value.length, transformedVertices.length);
-        transformedVertices[0..m] = value[0..m];
+        size_t m = min(value.length, deformed_.length);
+        deformed_[0..m] = value[0..m];
     }
 
     /**
@@ -62,6 +87,13 @@ public:
     */
     override void deform(vec2[] deformed, bool absolute) {
         super.deform(deformed, absolute);
+    }
+
+    /**
+        Resets the deformation for the IDeformable.
+    */
+    override void resetDeform() {
+        deformed_[0..$] = this.mesh.points[0..$];
     }
 
 //     Tuple!(vec2[], mat4*) filterChildren(vec2[] origVertices, vec2[] origDeformation, mat4* origTransform) {
@@ -114,8 +146,8 @@ public:
 //    }
 
 //     override
-//     void serializeSelfImpl(ref JSONValue object, bool recursive = true) {
-//         super.serializeSelfImpl(object, recursive);
+//     void onSerialize(ref JSONValue object, bool recursive = true) {
+//         super.onSerialize(object, recursive);
 
 //         object["dynamic_deformation"] = dynamic;
 //         object["translate_children"] = translateChildren;

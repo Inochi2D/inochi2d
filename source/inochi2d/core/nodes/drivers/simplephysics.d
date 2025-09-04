@@ -10,6 +10,7 @@ module inochi2d.core.nodes.drivers.simplephysics;
 private {
 import inochi2d.core.nodes.drivers;
 import inochi2d.core.nodes.common;
+import inochi2d.core.guid;
 //import inochi2d.core.nodes;
 //import inochi2d.core;
 import inochi2d.core.format;
@@ -179,7 +180,7 @@ class SimplePhysics : Driver {
 private:
     this() { }
 
-    uint paramRef = InInvalidUUID;
+    GUID paramRef = GUID.nil;
 
     Parameter param_;
 
@@ -203,9 +204,11 @@ protected:
         Allows serializing self data (with pretty serializer)
     */
     override
-    void serializeSelfImpl(ref JSONValue object, bool recursive=true) {
-        super.serializeSelfImpl(object, recursive);
-        object["param"] = paramRef;
+    void onSerialize(ref JSONValue object, bool recursive=true) {
+        super.onSerialize(object, recursive);
+
+        auto target = paramRef.toString();
+        object["target"] = target.dup;
         object["model_type"] = modelType_;
         object["map_mode"] = mapMode;
         object["gravity"] = gravity;
@@ -220,7 +223,8 @@ protected:
     override
     void onDeserialize(ref JSONValue object) {
         super.onDeserialize(object);
-        object.tryGetRef(paramRef, "param");
+
+        this.paramRef = object.tryGetGUID("param", "target");
         object.tryGetRef(modelType_, "model_type");
         object.tryGetRef(mapMode, "map_mode");
         object.tryGetRef(gravity, "gravity");
@@ -281,14 +285,14 @@ public:
         Constructs a new SimplePhysics node
     */
     this(Node parent = null) {
-        this(inCreateUUID(), parent);
+        this(inNewGUID(), parent);
     }
 
     /**
         Constructs a new SimplePhysics node
     */
-    this(uint uuid, Node parent = null) {
-        super(uuid, parent);
+    this(GUID guid, Node parent = null) {
+        super(guid, parent);
         reset();
     }
 
@@ -345,38 +349,6 @@ public:
                 (vec4(transformLocal.translation, 1)) : 
                 (transform.matrix * vec4(0, 0, 0, 1));
             anchor = vec2(anchorPos.x, anchorPos.y);
-        }
-    }
-
-    override
-    void preProcess() {
-        auto prevPos = (localOnly ? 
-            (vec4(transformLocal.translation, 1)) : 
-            (transform.matrix * vec4(0, 0, 0, 1))).xy;
-        super.preProcess(); 
-        auto anchorPos = (localOnly ? 
-            (vec4(transformLocal.translation, 1)) : 
-            (transform.matrix * vec4(0, 0, 0, 1))).xy;
-        if (anchorPos != prevPos) {
-            anchor = anchorPos;
-            prevTransMat = transform.matrix.inverse;
-            prevAnchorSet = true;
-        }
-    }
-
-    override
-    void postProcess() { 
-        auto prevPos = (localOnly ? 
-            (vec4(transformLocal.translation, 1)) : 
-            (transform.matrix * vec4(0, 0, 0, 1))).xy;
-        super.postProcess(); 
-        auto anchorPos = (localOnly ? 
-            (vec4(transformLocal.translation, 1)) : 
-            (transform.matrix * vec4(0, 0, 0, 1))).xy;
-        if (anchorPos != prevPos) {
-            anchor = anchorPos;
-            prevTransMat = transform.matrix.inverse;
-            prevAnchorSet = true;
         }
     }
 
@@ -458,8 +430,8 @@ public:
 
     void param(Parameter p) {
         param_ = p;
-        if (p is null) paramRef = InInvalidUUID;
-        else paramRef = p.uuid;
+        if (p is null) paramRef = GUID.nil;
+        else paramRef = p.guid;
     }
 
     float getScale() {

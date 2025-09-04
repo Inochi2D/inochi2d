@@ -113,7 +113,7 @@ class PuppetUsageRights {
     /**
         Serializes the type.
     */
-    void onSerialize(ref JSONValue object) {
+    void onSerialize(ref JSONValue object, bool recursive = true) {
         object["allowedUsers"] = this.allowedUsers;
         object["allowViolence"] = this.allowViolence;
         object["allowSexual"] = this.allowSexual;
@@ -201,7 +201,7 @@ class PuppetMeta {
     /**
         Serializes the type.
     */
-    void onSerialize(ref JSONValue object) {
+    void onSerialize(ref JSONValue object, bool recursive = true) {
         object["name"] = this.name;
         object["version"] = this.version_;
         object["rigger"] = this.rigger;
@@ -251,7 +251,7 @@ class PuppetPhysics : ISerializable, IDeserializable {
     /**
         Serializes the type.
     */
-    void onSerialize(ref JSONValue object) {
+    void onSerialize(ref JSONValue object, bool recursive) {
         object["pixelsPerMeter"] = pixelsPerMeter;
         object["gravity"] = gravity;
     }
@@ -377,14 +377,14 @@ private:
         return null;
     }
 
-    Node findNode(Node n, uint uuid) {
+    Node findNode(Node n, GUID guid) {
 
         // Name matches!
-        if (n.uuid == uuid) return n;
+        if (n.guid == guid) return n;
 
         // Recurse through children
         foreach(child; n.children) {
-            if (Node c = findNode(child, uuid)) return c;
+            if (Node c = findNode(child, guid)) return c;
         }
 
         // Not found
@@ -518,11 +518,11 @@ public:
     }
 
     /**
-        Returns a parameter by UUID
+        Returns a parameter by GUID
     */
-    Parameter findParameter(uint uuid) {
+    Parameter findParameter(GUID guid) {
         foreach(i, parameter; parameters) {
-            if (parameter.uuid == uuid) {
+            if (parameter.guid == guid) {
                 return parameter;
             }
         }
@@ -593,8 +593,8 @@ public:
     /**
         Finds Node by its unique id
     */
-    T find(T = Node)(uint uuid) if (is(T : Node)) {
-        return cast(T)findNode(root, uuid);
+    T find(T = Node)(GUID guid) if (is(T : Node)) {
+        return cast(T)findNode(root, guid);
     }
 
     /**
@@ -673,7 +673,7 @@ public:
 
             string iden = getLineSet();
 
-            string s = "%s[%s] %s <%s>\n".format(n.children.length > 0 ? "╭─" : "", n.typeId, n.name, n.uuid);
+            string s = "%s[%s] %s <%s>\n".format(n.children.length > 0 ? "╭─" : "", n.typeId, n.name, n.guid);
             foreach(i, child; n.children) {
                 string term = "├→";
                 if (i == n.children.length-1) {
@@ -696,14 +696,14 @@ public:
     */
     JSONValue serialize() {
         JSONValue object = JSONValue.emptyObject;
-        this.onSerialize(object);
+        this.onSerialize(object, true);
         return object;
     }
 
     /**
         Serializes a puppet into an existing object.
     */
-    void onSerialize(ref JSONValue object) {
+    void onSerialize(ref JSONValue object, bool recursive) {
 
         // Meta Info
         object["meta"] = JSONValue.emptyObject;

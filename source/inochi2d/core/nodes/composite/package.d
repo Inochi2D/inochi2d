@@ -58,7 +58,7 @@ private:
             b.zSort) > 0)(subParts);
     }
 
-    void scanPartsRecurse(ref Node node) {
+    void scanPartsRecurse(Node node) {
 
         // Don't need to scan null nodes
         if (node is null) return;
@@ -88,8 +88,8 @@ protected:
     }
 
     override
-    void serializeSelfImpl(ref JSONValue object, bool recursive=true) {
-        super.serializeSelfImpl(object, recursive);
+    void onSerialize(ref JSONValue object, bool recursive=true) {
+        super.onSerialize(object, recursive);
         object["blend_mode"] = blendingMode;
         object["tint"] = tint.serialize();
         object["screenTint"] = screenTint.serialize();
@@ -135,18 +135,6 @@ protected:
         return c;
     }
 
-    override
-    void preProcess() {
-        if (!propagateMeshGroup)
-            Node.preProcess();
-    }
-
-    override
-    void postProcess() {
-        if (!propagateMeshGroup)
-            Node.postProcess();
-    }
-
 public:
     bool propagateMeshGroup = true;
 
@@ -184,14 +172,14 @@ public:
         Constructs a new mask
     */
     this(Node parent = null) {
-        this(inCreateUUID(), parent);
+        this(inNewGUID(), parent);
     }
 
     /**
         Constructs a new composite
     */
-    this(uint uuid, Node parent = null) {
-        super(uuid, parent);
+    this(GUID guid, Node parent = null) {
+        super(guid, parent);
     }
 
     override
@@ -280,7 +268,7 @@ public:
 
     bool isMaskedBy(Drawable drawable) {
         foreach(mask; masks) {
-            if (mask.maskSrc.uuid == drawable.uuid) return true;
+            if (mask.maskSrc.guid == drawable.guid) return true;
         }
         return false;
     }
@@ -288,14 +276,14 @@ public:
     ptrdiff_t getMaskIdx(Drawable drawable) {
         if (drawable is null) return -1;
         foreach(i, ref mask; masks) {
-            if (mask.maskSrc.uuid == drawable.uuid) return i;
+            if (mask.maskSrc.guid == drawable.guid) return i;
         }
         return -1;
     }
 
-    ptrdiff_t getMaskIdx(uint uuid) {
+    ptrdiff_t getMaskIdx(GUID guid) {
         foreach(i, ref mask; masks) {
-            if (mask.maskSrc.uuid == uuid) return i;
+            if (mask.maskSrc.guid == guid) return i;
         }
         return -1;
     }
@@ -350,7 +338,7 @@ public:
         
         MaskBinding[] validMasks;
         foreach(i; 0..masks.length) {
-            if (Drawable nMask = puppet.find!Drawable(masks[i].maskSrcUUID)) {
+            if (Drawable nMask = puppet.find!Drawable(masks[i].maskSrcGUID)) {
                 masks[i].maskSrc = nMask;
                 validMasks ~= masks[i];
             }

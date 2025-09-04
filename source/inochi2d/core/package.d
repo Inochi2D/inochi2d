@@ -16,6 +16,7 @@ public import inochi2d.core.param;
 public import inochi2d.core.animation;
 public import inochi2d.core.format;
 public import inochi2d.core.phys;
+public import inochi2d.core.guid;
 
 
 import inochi2d.core.math;

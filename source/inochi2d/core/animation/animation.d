@@ -65,7 +65,7 @@ public:
     /**
         Serialization function
     */
-    void onSerialize(ref JSONValue object) {
+    void onSerialize(ref JSONValue object, bool recursive = true) {
         object["timestep"] = timestep;
         object["additive"] = additive;
         object["length"] = length;
@@ -114,7 +114,7 @@ struct AnimationParameterRef {
 */
 struct AnimationLane {
 private:
-    uint refuuid;
+    GUID refguid;
 
 public:
 
@@ -126,12 +126,13 @@ public:
     /**
         Serialization function
     */
-    void onSerialize(ref JSONValue object) {
+    void onSerialize(ref JSONValue object, bool recursive = true) {
         object["interpolation"] = interpolation;
         object["keyframes"] = frames.serialize();
         object["merge_mode"] = mergeMode;
         if (paramRef) {
-            object["uuid"] = paramRef.targetParam.uuid;
+            auto targetGuid = paramRef.targetParam.guid.toString;
+            object["guid"] = targetGuid.dup;
             object["target"] = paramRef.targetAxis;
         }
     }
@@ -141,9 +142,9 @@ public:
     */
     void onDeserialize(ref JSONValue object) {
         this.paramRef = new AnimationParameterRef(null, 0);
+        this.refguid = object.tryGetGUID("uuid", "guid");
 
         object.tryGetRef(interpolation, "interpolation");
-        object.tryGetRef(refuuid, "uuid");
         object.tryGetRef(paramRef.targetAxis, "target");
         object.tryGetRef(frames, "keyframes");
         object.tryGetRef(mergeMode, "merge_mode", mergeMode.init);
@@ -239,7 +240,7 @@ public:
     void reconstruct(Puppet puppet) { }
     
     void finalize(Puppet puppet) {
-        if (paramRef) paramRef.targetParam = puppet.findParameter(refuuid);
+        if (paramRef) paramRef.targetParam = puppet.findParameter(refguid);
     }
 
     /**
@@ -274,7 +275,7 @@ struct Keyframe {
     /**
         Serialization function
     */
-    void onSerialize(ref JSONValue object) {
+    void onSerialize(ref JSONValue object, bool recursive = true) {
         object["frame"] = frame;
         object["value"] = value;
         object["tension"] = tension;

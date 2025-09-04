@@ -146,9 +146,9 @@ abstract class ParameterBinding : ISerializable, IDeserializable {
     abstract Node getNode();
 
     /**
-        Gets the uuid of the node of the binding
+        Gets the Guid of the node of the binding
     */
-    abstract uint getNodeUUID();
+    abstract GUID getNodeGUID();
 
     /**
         Checks whether a binding is compatible with another node
@@ -168,7 +168,7 @@ abstract class ParameterBinding : ISerializable, IDeserializable {
     /**
         Serialize
     */
-    abstract void onSerialize(ref JSONValue data);
+    abstract void onSerialize(ref JSONValue data, bool recursive = true);
 
     /**
         Deserialize
@@ -184,7 +184,7 @@ private:
     /**
         Node reference (for deserialization)
     */
-    uint nodeRef;
+    GUID nodeRef;
 
     InterpolateMode interpolateMode_ = InterpolateMode.Linear;
 
@@ -236,10 +236,12 @@ public:
     /**
         Gets the uuid of the node of the binding
     */
-    override
-    uint getNodeUUID() {
+    override GUID getNodeGUID() {
         return nodeRef;
     }
+
+    deprecated("Inochi2D has switched to GUIDs, use getNodeGUID instead.")
+    alias getNodeUUID = getNodeGUID;
 
     /**
         Returns isSet_
@@ -280,8 +282,9 @@ public:
         Serializes a binding
     */
     override
-    void onSerialize(ref JSONValue object) {
-        object["node"] = target.node.uuid;
+    void onSerialize(ref JSONValue object, bool recursive = true) {
+        auto nodeGuid = target.node.guid.toString();
+        object["node"] = nodeGuid.dup;
         object["param_name"] = target.paramName;
         object["values"] = values.serialize();
         object["isSet"] = isSet_.serialize();
@@ -293,7 +296,7 @@ public:
     */
     override
     void onDeserialize(ref JSONValue object) {
-        object.tryGetRef(nodeRef, "node");
+        this.nodeRef = object.tryGetGUID("node", "target");
         object.tryGetRef(target.paramName, "param_name");
         object.tryGetRef(values, "values");
         object.tryGetRef(isSet_, "isSet");

@@ -9,7 +9,9 @@
 module inochi2d.core.nodes;
 import inochi2d.core.format;
 import inochi2d.core.math;
+import inochi2d.core.guid;
 import inochi2d.core;
+import nulib.string;
 
 public import inochi2d.core.nodes.part;
 public import inochi2d.core.nodes.drawable;
@@ -21,50 +23,11 @@ import std.typecons: tuple, Tuple;
 //public import inochi2d.core.nodes.shapes; // This isn't mainline yet!
 
 import std.exception;
-
-private {
-    uint[] takenUUIDs;
-}
-
 package(inochi2d) {
     void inInitNodes() {
         inRegisterNodeType!Node;
-        inRegisterNodeType!TmpNode;
     }
 }
-
-enum InInvalidUUID = uint.max;
-
-/**
-    Creates a new UUID for a node
-*/
-uint inCreateUUID() {
-    import std.algorithm.searching : canFind;
-    import std.random : uniform;
-
-    uint id = uniform(uint.min, InInvalidUUID);
-    while (takenUUIDs.canFind(id)) { id = uniform(uint.min, InInvalidUUID); } // Make sure the ID is actually unique in the current context
-
-    return id;
-}
-
-/**
-    Unloads a single UUID from the internal listing, freeing it up for reuse
-*/
-void inUnloadUUID(uint id) {
-    import std.algorithm.searching : countUntil;
-    import std.algorithm.mutation : remove;
-    ptrdiff_t idx = takenUUIDs.countUntil(id);
-    if (idx != -1) takenUUIDs.remove(idx);
-}
-
-/**
-    Clears all UUIDs from the internal listing
-*/
-void inClearUUIDs() {
-    takenUUIDs.length = 0;
-}
-
 /**
     A node in the Inochi2D rendering tree
 */
@@ -74,7 +37,7 @@ private:
     Puppet puppet_;
     Node parent_;
     Node[] children_;
-    uint uuid_;
+    GUID guid_;
     float zsort_ = 0;
     bool lockToRoot_;
     string nodePath_;
@@ -99,78 +62,6 @@ protected:
         if (parent !is null) parent.resetMask();
     }
 
-    void serializeSelfImpl(ref JSONValue object, bool recursive=true) {
-        object["uuid"] = uuid;
-        object["name"] = name;
-        object["type"] = typeId;
-        object["enabled"] = enabled;
-        object["zsort"] = zsort_;
-        object["transform"] = zsort_;
-        object["lockToRoot"] = lockToRoot_;
-        
-        // Skip iterating children if we're not doing a recursive
-        // serialization.
-        if (!recursive) return;
-        
-        object["children"] = JSONValue.emptyArray;
-        foreach(child; children) {
-
-            // Skip Temporary nodes
-            if (cast(TmpNode)child) continue;
-            object["children"].array ~= child.serialize();
-        }
-    }
-
-    void serializeSelf(ref JSONValue object) {
-        this.serializeSelfImpl(object, true);
-    }
-
-    mat4* oneTimeTransform = null;
-
-    class MatrixHolder {
-    public:
-        this(mat4 matrix) {
-            this.matrix = matrix;
-        }
-        mat4 matrix;
-    }
-    MatrixHolder overrideTransformMatrix = null;
-
-    // Tuple!(vec2[], mat4*) delegate(vec2[], vec2[], mat4*) preProcessFilter  = null;
-    // Tuple!(vec2[], mat4*) delegate(vec2[], vec2[], mat4*) postProcessFilter = null;
-
-    import std.stdio;
-    void preProcess() {
-        // if (preProcessed)
-        //     return;
-        // preProcessed = true;
-        // if (preProcessFilter !is null) {
-        //     overrideTransformMatrix = null;
-        //     mat4 matrix = this.parent ? this.parent.transform.matrix : mat4.identity;
-        //     auto filterResult = preProcessFilter([localTransform.translation.xy], [offsetTransform.translation.xy], &matrix);
-        //     if (filterResult[0] !is null && filterResult[0].length > 0) {
-        //         offsetTransform.translation = vec3(filterResult[0][0], offsetTransform.translation.z);
-        //         transformChanged();
-        //     } 
-        // }
-    }
-
-    void postProcess() {
-        // if (postProcessed)
-        //     return;
-        // postProcessed = true;
-        // if (postProcessFilter !is null) {
-        //     overrideTransformMatrix = null;
-        //     mat4 matrix = this.parent? this.parent.transform.matrix: mat4.identity;
-        //     auto filterResult = postProcessFilter([localTransform.translation.xy], [offsetTransform.translation.xy], &matrix);
-        //     if (filterResult[0] !is null && filterResult[0].length > 0) {
-        //         offsetTransform.translation = vec3(filterResult[0][0], offsetTransform.translation.z);
-        //         transformChanged();
-        //         overrideTransformMatrix = new MatrixHolder(transform.matrix);
-        //     } 
-        // }
-    }
-
 package(inochi2d):
 
     /**
@@ -188,88 +79,57 @@ public:
     bool enabled = true;
 
     /**
+        Visual name of the node
+    */
+    nstring name = "Unnamed Node";
+
+    /**
+        The Node's Type ID
+    */
+    @property string typeId() => "Node";
+
+    /**
+        The node's GUID.
+    */
+    @property GUID guid() => guid_;
+
+    /**
         Whether the node is enabled for rendering
 
         Disabled nodes will not be drawn.
 
         This happens recursively
     */
-    bool renderEnabled() {
-        if (parent) return !parent.renderEnabled ? false : enabled;
-        return enabled;
-    }
+    @property bool renderEnabled() => parent ? (!parent.renderEnabled ? false : enabled) : enabled;
 
     /**
-        Visual name of the node
+        The relative Z sorting
     */
-    string name = "Unnamed Node";
+    @property ref float relZSort() => zsort_;
 
     /**
-        Name of node as a null-terminated C string
+        The basis zSort offset.
     */
-    const(char)* cName() {
-        import std.string : toStringz;
-        return name.toStringz;
-    }
+    @property float zSortBase() => parent !is null ? parent.zSort() : 0;
 
     /**
-        Returns the unique identifier for this node
+        The Z sorting without parameter offsets
     */
-    uint uuid() {
-        return uuid_;
-    }
+    @property float zSortNoOffset() => zSortBase + relZSort;
 
     /**
-        This node's type ID
+        The Z sorting
     */
-    string typeId() { return "Node"; }
-
-    /**
-        Gets the relative Z sorting
-    */
-    ref float relZSort() {
-        return zsort_;
-    }
-
-    /**
-        Gets the basis zSort offset.
-    */
-    float zSortBase() {
-        return parent !is null ? parent.zSort() : 0;
-    }
-
-    /**
-        Gets the Z sorting without parameter offsets
-    */
-    float zSortNoOffset() {
-        return zSortBase + relZSort;
-    }
-
-    /**
-        Gets the Z sorting
-    */
-    float zSort() {
-        return zSortBase + relZSort + offsetSort;
-    }
-
-    /**
-        Sets the (relative) Z sorting
-    */
-    void zSort(float value) {
+    @property float zSort() => zSortBase + relZSort + offsetSort;
+    @property void zSort(float value) {
         zsort_ = value;
     }
 
     /**
         Lock translation to root
     */
-    ref bool lockToRoot() {
-        return lockToRoot_;
-    }
-
-    /**
-        Lock translation to root
-    */
-    void lockToRoot(bool value) {
+    @property bool lockToRoot() => lockToRoot_;
+    @property void lockToRoot(bool value) {
         
         // Automatically handle converting lock space and proper world space.
         if (value && !lockToRoot_) {
@@ -292,15 +152,15 @@ public:
         Constructs a new node
     */
     this(Node parent = null) {
-        this(inCreateUUID(), parent);
+        this(inNewGUID(), parent);
     }
 
     /**
         Constructs a new node with an UUID
     */
-    this(uint uuid, Node parent = null) {
+    this(GUID guid, Node parent = null) {
         this.parent = parent;
-        this.uuid_ = uuid;
+        this.guid_ = guid;
     }
 
     /**
@@ -443,10 +303,11 @@ public:
     }
 
     /**
-        Gets the parent of this node
+        The parent of this node
     */
-    final ref Node parent() {
-        return parent_;
+    final @property Node parent() => parent_;
+    final @property void parent(Node node) {
+        this.insertInto(node, OFFSET_END);
     }
 
     /**
@@ -471,13 +332,6 @@ public:
     */
     final void addChild(Node child) {
         child.parent = this;
-    }
-
-    /**
-        Sets the parent of this node
-    */
-    final void parent(Node node) {
-        this.insertInto(node, OFFSET_END);
     }
 
     final ptrdiff_t getIndexInParent() {
@@ -715,14 +569,10 @@ public:
         Updates the node
     */
     void update() {
-        preProcess();
-
         if (!enabled) return;
-
         foreach(child; children) {
             child.update();
         }
-        postProcess();
     }
 
     /**
@@ -736,28 +586,40 @@ public:
         }
     }
 
-    override
-    string toString() {
-        return name;
+    override string toString() const {
+        return name[];
     }
 
-    /**
-        Allows serializing a node (with pretty serializer)
-    */
-    void onSerialize(ref JSONValue object) {
-        this.serializeSelf(object);
+    void onSerialize(ref JSONValue object, bool recursive = true) {
+        nstring guid = guid_.toString();
+        object["guid"] = guid.dup;
+        object["name"] = name;
+        object["type"] = typeId;
+        object["enabled"] = enabled;
+        object["zsort"] = zsort_;
+        object["transform"] = zsort_;
+        object["lockToRoot"] = lockToRoot_;
+
+        // Allow non-recursive serialization.
+        if (!recursive)
+            return;
+
+        object["children"] = JSONValue.emptyArray;
+        foreach(child; children) {
+            object["children"].array ~= child.serialize();
+        }
     }
 
     /**
         Deserializes node from JSONValue formatted JSON data.
     */
     void onDeserialize(ref JSONValue object) {
-        object.tryGetRef(uuid_, "uuid");
+        this.guid_ = object.tryGetGUID("uuid", "guid");
         object.tryGetRef(name, "name");
         object.tryGetRef(enabled, "enabled");
         object.tryGetRef(zsort_, "zsort");
         object.tryGetRef(localTransform, "transform");
-        object.tryGetRef(lockToRoot, "lockToRoot");
+        object.tryGetRef(lockToRoot_, "lockToRoot");
 
         // Pre-populate our children with the correct types
         if (object.isJsonArray("children")) {
@@ -780,19 +642,6 @@ public:
                 }
             }
         }
-    }
-
-    void serializePartial(ref JSONValue object, bool recursive = true) {
-        this.serializeSelfImpl(object, recursive);
-    }
-
-    /**
-        Force sets the node's ID
-
-        THIS IS NOT A SAFE OPERATION.
-    */
-    final void forceSetUUID(uint uuid) {
-        this.uuid_ = uuid;
     }
 
     rect getCombinedBoundsRect(bool reupdate = false, bool countPuppet=false)() {
@@ -846,24 +695,12 @@ public:
     bool canReparent(Node to) {
         Node tmp = to;
         while(tmp !is null) {
-            if (tmp.uuid == this.uuid) return false;
+            if (tmp.guid == this.guid) return false;
             
             // Check next up
             tmp = tmp.parent;
         }
         return true;
-    }
-
-    void setOneTimeTransform(mat4* transform) {
-        oneTimeTransform = transform;
-
-        foreach (c; children) {
-            c.setOneTimeTransform(transform);
-        }
-    }
-
-    mat4* getOneTimeTransform() {
-        return oneTimeTransform;
     }
 
     /** 
@@ -874,37 +711,14 @@ public:
             setRelativeTo(parent);
         insertInto(parent, pOffset);
     }
-
-    mat4 getDynamicMatrix() {
-        if (overrideTransformMatrix !is null) {
-            return overrideTransformMatrix.matrix;
-        } else {
-            return transform.matrix;
-        }
-    }
-}
-
-//
-//  TEMPORARY NODE
-//
-
-/**
-    A temporary node which will not be saved to file under any circumstances
-*/
-@TypeId("Tmp")
-class TmpNode : Node {
-protected:
-    override
-    string typeId() { return "Tmp"; }
-
-public:
-    this() { super(); }
-    this(Node parent) { super(parent); }
 }
 
 
+
+
+
 //
-//  SERIALIZATION SHENNANIGANS
+//            SERIALIZATION SHENNANIGANS
 //
 private {
     Node delegate(Node parent)[string] typeFactories;

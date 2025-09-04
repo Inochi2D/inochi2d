@@ -21,6 +21,6 @@ interface ISerializable {
     /**
         Custom serializer function
     */
-    void onSerialize(ref JSONValue object);
+    void onSerialize(ref JSONValue object, bool recursive=true);
 }
 
