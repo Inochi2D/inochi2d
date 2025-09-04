@@ -323,15 +323,20 @@ public:
 
     override
     void draw(float delta, DrawList drawList) {
-        super.draw(delta, drawList);
-
         if (masks.length > 0) {
             foreach(ref mask; masks) {
                 mask.maskSrc.drawAsMask(delta, drawList, mask.mode);
             }
+
+            super.draw(delta, drawList);
             drawList.setDrawState(DrawState.maskedDraw);
+            drawList.setBlending(blendingMode);
+            drawList.setSources(textures);
+            drawList.next();
+            return;
         }
 
+        super.draw(delta, drawList);
         drawList.setSources(textures);
         drawList.setBlending(blendingMode);
         drawList.next();
@@ -340,10 +345,8 @@ public:
     override
     void drawAsMask(float delta, DrawList drawList, MaskingMode mode) {
         super.drawAsMask(delta, drawList, mode);
-
-        drawList.setSources(textures);
-        drawList.setBlending(blendingMode);
         drawList.setDrawState(DrawState.defineMask);
+        drawList.setSources(textures);
         drawList.next();
     }
 

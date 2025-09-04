@@ -24,8 +24,8 @@ public import inochi2d.core.render.state;
 @TypeId("Composite")
 class Composite : Node {
 private:
-
-    this() { }
+    Texture[IN_MAX_ATTACHMENTS] _colors;
+    Texture                     _depthStencil;
 
     void drawContents(float delta, DrawList drawList) {
 
@@ -35,14 +35,6 @@ private:
         foreach(Part child; subParts) {
             child.draw(delta, drawList);
         }
-    }
-
-    /*
-        RENDERING
-    */
-    void drawSelf() {
-        if (subParts.length == 0) return;
-
     }
 
     void selfSort() {
@@ -76,10 +68,6 @@ private:
 
 protected:
     Part[] subParts;
-    
-    void renderMask() {
-
-    }
 
     override
     void onSerialize(ref JSONValue object, bool recursive=true) {
@@ -313,7 +301,6 @@ public:
         //     // inEndMask();
             return;
         }
-        this.drawSelf();
     }
 
     override
@@ -330,6 +317,13 @@ public:
 
         // Remove invalid masks
         masks = validMasks;
+
+        _depthStencil = new Texture(32, 32, TextureFormat.depthStencil);
+        puppet.textureCache.add(_depthStencil);
+        foreach(i; 0.._colors.length) {
+            _colors[i] = new Texture(32, 32, TextureFormat.rgba8Unorm);
+            puppet.textureCache.add(_colors[i]);
+        }
     }
 
     /**

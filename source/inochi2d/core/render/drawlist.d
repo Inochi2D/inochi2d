@@ -187,6 +187,7 @@ public:
             _cmds[_cmdp] = _ccmd;
 
         _cmdp++;
+        _ccmd = DrawCmd.init;
 
         if (!_targetsStack.empty)
             _targetsStack.tryPeek(0, _ccmd.targets);
@@ -264,6 +265,12 @@ enum DrawState : uint {
         maskedDraw.
     */
     maskedDraw = 2,
+
+    /**
+        Sources should be drawn to targets using
+        the given blending mode.
+    */
+    blit = 3,
 }
 
 /**
