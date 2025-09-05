@@ -168,7 +168,6 @@ public:
     */
     override
     void draw(float delta, DrawList drawList) {
-        super.draw(delta, drawList);
         drawList.setMesh(drawListSlot);
     }
     

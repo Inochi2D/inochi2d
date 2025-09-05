@@ -14,7 +14,6 @@ import inochi2d.core.math;
 import inochi2d.core;
 
 import std.exception;
-import std.algorithm.sorting;
 
 public import inochi2d.core.render.state;
 import numem;
@@ -25,38 +24,67 @@ import numem;
 @TypeId("Composite")
 class Composite : Node {
 private:
-    Texture[IN_MAX_ATTACHMENTS] _colors;
-    Texture                     _depthStencil;
+    DrawListAlloc* __screenSpaceAlloc;
+    Mesh __screenSpaceMesh;
+
+    void setupScreenSpaceMesh() {
+        if (!__screenSpaceMesh) {
+            MeshData tmp;
+            tmp.indices = [
+                0, 1, 2,
+                2, 1, 3
+            ];
+            tmp.uvs = [
+                vec2(0, 0),
+                vec2(0, 1),
+                vec2(1, 0),
+                vec2(1, 1)
+            ];
+            tmp.vertices = [
+                vec2(-1, -1),
+                vec2(-1,  1),
+                vec2(1,  -1),
+                vec2(1,   1)
+            ];
+            __screenSpaceMesh = Mesh.fromMeshData(tmp);
+        }
+    }
 
     void drawContents(float delta, DrawList drawList) {
 
         // Optimization: Nothing to be drawn, skip context switching
-        if (subParts.length == 0) return;
+        if (toRender.length == 0)
+            return;
 
-        foreach(Part child; subParts) {
+        foreach(Node child; toRender) {
             child.draw(delta, drawList);
         }
     }
 
     void selfSort() {
+        import std.algorithm.sorting : sort;
+        import std.algorithm.mutation : SwapStrategy;
         import std.math : cmp;
+        
         sort!((a, b) => cmp(
             a.zSort, 
-            b.zSort) > 0)(subParts);
+            b.zSort) > 0, SwapStrategy.stable)(toRender);
     }
 
     void scanPartsRecurse(Node node) {
+        import std.stdio : writeln;
 
         // Don't need to scan null nodes
         if (node is null) return;
 
         // Do the main check
-        if (Part part = cast(Part)node) {
-            subParts ~= part;
-            foreach(child; part.children) {
+        if (Drawable drawable = cast(Drawable)node) {
+            toRender ~= drawable;
+            foreach(child; drawable.children) {
                 scanPartsRecurse(child);
             }
-            
+        } else if (Composite composite = cast(Composite)node) {
+            toRender ~= composite;
         } else {
 
             // Non-part nodes just need to be recursed through,
@@ -68,7 +96,7 @@ private:
     }
 
 protected:
-    Part[] subParts;
+    Node[] toRender;
 
     override
     void onSerialize(ref JSONValue object, bool recursive=true) {
@@ -84,6 +112,8 @@ protected:
 
     override
     void onDeserialize(ref JSONValue object) {
+        super.onDeserialize(object);
+
         object.tryGetRef(opacity, "opacity");
         object.tryGetRef(threshold, "mask_threshold");
         object.tryGetRef(tint, "tint");
@@ -91,8 +121,6 @@ protected:
         object.tryGetRef(masks, "masks");
         object.tryGetRef(propagateMeshGroup, "propagate_meshgroup", false);
         blendingMode = object.tryGet!string("blend_mode", "Normal").toBlendMode();
-        
-        super.onDeserialize(object);
     }
 
     override
@@ -109,18 +137,7 @@ protected:
 
         // Remove invalid masks
         masks = validMasks;
-
-        // Textures should be allocated outside of the GC, the cache
-        // ends up owning them.
-        _depthStencil = nogc_new!Texture(32, 32, TextureFormat.depthStencil);
-        _depthStencil.retain();
-        puppet.textureCache.add(_depthStencil);
-        foreach(i; 0.._colors.length) {
-            _colors[i] = nogc_new!Texture(32, 32, TextureFormat.rgba8Unorm);
-            _colors[i].retain();
-
-            puppet.textureCache.add(_colors[i]);
-        }
+        this.scanParts();
     }
 
     //
@@ -180,13 +197,7 @@ public:
     MaskBinding[] masks;
 
     /// Destructor
-    ~this() {
-        foreach(texture; _colors) {
-            if (texture)
-                texture.release();
-        }
-        _depthStencil.release();
-    }
+    ~this() { }
 
     /**
         Constructs a new mask
@@ -200,6 +211,7 @@ public:
     */
     this(GUID guid, Node parent = null) {
         super(guid, parent);
+        this.setupScreenSpaceMesh();
     }
 
     override
@@ -310,44 +322,50 @@ public:
 
     override
     void preUpdate(DrawList drawList) {
+        super.preUpdate(drawList);
+        __screenSpaceAlloc = null;
+
         offsetOpacity = 1;
         offsetTint = vec3(1, 1, 1);
         offsetScreenTint = vec3(0, 0, 0);
-        super.preUpdate(drawList);
+    }
+
+    override
+    void update(float delta, DrawList drawList) {
+        super.update(delta, drawList);
+
+        // Avoid over allocating a single screenspace
+        // rect.
+        if (!__screenSpaceAlloc)
+            __screenSpaceAlloc = drawList.allocate(__screenSpaceMesh.vertices, __screenSpaceMesh.indices);
     }
 
     override
     void draw(float delta, DrawList drawList) {
-        if (!enabled) return;
+        if (toRender.length == 0)
+            return;
         
         this.selfSort();
-        this.drawContents(delta, drawList);
 
-        size_t cMasks = maskCount;
-        if (masks.length > 0) {
-        //     // inBeginMask(cMasks > 0);
+        // Push sub render area.
+        drawList.beginComposite();
+            this.drawContents(delta, drawList);
+        drawList.endComposite();
 
-        //     foreach(ref mask; masks) {
-        //         mask.maskSrc.renderMask(mask.mode == MaskingMode.dodge);
-        //     }
-
-        //     // inBeginMaskContent();
-
-        //     // We are the content
-        //     this.drawSelf();
-
-        //     // inEndMask();
-            return;
-        }
+        // Then blit it to the main framebuffer
+        drawList.setMesh(__screenSpaceAlloc);
+        drawList.setDrawState(DrawState.compositeBlit);
+        drawList.setBlending(blendingMode);
+        drawList.next();
     }
 
     /**
         Scans for parts to render
     */
     void scanParts() {
-        subParts.length = 0;
-        if (children.length > 0) {
-            scanPartsRecurse(children[0].parent);
+        toRender.length = 0;
+        foreach(child; children) {
+            scanPartsRecurse(child);
         }
     }
 }

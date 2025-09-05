@@ -125,11 +125,17 @@ public:
     /**
         Pushes render targets to the draw list's stack.
     */
-    void pushTargets(Texture[IN_MAX_ATTACHMENTS] targets) {
-        if (!_ccmd.isEmpty)
-            this.next();
-        
-        _targetsStack.push(targets);
+    void beginComposite() {
+        _ccmd.state = DrawState.compositeBegin;
+        this.next();
+    }
+
+    /**
+        Pops the top render target from the list's stack.
+    */
+    void endComposite() {
+        _ccmd.state = DrawState.compositeEnd;
+        this.next();
     }
 
     /**
@@ -178,9 +184,6 @@ public:
         Pushes the next draw command
     */
     void next() {
-        if (_ccmd.isEmpty)
-            return;
-
         if (_cmdp >= _cmds.length)
             _cmds ~= _ccmd;
         else
@@ -188,20 +191,6 @@ public:
 
         _cmdp++;
         _ccmd = DrawCmd.init;
-
-        if (!_targetsStack.empty)
-            _targetsStack.tryPeek(0, _ccmd.targets);
-    }
-
-    /**
-        Pops the top render target from the list's stack.
-    */
-    void popTargets() {
-        if (!_ccmd.isEmpty)
-            this.next();
-        
-        if (!_targetsStack.empty)
-            _targetsStack.pop();
     }
 
     /**
@@ -267,10 +256,22 @@ enum DrawState : uint {
     maskedDraw = 2,
 
     /**
+        A composition into composition textures
+        has begun.
+    */
+    compositeBegin = 3,
+
+    /**
+        A composition into composition textures
+        has ended.
+    */
+    compositeEnd = 4,
+
+    /**
         Sources should be drawn to targets using
         the given blending mode.
     */
-    blit = 3,
+    compositeBlit = 5,
 }
 
 /**
@@ -278,11 +279,6 @@ enum DrawState : uint {
 */
 struct DrawCmd {
 @nogc:
-
-    /**
-        Render targets
-    */
-    Texture[IN_MAX_ATTACHMENTS] targets;
 
     /**
         Source textures

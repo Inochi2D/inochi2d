@@ -531,11 +531,10 @@ public:
         Update sequence run before the main update sequence.
     */
     void preUpdate(DrawList drawList) {
-
-        offsetSort = 0;
         offsetTransform.clear();
-        if (!enabled) return;
+        offsetSort = 0;
 
+        if (!enabled) return;
         foreach(child; children_) {
             child.preUpdate(drawList);
         }
@@ -545,8 +544,8 @@ public:
         Updates the node
     */
     void update(float delta, DrawList drawList) {
-        if (!enabled) return;
 
+        if (!enabled) return;
         foreach(child; children) {
             child.update(delta, drawList);
         }
@@ -556,8 +555,8 @@ public:
         Update sequence run after the main update sequence.
     */
     void postUpdate(DrawList drawList) {
+        
         if (!enabled) return;
-
         foreach(child; children_) {
             child.postUpdate(drawList);
         }
@@ -566,9 +565,7 @@ public:
     /**
         Draws this node and it's subnodes
     */
-    void draw(float delta, DrawList drawList) {
-        if (!renderEnabled) return;
-    }
+    void draw(float delta, DrawList drawList) { }
 
     /**
         Reconstructs a child.
