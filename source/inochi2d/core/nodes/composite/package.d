@@ -334,18 +334,18 @@ public:
         
         this.selfSort();
 
-        if (masks.length > 0) {
-            foreach(ref mask; masks) {
-                mask.maskSrc.drawAsMask(delta, drawList, mask.mode);
-            }
-        }
-
         // Push sub render area.
         drawList.beginComposite();
             foreach(Node child; toRender) {
                 child.draw(delta, drawList);
             }
         drawList.endComposite();
+
+        if (masks.length > 0) {
+            foreach(ref mask; masks) {
+                mask.maskSrc.drawAsMask(delta, drawList, mask.mode);
+            }
+        }
 
         // Then blit it to the main framebuffer
         drawList.setOpacity(offsetOpacity);
