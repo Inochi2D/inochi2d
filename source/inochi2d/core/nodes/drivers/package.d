@@ -29,8 +29,8 @@ protected:
 
 public:
     override
-    void beginUpdate() {
-        super.beginUpdate();
+    void preUpdate(DrawList drawList) {
+        super.preUpdate(drawList);
     }
 
     override

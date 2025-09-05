@@ -528,16 +528,16 @@ public:
     }
 
     /**
-        Sets up the node for another rendering pass.
+        Update sequence run before the main update sequence.
     */
-    void beginUpdate() {
+    void preUpdate(DrawList drawList) {
 
         offsetSort = 0;
         offsetTransform.clear();
+        if (!enabled) return;
 
-        // Iterate through children
         foreach(child; children_) {
-            child.beginUpdate();
+            child.preUpdate(drawList);
         }
     }
 
@@ -546,8 +546,20 @@ public:
     */
     void update(float delta, DrawList drawList) {
         if (!enabled) return;
+
         foreach(child; children) {
             child.update(delta, drawList);
+        }
+    }
+
+    /**
+        Update sequence run after the main update sequence.
+    */
+    void postUpdate(DrawList drawList) {
+        if (!enabled) return;
+
+        foreach(child; children_) {
+            child.postUpdate(drawList);
         }
     }
 

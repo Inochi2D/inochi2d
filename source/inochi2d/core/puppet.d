@@ -495,7 +495,7 @@ public:
     final void update(float delta) {
         drawList_.clear();
         transform.update();
-        root.beginUpdate();
+        root.preUpdate(drawList_);
 
         if (renderParameters) {
 
@@ -519,6 +519,7 @@ public:
 
         // Update nodes
         root.update(delta, drawList_);
+        root.postUpdate(drawList_);
     }
 
     /**

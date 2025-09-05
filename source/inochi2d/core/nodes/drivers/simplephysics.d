@@ -296,8 +296,8 @@ public:
     }
 
     override
-    void beginUpdate() {
-        super.beginUpdate();
+    void preUpdate(DrawList drawList) {
+        super.preUpdate(drawList);
         offsetGravity = 1;
         offsetLength = 0;
         offsetFrequency = 1;

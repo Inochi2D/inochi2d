@@ -104,7 +104,6 @@ public:
     */
     override void resetDeform() {
         deformed_.reset();
-        deformed_.pushMatrix(transform.matrix);
     }
 
     ~this() {
@@ -141,8 +140,8 @@ public:
     */
 
     override
-    void beginUpdate() {
-        super.beginUpdate();
+    void preUpdate(DrawList drawList) {
+        super.preUpdate(drawList);
         this.resetDeform();
     }
 
@@ -152,6 +151,15 @@ public:
     override
     void update(float delta, DrawList drawList) {
         super.update(delta, drawList);
+        deformed_.pushMatrix(transform.matrix);
+    }
+
+    /**
+        Post-update
+    */
+    override
+    void postUpdate(DrawList drawList) {
+        super.postUpdate(drawList);
         this.drawListSlot = drawList.allocate(deformed_.vertices, deformed_.indices);
     }
 

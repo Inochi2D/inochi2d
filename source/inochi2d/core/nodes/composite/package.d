@@ -309,11 +309,11 @@ public:
     }
 
     override
-    void beginUpdate() {
+    void preUpdate(DrawList drawList) {
         offsetOpacity = 1;
         offsetTint = vec3(1, 1, 1);
         offsetScreenTint = vec3(0, 0, 0);
-        super.beginUpdate();
+        super.preUpdate(drawList);
     }
 
     override
