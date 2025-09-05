@@ -61,7 +61,6 @@ protected:
         object["screenTint"] = screenTint.serialize();
         object["emissionStrength"] = emissionStrength;
         object["masks"] = masks.serialize();
-        object["mask_threshold"] = maskAlphaThreshold;
         object["opacity"] = opacity;
     }
 
@@ -84,7 +83,6 @@ protected:
         }
         
         object.tryGetRef(opacity, "opacity");
-        object.tryGetRef(maskAlphaThreshold, "mask_threshold");
         object.tryGetRef(tint, "tint");
         object.tryGetRef(screenTint, "screenTint");
         object.tryGetRef(tint, "tint");
@@ -133,11 +131,6 @@ public:
         Blending mode
     */
     BlendMode blendingMode = BlendMode.normal;
-    
-    /**
-        Alpha Threshold for the masking system, the higher the more opaque pixels will be discarded in the masking process
-    */
-    float maskAlphaThreshold = 0.5;
 
     /**
         Opacity of the mesh
@@ -204,7 +197,6 @@ public:
         if (super.hasParam(key)) return true;
 
         switch(key) {
-            case "alphaThreshold":
             case "opacity":
             case "tint.r":
             case "tint.g":
@@ -250,9 +242,6 @@ public:
         if (super.setValue(key, value)) return true;
 
         switch(key) {
-            case "alphaThreshold":
-                offsetMaskThreshold *= value;
-                return true;
             case "opacity":
                 offsetOpacity *= value;
                 return true;
@@ -331,6 +320,9 @@ public:
 
     override
     void draw(float delta, DrawList drawList) {
+        if (!renderEnabled)
+            return;
+        
         if (masks.length > 0) {
             foreach(ref mask; masks) {
                 mask.maskSrc.drawAsMask(delta, drawList, mask.mode);
@@ -338,6 +330,7 @@ public:
 
             super.draw(delta, drawList);
             drawList.setDrawState(DrawState.maskedDraw);
+            drawList.setOpacity(offsetOpacity);
             drawList.setBlending(blendingMode);
             drawList.setSources(textures);
             drawList.next();
@@ -347,6 +340,7 @@ public:
         super.draw(delta, drawList);
         drawList.setSources(textures);
         drawList.setBlending(blendingMode);
+        drawList.setOpacity(offsetOpacity);
         drawList.next();
     }
 

@@ -148,15 +148,22 @@ public:
     /**
         Sets the blending mode for the current draw call.
     */
-    void setBlending(BlendMode blendMode) {
-        _ccmd.blendMode = blendMode;
+    void setBlending(BlendMode value) {
+        _ccmd.blendMode = value;
+    }
+
+    /**
+        Sets the blending mode for the current draw call.
+    */
+    void setOpacity(float value) {
+        _ccmd.opacity = value;
     }
 
     /**
         Sets the masking mode for the current draw call.
     */
-    void setMasking(MaskingMode maskMode) {
-        _ccmd.maskMode = maskMode;
+    void setMasking(MaskingMode value) {
+        _ccmd.maskMode = value;
     }
 
     /**
@@ -289,6 +296,11 @@ struct DrawCmd {
         The current state of the drawing command.
     */
     DrawState state;
+
+    /**
+        Opacity of the drawing operation (if relevant)
+    */
+    float opacity = 1;
 
     /**
         Blending mode to apply

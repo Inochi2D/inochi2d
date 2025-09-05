@@ -50,17 +50,6 @@ private:
         }
     }
 
-    void drawContents(float delta, DrawList drawList) {
-
-        // Optimization: Nothing to be drawn, skip context switching
-        if (toRender.length == 0)
-            return;
-
-        foreach(Node child; toRender) {
-            child.draw(delta, drawList);
-        }
-    }
-
     void selfSort() {
         import std.algorithm.sorting : sort;
         import std.algorithm.mutation : SwapStrategy;
@@ -79,11 +68,17 @@ private:
 
         // Do the main check
         if (Drawable drawable = cast(Drawable)node) {
+            if (!drawable.renderEnabled)
+                return;
+            
             toRender ~= drawable;
             foreach(child; drawable.children) {
                 scanPartsRecurse(child);
             }
         } else if (Composite composite = cast(Composite)node) {
+            if (!composite.renderEnabled)
+                return;
+            
             toRender ~= composite;
         } else {
 
@@ -104,7 +99,6 @@ protected:
         object["blend_mode"] = blendingMode;
         object["tint"] = tint.serialize();
         object["screenTint"] = screenTint.serialize();
-        object["mask_threshold"] = threshold;
         object["opacity"] = opacity;
         object["propagate_meshgroup"] = propagateMeshGroup;
         object["masks"] = masks.serialize();
@@ -115,7 +109,6 @@ protected:
         super.onDeserialize(object);
 
         object.tryGetRef(opacity, "opacity");
-        object.tryGetRef(threshold, "mask_threshold");
         object.tryGetRef(tint, "tint");
         object.tryGetRef(screenTint, "screenTint");
         object.tryGetRef(masks, "masks");
@@ -137,7 +130,6 @@ protected:
 
         // Remove invalid masks
         masks = validMasks;
-        this.scanParts();
     }
 
     //
@@ -175,11 +167,6 @@ public:
         The opacity of the composite
     */
     float opacity = 1;
-
-    /**
-        The threshold for rendering masks
-    */
-    float threshold = 0.5;
 
     /**
         Multiplicative tint color
@@ -342,17 +329,26 @@ public:
 
     override
     void draw(float delta, DrawList drawList) {
-        if (toRender.length == 0)
+        if (!renderEnabled || toRender.length == 0)
             return;
         
         this.selfSort();
 
+        if (masks.length > 0) {
+            foreach(ref mask; masks) {
+                mask.maskSrc.drawAsMask(delta, drawList, mask.mode);
+            }
+        }
+
         // Push sub render area.
         drawList.beginComposite();
-            this.drawContents(delta, drawList);
+            foreach(Node child; toRender) {
+                child.draw(delta, drawList);
+            }
         drawList.endComposite();
 
         // Then blit it to the main framebuffer
+        drawList.setOpacity(offsetOpacity);
         drawList.setMesh(__screenSpaceAlloc);
         drawList.setDrawState(DrawState.compositeBlit);
         drawList.setBlending(blendingMode);
