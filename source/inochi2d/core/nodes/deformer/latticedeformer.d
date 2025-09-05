@@ -48,6 +48,11 @@ public:
     }
 
     /**
+        The base position of the deformable's points.
+    */
+    override @property const(vec2)[] basePoints() => lattice;
+
+    /**
         The control points of the deformer.
     */
     override @property vec2[] controlPoints() => lattice;

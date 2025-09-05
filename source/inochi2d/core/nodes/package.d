@@ -51,6 +51,15 @@ private:
     bool lockToRoot_;
     string nodePath_;
 
+package(inochi2d):
+
+    /**
+        Needed for deserialization
+    */
+    void setPuppet(Puppet puppet) {
+        this.puppet_ = puppet;
+    }
+
 protected:
     bool recalculateTransform = true;
     bool preProcessed  = false;
@@ -69,15 +78,6 @@ protected:
     // Send mask reset request one node up
     void resetMask() {
         if (parent !is null) parent.resetMask();
-    }
-
-package(inochi2d):
-
-    /**
-        Needed for deserialization
-    */
-    void setPuppet(Puppet puppet) {
-        this.puppet_ = puppet;
     }
 
 public:
@@ -568,24 +568,6 @@ public:
     void draw(float delta, DrawList drawList) { }
 
     /**
-        Reconstructs a child.
-    */
-    void reconstruct() {
-        foreach(child; children.dup) {
-            child.reconstruct();
-        }
-    }
-
-    /**
-        Finalizes this node and any children
-    */
-    void finalize() {
-        foreach(child; children) {
-            child.finalize();
-        }
-    }
-
-    /**
         Marks this node's transform (and its descendents') as dirty
     */
     void transformChanged() {
@@ -651,6 +633,24 @@ public:
                     child.deserialize(n);
                 }
             }
+        }
+    }
+
+    /**
+        Reconstructs a child.
+    */
+    void reconstruct() {
+        foreach(child; children.dup) {
+            child.reconstruct();
+        }
+    }
+
+    /**
+        Finalizes this node and any children
+    */
+    void finalize() {
+        foreach(child; children) {
+            child.finalize();
         }
     }
 

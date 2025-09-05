@@ -325,7 +325,8 @@ public:
         
         if (masks.length > 0) {
             foreach(ref mask; masks) {
-                mask.maskSrc.drawAsMask(delta, drawList, mask.mode);
+                if (mask.maskSrc)
+                    mask.maskSrc.drawAsMask(delta, drawList, mask.mode);
             }
 
             super.draw(delta, drawList);

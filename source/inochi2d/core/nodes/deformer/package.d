@@ -9,6 +9,8 @@
 module inochi2d.core.nodes.deformer;
 import inochi2d.core.nodes;
 import inochi2d.core.math;
+import nulib;
+import numem;
 
 public import inochi2d.core.nodes.deformer.meshdeformer;
 public import inochi2d.core.nodes.deformer.latticedeformer;
@@ -21,7 +23,41 @@ public import inochi2d.core.nodes.deformer.latticedeformer;
 */
 abstract
 class Deformer : Node, IDeformable {
+private:
+    void scanPartsRecurse(Node node) {
+        import std.stdio : writeln;
+
+        // Don't need to scan null nodes
+        if (node is null) return;
+
+        // Do the main check
+        if (IDeformable deformable = cast(IDeformable)node)
+            toDeform ~= deformable;
+    
+        foreach(child; node.children) {
+            scanPartsRecurse(child);
+        }
+    }
+
+protected:
+
+    /**
+        A list of the nodes to deform.
+    */
+    IDeformable[] toDeform;
+
+    /**
+        Finalizes the deformer.
+    */
+    override
+    void finalize() {
+        super.finalize();
+        this.rescan();
+    }
+
 public:
+
+    ~this() { }
 
     /**
         Constructs a new MeshGroup node
@@ -35,6 +71,21 @@ public:
     */
     abstract @property vec2[] controlPoints();
     abstract @property void controlPoints(vec2[] value);
+
+    /**
+        The base position of the deformable's points.
+    */
+    abstract @property const(vec2)[] basePoints();
+
+    /**
+        Local matrix of the deformable object.
+    */
+    override @property mat4 localMatrix() => transform.matrix;
+
+    /**
+        World matrix of the deformable object.
+    */
+    override @property mat4 worldMatrix() => globalTransform.matrix;
 
     /**
         The points which may be deformed by the deformer.
@@ -54,4 +105,14 @@ public:
         Resets the deformation for the IDeformable.
     */
     abstract void resetDeform();
+
+    /**
+        Rescans the children of the deformer.
+    */
+    void rescan() {
+        toDeform.length = 0;
+        foreach(child; children) {
+            this.scanPartsRecurse(child);
+        }
+    }
 }

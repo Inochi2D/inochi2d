@@ -16,9 +16,24 @@ interface IDeformable {
 public:
 
     /**
+        The base position of the deformable's points.
+    */
+    @property const(vec2)[] basePoints();
+
+    /**
         The points which may be deformed by the deformer.
     */
     @property vec2[] deformPoints();
+
+    /**
+        Local matrix of the deformable object.
+    */
+    @property mat4 localMatrix();
+
+    /**
+        World matrix of the deformable object.
+    */
+    @property mat4 worldMatrix();
 
     /**
         Deforms the IDeformable.

@@ -83,6 +83,21 @@ public:
     }
 
     /**
+        Local matrix of the deformable object.
+    */
+    override @property mat4 localMatrix() => transform.matrix;
+
+    /**
+        World matrix of the deformable object.
+    */
+    override @property mat4 worldMatrix() => globalTransform.matrix;
+
+    /**
+        The base position of the deformable's points.
+    */
+    @property const(vec2)[] basePoints() => mesh_.points;
+
+    /**
         The points which may be deformed by the deformer.
     */
     override @property vec2[] deformPoints() => deformed_.points;
