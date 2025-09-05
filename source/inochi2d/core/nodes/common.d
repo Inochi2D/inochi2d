@@ -35,6 +35,6 @@ public:
     */
     void onDeserialize(ref JSONValue object) {
         maskSrcGUID = object.tryGetGUID("source", "source");
-        mode = object.tryGet!string("mode").toMaskingMode;
+        mode = object.tryGet!string("mode", null).toMaskingMode;
     }
 }

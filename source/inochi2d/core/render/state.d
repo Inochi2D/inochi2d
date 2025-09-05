@@ -147,25 +147,28 @@ BlendMode toBlendMode(string name) {
 enum MaskingMode : uint {
 
     /**
-        No masking is happening.
-    */
-    none = 0,
-
-    /**
         The part should be masked by the drawables specified
     */
-    mask = 1,
+    mask = 0,
 
     /**
         The path should be dodge masked by the drawables specified
     */
-    dodge = 2,
+    dodge = 1,
 }
 
 MaskingMode toMaskingMode(string name) {
-    switch(name) with(MaskingMode) {
-        default: return none;
-        case "Mask": return mask;
-        case "DodgeMask": return dodge;
+    switch(name) {
+
+        case "Mask":
+        case "mask":
+            return MaskingMode.mask;
+
+        case "DodgeMask":
+        case "dodgeMask":
+            return MaskingMode.dodge;
+        
+        default:
+            return MaskingMode.mask;
     }
 }

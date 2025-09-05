@@ -355,6 +355,7 @@ public:
         super.drawAsMask(delta, drawList, mode);
         drawList.setDrawState(DrawState.defineMask);
         drawList.setSources(textures);
+        drawList.setMasking(mode);
         drawList.next();
     }
 
