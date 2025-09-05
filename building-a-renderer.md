@@ -2,6 +2,8 @@
 
 Inochi2D has transitioned over to becoming a renderer agonstic API, this means that you will have to supply a renderer yourself that appropriately handles state information sent by Inochi2D in the form of *Draw Lists*.
 
+Note, this will eventually be moved to the official documentation page, this is a preliminary document that will get expanded on as the drawlist system gets improvements.
+
 ## Anatomy of a Draw List
 
 A drawlist is a buffer that during an Inochi2D render pass, collects mesh data, state changes, texture sources and uniform data.
