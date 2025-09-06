@@ -58,7 +58,7 @@ You can then during `maskedDraw` add this texture to your pass, multiply `rgba` 
 Following is a list of all currently registered types, all types have a 32 bit type ID,
 with `0x00000000` to `0x0000FFFF` being reserved by Inochi2D.
 
-Following is a table of all the base node types of Inochi2D.
+Following is a table of all the core node types of Inochi2D.
 
 |         ID | Name            |
 | ---------: | :-------------- |
