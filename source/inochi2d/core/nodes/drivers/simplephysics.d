@@ -527,3 +527,4 @@ public:
     /// Gets the final length damping
     vec2 getOutputScale() { return outputScale * offsetOutputScale; }
 }
+mixin Register!(SimplePhysics, in_node_registry);

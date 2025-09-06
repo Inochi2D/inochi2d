@@ -20,36 +20,12 @@ public import inochi2d.core.nodes.drivers;
 public import inochi2d.core.registry;
 
 import core.attribute : standalone;
-
-//public import inochi2d.core.nodes.shapes; // This isn't mainline yet!
-
 import std.exception;
 
 /**
     The public node registry.
 */
 __gshared TypeRegistry!Node in_node_registry;
-
-@standalone
-shared static this() @trusted {
-    import numem : nogc_new;
-    in_node_registry = nogc_new!(TypeRegistry!Node);
-    
-    in_node_registry.register!Node;
-
-    in_node_registry.register!Deformer;
-    in_node_registry.register!MeshDeformer;
-    in_node_registry.register!LatticeDeformer;
-    
-    in_node_registry.register!Drawable;
-    in_node_registry.register!Part;
-    in_node_registry.register!AnimatedPart;
-
-    in_node_registry.register!Composite;
-    
-    in_node_registry.register!Driver;
-    in_node_registry.register!SimplePhysics;
-}
 
 /**
     A node in the Inochi2D rendering tree
@@ -745,3 +721,4 @@ public:
         insertInto(parent, pOffset);
     }
 }
+mixin Register!(Node, in_node_registry);

@@ -366,3 +366,4 @@ public:
         masks = validMasks;
     }
 }
+mixin Register!(Part, in_node_registry);

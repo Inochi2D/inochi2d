@@ -248,6 +248,7 @@ public:
         this.rebuildStructures();
     }
 }
+mixin Register!(MeshDeformer, in_node_registry);
 
 private
 struct Triangle {

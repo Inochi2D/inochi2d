@@ -52,3 +52,4 @@ public:
 
     abstract void reset();
 }
+mixin Register!(Driver, in_node_registry);

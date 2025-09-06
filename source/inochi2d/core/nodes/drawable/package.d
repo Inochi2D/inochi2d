@@ -20,6 +20,8 @@ public import inochi2d.core.mesh;
 public import inochi2d.core.nodes.drawable.part;
 public import inochi2d.core.nodes.drawable.apart;
 
+mixin Register!(Drawable, in_node_registry);
+
 /**
     Nodes that are meant to render something in to the Inochi2D scene
     Other nodes don't have to render anything and serve mostly other 

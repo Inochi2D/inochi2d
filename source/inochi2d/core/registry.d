@@ -28,10 +28,21 @@ struct TypeId {
 struct TypeIdAbstract;
 
 /**
+    Template which registers a type into a given type registry.
+*/
+mixin template Register(T, alias registry) {
+    import numem.core.traits : hasUDA;
+    static if (hasUDA!(T, TypeId)) {
+        pragma(crt_constructor)
+        mixin("extern(C) void __in_register_", T.stringof, "() { registry.register!T(); }");
+    }
+}
+
+/**
     A type registry that stores mappings between name and numeric IDs
     and their classes.
 */
-class TypeRegistry(T) : NuObject {
+struct TypeRegistry(T) {
 private:
     alias __TypeMap(Key, Value) = MapImpl!(Key, Value, (a, b) => a < b, false, false);
     alias __ctor(X) = () @nogc => assumeNoGC(() => cast(T)new X);
@@ -43,9 +54,6 @@ private:
     __TypeMap!(uint,   factory_t)    factoryStoreN;
 
 public:
-
-    // Needed to allow nogc_new construction.
-    this() { }
 
     /**
         Registers the given type in the type registry.

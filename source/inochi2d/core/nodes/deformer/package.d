@@ -117,3 +117,4 @@ public:
         }
     }
 }
+mixin Register!(Deformer, in_node_registry);

@@ -74,3 +74,4 @@ public:
         
     }
 }
+mixin Register!(LatticeDeformer, in_node_registry);
