@@ -108,13 +108,13 @@ enum BlendMode : uint {
     // Clip to Lower
     // Special blending mode that clips the drawable
     // to a lower rendered area.
-    clipToLower     = 0x11,
+    sourceIn        = 0x11,
 
     // Slice from Lower
     // Special blending mode that slices the drawable
     // via a lower rendered area.
     // Basically inverse ClipToLower
-    sliceFromLower  = 0x12
+    sourceOut       = 0x12
 }
 
 BlendMode toBlendMode(string name) {
@@ -136,8 +136,8 @@ BlendMode toBlendMode(string name) {
         case "Subtract": return subtract;
         case "Inverse": return inverse;
         case "DestinationIn": return destinationIn;
-        case "ClipToLower": return clipToLower;
-        case "SliceFromLower": return sliceFromLower;
+        case "ClipToLower": return sourceIn;
+        case "SliceFromLower": return sourceOut;
     }
 }
 

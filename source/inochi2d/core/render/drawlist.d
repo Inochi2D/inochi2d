@@ -69,6 +69,11 @@ public:
     @property uint[] indices() => _idxs[0.._idxp];
 
     /**
+        Allocated meshes
+    */
+    @property DrawListAlloc[] allocations() => _allocs[0.._allp];
+
+    /**
         Allocates the given mesh in the draw list, allowing its
         contents to be reused in draw commands.
 
@@ -106,7 +111,8 @@ public:
         _vtxp += vtx.length;
         _idxp += idx.length;
 
-        _call.elemCount = cast(uint)idx.length;
+        _call.idxCount = cast(uint)idx.length;
+        _call.vtxCount = cast(uint)vtx.length;
 
         // Set up allocation.
         if (_allp >= _allocs.length)
@@ -177,7 +183,7 @@ public:
         
         _ccmd.idxOffset = alloc.idxOffset;
         _ccmd.vtxOffset = alloc.vtxOffset;
-        _ccmd.elemCount = alloc.elemCount;
+        _ccmd.elemCount = alloc.idxCount;
     }
 
     /**
@@ -237,7 +243,12 @@ struct DrawListAlloc {
     /**
         Number of indices.
     */
-    uint elemCount;
+    uint idxCount;
+
+    /**
+        Number of vertices.
+    */
+    uint vtxCount;
 }
 
 /**

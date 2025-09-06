@@ -19,27 +19,6 @@ extern(C) export @nogc:
 struct in_resource_t;
 
 /**
-    Resource is ready for use.
-*/
-enum IN_RESOURCE_STATUS_OK = 0;
-
-/**
-    A new resource should be created and an ID allocated to it
-    by the rendering API.
-*/
-enum IN_RESOURCE_STATUS_WANTS_CREATE = 1;
-
-/**
-    A resource wants updates to its data or shape.
-*/
-enum IN_RESOURCE_STATUS_WANTS_UPDATE = 2;
-
-/**
-    A resource requests that it be deleted.
-*/
-enum IN_RESOURCE_STATUS_WANTS_DELETE = 3;
-
-/**
     Gets the length of the resource in bytes.
 
     Params:
@@ -152,6 +131,16 @@ void in_texture_flip_vertically(in_texture_t* obj) {
 }
 
 /**
+    Pre-multiplies the alpha channel of the texture.
+
+    Params:
+        obj = The texture object.
+*/
+void in_texture_premultiply(in_texture_t* obj) {
+    (cast(Texture)obj).data.premultiply();
+}
+
+/**
     Gets the pixels of the texture.
 
     Params:
@@ -210,8 +199,8 @@ enum in_blend_mode_t
     IN_BLEND_MODE_SUBTRACT          = 0x0E,
     IN_BLEND_MODE_INVERSE           = 0x0F,
     IN_BLEND_MODE_DESTINATION_IN    = 0x10,
-    IN_BLEND_MODE_CLIP_TO_LOWER     = 0x11,
-    IN_BLEND_MODE_SLICE_FROM_LOWER  = 0x12;
+    IN_BLEND_MODE_SOURCE_IN         = 0x11,
+    IN_BLEND_MODE_SOURCE_OUT        = 0x12;
 
 /**
     A drawing command from the Inochi2D draw list
@@ -226,6 +215,16 @@ struct in_drawcmd_t {
     uint                                elemCount;
     uint                                type;
     void[64]                            vars;
+}
+
+/**
+    A drawlist mesh allocation
+*/
+struct in_drawalloc_t {
+    uint vtxOffset;
+    uint idxOffset;
+    uint idxCount;
+    uint vtxCount;
 }
 
 /**
@@ -310,4 +309,22 @@ void* in_drawlist_get_vertex_data(in_drawlist_t* obj, ref uint bytes) {
 void* in_drawlist_get_index_data(in_drawlist_t* obj, ref uint bytes) {
     bytes = cast(uint)((cast(DrawList)obj).indices.length*uint.sizeof);
     return cast(void*)(cast(DrawList)obj).indices.ptr;
+}
+
+/**
+    Gets all of the allocated meshes of the drawlist.
+    
+    This memory is owned by the draw list and should not be freed
+    by you.
+
+    Params:
+        obj =   The drawlist
+        count = Where to store the element count
+    
+    Returns:
+        A pointer to the data
+*/
+in_drawalloc_t* in_drawlist_get_allocations(in_drawlist_t* obj, ref uint count) {
+    count = cast(uint)((cast(DrawList)obj).allocations.length);
+    return cast(in_drawalloc_t*)(cast(DrawList)obj).allocations.ptr;
 }
