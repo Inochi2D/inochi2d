@@ -8,7 +8,6 @@
 */
 module inochi2d.core.nodes.composite;
 import inochi2d.core.nodes.drawable;
-import inochi2d.core.nodes.common;
 import inochi2d.core.nodes;
 import inochi2d.core.math;
 import inochi2d.core;

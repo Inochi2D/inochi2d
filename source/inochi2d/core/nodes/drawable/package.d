@@ -188,3 +188,30 @@ public:
         drawList.setMesh(drawListSlot);
     }
 }
+
+/**
+    A binding between a mask and a mode
+*/
+struct MaskBinding {
+public:
+    GUID maskSrcGUID;
+    MaskingMode mode;
+    Drawable maskSrc;
+
+    /**
+        Serialization function
+    */
+    void onSerialize(ref JSONValue object, bool recursive = true) {
+        auto srcGuid = maskSrcGUID.toString();
+        object["source"] = srcGuid.dup;
+        object["mode"] = mode;
+    }
+
+    /**
+        Deserialization function
+    */
+    void onDeserialize(ref JSONValue object) {
+        maskSrcGUID = object.tryGetGUID("source", "source");
+        mode = object.tryGet!string("mode", null).toMaskingMode;
+    }
+}
