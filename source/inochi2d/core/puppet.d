@@ -448,7 +448,7 @@ public:
     /**
         The active draw list for the puppet.
     */
-    @property DrawList drawList() => drawList_;
+    @property DrawList drawList() @nogc => drawList_;
 
     // Destructor
     ~this() {

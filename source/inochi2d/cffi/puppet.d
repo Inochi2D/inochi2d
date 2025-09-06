@@ -255,6 +255,19 @@ in_parameter_t** in_puppet_get_parameters(in_puppet_t* obj, ref uint count) {
     return cast(in_parameter_t**)(cast(Puppet)obj).parameters.ptr;
 }
 
+/**
+    Gets the puppet's draw list.
+
+    Params:
+        obj = The puppet object.
+    
+    Returns:
+        The drawlist used by the puppet.
+*/
+in_drawlist_t* in_puppet_get_drawlist(in_puppet_t* obj) {
+    return cast(in_drawlist_t*)(cast(Puppet)obj).drawList;
+}
+
 //
 //              PARAMETERS
 //

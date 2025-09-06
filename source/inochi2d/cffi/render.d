@@ -8,6 +8,7 @@
 */
 module inochi2d.cffi.render;
 import inochi2d.core.render;
+import inochi2d.core.mesh;
 
 version(IN_DYNLIB):
 extern(C) export @nogc:
@@ -161,4 +162,151 @@ void in_texture_flip_vertically(in_texture_t* obj) {
 */
 void* in_texture_get_pixels(in_texture_t* obj) {
     return (cast(Texture)obj).pixels.ptr;
+}
+
+//
+//              DRAWLIST
+//
+
+/**
+    DrawState flags
+*/
+alias in_drawstate_t = uint;
+enum in_drawstate_t
+    IN_DRAW_STATE_NORMAL            = 0,
+    IN_DRAW_STATE_DEFINE_MASK       = 1,
+    IN_DRAW_STATE_MASKED_DRAW       = 2,
+    IN_DRAW_STATE_COMPOSITE_BEGIN   = 3,
+    IN_DRAW_STATE_COMPOSITE_END     = 4,
+    IN_DRAW_STATE_COMPOSITE_BLIT    = 5;
+
+/**
+    Masking modes
+*/
+alias in_mask_mode_t = uint;
+enum in_mask_mode_t
+    IN_MASK_MODE_MASK   = 0,
+    IN_MASK_MODE_DODGE  = 1;
+
+/**
+    Blending modes
+*/
+alias in_blend_mode_t = uint;
+enum in_blend_mode_t
+    IN_BLEND_MODE_NORMAL            = 0x00,
+    IN_BLEND_MODE_MULTIPLY          = 0x01,
+    IN_BLEND_MODE_SCREEN            = 0x02,
+    IN_BLEND_MODE_OVERLAY           = 0x03,
+    IN_BLEND_MODE_DARKEN            = 0x04,
+    IN_BLEND_MODE_LIGHTEN           = 0x05,
+    IN_BLEND_MODE_COLOR_DODGE       = 0x06,
+    IN_BLEND_MODE_LINEAR_DODGE      = 0x07,
+    IN_BLEND_MODE_ADD_GLOW          = 0x08,
+    IN_BLEND_MODE_COLOR_BURN        = 0x09,
+    IN_BLEND_MODE_HARD_LIGHT        = 0x0A,
+    IN_BLEND_MODE_SOFT_LIGHT        = 0x0B,
+    IN_BLEND_MODE_DIFFERENCE        = 0x0C,
+    IN_BLEND_MODE_EXCLUSION         = 0x0D,
+    IN_BLEND_MODE_SUBTRACT          = 0x0E,
+    IN_BLEND_MODE_INVERSE           = 0x0F,
+    IN_BLEND_MODE_DESTINATION_IN    = 0x10,
+    IN_BLEND_MODE_CLIP_TO_LOWER     = 0x11,
+    IN_BLEND_MODE_SLICE_FROM_LOWER  = 0x12;
+
+/**
+    A drawing command from the Inochi2D draw list
+*/
+struct in_drawcmd_t {
+    in_texture_t*[IN_MAX_ATTACHMENTS] sources;
+    in_drawstate_t state;
+    float opacity;
+    in_blend_mode_t blendMode;
+    in_mask_mode_t maskMode;
+    uint vtxOffset;
+    uint idxOffset;
+    uint elemCount;
+}
+
+/**
+    A drawlist instance
+*/
+struct in_drawlist_t;
+
+/**
+    Gets whether the draw list uses base vertex offsets.
+
+    Params:
+        obj = The drawlist
+    
+    Returns:
+        $(D true) if base vertex offsets are being generated,
+        $(D false) otherwise.
+*/
+bool in_drawlist_get_use_base_vertex(in_drawlist_t* obj) {
+    return (cast(DrawList)obj).useBaseVertex;
+}
+
+/**
+    Sets whether the draw list uses base vertex offsets.
+
+    Params:
+        obj =   The drawlist
+        value = The value to set.
+*/
+void in_drawlist_set_use_base_vertex(in_drawlist_t* obj, bool value) {
+    (cast(DrawList)obj).useBaseVertex = value;
+}
+
+/**
+    Gets all of the commands stored in the draw list for iteration.
+    
+    This memory is owned by the draw list and should not be freed
+    by you.
+
+    Params:
+        obj =   The drawlist
+        count = Where to store the command count
+    
+    Returns:
+        A pointer to an array of draw commands
+*/
+in_drawcmd_t* in_drawlist_get_commands(in_drawlist_t* obj, ref uint count) {
+    count = cast(uint)(cast(DrawList)obj).commands.length;
+    return cast(in_drawcmd_t*)(cast(DrawList)obj).commands.ptr;
+}
+
+/**
+    Gets all of the vertex data stored in the draw list.
+    
+    This memory is owned by the draw list and should not be freed
+    by you.
+
+    Params:
+        obj =   The drawlist
+        bytes = Where to store the byte count of the data.
+    
+    Returns:
+        A pointer to the data
+*/
+void* in_drawlist_get_vertex_data(in_drawlist_t* obj, ref uint bytes) {
+    bytes = cast(uint)((cast(DrawList)obj).vertices.length*VtxData.sizeof);
+    return cast(void*)(cast(DrawList)obj).vertices.ptr;
+}
+
+/**
+    Gets all of the index data stored in the draw list.
+    
+    This memory is owned by the draw list and should not be freed
+    by you.
+
+    Params:
+        obj =   The drawlist
+        bytes = Where to store the byte count of the data.
+    
+    Returns:
+        A pointer to the data
+*/
+void* in_drawlist_get_index_data(in_drawlist_t* obj, ref uint bytes) {
+    bytes = cast(uint)((cast(DrawList)obj).indices.length*uint.sizeof);
+    return cast(void*)(cast(DrawList)obj).indices.ptr;
 }

@@ -53,68 +53,68 @@ import inmath;
 /**
     Blending modes
 */
-enum BlendMode {
+enum BlendMode : uint {
     // Normal blending mode
-    normal,
+    normal          = 0x00,
 
     // Multiply blending mode
-    multiply,
+    multiply        = 0x01,
 
     // Screen
-    screen,
+    screen          = 0x02,
 
     // Overlay
-    overlay,
+    overlay         = 0x03,
 
     // Darken
-    darken,
+    darken          = 0x04,
 
     // Lighten
-    lighten,
+    lighten         = 0x05,
     
     // Color Dodge
-    colorDodge,
+    colorDodge      = 0x06,
 
     // Linear Dodge
-    linearDodge,
+    linearDodge     = 0x07,
 
     // Add (Glow)
-    addGlow,
+    addGlow         = 0x08,
 
     // Color Burn
-    colorBurn,
+    colorBurn       = 0x09,
 
     // Hard Light
-    hardLight,
+    hardLight       = 0x0A,
 
     // Soft Light
-    softLight,
+    softLight       = 0x0B,
 
     // Difference
-    difference,
+    difference      = 0x0C,
 
     // Exclusion
-    exclusion,
+    exclusion       = 0x0D,
 
     // Subtract
-    subtract,
+    subtract        = 0x0E,
 
     // Inverse
-    inverse,
+    inverse         = 0x0F,
 
     // Destination In
-    destinationIn,
+    destinationIn   = 0x10,
 
     // Clip to Lower
     // Special blending mode that clips the drawable
     // to a lower rendered area.
-    clipToLower,
+    clipToLower     = 0x11,
 
     // Slice from Lower
     // Special blending mode that slices the drawable
     // via a lower rendered area.
     // Basically inverse ClipToLower
-    sliceFromLower
+    sliceFromLower  = 0x12
 }
 
 BlendMode toBlendMode(string name) {
