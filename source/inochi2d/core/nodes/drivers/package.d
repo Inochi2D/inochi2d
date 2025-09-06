@@ -15,7 +15,8 @@ public import inochi2d.core.nodes.drivers.simplephysics;
 /**
     Driver abstract node type
 */
-@TypeId("Driver")
+@TypeId("Driver", 0x00000003)
+@TypeIdAbstract
 abstract class Driver : Node {
 protected:
     this() { }

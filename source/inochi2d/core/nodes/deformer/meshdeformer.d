@@ -20,7 +20,7 @@ import numem;
     A deformer which deforms child nodes stored within it,
 
 */
-@TypeId("MeshGroup")
+@TypeId("MeshGroup", 0x0102)
 class MeshDeformer : Deformer {
 private:
     Mesh mesh_;
@@ -247,9 +247,6 @@ public:
         super.rescan();
         this.rebuildStructures();
     }
-
-    override
-    string typeId() { return "MeshGroup"; }
 }
 
 private

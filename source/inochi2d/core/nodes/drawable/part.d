@@ -28,16 +28,21 @@ enum TextureUsage : size_t {
     COUNT
 }
 
+struct PartVars {
+align(vec4.sizeof):
+    vec3 tint;
+    vec3 screenTint;
+    float opacity;
+    float emissionStrength;
+}
+
 /**
     Dynamic Mesh Part
 */
-@TypeId("Part")
+@TypeId("Part", 0x0101)
 class Part : Drawable {
 private:
 protected:
-
-    override
-    string typeId() { return "Part"; }
 
     /**
         Allows serializing self data (with pretty serializer)
@@ -100,19 +105,6 @@ protected:
     float offsetEmissionStrength = 1;
     vec3 offsetTint = vec3(0);
     vec3 offsetScreenTint = vec3(0);
-
-    // TODO: Cache this
-    size_t maskCount() {
-        size_t c;
-        foreach(m; masks) if (m.mode == MaskingMode.mask) c++;
-        return c;
-    }
-
-    size_t dodgeCount() {
-        size_t c;
-        foreach(m; masks) if (m.mode == MaskingMode.dodge) c++;
-        return c;
-    }
 
 public:
     /**
@@ -273,16 +265,15 @@ public:
     override
     float getValue(string key) {
         switch(key) {
-            case "alphaThreshold":  return offsetMaskThreshold;
-            case "opacity":         return offsetOpacity;
-            case "tint.r":          return offsetTint.x;
-            case "tint.g":          return offsetTint.y;
-            case "tint.b":          return offsetTint.z;
-            case "screenTint.r":    return offsetScreenTint.x;
-            case "screenTint.g":    return offsetScreenTint.y;
-            case "screenTint.b":    return offsetScreenTint.z;
+            case "opacity":             return offsetOpacity;
+            case "tint.r":              return offsetTint.x;
+            case "tint.g":              return offsetTint.y;
+            case "tint.b":              return offsetTint.z;
+            case "screenTint.r":        return offsetScreenTint.x;
+            case "screenTint.g":        return offsetScreenTint.y;
+            case "screenTint.b":        return offsetScreenTint.z;
             case "emissionStrength":    return offsetEmissionStrength;
-            default:                return super.getValue(key);
+            default:                    return super.getValue(key);
         }
     }
 
@@ -322,6 +313,13 @@ public:
     void draw(float delta, DrawList drawList) {
         if (!renderEnabled)
             return;
+
+        PartVars vars = PartVars(
+            tint*offsetTint,
+            screenTint*offsetScreenTint,
+            opacity*offsetOpacity,
+            emissionStrength*offsetEmissionStrength
+        );
         
         if (masks.length > 0) {
             foreach(ref mask; masks) {
@@ -331,7 +329,7 @@ public:
 
             super.draw(delta, drawList);
             drawList.setDrawState(DrawState.maskedDraw);
-            drawList.setOpacity(offsetOpacity);
+            drawList.setVariables!PartVars(nid, vars);
             drawList.setBlending(blendingMode);
             drawList.setSources(textures);
             drawList.next();
@@ -341,7 +339,7 @@ public:
         super.draw(delta, drawList);
         drawList.setSources(textures);
         drawList.setBlending(blendingMode);
-        drawList.setOpacity(offsetOpacity);
+        drawList.setVariables!PartVars(nid, vars);
         drawList.next();
     }
 

@@ -20,11 +20,6 @@ public import inochi2d.core.mesh;
 public import inochi2d.core.nodes.drawable.part;
 public import inochi2d.core.nodes.drawable.apart;
 
-package(inochi2d)
-void inInitDrawable() {
-    inRegisterNodeType!Part;
-}
-
 /**
     Nodes that are meant to render something in to the Inochi2D scene
     Other nodes don't have to render anything and serve mostly other 
@@ -32,8 +27,8 @@ void inInitDrawable() {
 
     The main types of Drawables are Parts and Masks
 */
-
-@TypeId("Drawable")
+@TypeId("Drawable", 0x0001)
+@TypeIdAbstract
 abstract class Drawable : Node, IDeformable {
 private:
     Mesh mesh_;
@@ -192,7 +187,4 @@ public:
     void drawAsMask(float delta, DrawList drawList, MaskingMode mode) {
         drawList.setMesh(drawListSlot);
     }
-
-    override
-    string typeId() { return "Drawable"; }
 }

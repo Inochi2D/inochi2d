@@ -22,10 +22,3 @@ public import inochi2d.core.math;
 
 import inochi2d.core.math;
 import std.stdio;
-
-/**
-    UDA for sub-classable parts of the spec
-    eg. Nodes and Automation can be extended by
-    adding new subclasses that aren't in the base spec.
-*/
-struct TypeId { string id; }

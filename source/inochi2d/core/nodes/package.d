@@ -17,30 +17,44 @@ public import inochi2d.core.nodes.drawable;
 public import inochi2d.core.nodes.composite;
 public import inochi2d.core.nodes.deformer;
 public import inochi2d.core.nodes.drivers; 
-import std.typecons: tuple, Tuple;
+public import inochi2d.core.registry;
+
 import core.attribute : standalone;
 
 //public import inochi2d.core.nodes.shapes; // This isn't mainline yet!
 
 import std.exception;
 
+/**
+    The public node registry.
+*/
+__gshared TypeRegistry!Node in_node_registry;
+
 @standalone
 shared static this() @trusted {
-    inRegisterNodeType!Node;
+    import numem : nogc_new;
+    in_node_registry = nogc_new!(TypeRegistry!Node);
     
-    inRegisterNodeType!SimplePhysics;
-    
-    inRegisterNodeType!MeshDeformer;
-    inRegisterNodeType!LatticeDeformer;
+    in_node_registry.register!Node;
 
-    inRegisterNodeType!Composite;
-    inRegisterNodeType!Part;
+    in_node_registry.register!Deformer;
+    in_node_registry.register!MeshDeformer;
+    in_node_registry.register!LatticeDeformer;
+    
+    in_node_registry.register!Drawable;
+    in_node_registry.register!Part;
+    in_node_registry.register!AnimatedPart;
+
+    in_node_registry.register!Composite;
+    
+    in_node_registry.register!Driver;
+    in_node_registry.register!SimplePhysics;
 }
 
 /**
     A node in the Inochi2D rendering tree
 */
-@TypeId("Node")
+@TypeId("Node", 0x00000000)
 class Node : ISerializable, IDeserializable {
 private:
     Puppet puppet_;
@@ -50,6 +64,7 @@ private:
     float zsort_ = 0;
     bool lockToRoot_;
     string nodePath_;
+    uint nid_;
 
 package(inochi2d):
 
@@ -61,6 +76,12 @@ package(inochi2d):
     }
 
 protected:
+
+    /**
+        The Node's numeric ID
+    */
+    final @property uint nid() => nid_;
+
     bool recalculateTransform = true;
     bool preProcessed  = false;
     bool postProcessed = false;
@@ -95,7 +116,7 @@ public:
     /**
         The Node's Type ID
     */
-    @property string typeId() => "Node";
+    final @property TypeId typeId() => in_node_registry.lookup(this);
 
     /**
         The node's GUID.
@@ -154,7 +175,7 @@ public:
         Constructs a new puppet root node
     */
     this(Puppet puppet) {
-        puppet_ = puppet;
+        this.puppet_ = puppet;
     }
 
     /**
@@ -586,7 +607,7 @@ public:
         nstring guid = guid_.toString();
         object["guid"] = guid.dup;
         object["name"] = name;
-        object["type"] = typeId;
+        object["type"] = typeId.sid;
         object["enabled"] = enabled;
         object["zsort"] = zsort_;
         object["transform"] = zsort_;
@@ -619,17 +640,18 @@ public:
                 
                 // Fetch type from json
                 if (string type = child.tryGet!string("type", null)) {
-                
+
                     // Skips unknown node types
                     // TODO: A logging system that shows a warning for this?
-                    if (!inHasNodeType(type))
+                    if (!in_node_registry.has(type))
                         continue;
 
                     // NOTE:    inInstantiateNode implicitly handles setting the
                     //          Parent-child relationship, so we don't need to do
                     //          anything else besides pass it onto the child's
                     //          deserializer.
-                    Node n = inInstantiateNode(type, this);
+                    Node n = in_node_registry.create(type);
+                    n.parent = this;
                     child.deserialize(n);
                 }
             }
@@ -649,6 +671,7 @@ public:
         Finalizes this node and any children
     */
     void finalize() {
+        nid_ = typeId.nid;
         foreach(child; children) {
             child.finalize();
         }
@@ -720,40 +743,5 @@ public:
         if (parent !is null)
             setRelativeTo(parent);
         insertInto(parent, pOffset);
-    }
-}
-
-
-
-
-
-//
-//            SERIALIZATION SHENNANIGANS
-//
-private {
-    Node delegate(Node parent)[string] typeFactories;
-
-    Node inInstantiateNode(string id, Node parent = null) {
-        return typeFactories[id](parent);
-    }
-}
-
-void inRegisterNodeType(T)() if (is(T : Node)) {
-    import std.traits : getUDAs;
-    typeFactories[getUDAs!(T, TypeId)[0].id] = (Node parent) {
-        return new T(parent);
-    };
-}
-
-/**
-    Gets whether a node type is present in the factories
-*/
-bool inHasNodeType(string id) {
-    return (id in typeFactories) !is null;
-}
-
-mixin template InNode(T) {
-    static this() {
-        inRegisterNodeType!(T);
     }
 }

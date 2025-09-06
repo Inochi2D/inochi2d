@@ -175,7 +175,7 @@ public:
 /**
     Simple Physics Node
 */
-@TypeId("SimplePhysics")
+@TypeId("SimplePhysics", 0x0103)
 class SimplePhysics : Driver {
 private:
 
@@ -189,8 +189,6 @@ private:
     vec2 offsetOutputScale = vec2(1, 1);
 
 protected:
-    override
-    string typeId() { return "SimplePhysics"; }
 
     /**
         Allows serializing self data (with pretty serializer)

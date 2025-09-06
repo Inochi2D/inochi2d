@@ -15,7 +15,7 @@ import inmath.linalg;
     A deformer which uses a 2D lattice as the basis for
     its deformation.
 */
-@TypeId("LatticeDeformer")
+@TypeId("LatticeDeformer", 0x0202)
 class LatticeDeformer : Deformer {
 private:
     int subdivs;
@@ -73,6 +73,4 @@ public:
     override void resetDeform() {
         
     }
-
-    override string typeId() { return "LatticeDeformer"; }
 }

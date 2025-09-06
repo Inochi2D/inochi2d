@@ -12,18 +12,25 @@ This data is sent to you through a series of `DrawCmd` instances.
 
 ```d
 struct DrawCmd {
-    Texture[8] sources;
-    uint32_t state;
-    float opacity;
-    uint32_t blendMode;
-    uint32_t maskMode;
-    uint32_t vtxOffset;
-    uint32_t idxOffset;
-    uint32_t elemCount;
+    in_texture_t*[8]    sources;
+    in_drawstate_t      state;
+    in_blend_mode_t     blendMode;
+    in_mask_mode_t      maskMode;
+    uint32_t            vtxOffset;
+    uint32_t            idxOffset;
+    uint                type;
+    void[64]            vars;
 }
 ```
 
 Inochi2D is capable of providing these draw lists with the assumption that your renderer supports index/element data, and optionally, vertex offsets. If your API does not support vertex offsets, set `useBaseVertex` in the Draw List to `false`.
+
+### Variables
+
+Some nodes in Inochi2D provide further data needed to render the the node, these are provided in
+`vars`, up to 64 bytes of variable space is allocated per draw command. Read the individual Node's
+documentation for which variables are stored within. The `type` variable can be used to determine which
+node type the data pertains to. 
 
 ## DrawState
 
@@ -45,3 +52,29 @@ You can then during `maskedDraw` add this texture to your pass, multiply `rgba` 
 * On the transition from `maskedDraw` to `normal`, if you are not using unique shaders for `normal` you may want to clear the mask texture with all `0xFF`.
 * `compositeEnd` **may** be followed by `defineMask`, ensure that `compsiteBlit` is able to use the defined mask.
 * `compositeBlit` *should* be implemented by drawing a viewport-filling quad, an NDC mesh is provided for you in this DrawState to make it easier.
+
+## Registered Types
+
+Following is a list of all currently registered types, all types have a 32 bit type ID,
+with `0x00000000` to `0x0000FFFF` being reserved by Inochi2D.
+
+Following is a table of all the base node types of Inochi2D.
+
+|         ID | Name            |
+| ---------: | :-------------- |
+| 0x00000000 | Node            |
+| 0x00000001 | Drawable        |
+| 0x00000101 | Part            |
+| 0x00000201 | AnimatedPart    |
+| 0x00000002 | Deformer        |
+| 0x00000102 | MeshGroup       |
+| 0x00000202 | LatticeDeformer |
+| 0x00000003 | Driver          |
+| 0x00000103 | SimplePhysics   |
+| 0x00000004 | Composite       |
+
+All Inochi2D node types follow a numeric ID sequence of `0x0000SSBB` where  
+ * `SS` is the subnode id
+ * `BB` is the supernode id
+
+Part has ID 0x00000101, as it's type `01` (Part), derived from type `01` (Drawable)

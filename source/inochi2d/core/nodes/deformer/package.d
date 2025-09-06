@@ -21,6 +21,8 @@ public import inochi2d.core.nodes.deformer.latticedeformer;
 
     Deformations happen in world space
 */
+@TypeId("Deformer", 0x0002)
+@TypeIdAbstract
 abstract
 class Deformer : Node, IDeformable {
 private:

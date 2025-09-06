@@ -18,10 +18,17 @@ import std.exception;
 public import inochi2d.core.render.state;
 import numem;
 
+struct CompositeVars {
+align(vec4.sizeof):
+    vec3 tint;
+    vec3 screenTint;
+    float opacity;
+}
+
 /**
     Composite Node
 */
-@TypeId("Composite")
+@TypeId("Composite", 0x0004)
 class Composite : Node {
 private:
     DrawListAlloc* __screenSpaceAlloc;
@@ -138,9 +145,6 @@ protected:
     float offsetOpacity = 1;
     vec3 offsetTint = vec3(0);
     vec3 offsetScreenTint = vec3(0);
-
-    override
-    string typeId() { return "Composite"; }
 
     // TODO: Cache this
     size_t maskCount() {
@@ -332,6 +336,12 @@ public:
         if (!renderEnabled || toRender.length == 0)
             return;
         
+        CompositeVars compositeVars = CompositeVars(
+            tint*offsetTint,
+            screenTint*offsetScreenTint,
+            opacity*offsetOpacity
+        );
+
         this.selfSort();
 
         // Push sub render area.
@@ -348,7 +358,7 @@ public:
         }
 
         // Then blit it to the main framebuffer
-        drawList.setOpacity(offsetOpacity);
+        drawList.setVariables!CompositeVars(nid, compositeVars);
         drawList.setMesh(__screenSpaceAlloc);
         drawList.setDrawState(DrawState.compositeBlit);
         drawList.setBlending(blendingMode);

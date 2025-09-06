@@ -217,14 +217,15 @@ enum in_blend_mode_t
     A drawing command from the Inochi2D draw list
 */
 struct in_drawcmd_t {
-    in_texture_t*[IN_MAX_ATTACHMENTS] sources;
-    in_drawstate_t state;
-    float opacity;
-    in_blend_mode_t blendMode;
-    in_mask_mode_t maskMode;
-    uint vtxOffset;
-    uint idxOffset;
-    uint elemCount;
+    in_texture_t*[IN_MAX_ATTACHMENTS]   sources;
+    in_drawstate_t                      state;
+    in_blend_mode_t                     blendMode;
+    in_mask_mode_t                      maskMode;
+    uint                                vtxOffset;
+    uint                                idxOffset;
+    uint                                elemCount;
+    uint                                type;
+    void[64]                            vars;
 }
 
 /**

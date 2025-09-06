@@ -6,18 +6,7 @@ import inochi2d.core.math;
 /**
     Parts which contain spritesheet animation
 */
-@TypeId("AnimatedPart")
+@TypeId("AnimatedPart", 0x0201)
 class AnimatedPart : Part {
-private:
 
-protected:
-    override
-    string typeId() { return "AnimatedPart"; }
-
-public:
-
-    /**
-        The amount of splits in the texture
-    */
-    vec2i splits;
 }

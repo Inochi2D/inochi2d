@@ -155,8 +155,9 @@ public:
     /**
         Sets the blending mode for the current draw call.
     */
-    void setOpacity(float value) {
-        _ccmd.opacity = value;
+    void setVariables(T)(uint nid, T value) if (T.sizeof <= _ccmd.variables.sizeof) {
+        _ccmd.typeId = nid;
+        _ccmd.variables[0..T.sizeof] = (cast(void*)&value)[0..T.sizeof];
     }
 
     /**
@@ -298,11 +299,6 @@ struct DrawCmd {
     DrawState state;
 
     /**
-        Opacity of the drawing operation (if relevant)
-    */
-    float opacity = 1;
-
-    /**
         Blending mode to apply
     */
     BlendMode blendMode;
@@ -326,6 +322,16 @@ struct DrawCmd {
         Number of indices.
     */
     uint elemCount;
+    
+    /**
+        Type ID of the node being drawn.
+    */
+    uint typeId;
+
+    /**
+        Variables passed to the draw list.
+    */
+    void[64] variables;
 
     /**
         Whether the command is empty.
