@@ -450,7 +450,6 @@ public:
             auto swap = axisPoints[oldidx];
             axisPoints[axis] = axisPoints[axis].remove(oldidx);
             axisPoints[axis].insertInPlace(index, swap);
-            debug writeln("after move ", this.axisPointCount(0));
         }
 
         // Tell all bindings to reinterpolate

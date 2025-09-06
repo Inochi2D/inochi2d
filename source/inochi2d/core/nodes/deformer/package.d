@@ -27,7 +27,6 @@ abstract
 class Deformer : Node, IDeformable {
 private:
     void scanPartsRecurse(Node node) {
-        import std.stdio : writeln;
 
         // Don't need to scan null nodes
         if (node is null) return;

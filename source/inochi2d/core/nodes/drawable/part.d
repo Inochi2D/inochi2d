@@ -16,7 +16,6 @@ import std.exception;
 import std.algorithm.mutation : copy;
 import std.math : isNaN;
 
-public import inochi2d.core.nodes.common;
 public import inochi2d.core.render.state;
 public import inochi2d.core.mesh;
 
@@ -74,7 +73,6 @@ protected:
         super.onDeserialize(object);
 
         if (object.isJsonArray("textures")) {
-            import std.stdio : writeln;
             foreach(i, ref JSONValue element; object["textures"].array) {
 
                 uint textureId = element.tryGet!uint(NO_TEXTURE);

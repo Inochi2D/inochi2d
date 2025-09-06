@@ -7,20 +7,14 @@
     Authors: Asahi Lina
 */
 module inochi2d.core.nodes.drivers.simplephysics;
-private {
 import inochi2d.core.nodes.drivers;
-import inochi2d.core.nodes.common;
-import inochi2d.core.guid;
-//import inochi2d.core.nodes;
-//import inochi2d.core;
 import inochi2d.core.format;
+import inochi2d.core.guid;
 import inochi2d.core.math;
 import inochi2d.core.phys;
 import inochi2d;
-import std.exception;
 import std.algorithm.sorting;
-import std.stdio;
-}
+import std.exception;
 
 /**
     Physics model to use for simple physics

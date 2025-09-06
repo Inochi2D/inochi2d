@@ -10,10 +10,9 @@ module inochi2d.core.param.binding;
 import inochi2d.core.format;
 import inochi2d.core.math;
 import inochi2d.core;
+import std.algorithm.mutation;
 import std.exception;
 import std.array;
-import std.algorithm.mutation;
-import std.stdio;
 
 /**
     A target to bind to
@@ -1096,6 +1095,7 @@ class DeformationParameterBinding : ParameterBindingImpl!Deformation {
 
 @("TestInterpolation")
 unittest {
+    import std.stdio;
     void printArray(float[][] arr) {
         foreach (row; arr) {
             writefln(" %s", row);

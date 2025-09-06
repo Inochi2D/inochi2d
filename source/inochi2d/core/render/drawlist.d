@@ -12,7 +12,6 @@ import inmath;
 import nulib;
 import numem;
 import inochi2d.core.render.texture;
-import inochi2d.core.nodes.common;
 import inochi2d.core.mesh;
 
 /**
