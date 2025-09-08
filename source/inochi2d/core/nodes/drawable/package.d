@@ -82,12 +82,12 @@ public:
     /**
         Local matrix of the deformable object.
     */
-    override @property mat4 localMatrix() => localTransform.matrix;
+    override @property Transform baseTransform() => transform!true;
 
     /**
         World matrix of the deformable object.
     */
-    override @property mat4 worldMatrix() => transform!true.matrix;
+    override @property Transform worldTransform() => transform!false;
 
     /**
         The base position of the deformable's points.
@@ -153,6 +153,17 @@ public:
     */
     override void deform(size_t offset, vec2 deform, bool absolute = false) {
         deformed_.deform(offset, deform);
+    }
+
+    /**
+        Applies an offset to the Node's transform.
+
+        Params:
+            other = The transform to offset the current global transform by.
+    */
+    override
+    void offsetTransform(Transform other) {
+        super.offsetTransform(other);
     }
 
     /**

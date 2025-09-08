@@ -65,7 +65,7 @@ protected:
     /**
         The offset to the transform to apply
     */
-    Transform offsetTransform;
+    Transform transformOffset;
 
     /**
         The offset to apply to sorting
@@ -182,17 +182,17 @@ public:
     /**
         The transform in world space
     */
-    Transform transform(bool ignoreParam=false)() @nogc {
+    @property Transform transform(bool ignoreParam=false)() @nogc {
         static if (!ignoreParam) {
             if (recalculateTransform) {
                 localTransform.update();
-                offsetTransform.update();
+                transformOffset.update();
                 if (lockToRoot_)
-                    globalTransform = localTransform.calcOffset(offsetTransform) * puppet.root.localTransform;
+                    globalTransform = localTransform.calcOffset(transformOffset) * puppet.root.localTransform;
                 else if (parent !is null)
-                    globalTransform = localTransform.calcOffset(offsetTransform) * parent.transform();
+                    globalTransform = localTransform.calcOffset(transformOffset) * parent.transform();
                 else
-                    globalTransform = localTransform.calcOffset(offsetTransform);
+                    globalTransform = localTransform.calcOffset(transformOffset);
 
                 recalculateTransform = false;
             }
@@ -217,7 +217,7 @@ public:
     Transform transformLocal() @nogc {
         localTransform.update();
         
-        return localTransform.calcOffset(offsetTransform);
+        return localTransform.calcOffset(transformOffset);
     }
 
     /**
@@ -387,6 +387,17 @@ public:
     }
 
     /**
+        Applies an offset to the Node's transform.
+
+        Params:
+            other = The transform to offset the current global transform by.
+    */
+    void offsetTransform(Transform other) {
+        globalTransform = globalTransform.calcOffset(other);
+        globalTransform.update();
+    }
+
+    /**
         Return whether this node supports a parameter
     */
     bool hasParam(string key) {
@@ -436,35 +447,35 @@ public:
                 offsetSort += value;
                 return true;
             case "transform.t.x":
-                offsetTransform.translation.x += value;
+                transformOffset.translation.x += value;
                 transformChanged();
                 return true;
             case "transform.t.y":
-                offsetTransform.translation.y += value;
+                transformOffset.translation.y += value;
                 transformChanged();
                 return true;
             case "transform.t.z":
-                offsetTransform.translation.z += value;
+                transformOffset.translation.z += value;
                 transformChanged();
                 return true;
             case "transform.r.x":
-                offsetTransform.rotation.x += value;
+                transformOffset.rotation.x += value;
                 transformChanged();
                 return true;
             case "transform.r.y":
-                offsetTransform.rotation.y += value;
+                transformOffset.rotation.y += value;
                 transformChanged();
                 return true;
             case "transform.r.z":
-                offsetTransform.rotation.z += value;
+                transformOffset.rotation.z += value;
                 transformChanged();
                 return true;
             case "transform.s.x":
-                offsetTransform.scale.x *= value;
+                transformOffset.scale.x *= value;
                 transformChanged();
                 return true;
             case "transform.s.y":
-                offsetTransform.scale.y *= value;
+                transformOffset.scale.y *= value;
                 transformChanged();
                 return true;
             default: return false;
@@ -507,14 +518,14 @@ public:
     float getValue(string key) {
         switch(key) {
             case "zSort":           return offsetSort;
-            case "transform.t.x":   return offsetTransform.translation.x;
-            case "transform.t.y":   return offsetTransform.translation.y;
-            case "transform.t.z":   return offsetTransform.translation.z;
-            case "transform.r.x":   return offsetTransform.rotation.x;
-            case "transform.r.y":   return offsetTransform.rotation.y;
-            case "transform.r.z":   return offsetTransform.rotation.z;
-            case "transform.s.x":   return offsetTransform.scale.x;
-            case "transform.s.y":   return offsetTransform.scale.y;
+            case "transform.t.x":   return transformOffset.translation.x;
+            case "transform.t.y":   return transformOffset.translation.y;
+            case "transform.t.z":   return transformOffset.translation.z;
+            case "transform.r.x":   return transformOffset.rotation.x;
+            case "transform.r.y":   return transformOffset.rotation.y;
+            case "transform.r.z":   return transformOffset.rotation.z;
+            case "transform.s.x":   return transformOffset.scale.x;
+            case "transform.s.y":   return transformOffset.scale.y;
             default:                return 0;
         }
     }
@@ -523,7 +534,7 @@ public:
         Update sequence run before the main update sequence.
     */
     void preUpdate(DrawList drawList) {
-        offsetTransform.clear();
+        transformOffset.clear();
         offsetSort = 0;
 
         if (!enabled) return;

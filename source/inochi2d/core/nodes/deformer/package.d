@@ -112,12 +112,12 @@ public:
     /**
         Local matrix of the deformable object.
     */
-    override @property mat4 localMatrix() => localTransform.matrix;
+    override @property Transform baseTransform() => transform!true;
 
     /**
         World matrix of the deformable object.
     */
-    override @property mat4 worldMatrix() => transform!false.matrix;
+    override @property Transform worldTransform() => transform!false;
 
     /**
         The points which may be deformed by the deformer.
@@ -159,6 +159,17 @@ public:
             deformPoints[offset] = deform;
         else
             deformPoints[offset] += deform;
+    }
+
+    /**
+        Applies an offset to the Node's transform.
+
+        Params:
+            other = The transform to offset the current global transform by.
+    */
+    override
+    void offsetTransform(Transform other) {
+        super.offsetTransform(other);
     }
 
     /**

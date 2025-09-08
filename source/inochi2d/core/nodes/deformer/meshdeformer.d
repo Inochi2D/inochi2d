@@ -155,8 +155,8 @@ public:
         if (deformDeltas_.length == 0)
             return;
 
-        base_.pushMatrix(transform.matrix);
-        deformed_.pushMatrix(transform.matrix);
+        base_.pushMatrix(worldTransform.matrix);
+        deformed_.pushMatrix(worldTransform.matrix);
 
         // Calculate the deltas from the world matrix.
         foreach(i; 0..deformDeltas_.length)
@@ -201,13 +201,14 @@ public:
             // Reset all the data in the weights.
             weights_[i] = weights_[i].nu_resize(df.deformPoints.length);
             weights_[i][0..$] = BlendWeight.init;
-            
+
+            mat4 baseTransformMat = df.baseTransform.matrix;
             foreach(j; 0..df.deformPoints.length) {
 
                 // NOTE:    IDeformable doesn't have the internal mesh reference
                 //          so instead we just multiply the point with their world
                 //          matrix. 
-                vec2 wpt = (df.worldMatrix * vec4(df.basePoints[j], 0, 1)).xy;
+                vec2 wpt = (baseTransformMat * vec4(df.basePoints[j], 0, 1)).xy;
                 foreach(k, ref tri; tris) {
                     vec3 bc = tri.barycentric(wpt);
                     if (bc.x > 0 && bc.y > 0 && bc.z > 0) {
