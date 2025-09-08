@@ -36,8 +36,12 @@ private:
         if (IDeformable deformable = cast(IDeformable)node)
             toDeform ~= deformable;
         
-        foreach(child; node.children) {
-            this.scanPartsRecurse(child);
+        // Deformers already deform their children, and we deform
+        // them first, so don't exaggerate it through their children
+        if (!cast(Deformer)node) {
+            foreach(child; node.children) {
+                this.scanPartsRecurse(child);
+            }
         }
     }
 
