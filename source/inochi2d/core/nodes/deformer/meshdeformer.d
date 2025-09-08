@@ -136,19 +136,24 @@ public:
         this.resetDeform();
     }
 
+    override
+    void update(float delta, DrawList drawList) {
+        base_.pushMatrix(worldTransform.matrix);
+        deformed_.pushMatrix(worldTransform.matrix);
+        super.update(delta, drawList);
+    }
+
     /**
         Updates the internal transformation matrix to apply to children.
     */
     override
-    void update(float delta, DrawList drawList) {
-        super.update(delta, drawList);
+    void postUpdate(DrawList drawList) {
         
         // No deltas?
-        if (deformDeltas_.length == 0)
+        if (deformDeltas_.length == 0) {
+            super.postUpdate(drawList);
             return;
-
-        base_.pushMatrix(worldTransform.matrix);
-        deformed_.pushMatrix(worldTransform.matrix);
+        }
 
         // Calculate the deltas from the world matrix.
         foreach(i; 0..deformDeltas_.length)
@@ -195,6 +200,8 @@ public:
                 }
             }
         }
+
+        super.postUpdate(drawList);
     }
 }
 mixin Register!(MeshDeformer, in_node_registry);
