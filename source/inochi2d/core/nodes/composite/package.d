@@ -81,7 +81,6 @@ protected:
         object["tint"] = tint.serialize();
         object["screenTint"] = screenTint.serialize();
         object["opacity"] = opacity;
-        object["propagate_meshgroup"] = propagateMeshGroup;
         object["masks"] = masks.serialize();
     }
 
@@ -93,7 +92,6 @@ protected:
         object.tryGetRef(tint, "tint");
         object.tryGetRef(screenTint, "screenTint");
         object.tryGetRef(masks, "masks");
-        object.tryGetRef(propagateMeshGroup, "propagate_meshgroup", false);
         blendingMode = object.tryGet!string("blend_mode", "Normal").toBlendMode();
     }
 
@@ -134,7 +132,6 @@ protected:
     }
 
 public:
-    bool propagateMeshGroup = true;
 
     /**
         The blending mode
@@ -360,24 +357,23 @@ __gshared Mesh __screenSpaceMesh;
 pragma(crt_constructor)
 extern(C) void __in_setup_composite() {
     if (!__screenSpaceMesh) {
-        MeshData tmp;
-        tmp.indices = [
+        uint[6] indices = [
             0, 1, 2,
             2, 1, 3
         ];
-        tmp.uvs = [
+        vec2[4] uvs = [
             vec2(0, 0),
             vec2(0, 1),
             vec2(1, 0),
             vec2(1, 1)
         ];
-        tmp.vertices = [
+        vec2[4] vertices = [
             vec2(-1, -1),
             vec2(-1,  1),
             vec2(1,  -1),
             vec2(1,   1)
         ];
-        __screenSpaceMesh = Mesh.fromMeshData(tmp);
+        __screenSpaceMesh = Mesh.fromMeshData(MeshData(vertices, uvs, indices));
     }
 }
 

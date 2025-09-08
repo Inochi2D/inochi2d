@@ -82,12 +82,12 @@ public:
     /**
         Local matrix of the deformable object.
     */
-    override @property mat4 localMatrix() => transform.matrix;
+    override @property mat4 localMatrix() => localTransform.matrix;
 
     /**
         World matrix of the deformable object.
     */
-    override @property mat4 worldMatrix() => globalTransform.matrix;
+    override @property mat4 worldMatrix() => transform!true.matrix;
 
     /**
         The base position of the deformable's points.
@@ -140,6 +140,19 @@ public:
     override
     void deform(vec2[] deformed, bool absolute = false) {
         deformed_.deform(deformed);
+    }
+    
+    /**
+        Deforms a single vertex in the IDeformable
+
+        Params:
+            offset =    The offset into the point list to deform.
+            deform =    The deformation delta.
+            absolute =  Whether the deformation is absolute,
+                        replacing the original deformation.
+    */
+    override void deform(size_t offset, vec2 deform, bool absolute = false) {
+        deformed_.deform(offset, deform);
     }
 
     /**

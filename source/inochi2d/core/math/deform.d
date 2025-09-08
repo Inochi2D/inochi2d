@@ -46,6 +46,17 @@ public:
     void deform(vec2[] deformed, bool absolute = false);
 
     /**
+        Deforms a single vertex in the IDeformable
+
+        Params:
+            offset =    The offset into the point list to deform.
+            deform =    The deformation delta.
+            absolute =  Whether the deformation is absolute,
+                        replacing the original deformation.
+    */
+    void deform(size_t offset, vec2 deform, bool absolute = false);
+
+    /**
         Resets the deformation for the IDeformable.
     */
     void resetDeform();

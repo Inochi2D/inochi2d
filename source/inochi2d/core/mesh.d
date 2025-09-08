@@ -10,6 +10,7 @@ module inochi2d.core.mesh;
 import inochi2d.core.render.state;
 import inochi2d.core.format; // TODO: Replace
 import inochi2d.core.math.simd;
+import inochi2d.core.math.trig;
 import numem;
 import inmath;
 
@@ -30,32 +31,52 @@ struct VtxData {
 class Mesh : NuRefCounted {
 private:
 @nogc:
-    VtxData[]   _vtx;
-    uint[]      _idx;
-    vec2[]      _vto;
+    VtxData[]   vtx_;
+    uint[]      idx_;
+    vec2[]      vto_;
 
 public:
 
     /**
         The points of the vertices of the mesh.
     */
-    @property vec2[] points() => _vto[0..$];
+    @property vec2[] points() => vto_[0..$];
 
     /**
         The vertex data stored in the mesh.
     */
-    @property VtxData[] vertices() => _vtx[0..$];
+    @property VtxData[] vertices() => vtx_[0..$];
 
     /**
         The index data stored in the mesh.
     */
-    @property uint[] indices() => _idx[0..$];
+    @property uint[] indices() => idx_[0..$];
+
+    /**
+        How many vertices are in the mesh.
+    */
+    @property uint vertexCount() => cast(uint)vtx_.length;
+
+    /**
+        How many indices are in the mesh.
+    */
+    @property uint elementCount() => cast(uint)idx_.length;
+
+    /**
+        How many triangles are in the mesh.
+    */
+    @property uint triangleCount() => cast(uint)(idx_.length/3);
+
+    /**
+        Bounds of the deformed mesh.
+    */
+    @property rect bounds() => vto_.getBounds();
 
     // Destructor
     ~this() {
-        nu_freea(_vtx);
-        nu_freea(_idx);
-        nu_freea(_vto);
+        nu_freea(vtx_);
+        nu_freea(idx_);
+        nu_freea(vto_);
     }
 
     /**
@@ -68,12 +89,12 @@ public:
         structure.
     */
     this(MeshData meshData) {
-        this._vtx = nu_malloca!VtxData(meshData.vertices.length);
-        this._idx = meshData.indices.nu_dup();
-        this._vto = meshData.vertices.nu_dup();
+        this.vtx_ = nu_malloca!VtxData(meshData.vertices.length);
+        this.idx_ = meshData.indices.nu_dup();
+        this.vto_ = meshData.vertices.nu_dup();
 
-        foreach(i; 0.._vtx.length) {
-            this._vtx[i] = VtxData(meshData.vertices[i], meshData.uvs[i]);
+        foreach(i; 0..vtx_.length) {
+            this.vtx_[i] = VtxData(meshData.vertices[i], meshData.uvs[i]);
         }
     }
 
@@ -93,10 +114,49 @@ public:
     */
     Mesh clone() {
         Mesh result = nogc_new!Mesh();
-        result._vtx = this._vtx.nu_dup();
-        result._idx = this._idx.nu_dup();
-        result._vto = this._vto.nu_dup();
+        result.vtx_ = this.vtx_.nu_dup();
+        result.idx_ = this.idx_.nu_dup();
+        result.vto_ = this.vto_.nu_dup();
         return result;
+    }
+
+    /**
+        Gets the triangle in the mesh at the given offset.
+
+        Params:
+            offset = The offset into the mesh.
+
+        Returns:
+            The requested triangle.
+    */
+    Triangle getTriangle(uint offset) {
+        if (offset > idx_.length/3)
+            return Triangle.init;
+        
+        return Triangle(
+            vto_[idx_[(offset*3)+0]], 
+            vto_[idx_[(offset*3)+1]], 
+            vto_[idx_[(offset*3)+2]]
+        );
+    }
+
+    /**
+        Gets an array of every triangle in the mesh.
+
+        Returns:
+            A nogc array of triangles that you must free
+            yourself with $(D nu_freea).
+    */
+    Triangle[] getTriangles() {
+        Triangle[] tris = nu_malloca!Triangle(triangleCount);
+        foreach(i; 0..tris.length) {
+            tris[i] = Triangle(
+                vto_[idx_[(i*3)+0]], 
+                vto_[idx_[(i*3)+1]], 
+                vto_[idx_[(i*3)+2]]
+            );
+        }
+        return tris;
     }
 
     /**
@@ -146,6 +206,26 @@ public:
     */
     @property uint[] indices() => parent.indices;
 
+    /**
+        How many vertices are in the mesh.
+    */
+    @property uint vertexCount() => cast(uint)deformed_.length;
+
+    /**
+        How many indices are in the mesh.
+    */
+    @property uint elementCount() => cast(uint)parent_.idx_.length;
+
+    /**
+        How many triangles are in the mesh.
+    */
+    @property uint triangleCount() => cast(uint)(parent_.idx_.length/3);
+
+    /**
+        Bounds of the deformed mesh.
+    */
+    @property rect bounds() => delta_.getBounds();
+
     // Destructor
     ~this() {
         nu_freea(deformed_);
@@ -163,13 +243,37 @@ public:
     }
 
     /**
+        Constructs a new empty DeformedMesh
+    */
+    this() { }
+
+    /**
         Deform the mesh by the given amount.
+
+        Params:
+            by =        The deltas to deform the mesh by
     */
     void deform(vec2[] by) {
-        foreach(i; 0..deformed_.length) {
+        foreach(i; 0..delta_.length) {
             delta_[i] += by[i];
             deformed_[i].vtx = delta_[i];
         }
+    }
+
+    /**
+        Deforms a single vertex within the mesh by the 
+        given amount.
+
+        Params:
+            offset =    Offset into the mesh to deform.
+            by =        The delta to deform the mesh by
+    */
+    void deform(size_t offset, vec2 by) {
+        if (offset >= delta_.length)
+            return;
+
+        delta_[offset] += by;
+        deformed_[offset].vtx = delta_[offset];
     }
 
     /**
@@ -186,11 +290,30 @@ public:
     }
 
     /**
+        Gets an array of every triangle in the mesh.
+
+        Returns:
+            A nogc array of triangles that you must free
+            yourself with $(D nu_freea).
+    */
+    Triangle[] getTriangles() {
+        Triangle[] tris = nu_malloca!Triangle(triangleCount);
+        foreach(i; 0..tris.length) {
+            tris[i] = Triangle(
+                delta_[parent_.idx_[(i*3)+0]], 
+                delta_[parent_.idx_[(i*3)+1]], 
+                delta_[parent_.idx_[(i*3)+2]]
+            );
+        }
+        return tris;
+    }
+
+    /**
         Resets the deformation.
     */
     void reset() {
-        this.deformed_[0..$] = parent_.vertices[0..$];
-        this.delta_[0..$] = parent_.points[0..$];
+        this.deformed_[0..$] = parent_.vtx_[0..$];
+        this.delta_[0..$] = parent_.vto_[0..$];
     }
 }
 
@@ -261,4 +384,24 @@ MeshData toMeshData(Mesh mesh) {
         data.uvs[i] = mesh.vertices[i].uv;
     }
     return data;
+}
+
+/**
+    Calculates bounding box of a mesh.
+
+    Params:
+        mesh = The mesh to get the bounds for.
+
+    Returns:
+        A rectangle enclosing the mesh.
+*/
+rect getBounds(vec2[] mesh) @nogc nothrow pure {
+    vec2 minp = vec2(float.max, float.max);
+    vec2 maxp = vec2(-float.max, -float.max);
+
+    foreach(i; 0..mesh.length) {
+        minp = vec2(min(minp.x, mesh[i].x), min(minp.y, mesh[i].y));
+        maxp = vec2(max(maxp.x, mesh[i].x), max(maxp.y, mesh[i].y));
+    }
+    return rect(minp.x, minp.y, maxp.x-minp.x, maxp.y-minp.y);
 }

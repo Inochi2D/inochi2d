@@ -9,6 +9,7 @@
 module inochi2d.core.nodes.deformer;
 import inochi2d.core.nodes;
 import inochi2d.core.math;
+import inochi2d.core;
 import nulib;
 import numem;
 
@@ -26,15 +27,22 @@ public import inochi2d.core.nodes.deformer.latticedeformer;
 abstract
 class Deformer : Node, IDeformable {
 private:
+    bool legacyMode_;
+
     void scanPartsRecurse(Node node) {
 
         // Don't need to scan null nodes
         if (node is null) return;
 
+        // NOTE:    Backwards compatibility mode does not allow
+        //          MeshGroup instances to be nested.
+        if (legacyMode_ && cast(Deformer)node)
+            return;
+
         // Do the main check
         if (IDeformable deformable = cast(IDeformable)node)
             toDeform ~= deformable;
-    
+        
         foreach(child; node.children) {
             scanPartsRecurse(child);
         }
@@ -46,6 +54,20 @@ protected:
         A list of the nodes to deform.
     */
     IDeformable[] toDeform;
+    /**
+        Allows serializing self data (with pretty serializer)
+    */
+    override
+    void onSerialize(ref JSONValue object, bool recursive=true) {
+        super.onSerialize(object, recursive);
+        object["legacyMode"] = legacyMode_;
+    }
+
+    override
+    void onDeserialize(ref JSONValue object) {
+        super.onDeserialize(object);
+        this.legacyMode_ = object.tryGet!bool("legacyMode", true);
+    }
 
     /**
         Finalizes the deformer.
@@ -57,6 +79,15 @@ protected:
     }
 
 public:
+
+    /**
+        Whether deformers should act like MeshGroup when selecting
+        nodes to deform.
+    */
+    final @property bool legacyMode() => legacyMode_;
+    final @property void legacyMode(bool value) {
+        this.legacyMode_ = value;
+    }
 
     ~this() { }
 
@@ -81,17 +112,26 @@ public:
     /**
         Local matrix of the deformable object.
     */
-    override @property mat4 localMatrix() => transform.matrix;
+    override @property mat4 localMatrix() => localTransform.matrix;
 
     /**
         World matrix of the deformable object.
     */
-    override @property mat4 worldMatrix() => globalTransform.matrix;
+    override @property mat4 worldMatrix() => transform!false.matrix;
 
     /**
         The points which may be deformed by the deformer.
     */
     override @property vec2[] deformPoints() => controlPoints();
+
+    /**
+        Deforms the IDeformable.
+
+        Params:
+            deformed =  The deformation delta.
+            absolute =  Whether the deformation is absolute,
+                        replacing the original deformation.
+    */
     override void deform(vec2[] deformed, bool absolute) {
         import nulib.math : min;
         
@@ -100,6 +140,25 @@ public:
             deformPoints[0..m] = deformed[0..m];
         else
             deformPoints[0..m] += deformed[0..m];
+    }
+    
+    /**
+        Deforms a single vertex in the IDeformable
+
+        Params:
+            offset =    The offset into the point list to deform.
+            deform =    The deformation delta.
+            absolute =  Whether the deformation is absolute,
+                        replacing the original deformation.
+    */
+    override void deform(size_t offset, vec2 deform, bool absolute = false) {
+        if (offset >= deformPoints.length)
+            return;
+        
+        if (absolute)
+            deformPoints[offset] = deform;
+        else
+            deformPoints[offset] += deform;
     }
 
     /**

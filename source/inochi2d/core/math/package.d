@@ -24,6 +24,7 @@ import std.json;
 import numem;
 
 public import inochi2d.core.math.deform;
+public import inochi2d.core.math.trig;
 
 /**
     A camera
@@ -221,26 +222,6 @@ public:
 private:
     mat4 trs = mat4.identity;
 }
-
-
-bool isPointInTriangle(vec2 pt, vec2[3] triangle) {
-    float sign (ref vec2 p1, ref vec2 p2, ref vec2 p3) {
-        return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
-    }
-    vec2 p1 = triangle[0];
-    vec2 p2 = triangle[1];
-    vec2 p3 = triangle[2];
-
-    auto d1 = sign(pt, p1, p2);
-    auto d2 = sign(pt, p2, p3);
-    auto d3 = sign(pt, p3, p1);
-
-    auto hasNeg = (d1 < 0) || (d2 < 0) || (d3 < 0);
-    auto hasPos = (d1 > 0) || (d2 > 0) || (d3 > 0);
-
-    return !(hasNeg && hasPos);
-}
-
 
 int[] findSurroundingTriangle(vec2 pt, ref MeshData bindingMesh) {
     bool isPointInTriangle(vec2 pt, int[] triangle) {

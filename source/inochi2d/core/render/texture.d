@@ -260,6 +260,19 @@ public:
     }
 
     /**
+        Dumps the image data to the specified file.
+
+        Params:
+            file = The file to dump the texture data to.
+    */
+    void dump(string file) {
+        import imagefmt : write_image;
+        if (data.length > 0) {
+            write_image(file, width, height, cast(ubyte[])data, 4);
+        }
+    }
+
+    /**
         Pads the texture with a 1-pixel wide border.
 
         Params:
@@ -286,19 +299,6 @@ public:
         this.data = newData;
         this.width = width+totalPad;
         this.height = height+totalPad;
-    }
-
-    /**
-        Dumps the image data to the specified file.
-
-        Params:
-            file = The file to dump the texture data to.
-    */
-    void dump(string file) {
-        import imagefmt : write_image;
-        if (data.length > 0) {
-            write_image(file, width, height, cast(ubyte[])data, 4);
-        }
     }
 
     /**

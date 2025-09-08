@@ -97,7 +97,7 @@ public:
     /**
         The node's GUID.
     */
-    @property GUID guid() => guid_;
+    @property GUID guid() @nogc nothrow pure => guid_;
 
     /**
         Whether the node is enabled for rendering
@@ -106,36 +106,36 @@ public:
 
         This happens recursively
     */
-    @property bool renderEnabled() => parent ? (!parent.renderEnabled ? false : enabled) : enabled;
+    @property bool renderEnabled() @nogc nothrow pure => parent ? (!parent.renderEnabled ? false : enabled) : enabled;
 
     /**
         The relative Z sorting
     */
-    @property ref float relZSort() => zsort_;
+    @property ref float relZSort() @nogc nothrow pure => zsort_;
 
     /**
         The basis zSort offset.
     */
-    @property float zSortBase() => parent !is null ? parent.zSort() : 0;
+    @property float zSortBase() @nogc nothrow pure => parent !is null ? parent.zSort() : 0;
 
     /**
         The Z sorting without parameter offsets
     */
-    @property float zSortNoOffset() => zSortBase + relZSort;
+    @property float zSortNoOffset() @nogc nothrow pure => zSortBase + relZSort;
 
     /**
         The Z sorting
     */
-    @property float zSort() => zSortBase + relZSort + offsetSort;
-    @property void zSort(float value) {
+    @property float zSort() @nogc nothrow pure => zSortBase + relZSort + offsetSort;
+    @property void zSort(float value) @nogc nothrow pure {
         zsort_ = value;
     }
 
     /**
         Lock translation to root
     */
-    @property bool lockToRoot() => lockToRoot_;
-    @property void lockToRoot(bool value) {
+    @property bool lockToRoot() @nogc nothrow pure => lockToRoot_;
+    @property void lockToRoot(bool value) @nogc {
         
         // Automatically handle converting lock space and proper world space.
         if (value && !lockToRoot_) {
@@ -182,12 +182,11 @@ public:
     /**
         The transform in world space
     */
-    Transform transform(bool ignoreParam=false)() {
-        if (recalculateTransform) {
-            localTransform.update();
-            offsetTransform.update();
-
-            static if (!ignoreParam) {
+    Transform transform(bool ignoreParam=false)() @nogc {
+        static if (!ignoreParam) {
+            if (recalculateTransform) {
+                localTransform.update();
+                offsetTransform.update();
                 if (lockToRoot_)
                     globalTransform = localTransform.calcOffset(offsetTransform) * puppet.root.localTransform;
                 else if (parent !is null)
@@ -196,26 +195,26 @@ public:
                     globalTransform = localTransform.calcOffset(offsetTransform);
 
                 recalculateTransform = false;
-            } else {
-
-                if (lockToRoot_)
-                    globalTransform = localTransform * puppet.root.localTransform;
-                else if (parent !is null)
-                    globalTransform = localTransform * parent.transform();
-                else
-                    globalTransform = localTransform;
-
-                recalculateTransform = false;
             }
-        }
+            return globalTransform;
 
-        return globalTransform;
+        } else {
+            Transform mts;
+            if (lockToRoot_)
+                mts = localTransform * puppet.root.localTransform;
+            else if (parent !is null)
+                mts = localTransform * parent.transform();
+            else
+                mts = localTransform;
+            
+            return mts;
+        }
     }
 
     /**
         The transform in world space without locking
     */
-    Transform transformLocal() {
+    Transform transformLocal() @nogc {
         localTransform.update();
         
         return localTransform.calcOffset(offsetTransform);
@@ -224,12 +223,30 @@ public:
     /**
         The transform in world space without locking
     */
-    Transform transformNoLock() {
+    Transform transformNoLock() @nogc {
         localTransform.update();
         
         if (parent !is null) return localTransform * parent.transform();
         return localTransform;
     }
+
+    /**
+        Gets a list of this node's children
+    */
+    final @property Node[] children() @nogc nothrow pure => children_;
+
+    /**
+        The parent of this node
+    */
+    final @property Node parent() @nogc nothrow pure => parent_;
+    final @property void parent(Node node) {
+        this.insertInto(node, OFFSET_END);
+    }
+
+    /**
+        The puppet this node is attached to
+    */
+    final @property Puppet puppet() @nogc nothrow pure => parent_ !is null ? parent_.puppet : puppet_;
 
     /**
         Calculates the relative position between 2 nodes and applies the offset.
@@ -299,28 +316,6 @@ public:
             parent = parent.parent;
         }
         return depthV;
-    }
-
-    /**
-        Gets a list of this node's children
-    */
-    final Node[] children() {
-        return children_;
-    }
-
-    /**
-        The parent of this node
-    */
-    final @property Node parent() => parent_;
-    final @property void parent(Node node) {
-        this.insertInto(node, OFFSET_END);
-    }
-
-    /**
-        The puppet this node is attached to
-    */
-    final Puppet puppet() {
-        return parent_ !is null ? parent_.puppet : puppet_;
     }
 
     /**
