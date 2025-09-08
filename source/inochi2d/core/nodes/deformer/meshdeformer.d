@@ -26,15 +26,7 @@ private:
     Mesh mesh_;
     DeformedMesh base_;
     DeformedMesh deformed_;
-    BlendWeight[][] weights_;
     vec2[] deformDeltas_;
-
-    void clearWeights() {
-        foreach(i; 0..weights_.length) {
-            nu_freea(weights_[i]);
-        }
-        nu_freea(weights_);
-    }
 
 protected:
     /**
@@ -62,7 +54,7 @@ public:
     /**
         The mesh
     */
-    @property Mesh mesh() => mesh_;
+    @property Mesh mesh() @nogc => mesh_;
     final @property void mesh(Mesh value) @nogc {
         if (value is mesh_)
             return;
@@ -83,8 +75,8 @@ public:
     /**
         The control points of the deformer.
     */
-    override @property vec2[] controlPoints() => deformed_.points;
-    override @property void controlPoints(vec2[] value) {
+    override @property vec2[] controlPoints() @nogc => deformed_.points;
+    override @property void controlPoints(vec2[] value) @nogc {
         import nulib.math : min;
 
         size_t m = min(value.length, deformed_.points.length);
@@ -94,18 +86,18 @@ public:
     /**
         The base position of the deformable's points, in world space.
     */
-    override @property const(vec2)[] basePoints() => base_.points;
+    override @property const(vec2)[] basePoints() @nogc => base_.points;
 
     /**
         The points which may be deformed by a deformer, in world space.
     */
-    override @property vec2[] deformPoints() => deformed_.points;
+    override @property vec2[] deformPoints() @nogc => deformed_.points;
 
     // Destructor
     ~this() {
         nu_freea(deformDeltas_);
         nogc_delete(deformed_);
-        this.clearWeights();
+        nogc_delete(base_);
         mesh_.release();
     }
 
@@ -165,75 +157,44 @@ public:
         // Use the weights to deform each subpoint by a delta determined
         // by the weight to each vertex in their triangle.
         foreach(i, mesh; toDeform) {
-            if (weights_[i].length == 0)
-                continue;
-
             foreach(j; 0..mesh.deformPoints.length) {
-                BlendWeight weight = weights_[i][j];
-                vec2 dfDelta = -(
-                    (deformDeltas_[weight.indices[0]]*weight.weights.x) +
-                    (deformDeltas_[weight.indices[1]]*weight.weights.y) +
-                    (deformDeltas_[weight.indices[2]]*weight.weights.z)
-                );
-                mesh.deform(j, dfDelta);
-            }
-        }
-    }
+                vec2 mp = mesh.deformPoints[j];
 
-    override
-    void rescan() {
-        super.rescan();
+                foreach(k; 0..deformed_.elementCount/3) {
+                    uint[3] idx = [
+                        mesh_.indices[(k*3)+0],
+                        mesh_.indices[(k*3)+1],
+                        mesh_.indices[(k*3)+2],
+                    ];
+                    Triangle tri = Triangle(
+                        base_.points[idx[0]],
+                        base_.points[idx[1]],
+                        base_.points[idx[2]],
+                    );
 
-        base_.reset();
-        base_.pushMatrix(transform!true.matrix);
+                    // Do some cheaper checks first.
+                    float minX = min(tri.p1.x, tri.p2.x, tri.p3.x);
+                    float maxX = max(tri.p1.x, tri.p2.x, tri.p3.x);
+                    float minY = min(tri.p1.y, tri.p2.y, tri.p3.y);
+                    float maxY = max(tri.p1.y, tri.p2.y, tri.p3.y);
+                    if (!(minX < mp.x && maxX > mp.x) && 
+                        !(minY < mp.y && maxY > mp.y))
+                        continue;
 
-        // Clear weights lists.
-        if (weights_.length < toDeform.length) {
-            weights_ = weights_.nu_resize(toDeform.length);
-            nogc_zeroinit(weights_[0..$]);
-        }
+                    // Expensive check and barycentric coordinates.
+                    vec3 bc = tri.barycentric(mp);
+                    if (bc.x < 0 || bc.y < 0 || bc.z < 0)
+                        continue;
 
-        // Use barycentric coordinates of triangles to calculate
-        // weights for deformed points.
-        Triangle[] tris = base_.getTriangles();
-        foreach(i, df; toDeform) {
-
-            // Reset all the data in the weights.
-            weights_[i] = weights_[i].nu_resize(df.deformPoints.length);
-            weights_[i][0..$] = BlendWeight.init;
-
-            mat4 baseTransformMat = df.baseTransform.matrix;
-            foreach(j; 0..df.deformPoints.length) {
-
-                // NOTE:    IDeformable doesn't have the internal mesh reference
-                //          so instead we just multiply the point with their world
-                //          matrix. 
-                vec2 wpt = (baseTransformMat * vec4(df.basePoints[j], 0, 1)).xy;
-                foreach(k, ref tri; tris) {
-                    vec3 bc = tri.barycentric(wpt);
-                    if (bc.x > 0 && bc.y > 0 && bc.z > 0) {
-                        weights_[i][j] = BlendWeight(
-                            [
-                                mesh_.indices[(k*3)+0],
-                                mesh_.indices[(k*3)+1],
-                                mesh_.indices[(k*3)+2],
-                            ], 
-                            bc
-                        );
-                        break;
-                    }
+                    mesh.deform(j, -(
+                        (deformDeltas_[idx[0]]*bc.x) +
+                        (deformDeltas_[idx[1]]*bc.y) +
+                        (deformDeltas_[idx[2]]*bc.z)
+                    ));
+                    break;
                 }
             }
         }
-        nu_freea(tris);
     }
 }
 mixin Register!(MeshDeformer, in_node_registry);
-
-/**
-    Weights for meshes
-*/
-struct BlendWeight {
-    uint[3] indices = [0, 0, 0];
-    vec3 weights = vec3(0, 0, 0);
-}

@@ -27,24 +27,17 @@ public import inochi2d.core.nodes.deformer.latticedeformer;
 abstract
 class Deformer : Node, IDeformable {
 private:
-    bool legacyMode_;
-
     void scanPartsRecurse(Node node) {
 
         // Don't need to scan null nodes
         if (node is null) return;
-
-        // NOTE:    Backwards compatibility mode does not allow
-        //          MeshGroup instances to be nested.
-        if (legacyMode_ && cast(Deformer)node)
-            return;
 
         // Do the main check
         if (IDeformable deformable = cast(IDeformable)node)
             toDeform ~= deformable;
         
         foreach(child; node.children) {
-            scanPartsRecurse(child);
+            this.scanPartsRecurse(child);
         }
     }
 
@@ -60,13 +53,11 @@ protected:
     override
     void onSerialize(ref JSONValue object, bool recursive=true) {
         super.onSerialize(object, recursive);
-        object["legacyMode"] = legacyMode_;
     }
 
     override
     void onDeserialize(ref JSONValue object) {
         super.onDeserialize(object);
-        this.legacyMode_ = object.tryGet!bool("legacyMode", true);
     }
 
     /**
@@ -80,15 +71,6 @@ protected:
 
 public:
 
-    /**
-        Whether deformers should act like MeshGroup when selecting
-        nodes to deform.
-    */
-    final @property bool legacyMode() => legacyMode_;
-    final @property void legacyMode(bool value) {
-        this.legacyMode_ = value;
-    }
-
     ~this() { }
 
     /**
@@ -101,28 +83,28 @@ public:
     /**
         The control points of the deformer.
     */
-    abstract @property vec2[] controlPoints();
-    abstract @property void controlPoints(vec2[] value);
+    abstract @property vec2[] controlPoints() @nogc;
+    abstract @property void controlPoints(vec2[] value) @nogc;
 
     /**
         The base position of the deformable's points.
     */
-    abstract @property const(vec2)[] basePoints();
+    abstract @property const(vec2)[] basePoints() @nogc;
 
     /**
         Local matrix of the deformable object.
     */
-    override @property Transform baseTransform() => transform!true;
+    override @property Transform baseTransform() @nogc => transform!true;
 
     /**
         World matrix of the deformable object.
     */
-    override @property Transform worldTransform() => transform!false;
+    override @property Transform worldTransform() @nogc => transform!false;
 
     /**
         The points which may be deformed by the deformer.
     */
-    override @property vec2[] deformPoints() => controlPoints();
+    override @property vec2[] deformPoints() @nogc => controlPoints();
 
     /**
         Deforms the IDeformable.

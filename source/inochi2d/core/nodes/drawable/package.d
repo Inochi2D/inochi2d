@@ -35,6 +35,7 @@ abstract class Drawable : Node, IDeformable {
 private:
     Mesh mesh_;
     DeformedMesh deformed_;
+    DeformedMesh base_;
 
 protected:
 
@@ -58,8 +59,10 @@ protected:
     override
     void onDeserialize(ref JSONValue object) {
         super.onDeserialize(object);
-        this.mesh_ = Mesh.fromMeshData(object.tryGet!MeshData("mesh"));
-        this.deformed_ = nogc_new!DeformedMesh(mesh_);
+
+        this.deformed_ = nogc_new!DeformedMesh();
+        this.base_ = nogc_new!DeformedMesh();
+        this.mesh = Mesh.fromMeshData(object.tryGet!MeshData("mesh"));
     }
 
 public:
@@ -77,22 +80,23 @@ public:
 
         this.mesh_ = value.retained();
         this.deformed_.parent = value;
+        this.base_.parent = value;
     }
 
     /**
         Local matrix of the deformable object.
     */
-    override @property Transform baseTransform() => transform!true;
+    override @property Transform baseTransform() @nogc => transform!true;
 
     /**
         World matrix of the deformable object.
     */
-    override @property Transform worldTransform() => transform!false;
+    override @property Transform worldTransform() @nogc => transform!false;
 
     /**
         The base position of the deformable's points.
     */
-    @property const(vec2)[] basePoints() => mesh_.points;
+    @property const(vec2)[] basePoints() => base_.points;
 
     /**
         The points which may be deformed by the deformer.
@@ -125,8 +129,9 @@ public:
     this(MeshData data, GUID guid, Node parent = null) {
         super(guid, parent);
         
-        this.mesh_ = Mesh.fromMeshData(data);
-        this.deformed_ = nogc_new!DeformedMesh(mesh_);
+        this.deformed_ = nogc_new!DeformedMesh();
+        this.base_ = nogc_new!DeformedMesh();
+        this.mesh = Mesh.fromMeshData(data);
     }
 
     /**
@@ -172,6 +177,9 @@ public:
     override
     void resetDeform() {
         deformed_.reset();
+        
+        base_.reset();
+        base_.pushMatrix(baseTransform.matrix);
     }
 
     /**

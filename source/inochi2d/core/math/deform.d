@@ -18,23 +18,23 @@ public:
     /**
         The base position of the deformable's points.
     */
-    @property const(vec2)[] basePoints();
+    @property const(vec2)[] basePoints() @nogc;
 
     /**
         The points which may be deformed by the deformer.
     */
-    @property vec2[] deformPoints();
+    @property vec2[] deformPoints() @nogc;
 
     /**
         The base transform of the object before any 
         parameters have been applied.
     */
-    @property Transform baseTransform();
+    @property Transform baseTransform() @nogc;
 
     /**
         World transform of the deformable object.
     */
-    @property Transform worldTransform();
+    @property Transform worldTransform() @nogc;
 
     /**
         Deforms the IDeformable.
