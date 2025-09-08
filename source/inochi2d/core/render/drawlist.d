@@ -48,6 +48,15 @@ private:
 
 public:
 
+    // Destructor
+    ~this() {
+        _cmds.clear();
+        _vtxs.clear();
+        _idxs.clear();
+        _allocs.clear();
+        _targetsStack.clear();   
+    }
+
     /**
         Whether to use base vertex specification.
     */
@@ -111,6 +120,7 @@ public:
         _vtxp += vtx.length;
         _idxp += idx.length;
 
+        _call.allocId = _allp;
         _call.idxCount = cast(uint)idx.length;
         _call.vtxCount = cast(uint)vtx.length;
 
@@ -181,6 +191,7 @@ public:
     void setMesh(DrawListAlloc* alloc) {
         if (!alloc) return;
         
+        _ccmd.allocId = alloc.allocId;
         _ccmd.idxOffset = alloc.idxOffset;
         _ccmd.vtxOffset = alloc.vtxOffset;
         _ccmd.elemCount = alloc.idxCount;
@@ -249,6 +260,11 @@ struct DrawListAlloc {
         Number of vertices.
     */
     uint vtxCount;
+
+    /**
+        Allocation ID.
+    */
+    uint allocId;
 }
 
 /**
@@ -317,6 +333,11 @@ struct DrawCmd {
         Masking mode to apply.
     */
     MaskingMode maskMode;
+
+    /**
+        Allocation ID.
+    */
+    uint allocId;
 
     /**
         Vertex offset.

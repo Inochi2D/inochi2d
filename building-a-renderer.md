@@ -16,9 +16,10 @@ struct DrawCmd {
     in_drawstate_t      state;
     in_blend_mode_t     blendMode;
     in_mask_mode_t      maskMode;
+    uint32_t            allocId;
     uint32_t            vtxOffset;
     uint32_t            idxOffset;
-    uint                type;
+    uint32_t            type;
     void[64]            vars;
 }
 ```

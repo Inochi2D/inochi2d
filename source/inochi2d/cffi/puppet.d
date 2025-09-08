@@ -105,6 +105,8 @@ void in_puppet_free(in_puppet_t* obj) {
     import core.memory : GC;
     if (obj) {
         GC.removeRoot(cast(void*)obj);
+        assumeNoGC(&destroy!(false, Puppet), cast(Puppet)obj);
+        GC.free(obj);
     }
 }
 

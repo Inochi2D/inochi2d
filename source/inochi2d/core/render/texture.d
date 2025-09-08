@@ -202,11 +202,15 @@ public:
             case TextureFormat.rgba8Unorm:
                 ubyte[] dataView = cast(ubyte[])data;
                 foreach(i; 0..data.length/4) {
-
                     size_t offsetPixel = (i*4);
-                    dataView[offsetPixel+0] = cast(ubyte)((cast(int)dataView[offsetPixel+0] * cast(int)dataView[offsetPixel+3])/255);
-                    dataView[offsetPixel+1] = cast(ubyte)((cast(int)dataView[offsetPixel+1] * cast(int)dataView[offsetPixel+3])/255);
-                    dataView[offsetPixel+2] = cast(ubyte)((cast(int)dataView[offsetPixel+2] * cast(int)dataView[offsetPixel+3])/255);
+
+                    float r = (cast(float)dataView[offsetPixel+0]/255.0) * (cast(float)dataView[offsetPixel+3]/255.0);
+                    float g = (cast(float)dataView[offsetPixel+1]/255.0) * (cast(float)dataView[offsetPixel+3]/255.0);
+                    float b = (cast(float)dataView[offsetPixel+2]/255.0) * (cast(float)dataView[offsetPixel+3]/255.0);
+
+                    dataView[offsetPixel+0] = cast(ubyte)(r*255.0);
+                    dataView[offsetPixel+1] = cast(ubyte)(g*255.0);
+                    dataView[offsetPixel+2] = cast(ubyte)(b*255.0);
                 }
                 return;
             
@@ -215,6 +219,68 @@ public:
             case TextureFormat.r8:
                 return;
         }
+    }
+
+    /**
+        Un-premultiplies incoming color data.
+    */
+    void unpremultiply() {
+        final switch(format) {
+            case TextureFormat.rgba8Unorm:
+                ubyte[] dataView = cast(ubyte[])data;
+                foreach(i; 0..data.length/4) {
+
+                    size_t offsetPixel = (i*4);
+
+                    // Ensure no divide by zero happens.
+                    if (cast(float)dataView[offsetPixel+3] == 0) {
+                        dataView[offsetPixel..offsetPixel+3] = 0;
+                        continue;
+                    }
+
+                    float r = (cast(float)dataView[offsetPixel+0]/255.0) / (cast(float)dataView[offsetPixel+3]/255.0);
+                    float g = (cast(float)dataView[offsetPixel+1]/255.0) / (cast(float)dataView[offsetPixel+3]/255.0);
+                    float b = (cast(float)dataView[offsetPixel+2]/255.0) / (cast(float)dataView[offsetPixel+3]/255.0);
+                    dataView[offsetPixel+0] = cast(ubyte)(r*255.0);
+                    dataView[offsetPixel+1] = cast(ubyte)(g*255.0);
+                    dataView[offsetPixel+2] = cast(ubyte)(b*255.0);
+                }
+                return;
+            
+            case TextureFormat.none:
+            case TextureFormat.depthStencil:
+            case TextureFormat.r8:
+                return;
+        }
+    }
+
+    /**
+        Pads the texture with a 1-pixel wide border.
+
+        Params:
+            thickness = The border thickness to generate.
+    */
+    void pad(uint thickness) {
+        if (data.length == 0)
+            return;
+
+        uint totalPad = thickness*2;
+        ubyte[] newData = nu_malloca!ubyte((width+totalPad)*(height+totalPad)*channels);
+        newData[0..$] = 0;
+
+        size_t srcStride = width*channels;
+        size_t dstStride = (width+totalPad)*channels;
+        foreach(y; 0..height) {
+            size_t start = (dstStride*(y+thickness))+(thickness*channels);
+            size_t end = start + srcStride;
+            newData[start..end] = cast(ubyte[])data[srcStride*y..(srcStride*y)+srcStride];
+        }
+
+        // Update the texture
+        nu_freea(data);
+        this.data = newData;
+        this.width = width+totalPad;
+        this.height = height+totalPad;
     }
 
     /**

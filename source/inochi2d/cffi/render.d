@@ -131,13 +131,34 @@ void in_texture_flip_vertically(in_texture_t* obj) {
 }
 
 /**
-    Pre-multiplies the alpha channel of the texture.
+    Premultiplies the alpha channel of the texture.
 
     Params:
         obj = The texture object.
 */
 void in_texture_premultiply(in_texture_t* obj) {
     (cast(Texture)obj).data.premultiply();
+}
+
+/**
+    Un-premultiplies the alpha channel of the texture.
+
+    Params:
+        obj = The texture object.
+*/
+void in_texture_unpremultiply(in_texture_t* obj) {
+    (cast(Texture)obj).data.unpremultiply();
+}
+
+/**
+    Pads the texture with a border.
+
+    Params:
+        obj =       The texture object.
+        thickness = Thickness of the border in pixels.
+*/
+void in_texture_pad(in_texture_t* obj, uint thickness) {
+    (cast(Texture)obj).data.pad(thickness);
 }
 
 /**
@@ -210,6 +231,7 @@ struct in_drawcmd_t {
     in_drawstate_t                      state;
     in_blend_mode_t                     blendMode;
     in_mask_mode_t                      maskMode;
+    uint                                allocId;
     uint                                vtxOffset;
     uint                                idxOffset;
     uint                                elemCount;
@@ -225,6 +247,7 @@ struct in_drawalloc_t {
     uint idxOffset;
     uint idxCount;
     uint vtxCount;
+    uint allocId;
 }
 
 /**
