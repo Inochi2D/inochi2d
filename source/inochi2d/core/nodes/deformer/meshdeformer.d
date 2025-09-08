@@ -18,7 +18,6 @@ import numem;
 
 /**
     A deformer which deforms child nodes stored within it,
-
 */
 @TypeId("MeshGroup", 0x0102)
 class MeshDeformer : Deformer {

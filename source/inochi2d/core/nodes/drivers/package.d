@@ -28,28 +28,43 @@ protected:
     }
 
 public:
-    override
-    void preUpdate(DrawList drawList) {
-        super.preUpdate(drawList);
-    }
 
-    override
-    void update(float delta, DrawList drawList) {
-        super.update(delta, drawList);
-    }
+    /**
+        The affected parameters of the driver.
+    */
+    @property Parameter[] affectedParameters() => null;
 
-    Parameter[] getAffectedParameters() {
-        return [];
-    }
+    /**
+        Gets whether the given parameter is affected by
+        this driver.
 
+        Params:
+            param = The parameter to query.
+        
+        Returns:
+            $(D true) if the parameter is affected by 
+            the driver, $(D false) otherwise.
+    */
     final
     bool affectsParameter(ref Parameter param) {
-        foreach(ref Parameter p; getAffectedParameters()) {
-            if (p.guid == param.guid) return true;
+        foreach(ref Parameter p; this.affectedParameters) {
+            if (p.guid == param.guid)
+                return true;
         } 
         return false;
     }
 
+    /**
+        Updates the state of the driver.
+
+        Params:
+            delta = Time since the last frame.
+    */
+    abstract void updateDriver(float delta);
+
+    /**
+        Resets the driver's state.
+    */
     abstract void reset();
 }
 mixin Register!(Driver, in_node_registry);

@@ -50,10 +50,10 @@ protected:
     override
     void eval(float t) {
         setD(angle, dAngle);
-        float lengthRatio = driver.getGravity() / driver.getLength();
+        float lengthRatio = driver.finalGravity / driver.finalLength;
         float critDamp = 2 * sqrt(lengthRatio);
         float dd = -lengthRatio * sin(angle);
-        dd -= dAngle * driver.getAngleDamping() * critDamp;
+        dd -= dAngle * driver.finalAngleDamping * critDamp;
         setD(dAngle, dd);
     }
 
@@ -62,7 +62,7 @@ public:
     this(SimplePhysics driver) {
         this.driver = driver;
 
-        bob = driver.anchor + vec2(0, driver.getLength());
+        bob = driver.anchor + vec2(0, driver.finalLength);
 
         addVariable(&angle);
         addVariable(&dAngle);
@@ -79,14 +79,14 @@ public:
 
         // Update the bob position at the new angle
         dBob = vec2(-sin(angle), cos(angle));
-        bob = driver.anchor + dBob * driver.getLength();
+        bob = driver.anchor + dBob * driver.finalLength;
 
         driver.output = bob;
     }
 
     override
     void updateAnchor() {
-        bob = driver.anchor + vec2(0, driver.getLength());
+        bob = driver.anchor + vec2(0, driver.finalLength);
     }
 }
 
@@ -103,16 +103,16 @@ protected:
         setD(bob, dBob);
 
         // These are normalized vs. mass
-        float springKsqrt = driver.getFrequency() * 2 * PI;
+        float springKsqrt = driver.finalFrequency * 2 * PI;
         float springK = springKsqrt ^^ 2;
 
-        float g = driver.getGravity();
-        float restLength = driver.getLength() - g / springK;
+        float g = driver.finalGravity;
+        float restLength = driver.finalLength - g / springK;
 
         vec2 offPos = bob - driver.anchor;
         vec2 offPosNorm = offPos.normalized;
 
-        float lengthRatio = driver.getGravity() / driver.getLength();
+        float lengthRatio = driver.finalGravity / driver.finalLength;
         float critDampAngle = 2 * sqrt(lengthRatio);
         float critDampLength = 2 * springKsqrt;
 
@@ -127,8 +127,8 @@ protected:
         );
 
         vec2 ddBobRot = -vec2(
-            dBobRot.x * driver.getAngleDamping() * critDampAngle,
-            dBobRot.y * driver.getLengthDamping() * critDampLength,
+            dBobRot.x * driver.finalAngleDamping * critDampAngle,
+            dBobRot.y * driver.finalLengthDamping * critDampLength,
         );
 
         vec2 ddBobDamping = vec2(
@@ -146,7 +146,7 @@ public:
     this(SimplePhysics driver) {
         this.driver = driver;
 
-        bob = driver.anchor + vec2(0, driver.getLength());
+        bob = driver.anchor + vec2(0, driver.finalLength);
 
         addVariable(&bob);
         addVariable(&dBob);
@@ -162,19 +162,17 @@ public:
 
     override
     void updateAnchor() {
-        bob = driver.anchor + vec2(0, driver.getLength());
+        bob = driver.anchor + vec2(0, driver.finalLength);
     }
 }
 
 /**
     Simple Physics Node
 */
-@TypeId("SimplePhysics", 0x0103)
+@TypeId("SimplePhysics", 0x00000103)
 class SimplePhysics : Driver {
 private:
 
-    GUID paramRef = GUID.nil;
-    Parameter param_;
     float offsetGravity = 1.0;
     float offsetLength = 0;
     float offsetFrequency = 1;
@@ -182,7 +180,13 @@ private:
     float offsetLengthDamping = 0.5;
     vec2 offsetOutputScale = vec2(1, 1);
 
+    GUID paramRef = GUID.nil;
+    PhysicsModel modelType_ = PhysicsModel.Pendulum;
+    Parameter param_;
+    vec2 output;
+
 protected:
+    PhysicsSystem system;
 
     /**
         Allows serializing self data (with pretty serializer)
@@ -209,26 +213,29 @@ protected:
         super.onDeserialize(object);
 
         this.paramRef = object.tryGetGUID("param", "target");
-        object.tryGetRef(modelType_, "model_type");
-        object.tryGetRef(mapMode, "map_mode");
-        object.tryGetRef(gravity, "gravity");
-        object.tryGetRef(length, "length");
-        object.tryGetRef(frequency, "frequency");
-        object.tryGetRef(angleDamping, "angle_damping");
-        object.tryGetRef(lengthDamping, "length_damping");
-        object.tryGetRef(outputScale, "output_scale");
-        object.tryGetRef(localOnly, "local_only");
+        object.tryGetRef(modelType_, "model_type", PhysicsModel.Pendulum);
+        object.tryGetRef(mapMode, "map_mode", ParamMapMode.AngleLength);
+        object.tryGetRef(gravity, "gravity", 1.0);
+        object.tryGetRef(length, "length", 100);
+        object.tryGetRef(frequency, "frequency", 1.0);
+        object.tryGetRef(angleDamping, "angle_damping", 0.5);
+        object.tryGetRef(lengthDamping, "length_damping", 0.5);
+        object.tryGetRef(outputScale, "output_scale", vec2(1, 1));
+        object.tryGetRef(localOnly, "local_only", false);
     }
 
     override
     void finalize() {
-        param_ = puppet.findParameter(paramRef);
+        this.param_ = puppet.findParameter(paramRef);
         super.finalize();
         reset();
     }
 
 public:
-    PhysicsModel modelType_ = PhysicsModel.Pendulum;
+
+    /**
+        The mapping between physics space and parameter space.
+    */
     ParamMapMode mapMode = ParamMapMode.AngleLength;
 
     /**
@@ -260,17 +267,80 @@ public:
         Length damping ratio
     */
     float lengthDamping = 0.5;
+
+    /**
+        Output scale
+    */
     vec2 outputScale = vec2(1, 1);
 
+    /**
+        Previous anchor
+    */
     vec2 prevAnchor = vec2(0, 0);
-    mat4 prevTransMat;
-    bool prevAnchorSet = false;
 
+    /**
+        Current anchor
+    */
     vec2 anchor = vec2(0, 0);
 
-    vec2 output;
+    /**
+        The parameter that the physics system affects.
+    */
+    @property Parameter param() => param_;
+    @property void param(Parameter p) {
+        this.param_ = p;
+        this.paramRef = param_ ? param_.guid : GUID.nil;
+    }
 
-    PhysicsSystem system;
+    /**
+        The physics model to apply.
+    */
+    @property PhysicsModel modelType() => modelType_;
+    @property void modelType(PhysicsModel t) {
+        modelType_ = t;
+        reset();
+    }
+
+    /**
+        The affected parameters of the driver.
+    */
+    override
+    @property Parameter[] affectedParameters() => param ? [param_] : null;
+
+    /**
+        Physics scale.
+    */
+    @property float scale() => puppet.physics.pixelsPerMeter;
+
+    /**
+        The final gravity
+    */
+    @property float finalGravity() { return (gravity * offsetGravity) * puppet.physics.gravity * this.scale; }
+
+    /**
+        The final length
+    */
+    @property float finalLength() { return length + offsetLength; }
+
+    /**
+        The final frequency
+    */
+    @property float finalFrequency() { return frequency * offsetFrequency; }
+
+    /**
+        The final angle damping
+    */
+    @property float finalAngleDamping() { return angleDamping * offsetAngleDamping; }
+
+    /**
+        The final length damping
+    */
+    @property float finalLengthDamping() { return lengthDamping * offsetLengthDamping; }
+
+    /**
+        The final output scale
+    */
+    @property vec2 finalOutputScale() { return outputScale * offsetOutputScale; }
 
     /**
         Constructs a new SimplePhysics node
@@ -299,14 +369,8 @@ public:
     }
 
     override
-    Parameter[] getAffectedParameters() {
-        if (param_ is null) return [];
-        return [param_];
-    }
+    void updateDriver(float delta) {
 
-    override
-    void update(float delta, DrawList drawList) {
-        
         // Timestep is limited to 10 seconds, as if you
         // Are getting 0.1 FPS, you have bigger issues to deal with.
         float h = min(delta, 10);
@@ -321,7 +385,6 @@ public:
 
         system.tick(h);
         updateOutputs();
-        prevAnchorSet = false;
     }
 
     void updateAnchors() {
@@ -329,34 +392,30 @@ public:
     }
 
     void updateInputs() {
-        if (prevAnchorSet) {
-        } else {
-            auto anchorPos = localOnly ? 
-                (vec4(transformLocal.translation, 1)) : 
-                (transform.matrix * vec4(0, 0, 0, 1));
-            anchor = vec2(anchorPos.x, anchorPos.y);
-        }
+        auto anchorPos = localOnly ? 
+            (vec4(transformLocal.translation, 1)) : 
+            (transform.matrix * vec4(0, 0, 0, 1));
+        anchor = vec2(anchorPos.x, anchorPos.y);
     }
 
     void updateOutputs() {
         if (param is null) return;
 
-        vec2 oscale = getOutputScale();
+        vec2 oscale = this.finalOutputScale;
 
         // Okay, so this is confusing. We want to translate the angle back to local space,
         // but not the coordinates.
 
         // Transform the physics output back into local space.
         // The origin here is the anchor. This gives us the local angle.
-        vec4 localPos4;
-        localPos4 = localOnly ? 
-        vec4(output.x, output.y, 0, 1) : 
-        ((prevAnchorSet? prevTransMat: transform.matrix.inverse) * vec4(output.x, output.y, 0, 1));
+        auto localPos4 = localOnly ? 
+            vec4(output.x, output.y, 0, 1) : 
+            (transform.matrix.inverse * vec4(output.x, output.y, 0, 1));
         vec2 localAngle = vec2(localPos4.x, localPos4.y);
         localAngle.normalize();
 
         // Figure out the relative length. We can work this out directly in global space.
-        auto relLength = output.distance(anchor) / getLength();
+        auto relLength = output.distance(anchor) / this.finalLength;
 
         vec2 paramVal = vec2.zero;
         switch (mapMode) {
@@ -401,28 +460,6 @@ public:
             default:
                 break;
         }
-    }
-
-    Parameter param() {
-        return param_;
-    }
-
-    void param(Parameter p) {
-        this.param_ = p;
-        this.paramRef = param_ ? param_.guid : GUID.nil;
-    }
-
-    float getScale() {
-        return puppet.physics.pixelsPerMeter;
-    }
-
-    PhysicsModel modelType() {
-        return modelType_;
-    }
-
-    void modelType(PhysicsModel t) {
-        modelType_ = t;
-        reset();
     }
 
        override
@@ -508,23 +545,5 @@ public:
             default:                return super.getValue(key);
         }
     }
-
-    /// Gets the final gravity
-    float getGravity() { return (gravity * offsetGravity) * puppet.physics.gravity * getScale(); }
-
-    /// Gets the final length
-    float getLength() { return length + offsetLength; }
-
-    /// Gets the final frequency
-    float getFrequency() { return frequency * offsetFrequency; }
-
-    /// Gets the final angle damping
-    float getAngleDamping() { return angleDamping * offsetAngleDamping; }
-
-    /// Gets the final length damping
-    float getLengthDamping() { return lengthDamping * offsetLengthDamping; }
-
-    /// Gets the final length damping
-    vec2 getOutputScale() { return outputScale * offsetOutputScale; }
 }
 mixin Register!(SimplePhysics, in_node_registry);

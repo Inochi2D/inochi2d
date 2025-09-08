@@ -309,10 +309,11 @@ private:
         if (node is null) return;
 
         // Collect Drivers
-        if (Driver part = cast(Driver)node) {
-            drivers ~= part;
-            foreach(Parameter param; part.getAffectedParameters())
-                drivenParameters[param] = part;
+        if (Driver driver = cast(Driver)node) {
+            drivers ~= driver;
+            foreach(Parameter param; driver.affectedParameters)
+                drivenParameters[param] = driver;
+            
         } else if (!driversOnly) {
             // Collect drawable nodes only if we aren't inside a Composite node
 
@@ -394,6 +395,95 @@ private:
 
         // Not found
         return null;
+    }
+
+protected:
+
+
+    /**
+        Serializes a puppet into an existing object.
+    */
+    void onSerialize(ref JSONValue object, bool recursive) {
+
+        // Meta Info
+        object["meta"] = JSONValue.emptyObject;
+        object["meta"]["name"] = meta.name;
+        object["meta"]["version"] = meta.version_;
+        object["meta"]["rigger"] = meta.rigger;
+        object["meta"]["artist"] = meta.artist;
+        object["meta"]["copyright"] = meta.copyright;
+        object["meta"]["licenseURL"] = meta.licenseURL;
+        object["meta"]["contact"] = meta.contact;
+        object["meta"]["reference"] = meta.reference;
+        object["meta"]["thumbnailId"] = meta.thumbnailId;
+        object["meta"]["preservePixels"] = meta.preservePixels;
+        
+        // Meta Rights Info
+        if (meta.rights) {
+            object["meta"]["rights"] = JSONValue.emptyObject;
+            object["meta"]["rights"]["allowedUsers"] = meta.rights.allowedUsers;
+            object["meta"]["rights"]["allowViolence"] = meta.rights.allowViolence;
+            object["meta"]["rights"]["allowSexual"] = meta.rights.allowSexual;
+            object["meta"]["rights"]["allowCommercial"] = meta.rights.allowCommercial;
+            object["meta"]["rights"]["allowRedistribution"] = meta.rights.allowRedistribution;
+            object["meta"]["rights"]["allowModification"] = meta.rights.allowModification;
+            object["meta"]["rights"]["requireAttribution"] = meta.rights.requireAttribution;
+        }
+
+        // Physics Info
+        object["physics"] = JSONValue.emptyObject;
+        object["physics"]["pixelsPerMeter"] = physics.pixelsPerMeter;
+        object["physics"]["gravity"] = physics.gravity;
+
+        // Create objects for nodes, params, automation and animation.
+        object["nodes"] = root.serialize();
+        object["param"] = parameters.serialize();
+        object["animations"] = animations.serialize();
+    }
+
+    /**
+        Deserializes a puppet
+    */
+    void onDeserialize(ref JSONValue object) {
+        
+        // Invalid type.
+        if (!object.isJsonObject)
+            return;
+
+        object.tryGetRef(meta, "meta");
+        object.tryGetRef(physics, "physics");
+        object.tryGetRef(root, "nodes");
+        object.tryGetRef(parameters, "param");
+        object.tryGetRef(animations, "animations");
+        this.reconstruct();
+        this.finalize();
+    }
+
+    void reconstruct() {
+        this.root.reconstruct();
+        foreach(parameter; parameters.dup) {
+            parameter.reconstruct(this);
+        }
+        foreach(ref animation; animations.dup) {
+            animation.reconstruct(this);
+        }
+    }
+
+    void finalize() {
+        this.root.setPuppet(this);
+        this.root.name = "Root";
+        this.puppetRootNode = new Node(this);
+
+        // Finally update link etc.
+        this.root.finalize();
+        foreach(parameter; parameters) {
+            parameter.finalize(this);
+        }
+        foreach(ref animation; animations) {
+            animation.finalize(this);
+        }
+        this.scanParts!true(this.root);
+        this.selfSort();
     }
 
 public:
@@ -513,7 +603,7 @@ public:
         if (renderParameters && enableDrivers) {
             // Update parameter/node driver nodes (e.g. physics)
             foreach(driver; drivers) {
-                driver.update(delta, drawList_);
+                driver.updateDriver(delta);
             }
         }
 
@@ -718,107 +808,12 @@ public:
     }
 
     /**
-        Serializes a puppet into an existing object.
-    */
-    void onSerialize(ref JSONValue object, bool recursive) {
-
-        // Meta Info
-        object["meta"] = JSONValue.emptyObject;
-        object["meta"]["name"] = meta.name;
-        object["meta"]["version"] = meta.version_;
-        object["meta"]["rigger"] = meta.rigger;
-        object["meta"]["artist"] = meta.artist;
-        object["meta"]["copyright"] = meta.copyright;
-        object["meta"]["licenseURL"] = meta.licenseURL;
-        object["meta"]["contact"] = meta.contact;
-        object["meta"]["reference"] = meta.reference;
-        object["meta"]["thumbnailId"] = meta.thumbnailId;
-        object["meta"]["preservePixels"] = meta.preservePixels;
-        
-        // Meta Rights Info
-        if (meta.rights) {
-            object["meta"]["rights"] = JSONValue.emptyObject;
-            object["meta"]["rights"]["allowedUsers"] = meta.rights.allowedUsers;
-            object["meta"]["rights"]["allowViolence"] = meta.rights.allowViolence;
-            object["meta"]["rights"]["allowSexual"] = meta.rights.allowSexual;
-            object["meta"]["rights"]["allowCommercial"] = meta.rights.allowCommercial;
-            object["meta"]["rights"]["allowRedistribution"] = meta.rights.allowRedistribution;
-            object["meta"]["rights"]["allowModification"] = meta.rights.allowModification;
-            object["meta"]["rights"]["requireAttribution"] = meta.rights.requireAttribution;
-        }
-
-        // Physics Info
-        object["physics"] = JSONValue.emptyObject;
-        object["physics"]["pixelsPerMeter"] = physics.pixelsPerMeter;
-        object["physics"]["gravity"] = physics.gravity;
-
-        // Create objects for nodes, params, automation and animation.
-        object["nodes"] = root.serialize();
-        object["param"] = parameters.serialize();
-        object["animations"] = animations.serialize();
-    }
-
-    /**
         Deserializes a puppet
     */
     static Puppet deserialize(ref JSONValue object, TextureCache cache) {
         Puppet p = new Puppet(cache);
         p.onDeserialize(object);
         return p;
-    }
-
-    /**
-        Deserializes a puppet
-    */
-    void onDeserialize(ref JSONValue object) {
-        
-        // Invalid type.
-        if (!object.isJsonObject)
-            return;
-
-        object.tryGetRef(meta, "meta");
-        object.tryGetRef(physics, "physics");
-        object.tryGetRef(root, "nodes");
-        object.tryGetRef(parameters, "param");
-        object.tryGetRef(animations, "animations");
-        this.finalizeDeserialization(object);
-    }
-
-
-    void reconstruct() {
-        this.root.reconstruct();
-        foreach(parameter; parameters.dup) {
-            parameter.reconstruct(this);
-        }
-        foreach(ref animation; animations.dup) {
-            animation.reconstruct(this);
-        }
-    }
-
-    void finalize() {
-        this.root.setPuppet(this);
-        this.root.name = "Root";
-        this.puppetRootNode = new Node(this);
-
-        // Finally update link etc.
-        this.root.finalize();
-        foreach(parameter; parameters) {
-            parameter.finalize(this);
-        }
-        foreach(ref animation; animations) {
-            animation.finalize(this);
-        }
-        this.scanParts!true(this.root);
-        this.selfSort();
-    }
-
-    /**
-        Finalizer
-    */
-    void finalizeDeserialization(JSONValue data) {
-        // reconstruct object path so that object is located at final position
-        reconstruct();
-        finalize();
     }
 
     /**
