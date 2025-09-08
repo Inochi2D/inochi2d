@@ -31,30 +31,6 @@ align(vec4.sizeof):
 class Composite : Node {
 private:
     DrawListAlloc* __screenSpaceAlloc;
-    Mesh __screenSpaceMesh;
-
-    void setupScreenSpaceMesh() {
-        if (!__screenSpaceMesh) {
-            MeshData tmp;
-            tmp.indices = [
-                0, 1, 2,
-                2, 1, 3
-            ];
-            tmp.uvs = [
-                vec2(0, 0),
-                vec2(0, 1),
-                vec2(1, 0),
-                vec2(1, 1)
-            ];
-            tmp.vertices = [
-                vec2(-1, -1),
-                vec2(-1,  1),
-                vec2(1,  -1),
-                vec2(1,   1)
-            ];
-            __screenSpaceMesh = Mesh.fromMeshData(tmp);
-        }
-    }
 
     void selfSort() {
         import std.algorithm.sorting : sort;
@@ -200,7 +176,6 @@ public:
     */
     this(GUID guid, Node parent = null) {
         super(guid, parent);
-        this.setupScreenSpaceMesh();
     }
 
     override
@@ -374,3 +349,40 @@ public:
     }
 }
 mixin Register!(Composite, in_node_registry);
+
+//
+//              IMPLEMENTATION DETAILS
+//
+private:
+__gshared Mesh __screenSpaceMesh;
+
+// We are allocating extra data library-wide here.
+pragma(crt_constructor)
+extern(C) void __in_setup_composite() {
+    if (!__screenSpaceMesh) {
+        MeshData tmp;
+        tmp.indices = [
+            0, 1, 2,
+            2, 1, 3
+        ];
+        tmp.uvs = [
+            vec2(0, 0),
+            vec2(0, 1),
+            vec2(1, 0),
+            vec2(1, 1)
+        ];
+        tmp.vertices = [
+            vec2(-1, -1),
+            vec2(-1,  1),
+            vec2(1,  -1),
+            vec2(1,   1)
+        ];
+        __screenSpaceMesh = Mesh.fromMeshData(tmp);
+    }
+}
+
+// And deallocating it again
+pragma(crt_destructor)
+extern(C) void __in_cleanup_composite() {
+    __screenSpaceMesh.release();
+}

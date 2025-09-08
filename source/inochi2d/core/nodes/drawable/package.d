@@ -99,25 +99,7 @@ public:
     */
     override @property vec2[] deformPoints() => deformed_.points;
 
-    /**
-        Deforms the IDeformable.
-
-        Params:
-            deformed =  The deformation delta.
-            absolute =  Whether the deformation is absolute,
-                        replacing the original deformation.
-    */
-    override void deform(vec2[] deformed, bool absolute = false) {
-        deformed_.deform(deformed);
-    }
-
-    /**
-        Resets the deformation for the IDeformable.
-    */
-    override void resetDeform() {
-        deformed_.reset();
-    }
-
+    // Destructor
     ~this() {
         mesh_.release();
         nogc_delete(deformed_);
@@ -148,9 +130,29 @@ public:
     }
 
     /**
+        Deforms the IDeformable.
+
+        Params:
+            deformed =  The deformation delta.
+            absolute =  Whether the deformation is absolute,
+                        replacing the original deformation.
+    */
+    override
+    void deform(vec2[] deformed, bool absolute = false) {
+        deformed_.deform(deformed);
+    }
+
+    /**
+        Resets the deformation for the IDeformable.
+    */
+    override
+    void resetDeform() {
+        deformed_.reset();
+    }
+
+    /**
         The mesh of the model.
     */
-
     override
     void preUpdate(DrawList drawList) {
         super.preUpdate(drawList);

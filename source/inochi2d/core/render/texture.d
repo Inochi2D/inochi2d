@@ -102,6 +102,11 @@ public:
     */
     final @property void[] pixels() => data.data;
 
+    // Destructor
+    ~this() {
+        data.free();
+    }
+
     /**
         Constructs a new texture.
     */

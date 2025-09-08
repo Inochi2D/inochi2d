@@ -177,6 +177,19 @@ public:
     */
     override @property vec2[] deformPoints() => deformed_.points;
 
+    // Destructor
+    ~this() {
+        mesh_.release();
+        nogc_delete(deformed_);
+    }
+
+    /**
+        Constructs a new MeshGroup node
+    */
+    this(Node parent = null) {
+        super(parent);
+    }
+
     /**
         Deforms the IDeformable.
 
@@ -185,22 +198,17 @@ public:
             absolute =  Whether the deformation is absolute,
                         replacing the original deformation.
     */
-    override void deform(vec2[] deformed, bool absolute = false) {
+    override
+    void deform(vec2[] deformed, bool absolute = false) {
         deformed_.deform(deformed);
     }
 
     /**
         Resets the deformation for the IDeformable.
     */
-    override void resetDeform() {
+    override
+    void resetDeform() {
         deformed_.reset();
-    }
-
-    /**
-        Constructs a new MeshGroup node
-    */
-    this(Node parent = null) {
-        super(parent);
     }
 
     /**
