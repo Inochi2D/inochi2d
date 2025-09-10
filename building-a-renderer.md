@@ -19,6 +19,7 @@ struct DrawCmd {
     uint32_t            allocId;
     uint32_t            vtxOffset;
     uint32_t            idxOffset;
+    uint32_t            elemCount;
     uint32_t            type;
     void[64]            vars;
 }

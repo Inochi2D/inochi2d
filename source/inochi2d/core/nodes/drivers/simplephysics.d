@@ -305,7 +305,7 @@ public:
         The affected parameters of the driver.
     */
     override
-    @property Parameter[] affectedParameters() => param ? [param_] : null;
+    @property Parameter[] affectedParameters() => param_ ? [param_] : null;
 
     /**
         Physics scale.
@@ -462,10 +462,8 @@ public:
         }
     }
 
-       override
+    override
     bool hasParam(string key) {
-        if (super.hasParam(key)) return true;
-
         switch(key) {
             case "gravity":
             case "length":
@@ -476,7 +474,7 @@ public:
             case "outputScale.y":
                 return true;
             default:
-                return false;
+                return super.hasParam(key);
         }
     }
 
