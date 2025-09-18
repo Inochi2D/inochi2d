@@ -43,7 +43,7 @@ jobs:
             os: windows-latest
 
           - platform: 'linux'
-            os: ubuntu-
+            os: ubuntu-latest
     outputs:
       artifact: '${{ steps.finalize.outputs.artifact }}'
       
