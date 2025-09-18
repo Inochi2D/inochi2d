@@ -18,7 +18,7 @@ dependency "numem:hookset-libc" version="*"
 
 stringImportPaths "shaders/"
     
-copyFiles "include/" "LICENSE"
+copyFiles "LICENSE"
 
 // Engine Support Modules
 // subPackage "modules/gdextension"
@@ -32,6 +32,8 @@ configuration "static" {
 configuration "dynamic" {
     toolchainRequirements dmd="no" gdc="no" ldc=">=1.40.0"
     targetType "dynamicLibrary"
+
+    copyFiles "include/"
 
     versions "IN_DYNLIB"
 }
