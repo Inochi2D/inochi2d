@@ -26,6 +26,7 @@ configuration "static" {
     targetType "library"
 }
 
+// C FFI Dylib Configuration
 configuration "dynamic" {
     toolchainRequirements dmd="no" gdc="no" ldc=">=1.40.0"
     targetType "dynamicLibrary"
@@ -38,8 +39,13 @@ configuration "unittest" {
     dependency "silly" version=">=1.1.1"
 }
 
-// Configuration which tags a version.
-configuration "tag" {
-    targetType "none"
-    preGenerateCommands "dub run gitver -- --prefix IN --file source/inochi2d/ver.d --mod inochi2d.ver --appname Inochi2D"
+// SIMD Optimisation Modes
+buildType "release" {
+    dflags "-mattr=+sse3" "-mattr=+sse4.1" platform="x86_64-ldc"
+    dflags "-mattr=+crc" platform="aarch64-ldc"
+}
+
+buildType "release-debug" {
+    dflags "-mattr=+sse3" "-mattr=+sse4.1" platform="x86_64-ldc"
+    dflags "-mattr=+crc" platform="aarch64-ldc"
 }

@@ -30,6 +30,22 @@ This repository is purely for the standard and is not useful if you're an end us
 
 &nbsp;
 
+# System Requirements
+
+| Hardware | Requirement                                   |
+| -------: | :-------------------------------------------- |
+|      CPU | x86-64 CPU with SSE4+, Aarch64 with NEON.     |
+|   Memory | At least 1 GB of RAM for bigger models.       |
+|      GPU | Depends on renderer backend.                  |
+
+Inochi2D has no dependencies on non-D libraries besides a POSIX compliant C standard library.  
+Do note that until the transition to `nogc` is complete, you'll have the best experience with
+`glibc` on UNIX-like platforms.
+
+SSE and NEON optimisations are only enabled in `release` and `release-debug` builds.
+
+&nbsp;
+
 # Official SDK Bindings
  - [Unity](https://github.com/Inochi2D/com.inochi2d.inochi2d-unity)
 
