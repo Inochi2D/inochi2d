@@ -86,8 +86,10 @@ jobs:
     - name: 'Archive'
       id: archive
       run: |
+        cp LICENSE out/
+        cp -r include out/
         cd out/
-        tar -cvf ../inochi2d-${{ matrix.config.platform }}-${{ inputs.build_type }}.tar ./* ../LICENSE
+        tar -cvf ../inochi2d-${{ matrix.config.platform }}-${{ inputs.build_type }}.tar ./*
       
     - name: 'Make Artifact'
       uses: actions/upload-artifact@v4
