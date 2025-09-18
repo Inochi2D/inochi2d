@@ -311,9 +311,9 @@ in_drawcmd_t* in_drawlist_get_commands(in_drawlist_t* obj, ref uint count) {
     Returns:
         A pointer to the data
 */
-void* in_drawlist_get_vertex_data(in_drawlist_t* obj, ref uint bytes) {
+in_vtxdata_t* in_drawlist_get_vertex_data(in_drawlist_t* obj, ref uint bytes) {
     bytes = cast(uint)((cast(DrawList)obj).vertices.length*VtxData.sizeof);
-    return cast(void*)(cast(DrawList)obj).vertices.ptr;
+    return cast(in_vtxdata_t*)(cast(DrawList)obj).vertices.ptr;
 }
 
 /**

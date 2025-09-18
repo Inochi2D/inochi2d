@@ -45,3 +45,20 @@ struct in_vec2_t {
     float x;
     float y;
 }
+
+/**
+    Vertex position vector.
+*/
+struct in_vtx_t {
+    float x;
+    float y;
+    version(IN_VEC3_POSITION) float z;
+}
+
+/**
+    A single vertex in the renderer.
+*/
+struct in_vtxdata_t {
+    in_vtx_t vtx;
+    in_vec2_t uv;
+}

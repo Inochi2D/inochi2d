@@ -297,7 +297,7 @@ public:
         string[] pathSegments;
         Node parent = this;
         while(parent !is null) {
-            pathSegments = parent.name ~ pathSegments;
+            pathSegments = [parent.name[]] ~ pathSegments;
             parent = parent.parent;
         }
         

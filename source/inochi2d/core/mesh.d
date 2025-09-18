@@ -14,13 +14,17 @@ import inochi2d.core.math.trig;
 import numem;
 import inmath;
 
+version(IN_VEC3_POSITION) alias vtx_t = vec3;
+else alias vtx_t = vec2;
+
 /**
     Vertex Data that gets submitted to the GPU.
 */
 struct VtxData {
-    vec2 vtx;
+    vtx_t vtx;
     vec2 uv;
 }
+
 
 /**
     A collection of points connected to create a mesh.
@@ -94,7 +98,11 @@ public:
         this.vto_ = meshData.vertices.nu_dup();
 
         foreach(i; 0..vtx_.length) {
-            this.vtx_[i] = VtxData(meshData.vertices[i], meshData.uvs[i]);
+            version(IN_VEC3_POSITION) {
+                this.vtx_[i] = VtxData(vec3(this.vto_[i], 0), meshData.uvs[i]);
+            } else {
+                this.vtx_[i] = VtxData(this.vto_[i], meshData.uvs[i]);
+            }
         }
     }
 
@@ -134,9 +142,9 @@ public:
             return Triangle.init;
         
         return Triangle(
-            vto_[idx_[(offset*3)+0]], 
-            vto_[idx_[(offset*3)+1]], 
-            vto_[idx_[(offset*3)+2]]
+            vto_[idx_[(offset*3)+0]].xy, 
+            vto_[idx_[(offset*3)+1]].xy, 
+            vto_[idx_[(offset*3)+2]].xy
         );
     }
 
@@ -151,9 +159,9 @@ public:
         Triangle[] tris = nu_malloca!Triangle(triangleCount);
         foreach(i; 0..tris.length) {
             tris[i] = Triangle(
-                vto_[idx_[(i*3)+0]], 
-                vto_[idx_[(i*3)+1]], 
-                vto_[idx_[(i*3)+2]]
+                vto_[idx_[(i*3)+0]].xy, 
+                vto_[idx_[(i*3)+1]].xy, 
+                vto_[idx_[(i*3)+2]].xy
             );
         }
         return tris;
@@ -256,7 +264,9 @@ public:
     void deform(vec2[] by) {
         foreach(i; 0..delta_.length) {
             delta_[i] += by[i];
-            deformed_[i].vtx = delta_[i];
+
+            deformed_[i].vtx.x = delta_[i].x;
+            deformed_[i].vtx.y = delta_[i].y;
         }
     }
 
@@ -273,7 +283,8 @@ public:
             return;
 
         delta_[offset] += by;
-        deformed_[offset].vtx = delta_[offset];
+        deformed_[offset].vtx.x = delta_[offset].x;
+        deformed_[offset].vtx.y = delta_[offset].y;
     }
 
     /**
@@ -284,8 +295,10 @@ public:
         // NOTE: SIMD is slower in this instance due to how multiple arrays
         // are involved.
         foreach(i; 0..delta_.length) {
-            delta_[i] = (matrix * vec4(delta_[i], 0, 1)).xy;
-            deformed_[i].vtx = delta_[i];
+            delta_[i] += (matrix * vec4(delta_[i].xy, 0, 1)).xy;
+
+            deformed_[i].vtx.x = delta_[i].x;
+            deformed_[i].vtx.y = delta_[i].y;
         }
     }
 
@@ -300,9 +313,9 @@ public:
         Triangle[] tris = nu_malloca!Triangle(triangleCount);
         foreach(i; 0..tris.length) {
             tris[i] = Triangle(
-                delta_[parent_.idx_[(i*3)+0]], 
-                delta_[parent_.idx_[(i*3)+1]], 
-                delta_[parent_.idx_[(i*3)+2]]
+                delta_[parent_.idx_[(i*3)+0]].xy, 
+                delta_[parent_.idx_[(i*3)+1]].xy, 
+                delta_[parent_.idx_[(i*3)+2]].xy
             );
         }
         return tris;
@@ -380,7 +393,7 @@ MeshData toMeshData(Mesh mesh) {
     data.vertices.length = mesh.vertices.length;
     data.uvs.length = mesh.vertices.length;
     foreach(i; 0..mesh.vertices.length) {
-        data.vertices[i] = mesh.vertices[i].vtx;
+        data.vertices[i] = mesh.vertices[i].vtx.xy;
         data.uvs[i] = mesh.vertices[i].uv;
     }
     return data;
@@ -395,7 +408,7 @@ MeshData toMeshData(Mesh mesh) {
     Returns:
         A rectangle enclosing the mesh.
 */
-rect getBounds(vec2[] mesh) @nogc nothrow pure {
+rect getBounds(T)(T[] mesh) @nogc nothrow pure if (isVector!T) {
     vec2 minp = vec2(float.max, float.max);
     vec2 maxp = vec2(-float.max, -float.max);
 
