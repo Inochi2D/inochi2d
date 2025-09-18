@@ -75,7 +75,3 @@ Add with `--d-version=`
 |             Option | Use                                                                                   |
 | -----------------: | :------------------------------------------------------------------------------------ |
 | `IN_VEC3_POSITION` | Use 3D vectors to store the `POSITION` portion of the vertex data.                    |
-
-&nbsp;
-
-&nbsp;
