@@ -66,6 +66,8 @@ If your target graphics library does not allow 2D vectors to be used when passin
 to the GPU, you can add `--d-version=IN_VEC3_POSITION` as an argument, which will change the 
 VtxData to use a 3D vector to store the vertex position.
 
+You can alternatively download precompiled versions of the SDK from the [Releases](https://github.com/Inochi2D/inochi2d/releases).
+
 ## Build Configurations
 Add with `--config=`
 
