@@ -67,7 +67,7 @@ jobs:
         dub build --compiler=ldc2 --build=${{ inputs.build_type }} --config=${{ inputs.variant }} --arch=arm64-apple-macos
         mv out/libinochi2d.dylib out/libinochi2d-arm64.dylib
 
-        lipo out/libinochi2d-arm64.dylib out/libinochi2d-x86_64.dylib -output out/libinochi2d.dylib
+        lipo -create out/libinochi2d-arm64.dylib out/libinochi2d-x86_64.dylib -output out/libinochi2d.dylib
         rm out/libinochi2d-arm64.dylib out/libinochi2d-x86_64.dylib
 
     - name: 'Build (Windows)'

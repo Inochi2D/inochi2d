@@ -19,6 +19,7 @@ jobs:
       target_ref: 'nightly'
       variant: 'dynamic'
       build_type: 'release'
+      fail_fast: false
 
   build-debug:
     uses: './.github/workflows/build.yml'
@@ -26,6 +27,7 @@ jobs:
       target_ref: 'nightly'
       variant: 'dynamic'
       build_type: 'debug'
+      fail_fast: false
   
   release:
     runs-on: ubuntu-latest
