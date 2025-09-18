@@ -1,39 +1,102 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-name: Test Builds
+name: 'Build Inochi2D Library'
+run-name: 'Build Inochi2D Library (${{ inputs.variant }})...'
 
 on:
-  push:
-    branches: [ "main", "v0_8" ]
-  pull_request:
-    types: [ "opened", "synchronize", "edited" ]
+  workflow_call:
+    inputs:
+      target_ref:
+        required: false
+        type: string
+        default: '${{ github.ref_name }}'
+      variant:
+        required: true
+        type: string
+      build_type:
+        required: false
+        type: string
+        default: release
+      fail_fast:
+        required: false
+        type: boolean
+        default: true
+    outputs:
+      artifact:
+        description: 'The artifact that was produced.'
+        value: ${{ jobs.build.outputs.artifact }}
+      
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  test:
-    name: 'Build Library'
-    strategy:
-      matrix:
-        os: [macOS-latest, ubuntu-latest, windows-latest]
-        arch: [x86_64, arm64]
-        dc: [ldc-beta, dmd-master]
-        build: [debug, release]
-        exclude:
-          - { dc: dmd-master, arch: arm64 }
 
-    runs-on: ${{ matrix.os }}
+  build:
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: ${{ inputs.fail_fast }}
+      matrix:
+        config:
+          - platform: 'osx'
+            os: 'macos-latest'
+
+          - platform: 'win32'
+            os: windows-latest
+
+          - platform: 'linux'
+            os: ubuntu-
+    outputs:
+      artifact: '${{ steps.finalize.outputs.artifact }}'
+      
     steps:
     - uses: actions/checkout@v4
-
-    - name: Install compiler
-      uses: dlang-community/setup-dlang@v2
       with:
-        compiler: ${{ matrix.dc }}
+        ref: '${{ inputs.target_ref }}'
+        
+    # Setup D Compiler
+    - uses: dlang-community/setup-dlang@v1.4.0
+      with:
+        compiler: ldc-latest
 
-    - name: 'Build with ${{ matrix.os }} ${{ matrix.dc }} (${{ matrix.build }})' 
+    - name: 'Build (OSX Universal)'
+      if: ${{ matrix.config.platform == 'osx' }}
+      id: osx-build
       run: |
-        dub build --build=${{ matrix.build }}
+        dub build --compiler=ldc2 --build=${{ inputs.build_type }} --config=${{ inputs.variant }} --arch=x86_64
+        mv out/libinochi2d.dylib out/libinochi2d-x86_64.dylib
+
+        dub build --compiler=ldc2 --build=${{ inputs.build_type }} --config=${{ inputs.variant }} --arch=arm64-apple-macos
+        mv out/libinochi2d.dylib out/libinochi2d-arm64.dylib
+
+        lipo out/libinochi2d-arm64.dylib out/libinochi2d-x86_64.dylib -output out/libinochi2d.dylib
+        rm out/libinochi2d-arm64.dylib out/libinochi2d-x86_64.dylib
+
+    - name: 'Build (Windows)'
+      if: ${{ matrix.config.platform == 'win32' }}
+      id: win32-build
+      shell: powershell
+      run: |
+        dub build --compiler=ldc2 --build=${{ inputs.build_type }} --config=${{ inputs.variant }}
+
+    - name: 'Build (Linux)'
+      if: ${{ matrix.config.platform == 'linux' }}
+      id: posix-build
+      run: |
+        dub build --compiler=ldc2 --build=${{ inputs.build_type }} --config=${{ inputs.variant }}
+    
+    - name: 'Archive'
+      id: archive
+      run: |
+        tar -cvf inochi2d-${{ matrix.config.platform }}-${{ inputs.build_type }}.tar out/* LICENSE
+      
+    - name: 'Make Artifact'
+      uses: actions/upload-artifact@v4
+      with:
+        name: 'inochi2d-${{ matrix.config.platform }}-${{ inputs.build_type }}'
+        path: |
+          inochi2d-${{ matrix.config.platform }}-${{ inputs.build_type }}.tar
+        retention-days: 1
+    
+    - name: 'Finalize'
+      id: finalize
+      run: |
+        echo "artifact=inochi2d-${{ matrix.config.platform }}-${{ inputs.build_type }}" >> $GITHUB_OUTPUT

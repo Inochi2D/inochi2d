@@ -1,0 +1,44 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+name: Build and Release
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    uses: './.github/workflows/build.yml'
+    with:
+      target_ref: 'nightly'
+      variant: 'dynamic'
+      build_type: 'release'
+
+  build-debug:
+    uses: './.github/workflows/build.yml'
+    with:
+      target_ref: 'nightly'
+      variant: 'dynamic'
+      build_type: 'debug'
+  
+  release:
+    runs-on: ubuntu-latest
+    needs: [build-release, build-debug]
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: 'inochi2d-*'
+        merge-multiple: true
+
+    - name: 'Release to nightly'
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: 'nightly'
+        files: |
+          *.tar

@@ -1,0 +1,39 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+name: Test Builds
+
+on:
+  push:
+    branches: [ "main", "v0_8" ]
+  pull_request:
+    types: [ "opened", "synchronize", "edited" ]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: 'Build Library'
+    strategy:
+      matrix:
+        os: [macOS-latest, ubuntu-latest, windows-latest]
+        arch: [x86_64, arm64]
+        dc: [ldc-beta, dmd-master]
+        build: [debug, release]
+        exclude:
+          - { dc: dmd-master, arch: arm64 }
+
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install compiler
+      uses: dlang-community/setup-dlang@v2
+      with:
+        compiler: ${{ matrix.dc }}
+
+    - name: 'Build with ${{ matrix.os }} ${{ matrix.dc }} (${{ matrix.build }})' 
+      run: |
+        dub build --build=${{ matrix.build }}
