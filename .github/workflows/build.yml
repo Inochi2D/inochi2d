@@ -86,9 +86,8 @@ jobs:
     - name: 'Archive'
       id: archive
       run: |
-        mkdir -p out/include/
         cp LICENSE out/
-        cp include/* out/include/
+        cp include out/include/
         cd out/
         tar -cvf ../inochi2d-${{ matrix.config.platform }}-${{ inputs.build_type }}.tar ./*
       
