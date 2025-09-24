@@ -10,12 +10,12 @@
 // when the D library uses cdecl.
 #ifdef _WIN32
     #ifdef _MSC_VER
-        #define EXPORT_I2D(x) x __cdecl
+        #define I2D_CALL __cdecl
     #else
-        #define EXPORT_I2D(x) x
+        #define I2D_CALL
     #endif
 #else
-    #define EXPORT_I2D(x) x
+    #define I2D_CALL
 #endif
 
 #ifdef __cplusplus
@@ -58,7 +58,7 @@ typedef struct in_vtxdata_t {
     Returns:
         The object.
 */
-EXPORT_I2D void* in_retain(void* obj);
+void* I2D_CALL in_retain(void* obj);
 
 /**
     Releases a reference to a Inochi2D Object.
@@ -69,7 +69,7 @@ EXPORT_I2D void* in_retain(void* obj);
     Returns:
         The object.
 */
-EXPORT_I2D void* in_release(void* obj);
+void* I2D_CALL in_release(void* obj);
 
 /**
     Gets the last error.
@@ -78,7 +78,7 @@ EXPORT_I2D void* in_release(void* obj);
         A string with the last error that occured,
         or $(D null).
 */
-EXPORT_I2D const char* in_get_last_error();
+const char* I2D_CALL in_get_last_error();
 
 //
 //              PUPPET
@@ -111,7 +111,7 @@ struct in_parameter_t;
     See_Also:
         $(D in_get_last_error)
 */
-EXPORT_I2D in_puppet_t* in_puppet_load(const char* file);
+in_puppet_t* I2D_CALL in_puppet_load(const char* file);
 
 /**
     Loads a puppet into memory.
@@ -126,7 +126,7 @@ EXPORT_I2D in_puppet_t* in_puppet_load(const char* file);
     See_Also:
         $(D in_get_last_error)
 */
-EXPORT_I2D in_puppet_t* in_puppet_load_from_memory(const uint8_t* data, uint32_t length);
+in_puppet_t* I2D_CALL in_puppet_load_from_memory(const uint8_t* data, uint32_t length);
 
 /**
     Frees a puppet from memory.
@@ -139,7 +139,7 @@ EXPORT_I2D in_puppet_t* in_puppet_load_from_memory(const uint8_t* data, uint32_t
     Params:
         obj = The puppet object.
 */
-EXPORT_I2D void in_puppet_free(in_puppet_t* obj);
+void I2D_CALL in_puppet_free(in_puppet_t* obj);
 
 /**
     Gets the name of a puppet.
@@ -151,7 +151,7 @@ EXPORT_I2D void in_puppet_free(in_puppet_t* obj);
         The name of the puppet as specified by
         its author.
 */
-EXPORT_I2D const char* in_puppet_get_name(in_puppet_t* obj);
+const char* I2D_CALL in_puppet_get_name(in_puppet_t* obj);
 
 /**
     Gets whether to calculate physics for the puppet.
@@ -162,7 +162,7 @@ EXPORT_I2D const char* in_puppet_get_name(in_puppet_t* obj);
     Returns:
         Whether physics are enabled.
 */
-EXPORT_I2D bool in_puppet_get_physics_enabled(in_puppet_t* obj);
+bool I2D_CALL in_puppet_get_physics_enabled(in_puppet_t* obj);
 
 /**
     Sets whether to calculate physics for the puppet.
@@ -171,7 +171,7 @@ EXPORT_I2D bool in_puppet_get_physics_enabled(in_puppet_t* obj);
         obj =   The puppet object.
         value = The value to set.
 */
-EXPORT_I2D void in_puppet_set_physics_enabled(in_puppet_t* obj, bool value);
+void I2D_CALL in_puppet_set_physics_enabled(in_puppet_t* obj, bool value);
 
 /**
     Gets the pixel-to-meter unit mapping for the physics system.
@@ -182,7 +182,7 @@ EXPORT_I2D void in_puppet_set_physics_enabled(in_puppet_t* obj, bool value);
     Returns:
         A value describing how many pixels count as a meter.
 */
-EXPORT_I2D float in_puppet_get_pixels_per_meter(in_puppet_t* obj);
+float I2D_CALL in_puppet_get_pixels_per_meter(in_puppet_t* obj);
 
 /**
     Sets the pixel-to-meter unit mapping for the physics system.
@@ -191,7 +191,7 @@ EXPORT_I2D float in_puppet_get_pixels_per_meter(in_puppet_t* obj);
         obj =   The puppet object.
         value = The value to set.
 */
-EXPORT_I2D void in_puppet_set_pixels_per_meter(in_puppet_t* obj, float value);
+void I2D_CALL in_puppet_set_pixels_per_meter(in_puppet_t* obj, float value);
 
 /**
     Gets the gravity constant for the puppet.
@@ -203,7 +203,7 @@ EXPORT_I2D void in_puppet_set_pixels_per_meter(in_puppet_t* obj, float value);
         A value describing how many meters a second gravity
         pulls on the puppet. Normally is 9.8.
 */
-EXPORT_I2D float in_puppet_get_gravity(in_puppet_t* obj);
+float I2D_CALL in_puppet_get_gravity(in_puppet_t* obj);
 
 /**
     Sets the gravity constant for the puppet.
@@ -212,7 +212,7 @@ EXPORT_I2D float in_puppet_get_gravity(in_puppet_t* obj);
         obj =   The puppet object.
         value = The value to set.
 */
-EXPORT_I2D void in_puppet_set_gravity(in_puppet_t* obj, float value);
+void I2D_CALL in_puppet_set_gravity(in_puppet_t* obj, float value);
 
 /**
     Updates a puppet.
@@ -221,7 +221,7 @@ EXPORT_I2D void in_puppet_set_gravity(in_puppet_t* obj, float value);
         obj = The puppet object.
         delta = Time since last frame.
 */
-EXPORT_I2D void in_puppet_update(in_puppet_t* obj, float delta);
+void I2D_CALL in_puppet_update(in_puppet_t* obj, float delta);
 
 /**
     Draws a puppet.
@@ -230,7 +230,7 @@ EXPORT_I2D void in_puppet_update(in_puppet_t* obj, float delta);
         obj = The puppet object.
         delta = Time since last frame.
 */
-EXPORT_I2D void in_puppet_draw(in_puppet_t* obj, float delta);
+void I2D_CALL in_puppet_draw(in_puppet_t* obj, float delta);
 
 /**
     Resets the physics state for the puppet.
@@ -238,7 +238,7 @@ EXPORT_I2D void in_puppet_draw(in_puppet_t* obj, float delta);
     Params:
         obj = The puppet object.
 */
-EXPORT_I2D void in_puppet_reset_drivers(in_puppet_t* obj);
+void I2D_CALL in_puppet_reset_drivers(in_puppet_t* obj);
 
 /**
     Gets the texture cache belonging to the puppet.
@@ -249,7 +249,7 @@ EXPORT_I2D void in_puppet_reset_drivers(in_puppet_t* obj);
     Returns:
         The texture cache associated with the puppet.
 */
-EXPORT_I2D in_texture_cache_t* in_puppet_get_texture_cache(in_puppet_t* obj);
+in_texture_cache_t* I2D_CALL in_puppet_get_texture_cache(in_puppet_t* obj);
 
 /**
     Gets the parameters of the puppet.
@@ -261,7 +261,7 @@ EXPORT_I2D in_texture_cache_t* in_puppet_get_texture_cache(in_puppet_t* obj);
     Returns:
         A puppet-owned array of parameters.
 */
-EXPORT_I2D in_parameter_t** in_puppet_get_parameters(in_puppet_t* obj, uint* count);
+in_parameter_t** I2D_CALL in_puppet_get_parameters(in_puppet_t* obj, uint* count);
 /**
     Gets the puppet's draw list.
 
@@ -271,7 +271,7 @@ EXPORT_I2D in_parameter_t** in_puppet_get_parameters(in_puppet_t* obj, uint* cou
     Returns:
         The drawlist used by the puppet.
 */
-EXPORT_I2D in_drawlist_t* in_puppet_get_drawlist(in_puppet_t* obj);
+in_drawlist_t* I2D_CALL in_puppet_get_drawlist(in_puppet_t* obj);
 
 //
 //              PARAMETERS
@@ -288,7 +288,7 @@ struct in_parameter_t;
     Returns:
         The name of the parameter.
 */
-EXPORT_I2D const char* in_parameter_get_name(in_parameter_t* obj);
+const char* I2D_CALL in_parameter_get_name(in_parameter_t* obj);
 
 /**
     Gets whether the parameter is active.
@@ -300,7 +300,7 @@ EXPORT_I2D const char* in_parameter_get_name(in_parameter_t* obj);
         $(D true) if the parameter is active,
         $(D false) otherwise.
 */
-EXPORT_I2D bool in_parameter_get_active(in_parameter_t* obj);
+bool I2D_CALL in_parameter_get_active(in_parameter_t* obj);
 
 /**
     Gets how many dimensions the parameter has.
@@ -312,7 +312,7 @@ EXPORT_I2D bool in_parameter_get_active(in_parameter_t* obj);
         A number which indicates how many dimensions
         the parameter has.
 */
-EXPORT_I2D uint32_t in_parameter_get_dimensions(in_parameter_t* obj);
+uint32_t I2D_CALL in_parameter_get_dimensions(in_parameter_t* obj);
 
 /**
     Gets the parameter's minimum value.
@@ -323,7 +323,7 @@ EXPORT_I2D uint32_t in_parameter_get_dimensions(in_parameter_t* obj);
     Returns:
         The parameter's minimum value.
 */
-EXPORT_I2D in_vec2_t in_parameter_get_min_value(in_parameter_t* obj);
+in_vec2_t I2D_CALL in_parameter_get_min_value(in_parameter_t* obj);
 
 /**
     Gets the parameter's maximum value.
@@ -334,7 +334,7 @@ EXPORT_I2D in_vec2_t in_parameter_get_min_value(in_parameter_t* obj);
     Returns:
         The parameter's maximum value.
 */
-EXPORT_I2D in_vec2_t in_parameter_get_max_value(in_parameter_t* obj);
+in_vec2_t I2D_CALL in_parameter_get_max_value(in_parameter_t* obj);
 
 /**
     Gets the parameter's current value.
@@ -345,7 +345,7 @@ EXPORT_I2D in_vec2_t in_parameter_get_max_value(in_parameter_t* obj);
     Returns:
         The parameter's current value.
 */
-EXPORT_I2D in_vec2_t in_parameter_get_value(in_parameter_t* obj);
+in_vec2_t I2D_CALL in_parameter_get_value(in_parameter_t* obj);
 
 /**
     Sets the parameter's current value.
@@ -354,7 +354,7 @@ EXPORT_I2D in_vec2_t in_parameter_get_value(in_parameter_t* obj);
         obj =   The parameter object.
         value = The value to set.
 */
-EXPORT_I2D void in_parameter_set_value(in_parameter_t* obj, in_vec2_t value);
+void I2D_CALL in_parameter_set_value(in_parameter_t* obj, in_vec2_t value);
 
 /**
     Gets the parameter's current value normalized to
@@ -366,7 +366,7 @@ EXPORT_I2D void in_parameter_set_value(in_parameter_t* obj, in_vec2_t value);
     Returns:
         The parameter's current normalized value.
 */
-EXPORT_I2D in_vec2_t in_parameter_get_normalized_value(in_parameter_t* obj);
+in_vec2_t I2D_CALL in_parameter_get_normalized_value(in_parameter_t* obj);
 
 /**
     Sets the parameter's current value normalized to
@@ -376,7 +376,7 @@ EXPORT_I2D in_vec2_t in_parameter_get_normalized_value(in_parameter_t* obj);
         obj =   The parameter object.
         value = The value to set.
 */
-EXPORT_I2D void in_parameter_set_normalized_value(in_parameter_t* obj, in_vec2_t value);
+void I2D_CALL in_parameter_set_normalized_value(in_parameter_t* obj, in_vec2_t value);
 
 //
 //              TEXTURE CACHE
@@ -391,7 +391,7 @@ EXPORT_I2D void in_parameter_set_normalized_value(in_parameter_t* obj, in_vec2_t
     Returns:
         The amount of textures within the cache.
 */
-EXPORT_I2D uint32_t in_texture_cache_get_size(in_texture_cache_t* obj);
+uint32_t I2D_CALL in_texture_cache_get_size(in_texture_cache_t* obj);
 
 /**
     Gets a texture from the cache.
@@ -404,7 +404,7 @@ EXPORT_I2D uint32_t in_texture_cache_get_size(in_texture_cache_t* obj);
         The requested texture if found,
         otherwise $(D null).
 */
-EXPORT_I2D in_texture_t* in_texture_cache_get_texture(in_texture_cache_t* obj, uint32_t slot);
+in_texture_t* I2D_CALL in_texture_cache_get_texture(in_texture_cache_t* obj, uint32_t slot);
 
 /**
     Gets a texture from the cache.
@@ -417,7 +417,7 @@ EXPORT_I2D in_texture_t* in_texture_cache_get_texture(in_texture_cache_t* obj, u
         A puppet-owned array of textures.
 */
 
-EXPORT_I2D in_texture_t** in_texture_cache_get_textures(in_texture_cache_t* obj, uint* count);
+in_texture_t** I2D_CALL in_texture_cache_get_textures(in_texture_cache_t* obj, uint* count);
 
 /**
     Prunes the texture cache of unreferenced textures.
@@ -425,7 +425,7 @@ EXPORT_I2D in_texture_t** in_texture_cache_get_textures(in_texture_cache_t* obj,
     Params:
         obj = The texture cache object.
 */
-EXPORT_I2D void in_texture_cache_prune(in_texture_cache_t* obj);
+void I2D_CALL in_texture_cache_prune(in_texture_cache_t* obj);
 
 /**
     A resource that can be transferred between CPU and GPU.
@@ -442,7 +442,7 @@ struct in_resource_t;
         The length of the resource's GPU memory allocation
         in bytes.
 */
-EXPORT_I2D uint32_t in_resource_get_length(in_resource_t* obj);
+uint32_t I2D_CALL in_resource_get_length(in_resource_t* obj);
 /**
     Gets the renderer ID of the resource.
 
@@ -452,7 +452,7 @@ EXPORT_I2D uint32_t in_resource_get_length(in_resource_t* obj);
     Returns:
         The renderer ID of the resource.
 */
-EXPORT_I2D void* in_resource_get_id(in_resource_t* obj);
+void* I2D_CALL in_resource_get_id(in_resource_t* obj);
 
 /**
     Sets the renderer ID of the resource.
@@ -461,7 +461,7 @@ EXPORT_I2D void* in_resource_get_id(in_resource_t* obj);
         obj = The resource object.
         value = The value to set.
 */
-EXPORT_I2D void in_resource_set_id(in_resource_t* obj, void* value);
+void I2D_CALL in_resource_set_id(in_resource_t* obj, void* value);
 
 //
 //              TEXTURES
@@ -483,7 +483,7 @@ struct in_texture_t;
         resource, or $(D null) if the resource is not
         a texture.
 */
-EXPORT_I2D in_texture_t* in_texture_from_resource(in_resource_t* obj);
+in_texture_t* I2D_CALL in_texture_from_resource(in_resource_t* obj);
 
 /**
     Gets the width of the texture in pixels.
@@ -494,7 +494,7 @@ EXPORT_I2D in_texture_t* in_texture_from_resource(in_resource_t* obj);
     Returns:
         The width of the texture in pixels.
 */
-EXPORT_I2D uint32_t in_texture_get_width(in_texture_t* obj);
+uint32_t I2D_CALL in_texture_get_width(in_texture_t* obj);
 
 /**
     Gets the height of the texture in pixels.
@@ -505,7 +505,7 @@ EXPORT_I2D uint32_t in_texture_get_width(in_texture_t* obj);
     Returns:
         The height of the texture in pixels.
 */
-EXPORT_I2D uint32_t in_texture_get_height(in_texture_t* obj);
+uint32_t I2D_CALL in_texture_get_height(in_texture_t* obj);
 
 /**
     Gets the channels of the texture.
@@ -516,7 +516,7 @@ EXPORT_I2D uint32_t in_texture_get_height(in_texture_t* obj);
     Returns:
         The channel count of the texture.
 */
-EXPORT_I2D uint32_t in_texture_get_channels(in_texture_t* obj);
+uint32_t I2D_CALL in_texture_get_channels(in_texture_t* obj);
 
 /**
     Flips the texture's data vertically.
@@ -525,7 +525,7 @@ EXPORT_I2D uint32_t in_texture_get_channels(in_texture_t* obj);
     Params:
         obj = The texture object.
 */
-EXPORT_I2D void in_texture_flip_vertically(in_texture_t* obj);
+void I2D_CALL in_texture_flip_vertically(in_texture_t* obj);
 
 /**
     Premultiplies the alpha channel of the texture.
@@ -533,7 +533,7 @@ EXPORT_I2D void in_texture_flip_vertically(in_texture_t* obj);
     Params:
         obj = The texture object.
 */
-EXPORT_I2D void in_texture_premultiply(in_texture_t* obj);
+void I2D_CALL in_texture_premultiply(in_texture_t* obj);
 
 /**
     Un-premultiplies the alpha channel of the texture.
@@ -541,7 +541,7 @@ EXPORT_I2D void in_texture_premultiply(in_texture_t* obj);
     Params:
         obj = The texture object.
 */
-EXPORT_I2D void in_texture_unpremultiply(in_texture_t* obj);
+void I2D_CALL in_texture_unpremultiply(in_texture_t* obj);
 
 /**
     Pads the texture with a border.
@@ -550,7 +550,7 @@ EXPORT_I2D void in_texture_unpremultiply(in_texture_t* obj);
         obj =       The texture object.
         thickness = Thickness of the border in pixels.
 */
-EXPORT_I2D void in_texture_pad(in_texture_t* obj, uint32_t thickness);
+void I2D_CALL in_texture_pad(in_texture_t* obj, uint32_t thickness);
 
 /**
     Gets the pixels of the texture.
@@ -561,7 +561,7 @@ EXPORT_I2D void in_texture_pad(in_texture_t* obj, uint32_t thickness);
     Returns:
         The pixels of the texture.
 */
-EXPORT_I2D void* in_texture_get_pixels(in_texture_t* obj);
+void* I2D_CALL in_texture_get_pixels(in_texture_t* obj);
 
 //
 //              DRAWLIST
@@ -654,7 +654,7 @@ struct in_drawlist_t;
         $(D true) if base vertex offsets are being generated,
         $(D false) otherwise.
 */
-EXPORT_I2D bool in_drawlist_get_use_base_vertex(in_drawlist_t* obj);
+bool I2D_CALL in_drawlist_get_use_base_vertex(in_drawlist_t* obj);
 
 /**
     Sets whether the draw list uses base vertex offsets.
@@ -663,7 +663,7 @@ EXPORT_I2D bool in_drawlist_get_use_base_vertex(in_drawlist_t* obj);
         obj =   The drawlist
         value = The value to set.
 */
-EXPORT_I2D void in_drawlist_set_use_base_vertex(in_drawlist_t* obj, bool value);
+void I2D_CALL in_drawlist_set_use_base_vertex(in_drawlist_t* obj, bool value);
 
 /**
     Gets all of the commands stored in the draw list for iteration.
@@ -678,7 +678,7 @@ EXPORT_I2D void in_drawlist_set_use_base_vertex(in_drawlist_t* obj, bool value);
     Returns:
         A pointer to an array of draw commands
 */
-EXPORT_I2D in_drawcmd_t* in_drawlist_get_commands(in_drawlist_t* obj, uint32_t* count);
+in_drawcmd_t* I2D_CALL in_drawlist_get_commands(in_drawlist_t* obj, uint32_t* count);
 
 /**
     Gets all of the vertex data stored in the draw list.
@@ -693,7 +693,7 @@ EXPORT_I2D in_drawcmd_t* in_drawlist_get_commands(in_drawlist_t* obj, uint32_t* 
     Returns:
         A pointer to the data
 */
-EXPORT_I2D in_vtxdata_t* in_drawlist_get_vertex_data(in_drawlist_t* obj, uint32_t* bytes);
+in_vtxdata_t* I2D_CALL in_drawlist_get_vertex_data(in_drawlist_t* obj, uint32_t* bytes);
 
 /**
     Gets all of the index data stored in the draw list.
@@ -708,7 +708,7 @@ EXPORT_I2D in_vtxdata_t* in_drawlist_get_vertex_data(in_drawlist_t* obj, uint32_
     Returns:
         A pointer to the data
 */
-EXPORT_I2D void* in_drawlist_get_index_data(in_drawlist_t* obj, uint32_t* bytes);
+void* I2D_CALL in_drawlist_get_index_data(in_drawlist_t* obj, uint32_t* bytes);
 
 /**
     Gets all of the allocated meshes of the drawlist.
@@ -723,11 +723,9 @@ EXPORT_I2D void* in_drawlist_get_index_data(in_drawlist_t* obj, uint32_t* bytes)
     Returns:
         A pointer to the data
 */
-EXPORT_I2D in_drawalloc_t* in_drawlist_get_allocations(in_drawlist_t* obj, uint32_t* count);
+in_drawalloc_t* I2D_CALL in_drawlist_get_allocations(in_drawlist_t* obj, uint32_t* count);
 
 #ifdef __cplusplus
 }
 #endif
-
-
 #endif
