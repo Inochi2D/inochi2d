@@ -620,11 +620,11 @@ typedef struct in_drawcmd_t {
     in_drawstate_t                      state;
     in_blend_mode_t                     blendMode;
     in_mask_mode_t                      maskMode;
-    uint32_t                                allocId;
-    uint32_t                                vtxOffset;
-    uint32_t                                idxOffset;
-    uint32_t                                elemCount;
-    uint32_t                                type;
+    uint32_t                            allocId;
+    uint32_t                            vtxOffset;
+    uint32_t                            idxOffset;
+    uint32_t                            elemCount;
+    uint32_t                            type;
     unsigned char                       vars[64];
 } in_drawcmd_t;
 
