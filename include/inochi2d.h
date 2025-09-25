@@ -51,6 +51,41 @@ typedef struct in_vtxdata_t {
     in_vec2_t uv;
 } in_vtxdata_t;
 
+//
+//          OPAQUE TYPES
+//
+
+/**
+    Opaque handle to a puppet.
+*/
+typedef struct in_puppet_t in_puppet_t;
+
+/**
+    A texture cache.
+*/
+typedef struct in_texture_cache_t in_texture_cache_t;
+
+/**
+    A parameter.
+*/
+typedef struct in_parameter_t in_parameter_t;
+
+/**
+    A resource that can be transferred between CPU and GPU.
+*/
+typedef struct in_resource_t in_resource_t;
+
+/**
+    A texture.
+*/
+typedef struct in_texture_t in_texture_t;
+
+/**
+    A drawlist instance
+*/
+typedef struct in_drawlist_t in_drawlist_t;
+
+
 /**
     Retains a reference to a Inochi2D Object.
 
@@ -85,21 +120,6 @@ const char* I2D_CALL in_get_last_error();
 //
 //              PUPPET
 //
-
-/**
-    Opaque handle to a puppet.
-*/
-struct in_puppet_t;
-
-/**
-    A texture cache.
-*/
-struct in_texture_cache_t;
-
-/**
-    A parameter.
-*/
-struct in_parameter_t;
 
 /**
     Loads a puppet into memory.
@@ -263,7 +283,7 @@ in_texture_cache_t* I2D_CALL in_puppet_get_texture_cache(in_puppet_t* obj);
     Returns:
         A puppet-owned array of parameters.
 */
-in_parameter_t** I2D_CALL in_puppet_get_parameters(in_puppet_t* obj, uint* count);
+in_parameter_t** I2D_CALL in_puppet_get_parameters(in_puppet_t* obj, uint32_t* count);
 /**
     Gets the puppet's draw list.
 
@@ -417,7 +437,7 @@ in_texture_t* I2D_CALL in_texture_cache_get_texture(in_texture_cache_t* obj, uin
         A puppet-owned array of textures.
 */
 
-in_texture_t** I2D_CALL in_texture_cache_get_textures(in_texture_cache_t* obj, uint* count);
+in_texture_t** I2D_CALL in_texture_cache_get_textures(in_texture_cache_t* obj, uint32_t* count);
 
 /**
     Prunes the texture cache of unreferenced textures.
@@ -427,10 +447,9 @@ in_texture_t** I2D_CALL in_texture_cache_get_textures(in_texture_cache_t* obj, u
 */
 void I2D_CALL in_texture_cache_prune(in_texture_cache_t* obj);
 
-/**
-    A resource that can be transferred between CPU and GPU.
-*/
-struct in_resource_t;
+//
+//              RESOURCES
+//
 
 /**
     Gets the length of the resource in bytes.
@@ -466,11 +485,6 @@ void I2D_CALL in_resource_set_id(in_resource_t* obj, void* value);
 //
 //              TEXTURES
 //
-
-/**
-    A texture.
-*/
-struct in_texture_t;
 
 /**
     Creates a texture from a resource.
@@ -570,27 +584,29 @@ void* I2D_CALL in_texture_get_pixels(in_texture_t* obj);
 /**
     DrawState flags
 */
-enum in_drawstate_t {
+typedef enum {
     IN_DRAW_STATE_NORMAL            = 0,
     IN_DRAW_STATE_DEFINE_MASK       = 1,
     IN_DRAW_STATE_MASKED_DRAW       = 2,
     IN_DRAW_STATE_COMPOSITE_BEGIN   = 3,
     IN_DRAW_STATE_COMPOSITE_END     = 4,
-    IN_DRAW_STATE_COMPOSITE_BLIT    = 5
-};
+    IN_DRAW_STATE_COMPOSITE_BLIT    = 5,
+    IN_DRAW_STATE_MAX               = 0xFFFFFFFFU
+} in_drawstate_t;
 
 /**
     Masking modes
 */
-enum in_mask_mode_t {
+typedef enum {
     IN_MASK_MODE_MASK   = 0,
-    IN_MASK_MODE_DODGE  = 1
-};
+    IN_MASK_MODE_DODGE  = 1,
+    IN_MASK_MODE_MAX    = 0xFFFFFFFFU
+} in_mask_mode_t;
 
 /**
     Blending modes
 */
-enum in_blend_mode_t {
+typedef enum {
     IN_BLEND_MODE_NORMAL            = 0x00,
     IN_BLEND_MODE_MULTIPLY          = 0x01,
     IN_BLEND_MODE_SCREEN            = 0x02,
@@ -609,8 +625,9 @@ enum in_blend_mode_t {
     IN_BLEND_MODE_INVERSE           = 0x0F,
     IN_BLEND_MODE_DESTINATION_IN    = 0x10,
     IN_BLEND_MODE_SOURCE_IN         = 0x11,
-    IN_BLEND_MODE_SOURCE_OUT        = 0x12
-};
+    IN_BLEND_MODE_SOURCE_OUT        = 0x12,
+    IN_BLEND_MODE_MAX               = 0xFFFFFFFFU
+} in_blend_mode_t;
 
 /**
     A drawing command from the Inochi2D draw list
@@ -638,11 +655,6 @@ typedef struct in_drawalloc_t {
     uint32_t vtxCount;
     uint32_t allocId;
 } in_drawalloc_t;
-
-/**
-    A drawlist instance
-*/
-struct in_drawlist_t;
 
 /**
     Gets whether the draw list uses base vertex offsets.
