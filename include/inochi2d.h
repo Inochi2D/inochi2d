@@ -18,6 +18,8 @@
     #define I2D_CALL
 #endif
 
+#define IN_MAX_ATTACHMENTS 8
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -276,8 +278,6 @@ in_drawlist_t* I2D_CALL in_puppet_get_drawlist(in_puppet_t* obj);
 //
 //              PARAMETERS
 //
-
-struct in_parameter_t;
 
 /**
     Gets the name of the parameter.
