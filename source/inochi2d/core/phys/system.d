@@ -14,7 +14,7 @@ import inmath;
 abstract
 class PhysicsSystem {
 private:
-    ulong[float*] variableMap;
+    size_t[float*] variableMap;
     float*[] refs;
     float[] derivative;
 
@@ -24,8 +24,8 @@ protected:
     /**
         Add a float variable to the simulation
     */
-    ulong addVariable(float* var) {
-        ulong index = refs.length;
+    size_t addVariable(float* var) {
+        size_t index = refs.length;
 
         variableMap[var] = index;
         refs ~= var;
@@ -36,8 +36,8 @@ protected:
     /**
         Add a vec2 variable to the simulation
     */
-    ulong addVariable(vec2* var) {
-        ulong index = addVariable(&(var.vector[0]));
+    size_t addVariable(vec2* var) {
+        size_t index = addVariable(&(var.vector[0]));
         addVariable(&(var.vector[1]));
         return index;
     }
@@ -45,7 +45,7 @@ protected:
     /**
         Set the derivative of a variable (solver input) by index
     */
-    void setD(ulong index, float value) {
+    void setD(size_t index, float value) {
         derivative[index] = value;
     }
 

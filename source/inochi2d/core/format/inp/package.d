@@ -136,7 +136,7 @@ void inWriteINPExtensions(Puppet p, string file) {
     if (inVerifySection(f.peek(EXT_SECTION.length), EXT_SECTION)) {
         foundExtSection = true;
 
-        extSectionStart = f.tell();
+        extSectionStart = cast(size_t)f.tell();
         f.skip(EXT_SECTION.length);
         
         uint payloadCount = f.readValue!uint;
@@ -148,7 +148,7 @@ void inWriteINPExtensions(Puppet p, string file) {
             uint payloadLength = f.readValue!uint;
             f.skip(payloadLength);
         }
-        extSectionEnd = f.tell();
+        extSectionEnd = cast(size_t)f.tell();
     }
     f.close();
 

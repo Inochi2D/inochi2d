@@ -91,5 +91,5 @@ shared static this() {
     import core.time : MonoTime;
     import numem : nogc_new;
 
-    __i2d_uuid_random = nogc_new!Random(MonoTime.currTime.ticks);
+    __i2d_uuid_random = nogc_new!Random(cast(size_t)MonoTime.currTime.ticks);
 }

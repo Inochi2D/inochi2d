@@ -724,7 +724,7 @@ public:
     void reparent(Node parent, ulong pOffset) {
         if (parent !is null)
             setRelativeTo(parent);
-        insertInto(parent, pOffset);
+        insertInto(parent, cast(size_t)pOffset);
     }
 }
 mixin Register!(Node, in_node_registry);

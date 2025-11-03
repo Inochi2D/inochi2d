@@ -14,19 +14,55 @@ permissions:
   contents: read
 
 jobs:
-  test:
-    name: 'Build'
+  test-osx:
+    name: 'Build (OSX)'
     strategy:
       fail-fast: false
       matrix:
-        os: [macOS-latest, ubuntu-latest, windows-latest]
-        arch: [x86_64, arm64, arm]
         build: [debug, release]
-        exclude:
-          - { os: macOS-latest, arch: arm }
-          - { os: windows-latest, arch: arm }
+    runs-on: macOS-latest
+    steps:
+    - uses: actions/checkout@v4
 
-    runs-on: ${{ matrix.os }}
+    - name: Install compiler
+      uses: dlang-community/setup-dlang@v2
+      with:
+        compiler: ldc-beta
+
+    - name: 'Build (OSX, ${{ matrix.build }}, universal)' 
+      run: |
+        dub build --build=${{ matrix.build }} --arch=arm64-apple-darwin
+        dub build --build=${{ matrix.build }} --arch=x86_64-apple-darwin
+  
+  test-linux:
+    name: 'Build (Linux)'
+    strategy:
+      fail-fast: false
+      matrix:
+        build: [debug, release]
+        arch: [x86_64, aarch64, linux-arm]
+    
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install compiler
+      uses: dlang-community/setup-dlang@v2
+      with:
+        compiler: ldc-beta
+
+    - name: 'Build ${{ matrix.os }}-${{ matrix.build }} (${{ matrix.arch }})' 
+      run: |
+        dub build --build=${{ matrix.build }} --arch=${{ matrix.arch }}
+  
+  test-windows:
+    name: 'Build (Linux)'
+    strategy:
+      fail-fast: false
+      matrix:
+        build: [debug, release]
+    
+    runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
 
