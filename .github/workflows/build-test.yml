@@ -19,11 +19,14 @@ jobs:
     strategy:
       matrix:
         os: [macOS-latest, ubuntu-latest, windows-latest]
-        arch: [x86_64, arm64]
+        arch: [x86_64, arm64, arm32]
         dc: [ldc-beta, dmd-master]
         build: [debug, release]
         exclude:
           - { dc: dmd-master, arch: arm64 }
+          - { dc: dmd-master, arch: arm32 }
+          - { os: macOS-latest, arch: arm32 }
+          - { os: windows-latest, arch: arm32 }
 
     runs-on: ${{ matrix.os }}
     steps:
