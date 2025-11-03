@@ -51,16 +51,17 @@ jobs:
       with:
         compiler: ldc-beta
 
-    - name: 'Build ${{ matrix.os }}-${{ matrix.build }} (${{ matrix.arch }})' 
+    - name: 'Build (Linux, ${{ matrix.build }}, ${{ matrix.arch }})' 
       run: |
         dub build --build=${{ matrix.build }} --arch=${{ matrix.arch }}
   
   test-windows:
-    name: 'Build (Linux)'
+    name: 'Build (Windows)'
     strategy:
       fail-fast: false
       matrix:
         build: [debug, release]
+        arch: [x86_64, aarch64]
     
     runs-on: windows-latest
     steps:
@@ -71,6 +72,6 @@ jobs:
       with:
         compiler: ldc-beta
 
-    - name: 'Build ${{ matrix.os }}-${{ matrix.build }} (${{ matrix.arch }})' 
+    - name: 'Build (Linux, ${{ matrix.build }}, ${{ matrix.arch }})' 
       run: |
-        dub build --build=${{ matrix.build }} --arch=${{ matrix.arch }}
+        dub build --build=${{ matrix.build }}
