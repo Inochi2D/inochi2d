@@ -15,18 +15,16 @@ permissions:
 
 jobs:
   test:
-    name: 'Build Library'
+    name: 'Build'
     strategy:
+      fail-fast: false
       matrix:
         os: [macOS-latest, ubuntu-latest, windows-latest]
-        arch: [x86_64, arm64, arm32]
-        dc: [ldc-beta, dmd-master]
+        arch: [x86_64, arm64, arm]
         build: [debug, release]
         exclude:
-          - { dc: dmd-master, arch: arm64 }
-          - { dc: dmd-master, arch: arm32 }
-          - { os: macOS-latest, arch: arm32 }
-          - { os: windows-latest, arch: arm32 }
+          - { os: macOS-latest, arch: arm }
+          - { os: windows-latest, arch: arm }
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -35,8 +33,8 @@ jobs:
     - name: Install compiler
       uses: dlang-community/setup-dlang@v2
       with:
-        compiler: ${{ matrix.dc }}
+        compiler: ldc-beta
 
-    - name: 'Build with ${{ matrix.os }} ${{ matrix.dc }} (${{ matrix.build }})' 
+    - name: 'Build ${{ matrix.os }}-${{ matrix.build }} (${{ matrix.arch }})' 
       run: |
-        dub build --build=${{ matrix.build }}
+        dub build --build=${{ matrix.build }} --arch=${{ matrix.arch }}
