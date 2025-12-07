@@ -1,11 +1,20 @@
-# Dub Stuff
-dub.selections.json
 .dub
-out/
 docs.json
 __dummy.html
 docs/
+*.exe
+*.pdb
+*.o
+*.obj
+*.lst
+
+out/
+dub.selections.json
 __dummy_docs/
 
-# OSX Stuff
+# Redub Junk
+.ldc2_cache
+
+# Other Junk
 .DS_Store
+.vscode/
