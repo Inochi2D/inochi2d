@@ -13,28 +13,29 @@ import numem;
     Interface implemented by types which can be deformed.
 */
 interface IDeformable {
+@nogc:
 public:
 
     /**
         The base position of the deformable's points.
     */
-    @property const(vec2)[] basePoints() @nogc;
+    @property const(vec2)[] basePoints();
 
     /**
         The points which may be deformed by the deformer.
     */
-    @property vec2[] deformPoints() @nogc;
+    @property vec2[] deformPoints();
 
     /**
         The base transform of the object before any 
         parameters have been applied.
     */
-    @property Transform baseTransform() @nogc;
+    @property Transform baseTransform();
 
     /**
         World transform of the deformable object.
     */
-    @property Transform worldTransform() @nogc;
+    @property Transform worldTransform();
 
     /**
         Deforms the IDeformable.

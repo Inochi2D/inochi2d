@@ -1114,7 +1114,7 @@ unittest {
         foreach (x; 0 .. input.length) {
             bind.isSet_[x].length = input[0].length;
             foreach (y; 0 .. input[0].length) {
-                bind.isSet_[x][y] = !isNaN(input[x][y]);
+                bind.isSet_[x][y] = isFinite(input[x][y]);
             }
         }
 
@@ -1126,7 +1126,7 @@ unittest {
         foreach (x; 0 .. bind.values.length) {
             foreach (y; 0 .. bind.values[0].length) {
                 float delta = abs(expect[x][y] - bind.values[x][y]);
-                if (isNaN(delta) || delta > epsilon) {
+                if (!isFinite(delta) || delta > epsilon) {
                     debug writefln("Output mismatch at %d, %d", x, y);
                     debug writeln("Expected:");
                     printArray(expect);

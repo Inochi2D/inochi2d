@@ -108,6 +108,13 @@ public:
     A transform
 */
 struct Transform {
+private:
+    
+    // NOTE:    This private var is declared here to allow instantiating
+    //          the Transform like prior, but with the added benefit of
+    //          being able to do so with the new auto-generated constructors.
+    mat4 trs = mat4.identity;
+
 public:
 
     /**
@@ -215,12 +222,6 @@ public:
         object.tryGetRef(rotation, "rot");
         object.tryGetRef(scale, "scale");
     }
-    
-    // NOTE:    This private var is declared here to allow instantiating
-    //          the Transform like prior, but with the added benefit of
-    //          being able to do so with the new auto-generated constructors.
-private:
-    mat4 trs = mat4.identity;
 }
 
 int[] findSurroundingTriangle(vec2 pt, ref MeshData bindingMesh) {

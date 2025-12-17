@@ -556,7 +556,6 @@ public:
 
         this.meta = new PuppetMeta();
         this.physics = new PuppetPhysics();
-        this.transform = Transform(vec3(0, 0, 0));
 
         this.textureCache = cache ? cache : nogc_new!TextureCache();
         this.drawList_ = nogc_new!DrawList();
@@ -572,7 +571,6 @@ public:
         this.puppetRootNode = new Node(this);
         this.root.name = "Root";
         this.scanParts!true(this.root);
-        this.transform = Transform(vec3(0, 0, 0));
         this.selfSort();
 
         this.drawList_ = nogc_new!DrawList();

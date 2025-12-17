@@ -392,7 +392,7 @@ public:
         Params:
             other = The transform to offset the current global transform by.
     */
-    void offsetTransform(Transform other) {
+    void offsetTransform(Transform other) @nogc {
         globalTransform = globalTransform.calcOffset(other);
         globalTransform.update();
     }
