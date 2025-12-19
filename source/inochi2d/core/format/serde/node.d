@@ -6,455 +6,472 @@ import numem.core.traits;
 import numem.core.meta;
 import numem;
 
+enum DataNodeType : uint {
+    undefined   = 0,
+    string_     = 1,
+    int_        = 2,
+    uint_       = 3,
+    float_      = 4,
+    array_      = 5,
+    object_     = 6
+}
+
 /**
-    A node of data, may contain arrays of data.
+
 */
 struct DataNode {
 private:
 @nogc:
-    // Type handling
-    alias BASIC_NODES = AliasSeq!(int, float, string, ubyte, ObjectNode);
-    alias ARRAY_NODES = staticMap!(ArrayNode, BASIC_NODES);
-    alias ALL_NODES = AliasSeq!(BASIC_NODES, ARRAY_NODES);
-
-    enum ARRAY_ID(size_t i) = BASIC_NODES.length+i;
-
-    template typeIdOf(T) {
-        static foreach(i, NT; ALL_NODES) {
-            static if (!is(typeof(typeIdOf) == size_t) && isAssignable!(NT, T))
-                enum size_t typeIdOf = i;
-        }
-
-        static if (!is(typeof(typeIdOf) == size_t))
-            enum size_t typeIdOf = -1;
-    }
-
-    // Object Layout
-
-    shared_ptr!DataNodeValues data_;
-protected:
-
-    //
-    //              Sub-types
-    //
-
     import nulib.collections.internal.marray : ManagedArray;
 
     static
-    struct ArrayNode(T) {
-    private:
+    union DataNodeStore {
     @nogc:
-        ManagedArray!T values;
-        
-    public:
 
-        /**
-            Length of the node.
-        */
-        @property size_t length() => values.length;
-
-        /**
-            Allows appending to array nodes.
-        */
-        auto ref opOpAssign(string op, T)(T value)
-        if (op == "~") {
-            values.resize(values.length+1);
-            values[$-1] = DataNode(value);
-            return this;
-        }
-
-        void remove(size_t idx) {
-            if (idx >= values.length)
-                return;
-            
-            values.deleteRange(values[idx..idx+1]);
-        }
-    }
-
-    static
-    struct ObjectNode {
-    private:
-    @nogc:
         static
-        struct KV {
+        struct ObjectNode {
+        private:
         @nogc:
+
+            static
+            struct KV {
+            @nogc:
+                ~this() {
+                    nu_freea(key);
+                    nogc_delete(value);
+                }
+
+                /// Copy-constructor
+                this(ref return scope KV rhs) {
+                    this.key = rhs.key.nu_dup();
+                    this.value = rhs.value;
+                }
+            
+                string key;
+                DataNode value;
+            }
+            ManagedArray!KV values;
+
+            /// Helper that finds an entry by its key.
+            pragma(inline, true)
+            ptrdiff_t findEntry(string key) const nothrow {
+                foreach(i, ref entry; values) {
+                    if (entry.key == key)
+                        return i;
+                }
+                return -1;
+            }
+
+        public:
+
+            /// Destructor
             ~this() {
-                nu_freea(key);
-                nogc_delete(value);
+                values.resize(0);
             }
 
-            /// Copy-constructor
-            this(ref return scope KV rhs) {
-                this.key = rhs.key.nu_dup();
-                this.value = rhs.value;
+            /**
+                Length of the node.
+            */
+            @property size_t length() => values.length;
+
+            /**
+                Removes the given key from the object.
+
+                Params:
+                    key = The key to remove.
+            */
+            void remove(string key) {
+                ptrdiff_t idx = findEntry(key);
+                if (idx >= 0) {
+                    values.deleteRange(values[idx..idx+1]);
+                }
             }
+
+            /**
+                Assigns an element of the object node.
+
+                Params:
+                    key = The key to query.
+                    value = The value to set.
+            */
+            void opIndexAssign(T)(T value, string key) {
+                ptrdiff_t idx = findEntry(key);
+                if (idx >= 0) {
+                    nogc_delete(values[idx].value);
+                    values[idx].value = DataNode(value);
+                    return;
+                }
+
+                // Append our new entry.
+                values.resize(values.length+1);
+                values[$-1] = KV(key.nu_dup, DataNode(value));
+            }
+
+            /**
+                Gets whether the given key is present in the object.
+
+                Params:
+                    key = The key to query.
+
+                Returns:
+                    $(D true) if the object contains a value with the given key,
+                    $(D false) otherwise.
+            */
+            bool opBinaryRight(string op)(string key) const nothrow
+            if (op == "in") {
+                return findEntry(key) != -1;
+            }
+
+            /**
+                Gets the given entry in the object.
+
+                Params:
+                    key = The key to query.
+
+                Returns:
+                    The $(D DataNode) with the given key.
+            */
+            DataNode opIndex(string key) nothrow {
+                ptrdiff_t idx = findEntry(key);
+                return idx >= 0 ? (values[idx].value) : DataNode.init;
+            }
+        }
+
+        static
+        struct ArrayNode {
+        private:
+        @nogc:
+            ManagedArray!DataNode values;
         
-            string key;
-            DataNode value;
-        }
-        ManagedArray!KV values;
+        public:
 
-        /// Helper that finds an entry by its key.
-        pragma(inline, true)
-        ptrdiff_t findEntry(string key) const nothrow {
-            foreach(i, ref entry; values) {
-                if (entry.key == key)
-                    return i;
+            /// Destructor
+            ~this() {
+                values.resize(0);
             }
-            return -1;
-        }
 
-    public:
+            /**
+                Length of the node.
+            */
+            @property size_t length() => values.length;
 
-        /// Destructor
-        ~this() {
-            values.resize(0);
-        }
+            /**
+                Removes the given index from the array.
 
-        /**
-            Length of the node.
-        */
-        @property size_t length() => values.length;
-
-        /**
-            Removes the given key from the object.
-
-            Params:
-                key = The key to remove.
-        */
-        void remove(string key) {
-            ptrdiff_t idx = findEntry(key);
-            if (idx >= 0) {
+                Params:
+                    idx = The index to remove.
+            */
+            void remove(size_t idx) {
+                if (idx >= values.length)
+                    return;
+                
                 values.deleteRange(values[idx..idx+1]);
             }
-        }
 
-        /**
-            Assigns an element of the object node.
+            /**
+                Adds the given entry into the array.
 
-            Params:
-                key = The key to query.
-                value = The value to set.
-
-            Returns:
-                A $(D Variant) pointer if the object contains the entry,
-                $(D null) otherwise. 
-        */
-        auto ref opIndexAssign(T)(T value, string key) {
-            ptrdiff_t idx = findEntry(key);
-            if (idx >= 0) {
-                nogc_delete(values[idx].value);
-                values[idx].value = DataNode(value);
-                return value;
+                Params:
+                    rhs = Value to append
+            */
+            void opOpAssign(string op)(DataNode rhs) nothrow
+            if (op == "~") {
+                values.resize(values.length+1);
+                values[$-1] = rhs;
             }
 
-            // Append our new entry.
-            values.resize(values.length+1);
-            values[$-1] = KV(key.nu_dup, DataNode(value));
-            return value;
+            /**
+                Assigns an element of the array node.
+
+                Params:
+                    rhs = The value to set.
+                    idx = The idx to set.
+            */
+            void opIndexAssign(T)(T rhs, size_t idx) {
+                if (idx >= values.length)
+                    return;
+                
+                values[idx] = rhs;
+            }
+
+            /**
+                Gets the given entry in the array.
+
+                Params:
+                    idx = The index to query.
+
+                Returns:
+                    The $(D DataNode) with the given index.
+            */
+            DataNode opIndex(size_t idx) nothrow {
+                return idx < values.length ? values[idx] : DataNode.init;
+            }
         }
 
-        /**
-            Gets whether the given key is present in the object.
-
-            Params:
-                key = The key to query.
-
-            Returns:
-                $(D true) if the object contains a value with the given key,
-                $(D false) otherwise.
-        */
-        bool opBinaryRight(string op)(string key) const nothrow
-        if (op == "in") {
-            return findEntry(key) != -1;
-        }
-
-        /**
-            Gets the given entry in the object.
-
-            Params:
-                key = The key to query.
-
-            Returns:
-                The $(D DataNode) with the given key.
-        */
-        DataNode opIndex(string key) nothrow {
-            ptrdiff_t idx = findEntry(key);
-            return idx >= 0 ? (values[idx].value) : DataNode.init;
-        }
+        void* undefined;
+        string string_;
+        long int_; 
+        ulong uint_; 
+        float float_; 
+        ArrayNode array_; 
+        ObjectNode object_; 
     }
 
-    static
-    struct DataNodeValues {
-    public:
-    @nogc:
-        static
-        union Values {
-        @nogc:
-            static foreach(int i, T; ALL_NODES) {
-                mixin("T value", i.stringof, ";");
-            }
-        }
-
-        uint type;
-        Values data;
-
-        // Length helper
-        @property size_t length() {
-            switch(type) {
-                static foreach(i, T; ALL_NODES) {
-                    case i:
-                        static if (is(typeof(() => T.init.length)))
-                            return data.tupleof[i].length;
-                        else
-                            return 0;
-                }
-                default:
-                    return 0;
-            }
-        }
-
-        this(T)(T value) {
-            this.type = typeIdOf!T;
-            static if (is(T == string)) {
-                this.data.tupleof[typeIdOf!string] = value.nu_dup();
-            } else {
-                this.data.tupleof[typeIdOf!T] = value;
-            }
-        }
-
-        ~this() {
-            static foreach(i, T; ALL_NODES) {
-                static if (is(T == string)) {
-                    if (type == typeIdOf!string)
-                        nu_freea(data.tupleof[i]);
-                } else {
-                    if (type == typeIdOf!T)
-                        nogc_delete(data.tupleof[i]);
-                }
-            }
-        }
-    }
+    DataNodeType dataType = DataNodeType.undefined;
+    DataNodeStore dataStore;
 public:
 
     /**
-        Whether the node contains data of the given type.
+        The type of data stored within the node.
     */
-    pragma(inline, true)
-    @property bool isType(T)() => data_.isValid && (data_.type == typeIdOf!T);
+    @property DataNodeType type() nothrow pure => dataType;
 
     /**
-        Whether the node contains no data.
+        Whether the DataNode contains a numeric value.
     */
-    pragma(inline, true)
-    @property bool isUndefined() => !data_.isValid;
+    @property bool isNumber() nothrow pure => dataType >= DataNodeType.int_ && dataType <= DataNodeType.float_;
 
     /**
-        Whether the node contains a number.
+        The text content of the node, or null.
     */
-    pragma(inline, true)
-    @property bool isNumber() nothrow => isType!float || isType!int;
+    @property string text() nothrow pure => isType(DataNodeType.string_) ? dataStore.string_[] : null;
 
     /**
-        Whether the node contains an integer.
+        The text content of the node, or null.
     */
-    pragma(inline, true)
-    @property bool isIntegral() nothrow => isType!int();
-
-    /**
-        Whether the node contains a string.
-    */
-    pragma(inline, true)
-    @property bool isText() nothrow => isType!string();
-
-    /**
-        Whether the node contains a byte.
-    */
-    pragma(inline, true)
-    @property bool isByte() nothrow => isType!ubyte();
-
-    /**
-        Whether the node contains an array.
-    */
-    pragma(inline, true)
-    @property bool isObject() nothrow => isType!ObjectNode;
-
-    /**
-        Whether the node contains an array.
-    */
-    pragma(inline, true)
-    @property bool isArray() nothrow => data_.isValid && data_.type >= ARRAY_ID!0;
-    
-    /**
-        The number value of the node.
-    */
-    @property float number() => isNumber ? (isIntegral ? cast(float)data_.data.tupleof[typeIdOf!int] : data_.data.tupleof[typeIdOf!float]) : float.nan;
-
-    /**
-        The integral value of the node
-    */
-    @property int integral() => isIntegral ? data_.data.tupleof[typeIdOf!int] : 0;
-
-    /**
-        The text value of the node.
-    */
-    @property string text() => isText ? data_.data.tupleof[typeIdOf!string] : null;
-
-    /**
-        Gets the sub-array stored in the $(D DataNode)
-    */
-    @property T[] array(T)()
-    if (typeIdOf!T >= 0) {
-        if (!isArray)
-            return T.init;
-
-        return data_.data.tupleof[ARRAY_ID!(typeIdOf!T)].values;
-    }
-
-    /**
-        Length of the node, if it's an array or object.
-    */
-    @property size_t length() => data_.isValid ? data_.length : 0;
+    @property float number() nothrow pure => tryCoerce!float(float.nan);
 
     /// Destructor
     ~this() {
-        nogc_delete(data_);
-    }
+        switch(dataType) {
+            default:
+                this.dataType = DataNodeType.undefined;
+                break;
+            
+            case DataNodeType.string_:
+                nu_freea(this.dataStore.string_);
+                break;
 
-    /// Copy-constructor
-    this(ref return scope DataNode rhs) {
-        this.data_ = rhs.data_;
+            case DataNodeType.array_:
+                nogc_delete(this.dataStore.array_);
+                break;
+
+            case DataNodeType.object_:
+                nogc_delete(this.dataStore.object_);
+                break;
+        }
+
     }
 
     /**
-        Creates a new object data node.
+        Creates a new object node.
     */
     static DataNode createObject() {
         DataNode v;
-        v.data_ = shared_new!DataNodeValues(ObjectNode());
+        v.dataType = DataNodeType.object_;
+        nogc_initialize(v.dataStore.object_);
         return v;
     }
-    
+
     /**
-        Creates a new array data node.
+        Creates a new array node.
     */
-    static DataNode createArrayOf(T)()
-    if (typeIdOf!T >= 0) {
+    static DataNode createArray() {
         DataNode v;
-        v.data_ = shared_new!DataNodeValues(ArrayNode!T());
+        v.dataType = DataNodeType.array_;
+        nogc_initialize(v.dataStore.array_);
         return v;
     }
 
-    static foreach(T; BASIC_NODES) {
-
-        /**
-            Constructs a basic DataNode.
-
-            Params:
-                value = The initial value of the node.
-        */
-        this(T value) {
-            this.data_ = shared_new!DataNodeValues(value);
+    /**
+        Constructs an integer data node.
+    */
+    static foreach(T; AliasSeq!(byte, short, int, long)) {
+        this()(auto ref T value) @safe nothrow {
+            this.dataType = DataNodeType.int_;
+            this.dataStore = DataNodeStore(int_: cast(long)value);
         }
     }
 
     /**
-        Removes the given key from the array.
+        Constructs an unsigned integer data node.
+    */
+    static foreach(T; AliasSeq!(ubyte, ushort, uint, ulong)) {
+        this()(auto ref T value) @safe nothrow {
+            this.dataType = DataNodeType.uint_;
+            this.dataStore = DataNodeStore(uint_: cast(ulong)value);
+        }
+    }
+
+    /**
+        Constructs a floating point data node.
+    */
+    static foreach(T; AliasSeq!(float, double)) {
+        this()(auto ref T value) @safe nothrow {
+            this.dataType = DataNodeType.float_;
+            this.dataStore = DataNodeStore(float_: cast(double)value);
+        }
+    }
+
+    /**
+        Constructs a string data node.
+    */
+    this()(auto ref string value) @safe nothrow {
+        this.dataType = DataNodeType.string_;
+        this.dataStore = DataNodeStore(string_: value.nu_dup());
+    }
+
+    /**
+        Copy constructor
+    */
+    this()(scope auto ref inout(typeof(this)) rhs) {
+        this.dataType = rhs.dataType;
+        switch(dataType) {
+            case DataNodeType.string_:
+                this.dataStore.string_ = rhs.dataStore.string_.nu_dup();
+                break;
+            
+            case DataNodeType.array_:
+                this.dataStore.array_ = rhs.dataStore.array_.nu_dup();
+                break;
+            
+            case DataNodeType.object_:
+                this.dataStore.object_ = rhs.dataStore.object_.nu_dup();
+                break;
+            
+            default:
+                this.dataStore = rhs.dataStore;
+                break;
+        }
+    }
+
+    /**
+        Coerces the value of the DataNode to the given type, if possible.
+    */
+    T tryCoerce(T)(T defaultValue = T.init) nothrow pure {
+        switch(dataType) {
+            case DataNodeType.string_:
+                static if (is(T == string))
+                    return dataStore.string_;
+                else
+                    return defaultValue;
+            
+            case DataNodeType.uint_:
+                static if (isNumeric!T)
+                    return cast(T)dataStore.uint_;
+                else
+                    return defaultValue;
+            
+            case DataNodeType.int_:
+                static if (isNumeric!T)
+                    return cast(T)dataStore.int_;
+                else
+                    return defaultValue;
+            
+            case DataNodeType.float_:
+                static if (isNumeric!T)
+                    return cast(T)dataStore.float_;
+                else
+                    return defaultValue;
+            
+            default:
+                return defaultValue;
+        }
+    }
+
+    /**
+        Gets whether this DataNode contains data of the given type.
+
+        Params:
+            type = The type to check for.
+        
+        Returns:
+            $(D true) if the type of the data in the node matches,
+            $(D false) otherwise.
+    */
+    bool isType(inout(DataNodeType) type) inout nothrow pure => this.dataType == type;
+
+    /**
+        Length of the node.
+    */
+    @property size_t length() {
+        switch(dataType) {
+            case DataNodeType.array_:
+                return dataStore.array_.length;
+            case DataNodeType.object_:
+                return dataStore.array_.length;
+            case DataNodeType.string_:
+                return dataStore.array_.length;
+            default:
+                return 0;
+        }
+    }
+
+    /**
+        Removes the given key from the object.
 
         Params:
             key = The key to remove.
     */
     void remove(string key) {
-        if (!isObject)
-            return;
-
-        data_.data.tupleof[typeIdOf!ObjectNode].remove(key);
+        if (this.isType(DataNodeType.object_)) {
+            dataStore.object_.remove(key);
+        }
     }
 
     /**
-        Removes the given key from the array.
+        Removes the given index from the array.
 
         Params:
             idx = The index to remove.
     */
     void remove(size_t idx) {
-        if (!isArray)
-            return;
-
-        switch_: switch(data_.type) {
-            default: break switch_;
-            
-            static foreach(i, T; ARRAY_NODES) {
-                case ARRAY_ID!i:
-                    data_.data.tupleof[ARRAY_ID!i].remove(idx);
-                    break switch_;
-            }
+        if (this.isType(DataNodeType.array_)) {
+            dataStore.array_.remove(idx);
         }
     }
+
     /**
-        Gets an a $(D DataNode) associated with a key, if this is an object.
+        Adds the given entry into the array.
+
+        Params:
+            rhs = Value to append
+    */
+    void opOpAssign(string op)(DataNode rhs) nothrow
+    if (op == "~") {
+        if (this.isType(DataNodeType.array_)) {
+            dataStore.array_.opOpAssign!op(rhs);
+        }
+    }
+
+    /**
+        Assigns an element of the object node.
 
         Params:
             key = The key to query.
-    */
-    auto ref opIndex(string key) {
-        if (!isObject)
-            return DataNode.init;
-        
-        return data_.data.tupleof[typeIdOf!ObjectNode].opIndex(key);
-    }
-
-    /**
-        Assigns a specific element of the data node.
-
-        Params:
-            idx = The index to set, must be within range.
             value = The value to set.
-
-        Returns:
-            A $(D Variant) pointer if the object contains the entry,
-            $(D null) otherwise. 
     */
-    auto ref opIndexAssign(T)(T value, size_t idx) {
-        if (!isArray)
-            return value;
-
-        switch(data_.type) {
-            default:
-                return value;
-            
-            static foreach(i, T; ARRAY_NODES) {
-                case ARRAY_ID!i:
-                    if (idx >= data_.data.tupleof[ARRAY_ID!i].length)
-                        return value;
-                    
-                    data_.data.tupleof[ARRAY_ID!i][idx] = value;
-                    return value;
-            }
+    void opIndexAssign(T)(T value, string key) {
+        if (this.isType(DataNodeType.object_)) {
+            dataStore.object_.opIndexAssign!T(value, key);
         }
     }
 
     /**
-        Assigns a specific element of the data node.
+        Assigns an element of the array node.
 
         Params:
-            key = The key to set.
-            value = The value to set.
-
-        Returns:
-            A $(D Variant) pointer if the object contains the entry,
-            $(D null) otherwise. 
+            rhs = The value to set.
+            idx = The idx to set.
     */
-    auto ref opIndexAssign(T)(T value, string key) {
-        if (!isObject)
-            return value;
-
-        data_.data.tupleof[typeIdOf!ObjectNode].opIndexAssign!T(value, key);
-        return value;
+    void opIndexAssign(T)(T rhs, size_t idx) {
+        if (this.isType(DataNodeType.array_)) {
+            dataStore.array_.opIndexAssign!T(rhs, idx);
+        }
     }
 
     /**
-        Gets whether the given key is present in the DataNode, if it's an object..
+        Gets whether the given key is present in the object.
 
         Params:
             key = The key to query.
@@ -463,10 +480,37 @@ public:
             $(D true) if the object contains a value with the given key,
             $(D false) otherwise.
     */
-    bool opBinaryRight(string op)(string key) nothrow
+    bool opBinaryRight(string op)(string key) const nothrow
     if (op == "in") {
-        return isObject ? data_.data.tupleof[typeIdOf!ObjectNode].opBinaryRight!(op)(key) : false;
+        return this.isType(DataNodeType.object_) ? dataStore.object_.opBinaryRight!(op)(key) : false;
     }
+
+    /**
+        Gets the given entry in the object.
+
+        Params:
+            key = The key to query.
+
+        Returns:
+            The $(D DataNode) with the given key.
+    */
+    DataNode opIndex(string key) nothrow {
+        return this.isType(DataNodeType.object_) ? dataStore.object_.opIndex(key) : DataNode.init;
+    }
+
+    /**
+        Gets the given entry in the array.
+
+        Params:
+            idx = The index to query.
+
+        Returns:
+            The $(D DataNode) with the given index.
+    */
+    DataNode opIndex(size_t idx) nothrow {
+        return this.isType(DataNodeType.array_) ? dataStore.array_.opIndex(idx) : DataNode.init;
+    }
+
 }
 
 @("Create node.")
