@@ -18,130 +18,16 @@ import numem;
 */
 enum NO_THUMBNAIL = uint.max;
 
-enum PuppetAllowedUsers {
-    /**
-        Only the author(s) are allowed to use the puppet
-    */
-    OnlyAuthor = "onlyAuthor",
-
-    /**
-        Only licensee(s) are allowed to use the puppet
-    */
-    OnlyLicensee = "onlyLicensee",
-
-    /**
-        Everyone may use the model
-    */
-    Everyone = "everyone"
-}
-
-enum PuppetAllowedRedistribution {
-    /**
-        Redistribution is prohibited
-    */
-    Prohibited = "prohibited",
-
-    /**
-        Redistribution is allowed, but only under
-        the same license as the original.
-    */
-    ViralLicense = "viralLicense",
-
-    /**
-        Redistribution is allowed, and the puppet
-        may be redistributed under a different
-        license than the original.
-
-        This goes in conjunction with modification rights.
-    */
-    CopyleftLicense = "copyleftLicense"
-}
-
-enum PuppetAllowedModification {
-    /**
-        Modification is prohibited
-    */
-    Prohibited = "prohibited",
-
-    /**
-        Modification is only allowed for personal use
-    */
-    AllowPersonal = "allowPersonal",
-
-    /**
-        Modification is allowed with redistribution,
-        see allowedRedistribution for redistribution terms.
-    */
-    AllowRedistribute = "allowRedistribute",
-}
-
-class PuppetUsageRights {
-    /**
-        Who is allowed to use the puppet?
-    */
-    PuppetAllowedUsers allowedUsers = PuppetAllowedUsers.OnlyAuthor;
-
-    /**
-        Whether violence content is allowed
-    */
-    bool allowViolence = false;
-
-    /**
-        Whether sexual content is allowed
-    */
-    bool allowSexual = false;
-
-    /**
-        Whether commerical use is allowed
-    */
-    bool allowCommercial = false;
-
-    /**
-        Whether a model may be redistributed
-    */
-    PuppetAllowedRedistribution allowRedistribution = PuppetAllowedRedistribution.Prohibited;
-
-    /**
-        Whether a model may be modified
-    */
-    PuppetAllowedModification allowModification = PuppetAllowedModification.Prohibited;
-
-    /**
-        Whether the author(s) must be attributed for use.
-    */
-    bool requireAttribution = false;
-    
-    /**
-        Serializes the type.
-    */
-    void onSerialize(ref JSONValue object, bool recursive = true) {
-        object["allowedUsers"] = this.allowedUsers;
-        object["allowViolence"] = this.allowViolence;
-        object["allowSexual"] = this.allowSexual;
-        object["allowCommercial"] = this.allowCommercial;
-        object["allowRedistribution"] = this.allowRedistribution;
-        object["allowModification"] = this.allowModification;
-        object["requireAttribution"] = this.requireAttribution;
-    }
-    
-    /**
-        Deserializes the type.
-    */
-    void onDeserialize(ref JSONValue object) {
-        object.tryGetRef(allowedUsers, "allowedUsers");
-        object.tryGetRef(allowViolence, "allowViolence");
-        object.tryGetRef(allowSexual, "allowSexual");
-        object.tryGetRef(allowCommercial, "allowCommercial");
-        object.tryGetRef(allowRedistribution, "allowRedistribution");
-        object.tryGetRef(allowModification, "allowModification");
-        object.tryGetRef(requireAttribution, "requireAttribution");
-    }
-}
-
 /**
-    Puppet meta information
+    Puppet properties
 */
-class PuppetMeta {
+class PuppetProperties : ISerializable, IDeserializable {
+public:
+
+    /**
+        Parent puppet object
+    */
+    Puppet parent;
 
     /**
         Name of the puppet
@@ -149,120 +35,63 @@ class PuppetMeta {
     nstring name;
 
     /**
-        Version of the Inochi2D spec that was used for creating this model
+        Author of the puppet
     */
-    nstring version_ = "0.8.x";
+    nstring author;
 
     /**
-        Rigger(s) of the puppet
+        Thumbnail of the puppet.
     */
-    nstring rigger;
+    Texture thumbnail;
 
     /**
-        Artist(s) of the puppet
+        Pixels-per-meter for the physics system
     */
-    nstring artist;
-
+    float physicsPixelsPerMeter = 1000;
+    
     /**
-        Usage Rights of the puppet
+        Gravity for the physics system
     */
-    PuppetUsageRights rights;
-
-    /**
-        Copyright string
-    */
-    nstring copyright;
-
-    /**
-        URL of license
-    */
-    nstring licenseURL;
-
-    /**
-        Contact information of the first author
-    */
-    nstring contact;
-
-    /**
-        Link to the origin of this puppet
-    */
-    nstring reference;
-
-    /**
-        Texture ID of this puppet's thumbnail
-    */
-    uint thumbnailId = NO_THUMBNAIL;
+    float physicsGravity = 9.8;
 
     /**
         Whether the puppet should preserve pixel borders.
         This feature is mainly useful for puppets which use pixel art.
     */
-    bool preservePixels = false;
+    bool graphicsUsePointFiltering = false;
+
+    /**
+        Constructs a new properties object.
+    */
+    this(Puppet puppet) @nogc {
+        this.parent = puppet;
+    }
     
     /**
         Serializes the type.
     */
     void onSerialize(ref JSONValue object, bool recursive = true) {
-        object["name"] = this.name;
-        object["version"] = this.version_;
-        object["rigger"] = this.rigger;
-        object["artist"] = this.artist;
-        object["rights"] = this.rights.serialize();
-        object["copyright"] = this.copyright;
-        object["licenseURL"] = this.licenseURL;
-        object["contact"] = this.contact;
-        object["reference"] = this.reference;
-        object["thumbnailId"] = this.thumbnailId;
-        object["preservePixels"] = this.preservePixels;
-    }
-    
-    /**
-        Deserializes the type.
-    */
-    void onDeserialize(ref JSONValue object) {
-        object.tryGetRef(name, "name");
-        object.tryGetRef(version_, "version");
-        object.tryGetRef(rigger, "rigger");
-        object.tryGetRef(artist, "artist");
-        object.tryGetRef(rights, "rights");
-        object.tryGetRef(copyright, "copyright");
-        object.tryGetRef(licenseURL, "licenseURL");
-        object.tryGetRef(contact, "contact");
-        object.tryGetRef(reference, "reference");
-        object.tryGetRef(thumbnailId, "thumbnailId");
-        object.tryGetRef(preservePixels, "preservePixels");
-    }
-}
 
-/**
-    Puppet physics settings
-*/
-class PuppetPhysics : ISerializable, IDeserializable {
-    
-    /**
-        Pixels-per-meter for the physics system
-    */
-    float pixelsPerMeter = 1000;
-    
-    /**
-        Gravity for the physics system
-    */
-    float gravity = 9.8;
-    
-    /**
-        Serializes the type.
-    */
-    void onSerialize(ref JSONValue object, bool recursive) {
-        object["pixelsPerMeter"] = pixelsPerMeter;
-        object["gravity"] = gravity;
+        // General Properties.
+        object["name"] = name[];
+        object["author"] = author[];
+        object["thumbnail"] = parent.textureCache.find(thumbnail);
+
+
+        // Physics properties.
+        object["physicsPixelsPerMeter"] = physicsPixelsPerMeter;
+        object["physicsGravity"] = physicsGravity;
+
+        // Graphics properties
+        object["graphicsUsePointFiltering"] = graphicsUsePointFiltering;
     }
     
     /**
         Deserializes the type.
     */
     void onDeserialize(ref JSONValue object) {
-        object.tryGetRef(pixelsPerMeter, "pixelsPerMeter");
-        object.tryGetRef(gravity, "gravity");
+        object.tryGetRef(physicsPixelsPerMeter, "pixelsPerMeter");
+        object.tryGetRef(physicsGravity, "gravity");
     }
 }
 
@@ -404,36 +233,7 @@ protected:
         Serializes a puppet into an existing object.
     */
     void onSerialize(ref JSONValue object, bool recursive) {
-
-        // Meta Info
-        object["meta"] = JSONValue.emptyObject;
-        object["meta"]["name"] = meta.name;
-        object["meta"]["version"] = meta.version_;
-        object["meta"]["rigger"] = meta.rigger;
-        object["meta"]["artist"] = meta.artist;
-        object["meta"]["copyright"] = meta.copyright;
-        object["meta"]["licenseURL"] = meta.licenseURL;
-        object["meta"]["contact"] = meta.contact;
-        object["meta"]["reference"] = meta.reference;
-        object["meta"]["thumbnailId"] = meta.thumbnailId;
-        object["meta"]["preservePixels"] = meta.preservePixels;
-        
-        // Meta Rights Info
-        if (meta.rights) {
-            object["meta"]["rights"] = JSONValue.emptyObject;
-            object["meta"]["rights"]["allowedUsers"] = meta.rights.allowedUsers;
-            object["meta"]["rights"]["allowViolence"] = meta.rights.allowViolence;
-            object["meta"]["rights"]["allowSexual"] = meta.rights.allowSexual;
-            object["meta"]["rights"]["allowCommercial"] = meta.rights.allowCommercial;
-            object["meta"]["rights"]["allowRedistribution"] = meta.rights.allowRedistribution;
-            object["meta"]["rights"]["allowModification"] = meta.rights.allowModification;
-            object["meta"]["rights"]["requireAttribution"] = meta.rights.requireAttribution;
-        }
-
-        // Physics Info
-        object["physics"] = JSONValue.emptyObject;
-        object["physics"]["pixelsPerMeter"] = physics.pixelsPerMeter;
-        object["physics"]["gravity"] = physics.gravity;
+        object["properties"] = properties.serialize();
 
         // Create objects for nodes, params, automation and animation.
         object["nodes"] = root.serialize();
@@ -450,11 +250,22 @@ protected:
         if (!object.isJsonObject)
             return;
 
-        object.tryGetRef(meta, "meta");
-        object.tryGetRef(physics, "physics");
+        object.tryGetRef(properties, "settings");
         object.tryGetRef(root, "nodes");
         object.tryGetRef(parameters, "param");
         object.tryGetRef(animations, "animations");
+
+        // Legacy "meta" key.
+        if (object.hasKey("meta")) {
+            object["meta"].tryGetRef(properties.graphicsUsePointFiltering, "preservePixels");
+        }
+
+        // Legacy "physics" key.
+        if (object.hasKey("physics")) {
+            object["physics"].tryGetRef(properties.physicsPixelsPerMeter, "pixelsPerMeter");
+            object["physics"].tryGetRef(properties.physicsGravity, "gravity");
+        }
+
         this.reconstruct();
         this.finalize();
     }
@@ -489,14 +300,9 @@ protected:
 public:
 
     /**
-        Meta information about this puppet
+        Properties for the puppet.
     */
-    PuppetMeta meta;
-
-    /**
-        Global physics settings for this puppet
-    */
-    PuppetPhysics physics;
+    PuppetProperties properties;
 
     /**
         The root node of the puppet
@@ -542,6 +348,8 @@ public:
 
     // Destructor
     ~this() {
+        nogc_delete(properties);
+
         nogc_delete(drawList_);
         nogc_delete(textureCache);
     }
@@ -550,12 +358,11 @@ public:
         Creates a new puppet from nothing ()
     */
     this(TextureCache cache = null) {
+        this.properties = nogc_new!PuppetProperties(this);
+
         this.puppetRootNode = new Node(this); 
         this.root = new Node(this.puppetRootNode); 
         this.root.name = "Root";
-
-        this.meta = new PuppetMeta();
-        this.physics = new PuppetPhysics();
 
         this.textureCache = cache ? cache : nogc_new!TextureCache();
         this.drawList_ = nogc_new!DrawList();
@@ -565,8 +372,7 @@ public:
         Creates a new puppet from a node tree
     */
     this(Node root) {
-        this.meta = new PuppetMeta();
-        this.physics = new PuppetPhysics();
+        this.properties = nogc_new!PuppetProperties(this);
         this.root = root;
         this.puppetRootNode = new Node(this);
         this.root.name = "Root";
@@ -738,7 +544,8 @@ public:
         Sets thumbnail of this puppet
     */
     final void setThumbnail(Texture texture) {
-        this.meta.thumbnailId = textureCache.add(texture);
+        textureCache.add(texture);
+        this.properties.thumbnail = texture;
     }
 
     /**
@@ -748,52 +555,6 @@ public:
     */
     final ptrdiff_t getTextureSlotIndexFor(Texture texture) {
         return textureCache.find(texture);
-    }
-
-    /**
-        This cursed toString implementation outputs the puppet's
-        nodetree as a pretty printed tree.
-
-        Please use a graphical viewer instead of this if you can,
-        eg. Inochi Creator.
-    */
-    override
-    string toString() {
-        import std.format : format;
-        import std.range : repeat, takeExactly;
-        import std.array : array;
-        bool[] lineSet;
-
-        string toStringBranch(Node n, int indent, bool showLines = true) {
-
-            lineSet ~= n.children.length > 0;
-            string getLineSet() {
-                if (indent == 0) return "";
-                string s = "";
-                foreach(i; 1..lineSet.length) {
-                    s ~= lineSet[i-1] ? "│ " : "  ";
-                }
-                return s;
-            }
-
-            string iden = getLineSet();
-
-            string s = "%s[%s] %s <%s>\n".format(n.children.length > 0 ? "╭─" : "", n.typeId, n.name, n.guid.toString()[]);
-            foreach(i, child; n.children) {
-                string term = "├→";
-                if (i == n.children.length-1) {
-                    term = "╰→";
-                    lineSet[indent] = false;
-                }
-                s ~= "%s%s%s".format(iden, term, toStringBranch(child, indent+1));
-            }
-
-            lineSet.length--;
-
-            return s;
-        }
-
-        return toStringBranch(root, 0);
     }
 
     /**

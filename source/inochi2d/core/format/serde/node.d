@@ -1,7 +1,6 @@
 module inochi2d.core.format.serde.node;
 import nulib.data.variant;
 import nulib.collections;
-import nulib.memory.shared_ptr;
 import numem.core.traits;
 import numem.core.meta;
 import numem;
@@ -17,7 +16,7 @@ enum DataNodeType : uint {
 }
 
 /**
-
+    A node containing data for (de)serialization.
 */
 struct DataNode {
 private:
@@ -227,6 +226,11 @@ public:
     @property DataNodeType type() nothrow pure => dataType;
 
     /**
+        Whether the DataNode contains a nil value.
+    */
+    @property bool isNull() nothrow pure => dataType == DataNodeType.undefined;
+
+    /**
         Whether the DataNode contains a numeric value.
     */
     @property bool isNumber() nothrow pure => dataType >= DataNodeType.int_ && dataType <= DataNodeType.float_;
@@ -242,7 +246,7 @@ public:
     @property float number() nothrow pure => tryCoerce!float(float.nan);
 
     /// Destructor
-    ~this() {
+    ~this() @trusted nothrow {
         switch(dataType) {
             default:
                 this.dataType = DataNodeType.undefined;
@@ -253,11 +257,11 @@ public:
                 break;
 
             case DataNodeType.array_:
-                nogc_delete(this.dataStore.array_);
+                nogc_trydelete(this.dataStore.array_);
                 break;
 
             case DataNodeType.object_:
-                nogc_delete(this.dataStore.object_);
+                nogc_trydelete(this.dataStore.object_);
                 break;
         }
 
@@ -266,7 +270,7 @@ public:
     /**
         Creates a new object node.
     */
-    static DataNode createObject() {
+    static DataNode createObject() @trusted nothrow {
         DataNode v;
         v.dataType = DataNodeType.object_;
         nogc_initialize(v.dataStore.object_);
@@ -276,7 +280,7 @@ public:
     /**
         Creates a new array node.
     */
-    static DataNode createArray() {
+    static DataNode createArray() @trusted nothrow {
         DataNode v;
         v.dataType = DataNodeType.array_;
         nogc_initialize(v.dataStore.array_);
@@ -324,7 +328,7 @@ public:
     /**
         Copy constructor
     */
-    this()(scope auto ref inout(typeof(this)) rhs) {
+    this()(scope auto ref inout(typeof(this)) rhs) @trusted nothrow {
         this.dataType = rhs.dataType;
         switch(dataType) {
             case DataNodeType.string_:
@@ -510,7 +514,6 @@ public:
     DataNode opIndex(size_t idx) nothrow {
         return this.isType(DataNodeType.array_) ? dataStore.array_.opIndex(idx) : DataNode.init;
     }
-
 }
 
 @("Create node.")

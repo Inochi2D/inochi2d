@@ -310,37 +310,37 @@ public:
     /**
         Physics scale.
     */
-    @property float scale() => puppet.physics.pixelsPerMeter;
+    @property float scale() => puppet.properties.physicsPixelsPerMeter;
 
     /**
         The final gravity
     */
-    @property float finalGravity() { return (gravity * offsetGravity) * puppet.physics.gravity * this.scale; }
+    @property float finalGravity() => (gravity * offsetGravity) * puppet.properties.physicsGravity * this.scale;
 
     /**
         The final length
     */
-    @property float finalLength() { return length + offsetLength; }
+    @property float finalLength() => length + offsetLength;
 
     /**
         The final frequency
     */
-    @property float finalFrequency() { return frequency * offsetFrequency; }
+    @property float finalFrequency() => frequency * offsetFrequency;
 
     /**
         The final angle damping
     */
-    @property float finalAngleDamping() { return angleDamping * offsetAngleDamping; }
+    @property float finalAngleDamping() => angleDamping * offsetAngleDamping;
 
     /**
         The final length damping
     */
-    @property float finalLengthDamping() { return lengthDamping * offsetLengthDamping; }
+    @property float finalLengthDamping() => lengthDamping * offsetLengthDamping;
 
     /**
         The final output scale
     */
-    @property vec2 finalOutputScale() { return outputScale * offsetOutputScale; }
+    @property vec2 finalOutputScale() => outputScale * offsetOutputScale;
 
     /**
         Constructs a new SimplePhysics node

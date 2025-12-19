@@ -217,7 +217,6 @@ ubyte[] inWriteINPPuppetMemory(Puppet p) {
     auto app = appender!(ubyte[]);
 
     // Write the current used Inochi2D version to the version_ meta tag.
-    p.meta.version_ = IN_VERSION;
     string puppetJson = inToJson(p);
 
     app ~= MAGIC_BYTES;
