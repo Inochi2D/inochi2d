@@ -121,7 +121,7 @@ void in_puppet_free(in_puppet_t* obj) {
         its author.
 */
 const(char)* in_puppet_get_name(in_puppet_t* obj) {
-    return ((cast(Puppet)obj).meta !is null) ? (cast(Puppet)obj).meta.name.ptr : null;
+    return ((cast(Puppet)obj).properties !is null) ? (cast(Puppet)obj).properties.name.ptr : null;
 }
 
 /**
@@ -158,7 +158,7 @@ void in_puppet_set_physics_enabled(in_puppet_t* obj, bool value) {
         A value describing how many pixels count as a meter.
 */
 float in_puppet_get_pixels_per_meter(in_puppet_t* obj) {
-    return (cast(Puppet)obj).physics.pixelsPerMeter;
+    return (cast(Puppet)obj).properties.physicsPixelsPerMeter;
 }
 
 /**
@@ -169,7 +169,7 @@ float in_puppet_get_pixels_per_meter(in_puppet_t* obj) {
         value = The value to set.
 */
 void in_puppet_set_pixels_per_meter(in_puppet_t* obj, float value) {
-    (cast(Puppet)obj).physics.pixelsPerMeter = value;
+    (cast(Puppet)obj).properties.physicsPixelsPerMeter = value;
 }
 
 /**
@@ -183,7 +183,7 @@ void in_puppet_set_pixels_per_meter(in_puppet_t* obj, float value) {
         pulls on the puppet. Normally is 9.8.
 */
 float in_puppet_get_gravity(in_puppet_t* obj) {
-    return (cast(Puppet)obj).physics.gravity;
+    return (cast(Puppet)obj).properties.physicsGravity;
 }
 
 /**
@@ -194,7 +194,7 @@ float in_puppet_get_gravity(in_puppet_t* obj) {
         value = The value to set.
 */
 void in_puppet_set_gravity(in_puppet_t* obj, float value) {
-    (cast(Puppet)obj).physics.gravity = value;
+    (cast(Puppet)obj).properties.physicsGravity = value;
 }
 
 /**
