@@ -4,9 +4,15 @@ authors "Luna Nielsen"
 copyright "Copyright © 2020, Inochi2D Project"
 license "BSD-2-Clause"
 
+toolchainRequirements dmd="no" gdc="no" ldc=">=1.40.0"
+
 targetPath "out/"
 
+// Submodules
+subPackage "modules/inp"
+
 // Internally needed libraries.
+dependency ":inp" version="*"
 dependency "inmath" version=">=1.3.0"
 dependency "imagefmt" version="~>2.1"
 dependency "intel-intrinsics" version="~>1.12"
@@ -14,7 +20,6 @@ dependency "intel-intrinsics" version="~>1.12"
 // Numem
 dependency "nulib" version=">=0.3.11"
 dependency "numem" version=">=1.6.3"
-dependency "numem:hookset-libc" version="*"
 
 stringImportPaths "shaders/"
     
@@ -30,7 +35,6 @@ configuration "static" {
 
 // C FFI Dylib Configuration
 configuration "dynamic" {
-    toolchainRequirements dmd="no" gdc="no" ldc=">=1.40.0"
     targetType "dynamicLibrary"
 
     copyFiles "include/"

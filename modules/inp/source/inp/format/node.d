@@ -1,4 +1,12 @@
-module inochi2d.core.format.serde.node;
+/**
+    DataNode abstraction
+
+    Copyright © 2020-2025, Inochi2D Project
+    Distributed under the 2-Clause BSD License, see LICENSE file.
+    
+    Authors: Luna Nielsen
+*/
+module inp.format.node;
 import nulib.data.variant;
 import nulib.collections;
 import numem.core.traits;
@@ -12,7 +20,28 @@ enum DataNodeType : uint {
     uint_       = 3,
     float_      = 4,
     array_      = 5,
-    object_     = 6
+    object_     = 6,
+    blob_       = 7,
+}
+
+/**
+    DataNode Key-Value Pair.
+*/
+struct DataNodeKVPair {
+@nogc:
+    ~this() {
+        nu_freea(key);
+        nogc_delete(value);
+    }
+
+    /// Copy-constructor
+    this(ref return scope inout(DataNodeKVPair) rhs) @trusted {
+        this.key = cast(string)rhs.key.nu_dup();
+        this.value = DataNode(cast(DataNode)rhs.value);
+    }
+
+    string key;
+    DataNode value;
 }
 
 /**
@@ -22,6 +51,7 @@ struct DataNode {
 private:
 @nogc:
     import nulib.collections.internal.marray : ManagedArray;
+    __gshared DataNode UNDEF = DataNode.init;
 
     static
     union DataNodeStore {
@@ -31,25 +61,7 @@ private:
         struct ObjectNode {
         private:
         @nogc:
-
-            static
-            struct KV {
-            @nogc:
-                ~this() {
-                    nu_freea(key);
-                    nogc_delete(value);
-                }
-
-                /// Copy-constructor
-                this(ref return scope KV rhs) {
-                    this.key = rhs.key.nu_dup();
-                    this.value = rhs.value;
-                }
-            
-                string key;
-                DataNode value;
-            }
-            ManagedArray!KV values;
+            ManagedArray!DataNodeKVPair values;
 
             /// Helper that finds an entry by its key.
             pragma(inline, true)
@@ -62,6 +74,13 @@ private:
             }
 
         public:
+
+            this()(scope auto ref inout(typeof(this)) rhs) @trusted {
+                this.values.resize(rhs.values.length);
+                foreach(i, ref kv; rhs.values) {
+                    this.values[i] = DataNodeKVPair(kv);
+                }
+            }
 
             /// Destructor
             ~this() {
@@ -93,7 +112,7 @@ private:
                     key = The key to query.
                     value = The value to set.
             */
-            void opIndexAssign(T)(T value, string key) {
+            void opIndexAssign(T)(auto ref T value, string key) {
                 ptrdiff_t idx = findEntry(key);
                 if (idx >= 0) {
                     nogc_delete(values[idx].value);
@@ -103,7 +122,7 @@ private:
 
                 // Append our new entry.
                 values.resize(values.length+1);
-                values[$-1] = KV(key.nu_dup, DataNode(value));
+                values[$-1] = DataNodeKVPair(key.nu_dup, DataNode(value));
             }
 
             /**
@@ -130,9 +149,9 @@ private:
                 Returns:
                     The $(D DataNode) with the given key.
             */
-            DataNode opIndex(string key) nothrow {
+            DataNode opIndex(string key) {
                 ptrdiff_t idx = findEntry(key);
-                return idx >= 0 ? (values[idx].value) : DataNode.init;
+                return idx >= 0 ? DataNode(values[idx].value) : DataNode.init;
             }
         }
 
@@ -143,6 +162,11 @@ private:
             ManagedArray!DataNode values;
         
         public:
+
+            this()(scope auto ref inout(typeof(this)) rhs) @trusted {
+                this.values.resize(rhs.values.length);
+                this.values.memory[0..$] = (cast(DataNode[])rhs.values.memory)[0..$];
+            }
 
             /// Destructor
             ~this() {
@@ -173,7 +197,7 @@ private:
                 Params:
                     rhs = Value to append
             */
-            void opOpAssign(string op)(DataNode rhs) nothrow
+            void opOpAssign(string op)(DataNode rhs)
             if (op == "~") {
                 values.resize(values.length+1);
                 values[$-1] = rhs;
@@ -186,11 +210,11 @@ private:
                     rhs = The value to set.
                     idx = The idx to set.
             */
-            void opIndexAssign(T)(T rhs, size_t idx) {
+            void opIndexAssign(T)(auto ref T rhs, size_t idx) {
                 if (idx >= values.length)
                     return;
                 
-                values[idx] = rhs;
+                values[idx] = rhs.move();
             }
 
             /**
@@ -202,8 +226,8 @@ private:
                 Returns:
                     The $(D DataNode) with the given index.
             */
-            DataNode opIndex(size_t idx) nothrow {
-                return idx < values.length ? values[idx] : DataNode.init;
+            DataNode opIndex(size_t idx) {
+                return idx < values.length ? DataNode(values[idx]) : DataNode.init;
             }
         }
 
@@ -213,7 +237,8 @@ private:
         ulong uint_; 
         float float_; 
         ArrayNode array_; 
-        ObjectNode object_; 
+        ObjectNode object_;
+        ubyte[] blob_;
     }
 
     DataNodeType dataType = DataNodeType.undefined;
@@ -241,9 +266,24 @@ public:
     @property string text() nothrow pure => isType(DataNodeType.string_) ? dataStore.string_[] : null;
 
     /**
+        A blob of binary data, or null.
+    */
+    @property ubyte[] blob() nothrow pure => isType(DataNodeType.blob_) ? dataStore.blob_[] : null;
+
+    /**
         The text content of the node, or null.
     */
     @property float number() nothrow pure => tryCoerce!float(float.nan);
+
+    /**
+        The key-value pairs in the DataNode object, or null.
+    */
+    @property DataNodeKVPair[] object() nothrow pure => isType(DataNodeType.object_) ? dataStore.object_.values : null;
+
+    /**
+        The array in the DataNode object, or null.
+    */
+    @property DataNode[] array() nothrow pure => isType(DataNodeType.array_) ? dataStore.array_.values : null;
 
     /// Destructor
     ~this() @trusted nothrow {
@@ -253,14 +293,22 @@ public:
                 break;
             
             case DataNodeType.string_:
+                this.dataType = DataNodeType.undefined;
                 nu_freea(this.dataStore.string_);
+                break;
+            
+            case DataNodeType.blob_:
+                this.dataType = DataNodeType.undefined;
+                nu_freea(this.dataStore.blob_);
                 break;
 
             case DataNodeType.array_:
+                this.dataType = DataNodeType.undefined;
                 nogc_trydelete(this.dataStore.array_);
                 break;
 
             case DataNodeType.object_:
+                this.dataType = DataNodeType.undefined;
                 nogc_trydelete(this.dataStore.object_);
                 break;
         }
@@ -326,27 +374,46 @@ public:
     }
 
     /**
+        Constructs a string data node.
+    */
+    this()(auto ref ubyte[] value) @safe nothrow {
+        this.dataType = DataNodeType.blob_;
+        this.dataStore = DataNodeStore(blob_: value.nu_dup());
+    }
+
+    /**
         Copy constructor
     */
-    this()(scope auto ref inout(typeof(this)) rhs) @trusted nothrow {
+    this()(scope auto ref inout(typeof(this)) rhs) @trusted {
         this.dataType = rhs.dataType;
         switch(dataType) {
             case DataNodeType.string_:
-                this.dataStore.string_ = rhs.dataStore.string_.nu_dup();
+                this.dataStore.string_ = cast(typeof(dataStore.string_))rhs.dataStore.string_.nu_dup();
+                break;
+
+            case DataNodeType.blob_:
+                this.dataStore.blob_ = cast(typeof(dataStore.blob_))rhs.dataStore.blob_.nu_dup();
                 break;
             
             case DataNodeType.array_:
-                this.dataStore.array_ = rhs.dataStore.array_.nu_dup();
+                this.dataStore.array_ = cast(typeof(dataStore.array_))rhs.dataStore.array_;
                 break;
             
             case DataNodeType.object_:
-                this.dataStore.object_ = rhs.dataStore.object_.nu_dup();
+                this.dataStore.object_ = cast(typeof(dataStore.object_))rhs.dataStore.object_;
                 break;
             
             default:
-                this.dataStore = rhs.dataStore;
+                this.dataStore = cast(typeof(dataStore))rhs.dataStore;
                 break;
         }
+    }
+
+    /**
+        Post-move constructor
+    */
+    void opPostMove(S)(const ref S old) {
+        
     }
 
     /**
@@ -441,7 +508,7 @@ public:
         Params:
             rhs = Value to append
     */
-    void opOpAssign(string op)(DataNode rhs) nothrow
+    void opOpAssign(string op)(DataNode rhs)
     if (op == "~") {
         if (this.isType(DataNodeType.array_)) {
             dataStore.array_.opOpAssign!op(rhs);
@@ -455,7 +522,7 @@ public:
             key = The key to query.
             value = The value to set.
     */
-    void opIndexAssign(T)(T value, string key) {
+    void opIndexAssign(T)(auto ref T value, string key) {
         if (this.isType(DataNodeType.object_)) {
             dataStore.object_.opIndexAssign!T(value, key);
         }
@@ -468,7 +535,7 @@ public:
             rhs = The value to set.
             idx = The idx to set.
     */
-    void opIndexAssign(T)(T rhs, size_t idx) {
+    void opIndexAssign(T)(auto ref T rhs, size_t idx) {
         if (this.isType(DataNodeType.array_)) {
             dataStore.array_.opIndexAssign!T(rhs, idx);
         }
@@ -498,7 +565,7 @@ public:
         Returns:
             The $(D DataNode) with the given key.
     */
-    DataNode opIndex(string key) nothrow {
+    DataNode opIndex(string key) {
         return this.isType(DataNodeType.object_) ? dataStore.object_.opIndex(key) : DataNode.init;
     }
 
@@ -511,7 +578,7 @@ public:
         Returns:
             The $(D DataNode) with the given index.
     */
-    DataNode opIndex(size_t idx) nothrow {
+    DataNode opIndex(size_t idx) {
         return this.isType(DataNodeType.array_) ? dataStore.array_.opIndex(idx) : DataNode.init;
     }
 }

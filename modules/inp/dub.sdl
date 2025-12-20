@@ -1,0 +1,19 @@
+name "inp"
+
+targetPath "out/"
+
+dependency "nulib" version=">=0.3.11"
+dependency "numem" version=">=1.6.3"
+
+configuration "static" {
+    targetType "staticLibrary"
+}
+
+configuration "dynamic" {
+    targetType "dynamicLibrary"
+}
+
+// Unit tests
+configuration "unittest" {
+    dependency "silly" version=">=1.1.1"
+}
