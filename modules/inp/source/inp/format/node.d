@@ -149,9 +149,9 @@ private:
                 Returns:
                     The $(D DataNode) with the given key.
             */
-            DataNode opIndex(string key) {
+            ref DataNode opIndex(string key) {
                 ptrdiff_t idx = findEntry(key);
-                return idx >= 0 ? DataNode(values[idx].value) : DataNode.init;
+                return values[idx].value;
             }
         }
 
@@ -226,8 +226,8 @@ private:
                 Returns:
                     The $(D DataNode) with the given index.
             */
-            DataNode opIndex(size_t idx) {
-                return idx < values.length ? DataNode(values[idx]) : DataNode.init;
+            ref DataNode opIndex(size_t idx) {
+                return values[idx];
             }
         }
 
@@ -565,8 +565,8 @@ public:
         Returns:
             The $(D DataNode) with the given key.
     */
-    DataNode opIndex(string key) {
-        return this.isType(DataNodeType.object_) ? dataStore.object_.opIndex(key) : DataNode.init;
+    ref DataNode opIndex(string key) {
+        return dataStore.object_.opIndex(key);
     }
 
     /**
@@ -578,8 +578,8 @@ public:
         Returns:
             The $(D DataNode) with the given index.
     */
-    DataNode opIndex(size_t idx) {
-        return this.isType(DataNodeType.array_) ? dataStore.array_.opIndex(idx) : DataNode.init;
+    ref DataNode opIndex(size_t idx) {
+        return dataStore.array_.opIndex(idx);
     }
 }
 
