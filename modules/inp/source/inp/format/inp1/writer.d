@@ -7,6 +7,7 @@
     Authors: Luna Nielsen
 */
 module inp.format.inp1.writer;
+import inp.format.json.writer;
 import inp.format.node;
 import inp.format.inp1;
 import nulib.io.stream;
@@ -16,6 +17,13 @@ import numem;
 
 @nogc:
 
+/**
+    Write the contents of a $(D DataNode) into the INP1 File.
+
+    Params:
+        stream =    The stream to write to.
+        node =      A DataNode object following the INP structure.
+*/
 void writeINP1(Stream stream, ref DataNode node) {
     StreamWriter writer = nogc_new!StreamWriter(stream);
 
@@ -65,72 +73,8 @@ ubyte[] makeJsonPayload(ref DataNode node) {
     ubyte[] result;
 
     MemoryStream stream = nogc_new!MemoryStream(1);
-    StreamWriter writer = nogc_new!StreamWriter(stream);
-
-    writer.writeJson(node);
+    stream.writeJson(node);
     result = stream.take();
-
-    nogc_delete(writer);
     nogc_delete(stream);
     return result;
-}
-
-void writeJsonString(StreamWriter writer, string text) {
-    writer.writeUTF8("\"");
-    writer.writeUTF8(text);
-    writer.writeUTF8("\"");
-}
-
-void writeJson()(StreamWriter writer, auto ref DataNode node) {
-    import nulib.conv : to_string;
-    final switch(node.type) {
-        case DataNodeType.undefined:
-            return;
-        
-        case DataNodeType.blob_:
-            return;
-        
-        case DataNodeType.int_:
-            auto v = to_string(node.tryCoerce!int);
-            writer.writeUTF8(v[]);
-            return;
-
-        case DataNodeType.uint_:
-            auto v = to_string(node.tryCoerce!uint);
-            writer.writeUTF8(v[]);
-            return;
-
-        case DataNodeType.float_:
-            auto v = to_string(node.tryCoerce!float);
-            writer.writeUTF8(v[]);
-            return;
-        
-        case DataNodeType.string_:
-            writer.writeJsonString(node.text);
-            return;
-        
-        case DataNodeType.array_:
-            writer.writeUTF8("[");
-            foreach(i, ref n; node.array) {
-                writer.writeJson(n);
-                if (i+1 < node.length)
-                    writer.writeUTF8(",");
-            }
-            writer.writeUTF8("]");
-            return;
-        
-        case DataNodeType.object_:
-            writer.writeUTF8("{");
-            foreach(i, kv; node.object) {
-
-                writer.writeJsonString(kv.key);
-                writer.writeUTF8(":");
-                writer.writeJson(kv.value);
-
-                if (i+1 < node.length)
-                    writer.writeUTF8(",");
-            }
-            writer.writeUTF8("}");
-            return;
-    }
 }
