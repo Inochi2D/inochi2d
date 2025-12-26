@@ -23,9 +23,8 @@ import numem;
         node =      The node to write.
 */
 void writeJson(Stream stream, ref DataNode node) {
-    StreamWriter writer = nogc_new!StreamWriter(stream);
+    scope StreamWriter writer = new StreamWriter(stream);
     writer.writeJsonImpl(node);
-    nogc_delete(writer);
 }
 
 
@@ -35,17 +34,17 @@ void writeJson(Stream stream, ref DataNode node) {
 private:
 
 void writeJsonString(StreamWriter writer, string text) {
-    writer.writeUTF8("\"");
+    writer.writeLE('"');
     foreach(char c; text) {
         if (c == '"') {
-            writer.writeUTF8("\\\"");
+            writer.writeLE('\\');
+            writer.writeLE('"');
             continue;
         }
 
         writer.writeLE!ubyte(c);
     }
-    writer.writeUTF8(text);
-    writer.writeUTF8("\"");
+    writer.writeLE('"');
 }
 
 void writeJsonImpl()(StreamWriter writer, auto ref DataNode node) {
@@ -77,27 +76,27 @@ void writeJsonImpl()(StreamWriter writer, auto ref DataNode node) {
             return;
         
         case DataNodeType.array_:
-            writer.writeUTF8("[");
+            writer.writeLE('[');
             foreach(i, ref n; node.array) {
                 writer.writeJsonImpl(n);
                 if (i+1 < node.length)
-                    writer.writeUTF8(",");
+                    writer.writeLE(',');
             }
-            writer.writeUTF8("]");
+            writer.writeLE(']');
             return;
         
         case DataNodeType.object_:
-            writer.writeUTF8("{");
+            writer.writeLE('{');
             foreach(i, kv; node.object) {
 
                 writer.writeJsonString(kv.key);
-                writer.writeUTF8(":");
+                writer.writeLE(':');
                 writer.writeJsonImpl(kv.value);
 
                 if (i+1 < node.length)
-                    writer.writeUTF8(",");
+                    writer.writeLE(',');
             }
-            writer.writeUTF8("}");
+            writer.writeLE('}');
             return;
     }
 }

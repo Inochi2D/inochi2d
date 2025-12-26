@@ -28,7 +28,7 @@ import numem;
         or an error message.
 */
 Result!DataNode readINP2(Stream stream) @nogc {
-    StreamReader reader = nogc_new!StreamReader(stream);
+    scope StreamReader reader = new StreamReader(stream);
     DataNode result;
 
     size_t start = stream.tell();
@@ -36,14 +36,12 @@ Result!DataNode readINP2(Stream stream) @nogc {
     // Verify magic bytes.
     auto magic = reader.readUTF8(8);
     if (magic != INP2_MAGIC) {
-        nogc_delete(reader);
         stream.seek(start);
         return error!DataNode("Invalid magic bytes!");
     }
 
     // Read the tags.
     if (string err = reader.readINP2Impl(result)) {
-        nogc_delete(reader);
         nogc_delete(result);
         stream.seek(start);
         return error!DataNode(err);

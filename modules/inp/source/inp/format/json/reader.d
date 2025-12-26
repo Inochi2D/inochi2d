@@ -27,13 +27,30 @@ import numem;
         or an error message.
 */
 Result!DataNode readJson(Stream stream) @nogc {
-    StreamReader reader = nogc_new!StreamReader(stream);
+    scope StreamReader reader = new StreamReader(stream);
     DataNode result;
 
-    if (auto err = reader.readJsonImpl(result))
+    if (auto err = reader.readJsonImpl(result, reader.stream.tell, reader.stream.length))
         return error!DataNode(err);
 
     return ok(result.move());
+}
+
+/**
+    Reads and parses a JSON string into the given $(D DataNode).
+
+    Params:
+        reader =    The stream reader.
+        node =      The node to write to.
+        length =    Max length to read.
+    
+    Returns:
+        $(D null) on success,
+        otherwise an error message.
+
+*/
+string readJson(StreamReader reader, ref DataNode node, uint length = uint.max) @nogc {
+    return reader.readJsonImpl(node, reader.stream.tell, min(reader.stream.length-reader.stream.tell, length));
 }
 
 
@@ -69,7 +86,7 @@ string readJsonString(StreamReader reader) {
             result ~= c;
         }
     } while(c != '"');
-    return result.take();
+    return result.take()[0..$-1];
 }
 
 string readJsonNumber(StreamReader reader) {
@@ -85,7 +102,10 @@ string readJsonNumber(StreamReader reader) {
 
 bool isJsonSymbol(char c) {
     import nulib.text.ascii;
-    return isAlphaNumeric(c) || c == '"' || c == ':' || c == ',';
+    return isAlphaNumeric(c) || 
+        c == '"' || c == ':' || c == ',' || 
+        c == '{' || c == '}' ||
+        c == '[' || c == ']';
 }
 
 void skipWhitespace(StreamReader reader) {
@@ -97,14 +117,19 @@ bool isNumberChar(char c) {
     return (c >= '0' && c <= '9') || c == '.';
 }
 
-string readJsonImpl()(StreamReader reader, ref DataNode node) {
+string readJsonImpl()(StreamReader reader, ref DataNode node, size_t start, size_t length) {
     import nulib.conv : to_floating;
     reader.skipWhitespace();
+
+    if (reader.stream.tell() > start+length)
+        return "Reached EOF";
 
     char c = cast(char)reader.readU8();
     switch(c) {
         default:
             if (isNumberChar(c)) {
+                reader.stream.seek(-1, SeekOrigin.relative);
+                
                 auto valueStr = reader.readJsonNumber();
                 node = DataNode(to_floating!double(valueStr));
                 nu_freea(valueStr);
@@ -118,7 +143,7 @@ string readJsonImpl()(StreamReader reader, ref DataNode node) {
 
                 reader.skipWhitespace();
                 
-                if (auto error = reader.readJsonImpl(value))
+                if (auto error = reader.readJsonImpl(value, start, length))
                     return error;
                 node ~= value.move();
 
@@ -146,8 +171,10 @@ string readJsonImpl()(StreamReader reader, ref DataNode node) {
                     return "Invalid key-value pair!";
                     
                 reader.skipWhitespace();
-                if (auto error = reader.readJsonImpl(value))
+                if (auto error = reader.readJsonImpl(value, start, length)) {
+                    nu_freea(key);
                     return error;
+                }
                 reader.skipWhitespace();
 
                 node[key] = value.move();

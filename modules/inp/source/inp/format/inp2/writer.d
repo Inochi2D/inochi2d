@@ -25,10 +25,9 @@ import numem;
         node =      A DataNode object following the INP structure.
 */
 void writeINP2(Stream stream, ref DataNode node) {
-    StreamWriter writer = nogc_new!StreamWriter(stream);
+    scope StreamWriter writer = new StreamWriter(stream);
     writer.writeUTF8(INP2_MAGIC);
     writer.writeINP2Impl(node);
-    nogc_delete(writer);
 }
 
 

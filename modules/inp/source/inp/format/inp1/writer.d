@@ -25,7 +25,7 @@ import numem;
         node =      A DataNode object following the INP structure.
 */
 void writeINP1(Stream stream, ref DataNode node) {
-    StreamWriter writer = nogc_new!StreamWriter(stream);
+    scope  StreamWriter writer = new StreamWriter(stream);
 
     if (INP1_MAGIC in node) {
         writer.writeUTF8(INP1_MAGIC);
@@ -57,8 +57,6 @@ void writeINP1(Stream stream, ref DataNode node) {
             stream.write(kv.value.blob);
         }
     }
-
-    nogc_delete(writer);
 }
 
 
@@ -70,11 +68,7 @@ void writeINP1(Stream stream, ref DataNode node) {
 private:
 
 ubyte[] makeJsonPayload(ref DataNode node) {
-    ubyte[] result;
-
-    MemoryStream stream = nogc_new!MemoryStream(1);
+    scope MemoryStream stream = new MemoryStream(1);
     stream.writeJson(node);
-    result = stream.take();
-    nogc_delete(stream);
-    return result;
+    return stream.take();
 }
