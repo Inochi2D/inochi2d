@@ -75,7 +75,7 @@ private:
 
         public:
 
-            this()(scope auto ref inout(typeof(this)) rhs) @trusted {
+            this()(ref return scope inout(typeof(this)) rhs) @trusted {
                 this.values.resize(rhs.values.length);
                 foreach(i, ref kv; rhs.values) {
                     this.values[i] = DataNodeKVPair(kv);
@@ -163,7 +163,7 @@ private:
         
         public:
 
-            this()(scope auto ref inout(typeof(this)) rhs) @trusted {
+            this()(ref return scope inout(typeof(this)) rhs) @trusted {
                 this.values.resize(rhs.values.length);
                 this.values.memory[0..$] = (cast(DataNode[])rhs.values.memory)[0..$];
             }
@@ -384,9 +384,9 @@ public:
     /**
         Copy constructor
     */
-    this()(scope auto ref inout(typeof(this)) rhs) @trusted {
+    this()(ref return scope typeof(this) rhs) @trusted {
         this.dataType = rhs.dataType;
-        switch(dataType) {
+        switch(rhs.dataType) {
             case DataNodeType.string_:
                 this.dataStore.string_ = cast(typeof(dataStore.string_))rhs.dataStore.string_.nu_dup();
                 break;
@@ -396,24 +396,17 @@ public:
                 break;
             
             case DataNodeType.array_:
-                this.dataStore.array_ = cast(typeof(dataStore.array_))rhs.dataStore.array_;
+                this.dataStore.array_ = typeof(dataStore.array_)(cast(typeof(dataStore.array_))rhs.dataStore.array_);
                 break;
             
             case DataNodeType.object_:
-                this.dataStore.object_ = cast(typeof(dataStore.object_))rhs.dataStore.object_;
+                this.dataStore.object_ = typeof(dataStore.object_)(cast(typeof(dataStore.object_))rhs.dataStore.object_);
                 break;
             
             default:
                 this.dataStore = cast(typeof(dataStore))rhs.dataStore;
                 break;
         }
-    }
-
-    /**
-        Post-move constructor
-    */
-    void opPostMove(S)(const ref S old) {
-        
     }
 
     /**
@@ -580,6 +573,39 @@ public:
     */
     ref DataNode opIndex(size_t idx) {
         return dataStore.array_.opIndex(idx);
+    }
+
+    /**
+        Converts the DataNode to a string.
+    */
+    string toString() const @trusted pure nothrow {
+        import nulib.conv : to_string;
+        final switch(dataType) {
+            
+            case DataNodeType.string_:
+                return dataStore.string_;
+            
+            case DataNodeType.int_:
+                return to_string(dataStore.int_);
+            
+            case DataNodeType.uint_:
+                return to_string(dataStore.uint_);
+            
+            case DataNodeType.float_:
+                return to_string(dataStore.float_);
+            
+            case DataNodeType.array_:
+                return "<array>";
+            
+            case DataNodeType.object_:
+                return "<object>";
+            
+            case DataNodeType.blob_:
+                return "<blob>";
+            
+            case DataNodeType.undefined:
+                return "<undefined>";
+        }
     }
 }
 
