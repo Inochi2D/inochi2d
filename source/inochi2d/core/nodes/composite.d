@@ -1,4 +1,4 @@
-/*
+/**
     Inochi2D Composite Node
 
     Copyright © 2020, Inochi2D Project
@@ -8,6 +8,7 @@
 */
 module inochi2d.core.nodes.composite;
 import inochi2d.core.nodes.drawable;
+import inochi2d.core.nodes.visual;
 import inochi2d.core.nodes;
 import inochi2d.core.math;
 import inochi2d.core;
@@ -27,8 +28,8 @@ align(vec4.sizeof):
 /**
     Composite Node
 */
-@TypeId("Composite", 0x0004)
-class Composite : Node {
+@TypeId("Composite", 0x0301)
+class Composite : Visual {
 private:
     DrawListAlloc* __screenSpaceAlloc;
 
@@ -132,6 +133,12 @@ protected:
     }
 
 public:
+
+    /**
+        Whether the renderer should delegate rendering logic
+        to the visual node.
+    */
+    override @property bool isDelegated() @nogc => true;
 
     /**
         The blending mode

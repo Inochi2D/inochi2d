@@ -39,9 +39,19 @@ align(vec4.sizeof):
     Dynamic Mesh Part
 */
 @TypeId("Part", 0x0101)
-class Part : Drawable {
+class Part : Visual, IDeformable {
 private:
+    Mesh mesh_;
+    DeformedMesh deformed_;
+    DeformedMesh base_;
+
 protected:
+
+    /**
+        The current active draw list slot for this
+        drawable.
+    */
+    DrawListAlloc* drawListSlot;
 
     /**
         Allows serializing self data (with pretty serializer)
@@ -50,6 +60,8 @@ protected:
     void onSerialize(ref JSONValue object, bool recursive = true) {
         super.onSerialize(object, recursive);
 
+        MeshData data = mesh_.toMeshData();
+        object["mesh"] = data.serialize();
         object["textures"] = JSONValue.emptyArray;
         foreach(ref texture; textures) {
             if (texture) {
@@ -72,6 +84,9 @@ protected:
     void onDeserialize(ref JSONValue object) {
         super.onDeserialize(object);
 
+        this.deformed_ = nogc_new!DeformedMesh();
+        this.base_ = nogc_new!DeformedMesh();
+        this.mesh = Mesh.fromMeshData(object.tryGet!MeshData("mesh"));
         if (object.isJsonArray("textures")) {
             foreach(i, ref JSONValue element; object["textures"].array) {
 
@@ -105,6 +120,43 @@ protected:
     vec3 offsetScreenTint = vec3(0);
 
 public:
+
+    /**
+        The mesh of the part..
+    */
+    final @property Mesh mesh() @nogc => mesh_;
+    final @property void mesh(Mesh value) @nogc {
+        if (value is mesh_)
+            return;
+        
+        if (mesh_)
+            mesh_.release();
+
+        this.mesh_ = value.retained();
+        this.deformed_.parent = value;
+        this.base_.parent = value;
+    }
+
+    /**
+        Local matrix of the deformable object.
+    */
+    override @property Transform baseTransform() @nogc => transform!true;
+
+    /**
+        World matrix of the deformable object.
+    */
+    override @property Transform worldTransform() @nogc => transform!false;
+
+    /**
+        The base position of the deformable's points.
+    */
+    @property const(vec2)[] basePoints() => base_.points;
+
+    /**
+        The points which may be deformed by the deformer.
+    */
+    override @property vec2[] deformPoints() => deformed_.points;
+
     /**
         List of textures this part can use
 
@@ -151,17 +203,12 @@ public:
 
     /// Destructor
     ~this() {
+        mesh_.release();
+        nogc_delete(deformed_);
         foreach(texture; textures) {
             if (texture)
                 texture.release();
         }
-    }
-
-    /**
-        Constructs a new part
-    */
-    this(MeshData data, Texture[] textures, Node parent = null) {
-        this(data, textures, inNewGUID(), parent);
     }
 
     /**
@@ -174,12 +221,74 @@ public:
     /**
         Constructs a new part
     */
+    this(MeshData data, Node parent = null) {
+        this(data, inNewGUID(), parent);
+    }
+
+    /**
+        Constructs a new part
+    */
+    this(MeshData data, GUID guid, Node parent = null) {
+        super(guid, parent);
+        
+        this.deformed_ = nogc_new!DeformedMesh();
+        this.base_ = nogc_new!DeformedMesh();
+        this.mesh = Mesh.fromMeshData(data);
+    }
+
+    /**
+        Constructs a new part
+    */
+    this(MeshData data, Texture[] textures, Node parent = null) {
+        this(data, textures, inNewGUID(), parent);
+    }
+
+    /**
+        Constructs a new part
+    */
     this(MeshData data, Texture[] textures, GUID guid, Node parent = null) {
         super(data, guid, parent);
         foreach(i; 0..TextureUsage.COUNT) {
             if (i >= textures.length) break;
             this.textures[i] = textures[i];
         }
+    }
+
+    /**
+        Resets the deformation for the IDeformable.
+    */
+    override
+    void resetDeform() {
+        deformed_.reset();
+        
+        base_.reset();
+        base_.pushMatrix(baseTransform.matrix);
+    }
+
+    /**
+        Deforms the IDeformable.
+
+        Params:
+            deformed =  The deformation delta.
+            absolute =  Whether the deformation is absolute,
+                        replacing the original deformation.
+    */
+    override
+    void deform(vec2[] deformed, bool absolute = false) {
+        deformed_.deform(deformed);
+    }
+    
+    /**
+        Deforms a single vertex in the IDeformable
+
+        Params:
+            offset =    The offset into the point list to deform.
+            deform =    The deformation delta.
+            absolute =  Whether the deformation is absolute,
+                        replacing the original deformation.
+    */
+    override void deform(size_t offset, vec2 deform, bool absolute = false) {
+        deformed_.deform(offset, deform);
     }
 
     override
@@ -304,7 +413,27 @@ public:
         offsetTint = vec3(1, 1, 1);
         offsetScreenTint = vec3(0, 0, 0);
         offsetEmissionStrength = 1;
+
         super.preUpdate(drawList);
+        this.resetDeform();
+    }
+
+    /**
+        Updates the drawable
+    */
+    override
+    void update(float delta, DrawList drawList) {
+        super.update(delta, drawList);
+        deformed_.pushMatrix(transform.matrix);
+    }
+
+    /**
+        Post-update
+    */
+    override
+    void postUpdate(DrawList drawList) {
+        super.postUpdate(drawList);
+        this.drawListSlot = drawList.allocate(deformed_.vertices, deformed_.indices);
     }
 
     override
@@ -325,7 +454,7 @@ public:
                     mask.maskSrc.drawAsMask(delta, drawList, mask.mode);
             }
 
-            super.draw(delta, drawList);
+            drawList.setMesh(drawListSlot);
             drawList.setDrawState(DrawState.maskedDraw);
             drawList.setVariables!PartVars(nid, vars);
             drawList.setBlending(blendingMode);
@@ -334,7 +463,7 @@ public:
             return;
         }
 
-        super.draw(delta, drawList);
+        drawList.setMesh(drawListSlot);
         drawList.setSources(textures);
         drawList.setBlending(blendingMode);
         drawList.setVariables!PartVars(nid, vars);
@@ -343,7 +472,7 @@ public:
 
     override
     void drawAsMask(float delta, DrawList drawList, MaskingMode mode) {
-        super.drawAsMask(delta, drawList, mode);
+        drawList.setMesh(drawListSlot);
         drawList.setDrawState(DrawState.defineMask);
         drawList.setSources(textures);
         drawList.setMasking(mode);
