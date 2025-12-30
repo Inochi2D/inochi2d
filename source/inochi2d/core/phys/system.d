@@ -4,7 +4,7 @@
     Copyright © 2022, Inochi2D Project
     Distributed under the 2-Clause BSD License, see LICENSE file.
 
-    Author: Asahi Lina
+    Author: Hoshino Lina
 */
 module inochi2d.core.phys.system;
 import inochi2d;

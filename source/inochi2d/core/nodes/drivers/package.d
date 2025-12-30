@@ -4,7 +4,7 @@
     Copyright © 2022, Inochi2D Project
     Distributed under the 2-Clause BSD License, see LICENSE file.
 
-    Authors: Asahi Lina
+    Authors: Hoshino Lina
 */
 module inochi2d.core.nodes.drivers;
 import inochi2d.core;

@@ -9,7 +9,7 @@
 
     Authors:
         Luna Nielsen
-        Asahi Lina
+        Hoshino Lina
 */
 module inochi2d.core.math;
 import inochi2d.core;

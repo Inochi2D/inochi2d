@@ -4,7 +4,7 @@
 
     Authors:
     - Luna Nielsen
-    - Asahi Lina
+    - Hoshino Lina
 */
 module inochi2d.core.param.binding;
 import inochi2d.core.format;
