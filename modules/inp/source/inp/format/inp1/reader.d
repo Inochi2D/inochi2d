@@ -61,16 +61,16 @@ void readINP1Impl()(StreamReader reader, ref DataNode node) {
                 break readLoop;
 
             case INP1_MAGIC:
-                uint payloadLength = reader.readU32LE();
+                uint payloadLength = reader.readU32BE();
                 reader.readJson(node[INP1_MAGIC], payloadLength);
                 break;
 
             case "TEX_SECT":
-                uint count = reader.readU32LE();
+                uint count = reader.readU32BE();
                 foreach(i; 0..count) {
                     
                     // Main data
-                    uint dataLength = reader.readU32LE();
+                    uint dataLength = reader.readU32BE();
                     ubyte encoding = reader.readU8();
                     if (dataLength > 0) {
                         DataNode result = DataNode.createObject();
@@ -86,10 +86,10 @@ void readINP1Impl()(StreamReader reader, ref DataNode node) {
                 break;
 
             case "EXT_SECT":
-                uint count = reader.readU32LE();
+                uint count = reader.readU32BE();
                 foreach(i; 0..count) {
-                    auto dataKey = reader.readUTF8(reader.readU32LE());
-                    auto dataValue = nu_malloca!ubyte(reader.readU32LE());
+                    auto dataKey = reader.readUTF8(reader.readU32BE());
+                    auto dataValue = nu_malloca!ubyte(reader.readU32BE());
                     reader.stream.read(dataValue);
                     node["EXT_SECT"][dataKey] = dataValue;
                     nu_freea(dataValue);

@@ -31,7 +31,7 @@ void writeINP1(Stream stream, ref DataNode node) {
         writer.writeUTF8(INP1_MAGIC);
 
         ubyte[] payload = node[INP1_MAGIC].makeJsonPayload();
-        writer.writeLE!uint(cast(uint)payload.length);
+        writer.writeBE!uint(cast(uint)payload.length);
         stream.write(payload);
 
         nu_freea(payload);
@@ -39,21 +39,21 @@ void writeINP1(Stream stream, ref DataNode node) {
 
     if ("TEX_SECT" in node) {
         writer.writeUTF8("TEX_SECT");
-        writer.writeLE!uint(cast(uint)node["TEX_SECT"].length);
+        writer.writeBE!uint(cast(uint)node["TEX_SECT"].length);
         foreach(ref v; node["TEX_SECT"].array) {
-            writer.writeLE!uint(cast(uint)v["data"].blob.length);
-            writer.writeLE!ubyte(v["encoding"].tryCoerce!ubyte);
+            writer.writeBE!uint(cast(uint)v["data"].blob.length);
+            writer.writeBE!ubyte(v["encoding"].tryCoerce!ubyte);
             stream.write(v["data"].blob);
         }
     }
 
     if ("EXT_SECT" in node) {
         writer.writeUTF8("EXT_SECT");
-        writer.writeLE!uint(cast(uint)node["EXT_SECT"].length);
+        writer.writeBE!uint(cast(uint)node["EXT_SECT"].length);
         foreach(ref kv; node["EXT_SECT"].object) {
-            writer.writeLE!uint(cast(uint)kv.key.length);
+            writer.writeBE!uint(cast(uint)kv.key.length);
             writer.writeUTF8(kv.key);
-            writer.writeLE!uint(cast(uint)kv.value.blob.length);
+            writer.writeBE!uint(cast(uint)kv.value.blob.length);
             stream.write(kv.value.blob);
         }
     }
