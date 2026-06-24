@@ -513,8 +513,9 @@ public:
     /**
         Converts the DataNode to a string.
     */
-    string toString() const @trusted pure nothrow {
-        import nulib.conv : to_string;
+    string toString() const @trusted nothrow {
+        import nulib.string : nstring;
+        import nulib.conv : to;
         final switch(dataType) {
             
             case DataNodeType.string_:
@@ -524,13 +525,13 @@ public:
                 return dataStore.boolean_ ? "true" : "false";
             
             case DataNodeType.int_:
-                return to_string(dataStore.int_);
+                return to!nstring(dataStore.int_).take();
             
             case DataNodeType.uint_:
-                return to_string(dataStore.uint_);
+                return to!nstring(dataStore.uint_).take();
             
             case DataNodeType.float_:
-                return to_string(dataStore.float_);
+                return to!nstring(dataStore.float_).take();
             
             case DataNodeType.array_:
                 return "<array>";

@@ -22,7 +22,7 @@ import numem.core.memory;
 import nulib.collections;
 import nulib.string;
 
-import inmath;
+import numath;
 
 /**
     Parameters are configurable values that are used to drive mesh
@@ -204,7 +204,7 @@ public:
         Construct a new named parameter.
     */
     this(string name) {
-        const float[2] points_init = [0, 1];
+        float[2] points_init = [0, 1];
         points = points_init;
         guid = inNewGUID();
         this.name = name;
@@ -346,7 +346,7 @@ public:
         Construct a new named parameter.
     */
     this(string name) {
-        const float[2] points_init = [0, 1];
+        float[2] points_init = [0, 1];
         hpoints = points_init;
         vpoints = points_init;
         guid = inNewGUID();
