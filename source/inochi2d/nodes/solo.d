@@ -110,7 +110,7 @@ public:
             $(D false) otherwise.
     */
     override
-    bool hasProperty(string key) @nogc nothrow {
+    bool hasProperty(string key) const @nogc nothrow {
         switch (key) {
         case "activeLayer":
             return true;
@@ -129,7 +129,7 @@ public:
             The floating point value of the property.
     */
     override
-    float getProperty(string key) @nogc nothrow {
+    float getProperty(string key) const @nogc nothrow {
         switch (key) {
         case "activeLayer":
             return activeLayer_;
@@ -148,7 +148,7 @@ public:
             The default value of the property.
     */
     override
-    float getPropertyDefault(string key) @nogc nothrow {
+    float getPropertyDefault(string key) const @nogc nothrow {
         switch (key) {
         case "activeLayer":
             return 0;

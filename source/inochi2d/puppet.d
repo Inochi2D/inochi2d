@@ -232,7 +232,10 @@ protected:
 
         // Create objects for nodes, params, automation and animation.
         object["nodes"] = root.serialize();
-        object["param"] = parameters_.serialize();
+
+        // TODO: requires handling vector in serde.d
+        // object["param"] = parameters_.serialize();
+
         object["animations"] = animations_.serialize();
     }
 
@@ -260,22 +263,30 @@ protected:
         }
 
         object.tryGetRef(root, "nodes");
-        if ("param" in object)
-            object["param"].deserialize(parameters_);
-        if ("animation" in object)
-            object["animations"].deserialize(animations_);
+
+        // TODO: requires handling vector in serde.d
+        // if (auto param = "param" in object) {
+        //     (*param).deserialize(parameters_);
+        // }
+
+        if (auto anim = "animation" in object) {
+            (*anim).deserialize(animations_);
+        }
     }
 
     void onFinalize() @nogc {
 
         // Finally update link etc.
         this.root.finalize();
+
         foreach (parameter; parameters_) {
-            parameter.finalize(this);
+            parameter.bind(this);
         }
+
         foreach (ref animation; animations_) {
             animation.finalize(this);
         }
+
         this.scanParts(this.root);
     }
 
@@ -486,7 +497,7 @@ public:
         // Update parameters
         if (renderParameters) {
             foreach (parameter; parameters_) {
-                parameter.update();
+                parameter.updateBindings();
             }
         }
 
@@ -543,9 +554,9 @@ public:
     /**
         Gets if a node is bound to ANY parameter.
     */
-    bool getIsNodeBound(Node n) {
+    bool getIsNodeBound(Node node) {
         foreach (i, parameter; parameters_) {
-            if (parameter.hasAnyBinding(n))
+            if (parameter.hasAnyBindingsTo(node))
                 return true;
         }
         return false;

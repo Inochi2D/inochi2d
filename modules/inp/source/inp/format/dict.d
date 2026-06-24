@@ -123,9 +123,10 @@ public:
             $(D true) if the object contains a value with the given key,
             $(D false) otherwise.
     */
-    bool opBinaryRight(string op)(auto ref TKey key) const nothrow
+    inout(TValue)* opBinaryRight(string op)(auto ref TKey key) inout nothrow
     if (op == "in") {
-        return findEntry(key) != -1;
+        inout idx = findEntry(key);
+        return idx != -1 ? &(values[idx].value) : null;
     }
 
     /**

@@ -630,7 +630,7 @@ public:
             $(D true) if the property exists,
             $(D false) otherwise.
     */
-    bool hasProperty(string key) @nogc nothrow {
+    bool hasProperty(string key) const @nogc nothrow {
         switch (key) {
         case "zSort":
         case "transform.t.x":
@@ -656,7 +656,7 @@ public:
         Returns:
             The floating point value of the property.
     */
-    float getProperty(string key) @nogc nothrow {
+    float getProperty(string key) const @nogc nothrow {
         switch (key) {
         case "zSort":
             return zSort_.offset;
@@ -690,7 +690,7 @@ public:
         Returns:
             The default value of the property.
     */
-    float getPropertyDefault(string key) @nogc nothrow {
+    float getPropertyDefault(string key) const @nogc nothrow {
         switch (key) {
         case "zSort":
         case "transform.t.x":

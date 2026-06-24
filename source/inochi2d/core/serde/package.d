@@ -203,7 +203,7 @@ void tryGetRef(T)(ref DataNode object, ref T dst, string key) if (__traits(isFlo
 */
 void tryGetRef(T)(ref DataNode object, ref T dst, string key, T defaultValue = T.init) {
     if (key !in object) {
-        dst = defaultValue;
+        dst = __rvalue(defaultValue);
         return;
     }
 

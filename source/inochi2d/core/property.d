@@ -27,7 +27,7 @@ interface IPropertyOwner {
             $(D true) if the property exists,
             $(D false) otherwise.
     */
-    bool hasProperty(string key);
+    bool hasProperty(string key) const;
 
     /**
         Gets the value of a given property.
@@ -38,7 +38,7 @@ interface IPropertyOwner {
         Returns:
             The floating point value of the property.
     */
-    float getProperty(string key);
+    float getProperty(string key) const;
 
     /**
         Gets the default value of a given property.
@@ -49,7 +49,7 @@ interface IPropertyOwner {
         Returns:
             The default value of the property.
     */
-    float getPropertyDefault(string key);
+    float getPropertyDefault(string key) const;
 
     /**
         Sets the value of the property.

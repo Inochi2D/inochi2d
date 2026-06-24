@@ -176,15 +176,7 @@ public:
 @TypeId("SimplePhysics", 0x00000103)
 class SimplePhysics : Node {
 private:
-    void __tmp__pushToParameter(Parameter param, vec2 paramVal, vec2 oscale) @nogc {
-        assumeNoThrowNoGC((Parameter param, vec2 paramVal, vec2 oscale) {
-            param.pushIOffset(vec2(paramVal.x * oscale.x, paramVal.y * oscale.y), ParamMergeMode.forced);
-            param.update();
-        }, param, paramVal, oscale);
-    }
-
 @nogc:
-
     float offsetGravity = 1.0;
     float offsetLength = 0;
     float offsetFrequency = 1;
@@ -494,7 +486,15 @@ public:
             break;
         }
 
-        __tmp__pushToParameter(param, paramVal, oscale);
+        if (auto param1d = cast(Parameter1D)param) {
+            auto value = paramVal.x * oscale.x;
+            param1d.pushValue(value);
+            param1d.updateBindings();
+        } else if (auto param2d = cast(Parameter2D)param) {
+            auto value = vec2(paramVal.x * oscale.x, paramVal.y * oscale.y);
+            param2d.pushValue(value);
+            param2d.updateBindings();
+        }
     }
 
     void reset() {
@@ -524,7 +524,7 @@ public:
             $(D false) otherwise.
     */
     override
-    bool hasProperty(string key) {
+    bool hasProperty(string key) const {
         switch (key) {
         case "gravity":
         case "length":
@@ -549,7 +549,7 @@ public:
             The floating point value of the property.
     */
     override
-    float getProperty(string key) {
+    float getProperty(string key) const {
         switch (key) {
         case "gravity":
             return offsetGravity;
@@ -580,7 +580,7 @@ public:
             The default value of the property.
     */
     override
-    float getPropertyDefault(string key) {
+    float getPropertyDefault(string key) const {
         switch (key) {
         case "gravity":
         case "frequency":

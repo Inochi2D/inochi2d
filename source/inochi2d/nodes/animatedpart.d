@@ -84,7 +84,7 @@ public:
             $(D false) otherwise.
     */
     override
-    bool hasProperty(string key) {
+    bool hasProperty(string key) const {
         switch (key) {
         case "frame.x":
         case "frame.y":
@@ -105,7 +105,7 @@ public:
             The floating point value of the property.
     */
     override
-    float getProperty(string key) {
+    float getProperty(string key) const {
         switch (key) {
         case "frame.x":
             return frame_.x;
@@ -126,7 +126,7 @@ public:
             The default value of the property.
     */
     override
-    float getPropertyDefault(string key) {
+    float getPropertyDefault(string key) const {
         switch (key) {
         case "frame.x":
             return 0;

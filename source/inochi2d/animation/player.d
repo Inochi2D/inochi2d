@@ -373,18 +373,19 @@ public:
         Called internally automatically by the animation player
     */
     void render() {
-
-        // Apply lanes
         float realStrength = clamp(_strength, 0, 1);
         foreach (lane; anim.lanes) {
-            lane.paramRef.targetParam.pushIOffsetAxis(
-                    lane.paramRef.targetAxis,
-                    lane.get(hframe, player.snapToFramerate) * realStrength,
-                    lane.mergeMode
-            );
+            if (auto param1d = cast(Parameter1D)lane.paramRef.targetParam) {
+
+                param1d.pushValue(lane.get(hframe, player.snapToFramerate) * realStrength);
+            } else if (auto param2d = cast(Parameter2D)lane.paramRef.targetParam) {
+
+                auto axis = cast(ParameterAxis)lane.paramRef.targetAxis;
+                auto value = lane.get(hframe, player.snapToFramerate) * realStrength;
+                param2d.pushValue(axis, value);
+            }
         }
     }
-
 }
 
 alias AnimationPlaybackRef = AnimationPlayback*;

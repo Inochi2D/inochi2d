@@ -411,9 +411,9 @@ public:
             $(D true) if the object contains a value with the given key,
             $(D false) otherwise.
     */
-    bool opBinaryRight(string op)(string key) const nothrow
+    inout(DataNode)* opBinaryRight(string op)(string key) inout nothrow
     if (op == "in") {
-        return this.isType(DataNodeType.object_) ? dataStore.object_.opBinaryRight!(op)(key) : false;
+        return this.isType(DataNodeType.object_) ? key in dataStore.object_ : null;
     }
 
     /**
@@ -440,6 +440,110 @@ public:
     */
     ref DataNode opIndex(size_t idx) {
         return dataStore.array_.opIndex(idx);
+    }
+
+    bool opEquals(DataNode other) {
+        if (dataType == DataNodeType.int_ && other.dataType == DataNodeType.uint_) {
+            return dataStore.int_ >= 0 ? cast(uint)dataStore.int_ == other.dataStore.uint_ : false;
+        } else if (dataType == DataNodeType.uint_ && other.dataType == DataNodeType.int_) {
+            return other.dataStore.int_ >= 0 ? dataStore.uint_ == cast(uint)other.dataStore.int_ : false;
+        }
+
+        if (dataType != other.dataType) {
+            return false;
+        }
+
+        switch (dataType) {
+            case DataNodeType.undefined:
+                return dataStore.undefined == other.dataStore.undefined;
+            case DataNodeType.boolean_:
+                return dataStore.boolean_ == other.dataStore.boolean_;
+            case DataNodeType.int_:
+                return dataStore.int_ == other.dataStore.int_;
+            case DataNodeType.uint_:
+                return dataStore.uint_ == other.dataStore.uint_;
+            case DataNodeType.float_:
+                return dataStore.float_ == other.dataStore.float_;
+            case DataNodeType.string_:
+                return dataStore.string_ == other.dataStore.string_;
+            // case DataNodeType.array_:
+            //     return dataStore.array_ == other.dataStore.array_;
+            // case DataNodeType.object_:
+            //     return dataStore.object_ == other.dataStore.object_;
+            case DataNodeType.blob_:
+                return dataStore.blob_ == other.dataStore.blob_;
+            default:
+                return false;
+        }
+    }
+
+    bool opEquals(T)(T other) {
+        static if (__traits(isIntegral, T)) {
+            if (dataType == DataNodeType.int_ && dataNodeTypeOf!T == DataNodeType.uint_) {
+                return dataStore.int_ >= 0 ? cast(uint)dataStore.int_ == other : false;
+            } else if (dataType == DataNodeType.uint_ && dataNodeTypeOf!T == DataNodeType.int_) {
+                return other >= 0 ? dataStore.uint_ == cast(uint)other : false;
+            }
+        }
+
+        if (dataType != dataNodeTypeOf!T) {
+            return false;
+        }
+
+        // TODO: handle array & dictionary
+        static if (dataNodeTypeOf!T == DataNodeType.undefined) {
+            return dataStore.undefined == other;
+        } else static if (dataNodeTypeOf!T == DataNodeType.boolean_) {
+            return dataStore.boolean_ == other;
+        } else static if (dataNodeTypeOf!T == DataNodeType.int_) {
+            return dataStore.int_ == other;
+        } else static if (dataNodeTypeOf!T == DataNodeType.uint_) {
+            return dataStore.uint_ == other;
+        } else static if (dataNodeTypeOf!T == DataNodeType.float_) {
+            return dataStore.float_ == other;
+        } else static if (dataNodeTypeOf!T == DataNodeType.string_) {
+            return dataStore.string_ == other;
+        } else static if (dataNodeTypeOf!T == DataNodeType.blob_) {
+            return dataStore.blob_ == other;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+        Converts the DataNode to a string.
+    */
+    string toString() const @trusted pure nothrow {
+        import nulib.conv : to_string;
+        final switch(dataType) {
+            
+            case DataNodeType.string_:
+                return dataStore.string_;
+            
+            case DataNodeType.boolean_:
+                return dataStore.boolean_ ? "true" : "false";
+            
+            case DataNodeType.int_:
+                return to_string(dataStore.int_);
+            
+            case DataNodeType.uint_:
+                return to_string(dataStore.uint_);
+            
+            case DataNodeType.float_:
+                return to_string(dataStore.float_);
+            
+            case DataNodeType.array_:
+                return "<array>";
+            
+            case DataNodeType.object_:
+                return "<object>";
+            
+            case DataNodeType.blob_:
+                return "<blob>";
+            
+            case DataNodeType.undefined:
+                return "<undefined>";
+        }
     }
 }
 

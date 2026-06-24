@@ -163,7 +163,7 @@ public:
     /**
         Merging mode of the lane
     */
-    ParamMergeMode mergeMode = ParamMergeMode.forced;
+    ParameterMergeMode mergeMode = ParameterMergeMode.forced;
 
     /**
         Gets the interpolated state of a frame of animation 
