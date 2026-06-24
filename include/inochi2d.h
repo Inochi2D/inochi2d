@@ -611,26 +611,28 @@ bool I2D_CALL in_parameter_get_active(in_parameter_t* obj);
 uint32_t I2D_CALL in_parameter_get_dimensions(in_parameter_t* obj);
 
 /**
-    Gets the parameter's minimum value.
+    Gets the parameter's lower bounds.
     
     Params:
         obj = The parameter object.
     
     Returns:
-        The parameter's minimum value.
+        Pointer to a series of parameter-owned floats,
+        use $(D in_parameter_get_dimensions) to get the dimensionality.
 */
-in_vec2_t I2D_CALL in_parameter_get_min_value(in_parameter_t* obj);
+const float *I2D_CALL in_parameter_get_lower_bounds(in_parameter_t* obj);
 
 /**
-    Gets the parameter's maximum value.
+    Gets the parameter's upper bounds.
     
     Params:
         obj = The parameter object.
     
     Returns:
-        The parameter's maximum value.
+        Pointer to a series of parameter-owned floats,
+        use $(D in_parameter_get_dimensions) to get the dimensionality.
 */
-in_vec2_t I2D_CALL in_parameter_get_max_value(in_parameter_t* obj);
+const float *I2D_CALL in_parameter_get_upper_bounds(in_parameter_t* obj);
 
 /**
     Gets the parameter's current value.
@@ -639,40 +641,19 @@ in_vec2_t I2D_CALL in_parameter_get_max_value(in_parameter_t* obj);
         obj = The parameter object.
     
     Returns:
-        The parameter's current value.
+        Pointer to a series of parameter-owned floats,
+        use $(D in_parameter_get_dimensions) to get the dimensionality.
 */
-in_vec2_t I2D_CALL in_parameter_get_value(in_parameter_t* obj);
+float *I2D_CALL in_parameter_get_value(in_parameter_t* obj);
 
 /**
     Sets the parameter's current value.
     
     Params:
-        obj =   The parameter object.
-        value = The value to set.
+        obj =       The parameter object.
+        values =    The values to set for the parameter.
 */
-void I2D_CALL in_parameter_set_value(in_parameter_t* obj, in_vec2_t value);
-
-/**
-    Gets the parameter's current value normalized to
-    a range of 0..1
-    
-    Params:
-        obj = The parameter object.
-    
-    Returns:
-        The parameter's current normalized value.
-*/
-in_vec2_t I2D_CALL in_parameter_get_normalized_value(in_parameter_t* obj);
-
-/**
-    Sets the parameter's current value normalized to
-    a range of 0..1
-    
-    Params:
-        obj =   The parameter object.
-        value = The value to set.
-*/
-void I2D_CALL in_parameter_set_normalized_value(in_parameter_t* obj, in_vec2_t value);
+void I2D_CALL in_parameter_set_value(in_parameter_t* obj, float* values);
 
 //
 //              TEXTURE CACHE

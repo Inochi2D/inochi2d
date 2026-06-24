@@ -53,6 +53,26 @@ public:
     vector!ParameterBinding bindings;
 
     /**
+        The dimensionality of the parameter.
+    */
+    abstract @property int dimensions();
+
+    /**
+        The current value of the parameter.
+    */
+    abstract @property float[] currentValue();
+
+    /**
+        The lower bound of this parameter.
+    */
+    abstract @property float[] lowerBound();
+
+    /**
+        The upper bound of this parameter.
+    */
+    abstract @property float[] upperBound();
+
+    /**
         Check whether this parameter has a binding to the given target.
 
         Params:
@@ -201,6 +221,26 @@ public:
     vector!float points;
 
     /**
+        The lower bound of this parameter.
+    */
+    override @property float[] lowerBound() @trusted => (&min)[0..1];
+
+    /**
+        The upper bound of this parameter.
+    */
+    override @property float[] upperBound() @trusted => (&max)[0..1];
+
+    /**
+        The current value of the parameter.
+    */
+    override @property float[] currentValue() @trusted => (&value)[0..1];
+
+    /**
+        The dimensionality of the parameter.
+    */
+    override @property int dimensions() => 1;
+
+    /**
         Construct a new named parameter.
     */
     this(string name) {
@@ -341,6 +381,26 @@ public:
         Our vertical keypoints' positions.
     */
     vector!float vpoints;
+
+    /**
+        The dimensionality of the parameter.
+    */
+    override @property int dimensions() => 2;
+
+    /**
+        The current value of the parameter.
+    */
+    override @property float[] currentValue() @trusted => value.data[];
+
+    /**
+        The lower bound of this parameter.
+    */
+    override @property float[] lowerBound() => min.data[];
+
+    /**
+        The upper bound of this parameter.
+    */
+    override @property float[] upperBound() => max.data[];
 
     /**
         Construct a new named parameter.

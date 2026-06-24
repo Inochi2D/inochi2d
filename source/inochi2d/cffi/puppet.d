@@ -74,7 +74,13 @@ in_puppet_t* in_puppet_load_from_memory(const(ubyte)* data, uint length) {
         stream.take();
         nogc_delete(stream);
     }
-    return cast(in_puppet_t*)Puppet.fromStream(stream);
+
+    auto result = Puppet.fromStream(stream);
+    if (!result) {
+        __in_set_error(result.error);
+        return null;
+    }
+    return cast(in_puppet_t*)result.getOr(null);
 }
 
 /**
@@ -104,7 +110,22 @@ void in_puppet_free(in_puppet_t* obj) {
         its author.
 */
 const(char)* in_puppet_get_name(in_puppet_t* obj) {
-    return ((cast(Puppet)obj).properties !is null) ? (cast(Puppet)obj).properties.name.ptr : null;
+    auto props = (cast(Puppet)obj).properties;
+    return (props !is null) ? props.name.ptr : null;
+}
+
+/**
+    Gets the author of a puppet.
+
+    Params:
+        obj = The puppet object.
+
+    Returns:
+        The author of the puppet.
+*/
+const(char)* in_puppet_get_author(in_puppet_t* obj) {
+    auto props = (cast(Puppet)obj).properties;
+    return (props !is null) ? props.author.ptr : null;
 }
 
 /**
@@ -297,33 +318,35 @@ bool in_parameter_get_active(in_parameter_t* obj) {
         the parameter has.
 */
 uint in_parameter_get_dimensions(in_parameter_t* obj) {
-    return (cast(Parameter)obj).isVec2 + 1;
+    return (cast(Parameter)obj).dimensions;
 }
 
 /**
-    Gets the parameter's minimum value.
+    Gets the parameter's lower bounds.
     
     Params:
         obj = The parameter object.
     
     Returns:
-        The parameter's minimum value.
+        Pointer to a series of parameter-owned floats,
+        use $(D in_parameter_get_dimensions) to get the dimensionality.
 */
-in_vec2_t in_parameter_get_min_value(in_parameter_t* obj) {
-    return reinterpret_cast!in_vec2_t((cast(Parameter)obj).min);
+const(float)* in_parameter_get_lower_bounds(in_parameter_t* obj) {
+    return (cast(Parameter)obj).lowerBound.ptr;
 }
 
 /**
-    Gets the parameter's maximum value.
+    Gets the parameter's upper bounds.
     
     Params:
         obj = The parameter object.
     
     Returns:
-        The parameter's maximum value.
+        Pointer to a series of parameter-owned floats,
+        use $(D in_parameter_get_dimensions) to get the dimensionality.
 */
-in_vec2_t in_parameter_get_max_value(in_parameter_t* obj) {
-    return reinterpret_cast!in_vec2_t((cast(Parameter)obj).max);
+const(float)* in_parameter_get_upper_bounds(in_parameter_t* obj) {
+    return (cast(Parameter)obj).upperBound.ptr;
 }
 
 /**
@@ -333,48 +356,27 @@ in_vec2_t in_parameter_get_max_value(in_parameter_t* obj) {
         obj = The parameter object.
     
     Returns:
-        The parameter's current value.
+        Pointer to a series of parameter-owned floats,
+        use $(D in_parameter_get_dimensions) to get the dimensionality.
 */
-in_vec2_t in_parameter_get_value(in_parameter_t* obj) {
-    return reinterpret_cast!in_vec2_t((cast(Parameter)obj).value);
+float* in_parameter_get_value(in_parameter_t* obj) {
+    return (cast(Parameter)obj).currentValue.ptr;
 }
 
 /**
     Sets the parameter's current value.
     
     Params:
-        obj =   The parameter object.
-        value = The value to set.
+        obj =       The parameter object.
+        values =    The values to set for the parameter.
 */
-void in_parameter_set_value(in_parameter_t* obj, in_vec2_t value) {
-    (cast(Parameter)obj).value = reinterpret_cast!vec2(value);
+void in_parameter_set_value(in_parameter_t* obj, float* values) {
+    size_t dims = (cast(Parameter)obj).dimensions;
+    (cast(Parameter)obj).currentValue[0..dims] = values[0..dims];
 }
 
-/**
-    Gets the parameter's current value normalized to
-    a range of 0..1
-    
-    Params:
-        obj = The parameter object.
-    
-    Returns:
-        The parameter's current normalized value.
-*/
-in_vec2_t in_parameter_get_normalized_value(in_parameter_t* obj) {
-    return reinterpret_cast!in_vec2_t((cast(Parameter)obj).normalizedValue);
-}
 
-/**
-    Sets the parameter's current value normalized to
-    a range of 0..1
-    
-    Params:
-        obj =   The parameter object.
-        value = The value to set.
-*/
-void in_parameter_set_normalized_value(in_parameter_t* obj, in_vec2_t value) {
-    (cast(Parameter)obj).normalizedValue = reinterpret_cast!vec2(value);
-}
+
 
 //
 //              TEXTURE CACHE

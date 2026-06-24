@@ -7,7 +7,7 @@
     Authors: Luna Nielsen
 */
 module inochi2d.cffi;
-import inochi2d.core.guid;;
+import inochi2d.core.guid;
 import numem;
 
 version (IN_DYNLIB) :
@@ -48,3 +48,10 @@ void* in_retain(void* obj) {
 void* in_release(void* obj) {
     return cast(void*)(cast(NuRefCounted)obj).release();
 }
+
+//  NOTE: This hook ensures that the code loads properly.
+//
+//
+version (IN_WASM)
+pragma(mangle, "__main_void")
+extern(C) void main() { }

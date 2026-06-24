@@ -29,8 +29,8 @@ extern (C) const(char)* in_get_last_error() @nogc nothrow {
     Internal function which sets the current active error.
 */
 export
-extern (C) void __in_set_error(Exception ex) @nogc nothrow {
-    assumeNoThrowNoGC(&__in_set_error_fn, ex);
+extern (C) void __in_set_error(string error) @nogc nothrow {
+    __in_last_error = error;
 }
 
 /**
@@ -38,21 +38,8 @@ extern (C) void __in_set_error(Exception ex) @nogc nothrow {
 */
 export
 extern (C) void __in_clear_error() @nogc nothrow {
-
-    // Delete old error message (if needed)
-    if (__in_last_error.length > 0)
+    if (__in_last_error)
         nu_freea(__in_last_error);
 }
 
-// The last error.
-private {
-    __gshared string __in_last_error;
-    void __in_set_error_fn(Exception ex) {
-        import std.format : format;
-        import numem.core.memory : nu_terminate;
-
-        // Set the error message.
-        __in_last_error = ex.toString().nu_dup;
-        __in_last_error = __in_last_error.nu_terminate;
-    }
-}
+private __gshared string __in_last_error;

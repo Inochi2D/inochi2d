@@ -12,7 +12,6 @@ public import inp.format.inp1.reader;
 public import inp.format.inp1.writer;
 
 /**
-    Magic bytes for INP 1 (Trans Rights!)
+    Magic bytes as a string.    
 */
-enum INP1_MAGIC = "TRNSRTS\0";
-
+enum char[8] INP1_MAGIC = "TRNSRTS\0";

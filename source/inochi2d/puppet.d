@@ -87,6 +87,8 @@ public:
         object["author"] = author[];
         object["thumbnail"] = parent.textureCache.find(thumbnail);
 
+
+
         // Physics properties.
         object["physicsPixelsPerMeter"] = physicsPixelsPerMeter;
         object["physicsGravity"] = physicsGravity;
@@ -99,6 +101,13 @@ public:
         Deserializes the type.
     */
     void onDeserialize(ref DataNode object) @nogc {
+        // 0.8 backwards compatibility.
+        object.tryGetRef(author, "rigger", author);
+        object.tryGetRef(author, "artist", author);
+
+
+        object.tryGetRef(name, "name");
+        object.tryGetRef(author, "author", author);
         object.tryGetRef(physicsPixelsPerMeter, "pixelsPerMeter");
         object.tryGetRef(physicsGravity, "gravity");
     }
@@ -253,6 +262,7 @@ protected:
 
         // Legacy "meta" key.
         if ("meta" in object) {
+            object.tryGetRef(properties, "meta", properties);
             object["meta"].tryGetRef(properties.graphicsUsePointFiltering, "preservePixels");
         }
 
@@ -262,7 +272,10 @@ protected:
             object["physics"].tryGetRef(properties.physicsGravity, "gravity");
         }
 
-        object.tryGetRef(root, "nodes");
+        Node r_root;
+        object.tryGetRef(r_root, "nodes");
+        if (r_root)
+            root.addChild(r_root);
 
         // TODO: requires handling vector in serde.d
         // if (auto param = "param" in object) {
@@ -357,7 +370,6 @@ public:
     // Destructor
     ~this() {
         nogc_delete(properties);
-
         nogc_delete(drawList_);
         nogc_delete(textureCache);
     }
@@ -378,7 +390,6 @@ public:
         this.root = root ? root : nogc_new!Node(this);
         this.root.setPuppet(this);
         this.root.name = "Root";
-        this.scanParts(this.root);
     }
 
     /**

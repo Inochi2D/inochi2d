@@ -69,7 +69,7 @@ INPFileFormat detectFormat(Stream stream) @nogc nothrow {
     }
 
     stream.seek(start);
-    switch(cast(string)magic) {
+    switch(cast(char[8])magic) {
         default:            return INPFileFormat.unknown;
         case INP1_MAGIC:    return INPFileFormat.inp1;
         case INP2_MAGIC:    return INPFileFormat.inp2;

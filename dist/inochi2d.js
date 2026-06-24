@@ -53,6 +53,30 @@ async function in_init(url = "inochi2d.wasm") {
 }
 
 /**
+    Helper that gets the length of a wasm string.    
+*/
+function strlen_nz(ptr) {
+    let wasm_view = new DataView(__inochi2d.instance.exports.memory.buffer, ptr);
+    for (let i = 0; i < wasm_view.byteLength; i++) {
+        if (wasm_view.getUint8(i) == 0)
+            return i;
+    }
+    return -1;
+}
+
+/**
+    Helper function that convers the given wasm pointer to a JS string.    
+*/
+function toJsString(ptr) {
+    if (ptr == 0)
+        return "";
+
+    let str_view = new DataView(__inochi2d.instance.exports.memory.buffer, ptr, strlen_nz(ptr));
+    const decoder = new TextDecoder('utf-8'); // D always produces UTF-8 strings.
+    return decoder.decode(str_view);
+}
+
+/**
     An Inochi2D puppet.    
 */
 class InPuppet {
@@ -66,33 +90,51 @@ class InPuppet {
     }
 
     /**
-        Constructs a new puppet from a given URL.
+        Creates a puppet from a url, returning a promise.
     */
-    constructor(url) {
-        try {
-            const data = fetch(url)
-            .then((response) => response.bytes())
-            .then((data) => {
-                let wptr = __inochi2d.nu_malloc(data.byteLength);
-                let wasm_view = new DataView(__inochi2d.instance.exports.memory.buffer);
+    static fromUrl(url) {
+        return new Promise((resolve, reject) => {
+            try {
+                const data = fetch(url)
+                .then((response) => response.bytes())
+                .then((data) => {
+                    let wptr = __inochi2d.nu_malloc(data.byteLength);
+                    let wasm_view = new DataView(__inochi2d.instance.exports.memory.buffer);
 
-                for (let i = 0; i < data.byteLength; i++) {
-                    wasm_view.setUint8(wptr+i, data[i]);
-                }
-                console.log(wptr);
+                    for (let i = 0; i < data.byteLength; i++) {
+                        wasm_view.setUint8(wptr+i, data[i]);
+                    }
 
-                this.#ptr = __inochi2d.instance.exports.in_puppet_load_from_memory(wptr, data.byteLength);
-                __inochi2d.nu_free(wptr);
-            });
-        } catch(error) {
-            throw error;
-        }
+                    let ptr = __inochi2d.instance.exports.in_puppet_load_from_memory(wptr, data.byteLength);
+                    __inochi2d.nu_free(wptr);
+                    resolve(new InPuppet(ptr));
+                });
+            } catch(error) {
+                reject(error);
+            }
+        });
+    }
+
+    /**
+        Constructs a puppet from a pointer.
+    */
+    constructor(ptr) {
+        this.#ptr = ptr;
     }
 
     /**
         The name of the puppet.
     */
-    get name() { return ""; }
+    get name() {
+        return toJsString(__inochi2d.instance.exports.in_puppet_get_name(this.#ptr));
+    }
+
+    /**
+        The author of the puppet.
+    */
+    get author() {
+        return toJsString(__inochi2d.instance.exports.in_puppet_get_author(this.#ptr));
+    }
 
     /**
         Whether physics is enabled.

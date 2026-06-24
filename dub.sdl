@@ -49,9 +49,12 @@ dependency "numem" version=">=1.6.5"
 dependency "nurt" version=">=0.2.2"
 
 // Base sub-configurations
-subConfiguration "gamut" "boost"
+subConfiguration "gamut" "no-codecs"
 subConfiguration "nurt" "nurt-disabled"
 
+// Gamut codecs
+versions "decodeJPEG" "decodePNG" "decodeQOI" "decodeQOIX" \
+         "encodeJPEG" "encodePNG" "encodeQOI" "encodeQOIX"
 
 
 
@@ -106,7 +109,7 @@ configuration "dynamic" {
 // WASM configuration
 configuration "wasm" {
     targetType "executable"
-    versions "IN_DYNLIB"
+    versions "IN_DYNLIB" "IN_WASM"
 
     copyFiles "tech-docs" "dist/*"
     subConfiguration "nurt" "nurt-enabled"

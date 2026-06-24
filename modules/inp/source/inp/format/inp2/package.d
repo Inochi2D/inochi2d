@@ -14,7 +14,7 @@ public import inp.format.inp2.writer;
 /**
     Magic bytes for INP 2 (Trans Rights 2: Electric Boogaloo)
 */
-enum INP2_MAGIC = "TRNSRTS2";
+enum char[8] INP2_MAGIC = "TRNSRTS2";
 
 /**
     Mask used to get the tag portion of a tag.
