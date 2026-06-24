@@ -7,11 +7,13 @@
     Authors: Luna Nielsen
 */
 module inp.format.json.reader;
+import inp.format.parse;
 import inp.format.node;
 import nulib.io.stream;
 import nulib.io.stream.rw;
 import nulib.string;
 import nulib.math;
+import nulib.conv;
 import numem;
 
 @nogc:
@@ -21,35 +23,42 @@ import numem;
 
     Params:
         stream = The stream to read.
+        length = The amount of characters to read.
     
     Returns:
         A result type containing either a $(D DataNode)
         or an error message.
 */
-Result!DataNode readJson(Stream stream) @nogc {
-    scope StreamReader reader = new StreamReader(stream);
+Result!DataNode readJson(Stream stream, size_t length = 0) @nogc {
     DataNode result;
-
-    if (auto err = reader.readJsonImpl(result, reader.stream.tell, reader.stream.length))
+    scope StreamReader reader = new StreamReader(stream);
+    if (auto err = reader.readJson(result, length))
         return error!DataNode(err);
     return ok(result.move());
 }
 
 /**
-    Reads and parses a JSON string into the given $(D DataNode).
+    Reads JSON data from the given existing stream.
 
     Params:
-        reader =    The stream reader.
-        node =      The node to write to.
-        length =    Max length to read.
-    
-    Returns:
-        $(D null) on success,
-        otherwise an error message.
+        reader =    The stream reader to read from.
+        node =      The node to store the result in.
+        length =    The length of the buffer to read.
 
+    Returns:
+        Any errors emitted.
 */
-string readJson(StreamReader reader, ref DataNode node, uint length = uint.max) @nogc {
-    return reader.readJsonImpl(node, reader.stream.tell, min(length, reader.stream.length-reader.stream.tell));
+ErrorString readJson(StreamReader reader, ref DataNode node, size_t length) {
+    if (length > 0) {
+        ubyte[] buffer = nu_malloca!ubyte(length);
+        if (reader.stream.read(buffer) < length)
+            return "Reached EOF!";
+
+        scope MemoryStream mstream = new MemoryStream(buffer);
+        scope StreamReader mreader = new StreamReader(mstream);
+        return mreader.readJson(node);
+    }
+    return reader.readJson(node);
 }
 
 
@@ -60,204 +69,150 @@ string readJson(StreamReader reader, ref DataNode node, uint length = uint.max) 
 //
 private:
 
-char peekChar(StreamReader reader) {
-    char c = cast(char)reader.readU8();
-    reader.stream.seek(-1, SeekOrigin.relative);
-    return c;
-}
-
-string peek(StreamReader reader, uint length) {
-    auto s = reader.read(length);
-    if (s.length > 0) {
-        reader.stream.seek(-cast(ptrdiff_t)s.length, SeekOrigin.relative);
-    }
-    return s;
-}
-
-bool peek(StreamReader reader, string key) {
-    string read = reader.peek(cast(uint)key.length);
-    bool same = key == read;
-    nu_freea(read);
-    return same;
-}
-
-string read(StreamReader reader, uint length) {
-    return reader.readUTF8(length).take();
-}
-
-string popString(StreamReader reader, string key) {
-    auto read = reader.readUTF8(cast(uint)key.length);
-    if (read == key) {
-        return key;
-    }
-
-    reader.stream.seek(-cast(ptrdiff_t)read.length, SeekOrigin.relative);
-    return null;
-}
-
-string readJsonString(StreamReader reader) {
-
-    // Skip initial quote.
-    if (reader.peekChar() == '"') {
-        reader.stream.seek(1, SeekOrigin.relative);
-    }
-
-    nstring result;
-    char c;
-    do {
-        c = cast(char)reader.readU8();
-        if (c == '"')
-            break;
-        
-        result ~= c;
-
-        // Read escape codes.
-        if (c == '\\') {
-            c = cast(char)reader.readU8();
-            result ~= c;
-        }
-    } while(c != '"');
-    return result.take();
-}
-
-string readJsonNumber(StreamReader reader) {
-    nstring result;
-    char c;
-
-    do {
-        c = cast(char)reader.readU8();
-        result ~= c;
-    } while (isNumberChar(c));
-
-    reader.stream.seek(-1, SeekOrigin.relative);
-    return result.take();
-}
-
-bool isJsonSymbol(char c) {
-    import nulib.text.ascii;
-    return isAlphaNumeric(c) || 
-        c == '"' || c == ':' || c == ',' || 
-        c == '{' || c == '}' ||
-        c == '[' || c == ']' || c == '.';
-}
-
-void skipWhitespace(StreamReader reader) {
-    do { } while(!isJsonSymbol(cast(char)reader.readU8()));
-    reader.stream.seek(-1, SeekOrigin.relative);
-}
-
-bool isNumberChar(char c) {
-    return (c >= '0' && c <= '9') || c == '.' || c == '-' || c == '+';
-}
-
-string readJsonImpl()(StreamReader reader, ref DataNode node, size_t start, size_t length) {
-    import nulib.conv : parseFloat;
-
+/**
+    Reads a JSON value from the stream.    
+*/
+ErrorString readJson(StreamReader reader, ref DataNode node) {
     reader.skipWhitespace();
-    if (reader.stream.tell() >= start+length)
-        return "Reached EOF";
-
-
-    char c = cast(char)reader.readU8();
-    switch(c) {
+    switch(reader.peekChar()) {
         default:
-            reader.stream.seek(-1, SeekOrigin.relative);
-            if (isNumberChar(c)) {
-                
-                auto valueStr = reader.readJsonNumber();
-                node = DataNode(parseFloat!double(valueStr));
-                nu_freea(valueStr);
-                return null;
-            }
-
-            if (reader.peek("true")) {
-                reader.stream.seek(4, SeekOrigin.relative);
+            if (reader.peekString("true")) {
+                reader.skip(4);
                 node = DataNode(true);
                 return null;
             }
 
-            if (reader.peek("false")) {
-                reader.stream.seek(5, SeekOrigin.relative);
+            if (reader.peekString("false")) {
+                reader.skip(5);
                 node = DataNode(false);
                 return null;
             }
 
             // Skip 'null'
-            if (reader.peek("null")) {
-                reader.stream.seek(4, SeekOrigin.relative);
+            if (reader.peekString("null")) {
+                reader.skip(4);
                 return null;
             }
 
             // Okay, no idea what this character is.
             return "Unexpected token";
 
-        case '[':
-            node = DataNode.createArray();
-            
-            // Empty array.
-            if (reader.peekChar() == ']') {
-                reader.stream.seek(1, SeekOrigin.relative);
-                return null;
-            }
-
-            do {
-                DataNode value;
-
-                reader.skipWhitespace();
-                if (auto error = reader.readJsonImpl(value, start, length))
-                    return error;
-                node ~= value.move();
-                reader.skipWhitespace();
-
-                c = cast(char)reader.readU8();
-                if (c == ',')
-                    continue;
-                
-            } while(c != ']');
-            return null;
-
-        case '{':
-            node = DataNode.createObject();
-            
-            // Empty object.
-            if (reader.peekChar() == '}') {
-                reader.stream.seek(1, SeekOrigin.relative);
-                return null;
-            }
-
-            do {
-                DataNode value;
-
-                // Get key
-                reader.skipWhitespace();
-                string key = reader.readJsonString();
-                reader.skipWhitespace();
-
-                c = cast(char)reader.readU8();
-                if (c != ':')
-                    return "Invalid key-value pair!";
-                    
-                reader.skipWhitespace();
-                if (auto error = reader.readJsonImpl(value, start, length)) {
-                    nu_freea(key);
-                    return error;
-                }
-                reader.skipWhitespace();
-
-                node[key] = value.move();
-                nu_freea(key);
-
-                c = cast(char)reader.readU8();
-                if (c == ',')
-                    continue;
-                
-            } while(c != '}');
-            return null;
+        case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+        case '+', '-':
+            return reader.readJsonNumber(node);
 
         case '"':
-            string value = reader.readJsonString();
-            node = DataNode(value);
-            nu_freea(value);
-            return null;
+            return reader.readJsonString(node);
+
+        case '{':
+            return reader.readJsonObject(node);
+
+        case '[':
+            return reader.readJsonArray(node);
     }
+}
+
+ErrorString readJsonString(StreamReader reader, ref DataNode node) {
+    node = DataNode(reader.readStringJson().take());
+    return null;
+}
+
+ErrorString readJsonNumber(StreamReader reader, ref DataNode node) {
+    nstring num = reader.readNumberJson();
+    node = DataNode(parseFloat!double(num[]));
+    return null;
+}
+
+ErrorString readJsonArray(StreamReader reader, ref DataNode node) {
+    char c = cast(char)reader.readU8();
+    if (c != '[')
+        return "Not an array";
+
+    node = DataNode.createArray();
+            
+    // Empty array.
+    if (reader.peekChar() == ']') {
+        reader.skip(1);
+        return null;
+    }
+
+    DataNode value;
+    do {
+        
+        // Read value
+        reader.skipWhitespace();
+        if (auto error = reader.readJson(value)) {
+            return error;
+        }
+        reader.skipWhitespace();
+
+        // Append value
+        node ~= value.move();
+
+        // Consume comma if needed.
+        c = cast(char)reader.readU8();
+        if (c == ',') {
+            reader.skipWhitespace();
+            continue;
+        }
+
+        // Consume array end.
+        if (c == ']')
+            break;
+
+    } while(!reader.eof());
+    return null;
+}
+
+ErrorString readJsonObject(StreamReader reader, ref DataNode node) {
+    import std.stdio : writeln;
+
+    char c = cast(char)reader.readU8();
+    if (c != '{')
+        return "Not an object";
+
+    node = DataNode.createObject();
+            
+    // Empty object.
+    if (reader.peekChar() == '}') {
+        reader.skip(1);
+        return null;
+    }
+
+    DataNode value;
+    do {
+
+        // Read key
+        reader.skipWhitespace();
+        nstring key = reader.readStringJson();
+        reader.skipWhitespace();
+
+        // Ensure it's a k-v pair.
+        c = cast(char)reader.readU8();
+        if (c != ':')
+            return "Invalid key-value pair!";
+        
+        // Read value
+        reader.skipWhitespace();
+        if (auto error = reader.readJson(value)) {
+            return error;
+        }
+        reader.skipWhitespace();
+
+        // Assign key-value pair.
+        node[key[]] = value.move();
+
+        // Consume comma if needed.
+        c = cast(char)reader.readU8();
+        if (c == ',') {
+            reader.skipWhitespace();
+            continue;
+        }
+
+        // Comsume object end.
+        if (c == '}')
+            break;
+
+    } while(!reader.eof());
+    return null;
 }

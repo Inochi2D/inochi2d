@@ -272,10 +272,10 @@ protected:
             object["physics"].tryGetRef(properties.physicsGravity, "gravity");
         }
 
-        Node r_root;
-        object.tryGetRef(r_root, "nodes");
-        if (r_root)
-            root.addChild(r_root);
+        // Add root node if it was found.
+        if ("nodes" in object) {
+            object.tryGetRef(root, "nodes", root);
+        }
 
         // TODO: requires handling vector in serde.d
         // if (auto param = "param" in object) {

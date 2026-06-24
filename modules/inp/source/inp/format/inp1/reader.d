@@ -66,8 +66,10 @@ void readINP1Impl()(StreamReader reader, ref DataNode node) {
                 break readLoop;
 
             case INP1_MAGIC:
+                ptrdiff_t rstart = reader.stream.tell;
                 uint payloadLength = reader.readU32BE();
                 auto result = reader.readJson(node[INP_TAG_PAYLOAD], payloadLength);
+                reader.stream.seek(rstart+payloadLength);
                 break;
 
             case INP_TAG_TEXTURES:
