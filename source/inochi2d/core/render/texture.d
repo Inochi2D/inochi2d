@@ -158,7 +158,7 @@ public:
         TextureData result;
         try {
             Image img;
-            if (!img.loadFromMemory(data, LAYOUT_GAPLESS | LAYOUT_VERT_STRAIGHT | LOAD_8BIT))
+            if (!img.loadFromMemory(data, LAYOUT_GAPLESS | LAYOUT_VERT_STRAIGHT | LOAD_8BIT | LOAD_NO_PREMUL))
                 throw nogc_new!NuException(img.errorMessage());
 
             switch(img.type) with(PixelType) {
@@ -173,7 +173,7 @@ public:
                     break;
 
                 default:
-                    img.convertTo(PixelType.rgba8, LAYOUT_GAPLESS);
+                    img.convertTo(PixelType.rgba8, LAYOUT_GAPLESS | LAYOUT_VERT_STRAIGHT);
                     result.format = TextureFormat.rgba8Unorm;
                     break;
             }
