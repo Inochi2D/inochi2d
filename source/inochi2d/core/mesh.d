@@ -419,8 +419,16 @@ struct MeshData {
         if (object.isNull)
             return;
 
-        object.tryGetRef(vertices, "verts");
-        object.tryGetRef(uvs, "uvs");
+        // Load vertices as tightly packed floats.
+        float[] vtxbuf;
+        object.tryGetRef(vtxbuf, "verts");
+        this.vertices = cast(vec2[])vtxbuf[0..nu_aligndown(vtxbuf.length, 2)];
+
+        // Load UVs as tightly packed floats.
+        float[] uvbuf;
+        object.tryGetRef(uvbuf, "uvs");
+        this.uvs = cast(vec2[])uvbuf[0..nu_aligndown(uvbuf.length, 2)];
+
         object.tryGetRef(indices, "indices");
 
         vec2 origin = object.tryGet!vec2("origin");
