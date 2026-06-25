@@ -94,7 +94,7 @@ public:
         Creates a mesh from a encoded Inochi2D MeshData
         structure.
     */
-    this(MeshData meshData) {
+    this(ref MeshData meshData) {
         this.vtx_ = nu_malloca!VtxData(meshData.vertices.length);
         this.idx_ = meshData.indices.nu_dup();
         this.vto_ = meshData.vertices.nu_dup();
@@ -111,9 +111,18 @@ public:
     /**
         Creates a mesh from a encoded Inochi2D MeshData
         structure.
+
+        Params:
+            data =  The mesh data.
+            free =  Whether to free the original mesh data.
     */
-    static Mesh fromMeshData(MeshData data) {
-        return nogc_new!Mesh(data);
+    static Mesh fromMeshData(ref MeshData data, bool free=true) {
+        auto result = nogc_new!Mesh(data);
+        
+        if (free)
+            data.free();
+
+        return result;
     }
 
     /**
@@ -186,7 +195,7 @@ class DeformedMesh : NuObject {
 private:
 @nogc:
     Mesh parent_;
-    VtxData[] deformed_;
+    VtxData[] vertices_;
     vec2[] delta_;
 
 public:
@@ -198,8 +207,9 @@ public:
     @property void parent(Mesh value) {
         this.parent_ = value;
         if (parent_) {
-            this.deformed_ = deformed_.nu_resize(value.points.length);
+            this.vertices_ = vertices_.nu_resize(value.points.length);
             this.delta_ = delta_.nu_resize(value.points.length);
+            this.reset();
         }
     }
 
@@ -211,7 +221,7 @@ public:
     /**
         The deformed vertices of the mesh.
     */
-    @property VtxData[] vertices() => deformed_;
+    @property VtxData[] vertices() => vertices_;
 
     /**
         The indices for the mesh.
@@ -221,7 +231,7 @@ public:
     /**
         How many vertices are in the mesh.
     */
-    @property uint vertexCount() => cast(uint)deformed_.length;
+    @property uint vertexCount() => cast(uint)vertices_.length;
 
     /**
         How many indices are in the mesh.
@@ -240,7 +250,7 @@ public:
 
     // Destructor
     ~this() {
-        nu_freea(deformed_);
+        nu_freea(vertices_);
         nu_freea(delta_);
     }
 
@@ -250,7 +260,7 @@ public:
     this(Mesh parent) {
         this.parent_ = parent;
 
-        this.deformed_ = nu_malloca!VtxData(parent.points.length);
+        this.vertices_ = nu_malloca!VtxData(parent.points.length);
         this.delta_ = nu_malloca!vec2(parent.points.length);
     }
 
@@ -267,7 +277,7 @@ public:
     */
     void deform(vec2[] by) {
         simd_deform(delta_, by);
-        simd_broadcast_mesh(deformed_, delta_);
+        simd_broadcast_mesh(vertices_, delta_);
     }
 
     /**
@@ -278,7 +288,7 @@ public:
     */
     void deform(vec2 by) {
         simd_offset(delta_, by);
-        simd_broadcast_mesh(deformed_, delta_);
+        simd_broadcast_mesh(vertices_, delta_);
     }
 
     /**
@@ -294,8 +304,8 @@ public:
             return;
 
         delta_[offset] += by;
-        deformed_[offset].vtx.x = delta_[offset].x;
-        deformed_[offset].vtx.y = delta_[offset].y;
+        vertices_[offset].vtx.x = delta_[offset].x;
+        vertices_[offset].vtx.y = delta_[offset].y;
     }
 
     /**
@@ -303,7 +313,7 @@ public:
     */
     void pushMatrix(mat4 matrix) {
         simd_mul(delta_, matrix);
-        simd_broadcast_mesh(deformed_, delta_);
+        simd_broadcast_mesh(vertices_, delta_);
     }
 
     /**
@@ -332,7 +342,7 @@ public:
             offset =    The offset to apply to the texel coordinates.
     */
     void applyUVOffset(vec2 offset) {
-        foreach(ref vtx; deformed_) {
+        foreach(ref vtx; vertices_) {
             vtx.uv += offset;
         }
     }
@@ -341,7 +351,7 @@ public:
         Resets the deformation.
     */
     void reset() {
-        this.deformed_[0 .. $] = parent_.vtx_[0 .. $];
+        this.vertices_[0 .. $] = parent_.vtx_[0 .. $];
         this.delta_[0 .. $] = parent_.vto_[0 .. $];
     }
 }
@@ -366,22 +376,6 @@ struct MeshData {
         Indices in the mesh
     */
     uint[] indices;
-
-    /// Destructor
-    ~this() {
-        nu_freea(vertices);
-        nu_freea(uvs);
-        nu_freea(indices);
-    }
-
-    /**
-        Copy-constructor
-    */
-    this(ref return scope inout(typeof(this)) rhs) pure nothrow @trusted {
-        this.vertices = cast(typeof(vertices))rhs.vertices.nu_dup();
-        this.uvs = cast(typeof(uvs))rhs.vertices.nu_dup();
-        this.indices = cast(typeof(indices))rhs.vertices.nu_dup();
-    }
 
     /**
         Constructs a new MeshData from slices of mesh data.
@@ -435,6 +429,12 @@ struct MeshData {
                 vertices[i] -= origin;
             }
         }
+    }
+
+    void free() {
+        nu_freea(vertices);
+        nu_freea(uvs);
+        nu_freea(indices);
     }
 }
 

@@ -121,9 +121,10 @@ protected:
     void onDeserialize(ref DataNode object) {
         super.onDeserialize(object);
 
+        auto meshData = object.tryGet!MeshData("mesh");
         this.deformed_ = nogc_new!DeformedMesh();
         this.base_ = nogc_new!DeformedMesh();
-        this.mesh = Mesh.fromMeshData(object.tryGet!MeshData("mesh"));
+        this.mesh = Mesh.fromMeshData(meshData);
 
         // Textures
         if ("textures" in object && object["textures"].isArray) {

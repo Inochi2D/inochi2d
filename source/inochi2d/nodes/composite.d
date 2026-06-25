@@ -386,7 +386,8 @@ extern (C) void __in_setup_composite() {
             vec2(1, -1),
             vec2(1, 1)
         ];
-        __screenSpaceMesh = Mesh.fromMeshData(MeshData(vertices, uvs, indices));
+        auto meshData = MeshData(vertices, uvs, indices);
+        __screenSpaceMesh = Mesh.fromMeshData(meshData);
     }
 }
 

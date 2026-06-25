@@ -51,10 +51,11 @@ protected:
     override
     void onDeserialize(ref DataNode object) {
         super.onDeserialize(object);
-
         this.deformed_ = nogc_new!DeformedMesh();
         this.base_ = nogc_new!DeformedMesh();
-        this.mesh = Mesh.fromMeshData(object.tryGet!MeshData("mesh"));
+
+        auto meshData = object.tryGet!MeshData("mesh");
+        this.mesh = Mesh.fromMeshData(meshData);
     }
 
     /**
