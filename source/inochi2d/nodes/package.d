@@ -800,13 +800,11 @@ void findNodes(T)(Node root, ref T[] list) @nogc if (is(T : Node)) {
     Params:
         slice = The slice to sort.
 */
-void sortNodes(T)(ref T[] slice) @nogc nothrow if (is(T : Node)) {
+void sortNodes(T)(T[] slice) @nogc nothrow if (is(T : Node)) {
     import nulib.math.fixed : fixed32;
     import numem.sorting : nu_sort;
 
     // HACK:    nulib doesn't have a float cmp function yet,
     //          as such we convert sorting values to fixed.
-    nu_sort!((Node a, Node b) @nogc {
-        return fixed32(a.zSort).data < fixed32(b.zSort).data;
-    })(slice);
+    nu_sort!((a, b) @nogc => fixed32(a.zSort).data < fixed32(b.zSort).data)(slice);
 }

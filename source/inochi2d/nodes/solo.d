@@ -11,6 +11,7 @@ import inochi2d.nodes.visual;
 import inochi2d.nodes;
 import inochi2d.core.math;
 import inochi2d.core;
+import nulib;
 import numem;
 
 /**
@@ -58,7 +59,7 @@ protected:
             append =            Whether to append to the visuals list.
     */
     override
-    void onDelegateFindVisuals(ref Visual[] visuals, bool recurseDelegates, bool append) {
+    void onDelegateFindVisuals(ref weak_vector!Visual visuals, bool recurseDelegates, bool append) {
         if (children.length > 0) {
             .findVisuals(children[activeLayer_], visuals, recurseDelegates, false, append);
         }

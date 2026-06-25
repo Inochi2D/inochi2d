@@ -118,11 +118,11 @@ protected:
         sub-visuals.
 
         Params:
-            visuals = The array to append the visuals to.
+            visuals =           The array to append the visuals to.
             recurseDelegates =  Whether to recurse through delegate visuals.
             append =            Whether to append to the visuals list.
     */
-    void onDelegateFindVisuals(ref Visual[] visuals, bool recurseDelegates, bool append) { }
+    void onDelegateFindVisuals(ref weak_vector!Visual visuals, bool recurseDelegates, bool append) { }
 
 public:
 
@@ -218,7 +218,7 @@ public:
             recurseDelegates =  Whether to recurse through delegate visuals.
             append =            Whether to append to the visuals list.
     */
-    void findVisuals(ref Visual[] visuals, bool recurseDelegates = false, bool append = false) {
+    void findVisuals(ref weak_vector!Visual visuals, bool recurseDelegates = false, bool append = false) {
         this.onDelegateFindVisuals(visuals, recurseDelegates, append);
     }
 }
@@ -263,19 +263,16 @@ public:
         sort =              Whether to sort the list of visuals.
         append =            Whether to append to the visuals list.
 */
-void findVisuals(Node root, ref Visual[] visuals, bool recurseDelegates = false, bool sort = true, bool append = false) @nogc {
-    static void findVisualsImpl(Node node, ref Visual[] visuals, ref size_t i, bool recurseDelegates = false) @nogc {
+void findVisuals(Node root, ref weak_vector!Visual visuals, bool recurseDelegates = false, bool sort = true, bool append = false) @nogc {
+    static void findVisualsImpl(Node node, ref weak_vector!Visual visuals, ref size_t i, bool recurseDelegates = false) @nogc {
         if (!node)
             return;
 
         if (auto visual = cast(Visual)node) {
             if (!visual.enabled)
                 return;
-
-            if (i >= visuals.length)
-                visuals = visuals.nu_resize(visuals.length + 1);
-            visuals[i] = visual;
-
+            
+            visuals ~= visual;
             if (!visual.isDelegated || recurseDelegates) {
                 foreach (child; node.children) {
                     findVisualsImpl(child, visuals, i, recurseDelegates);
@@ -294,13 +291,14 @@ void findVisuals(Node root, ref Visual[] visuals, bool recurseDelegates = false,
     }
 
     if (!append)
-        nu_cleara(visuals);
+        visuals.clear();
 
     // Find all visuals in children.
     size_t i = 0;
     foreach(child; root.children) {
         findVisualsImpl(child, visuals, i, recurseDelegates);
     }
+
     if (sort)
-        sortNodes(visuals);
+        sortNodes(visuals.value);
 }

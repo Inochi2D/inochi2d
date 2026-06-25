@@ -12,6 +12,7 @@ import inochi2d.nodes;
 import inochi2d.core.math;
 import inochi2d.core;
 import numem;
+import nulib;
 
 public import inochi2d.core.render.state;
 
@@ -30,7 +31,7 @@ class Composite : Visual {
 private:
 @nogc:
     DrawListAlloc* ssDrawList_;
-    Visual[] visuals_;
+    weak_vector!Visual visuals_;
 
     //
     //      PARAMETER OFFSETS
@@ -171,7 +172,7 @@ protected:
             append =            Whether to append to the visuals list.
     */
     override
-    void onDelegateFindVisuals(ref Visual[] visuals, bool recurseDelegates, bool append) {
+    void onDelegateFindVisuals(ref weak_vector!Visual visuals, bool recurseDelegates, bool append) {
         this.notifyVisualsChanged();
     }
 
@@ -353,7 +354,6 @@ public:
         that it should re-index them.
     */
     void notifyVisualsChanged() {
-        nu_cleara(visuals_);
         .findVisuals(this, visuals_, true, true, false);
     }
 }

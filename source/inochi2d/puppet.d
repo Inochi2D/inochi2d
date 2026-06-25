@@ -124,7 +124,7 @@ private:
     DrawList drawList_;
 
     // A list of parts that are not masked by other parts
-    Visual[] visuals_;
+    weak_vector!Visual visuals_;
 
     // A list of parameters attached to the puppet.
     vector!Parameter parameters_;
@@ -275,7 +275,7 @@ protected:
 
         // Add root node if it was found.
         if ("nodes" in object) {
-            object.tryGetRef(root, "nodes");
+            object.tryGetRef(root, "nodes", root);
         }
 
         // TODO: requires handling vector in serde.d
