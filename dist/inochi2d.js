@@ -80,6 +80,18 @@ const IN_DRAWCMD_SIZE =
     4 +                         // type
     64;                         // vars
 
+// Dimensions stored in the vertex data.
+const IN_VTXDATA_DIMS = 2;
+
+// Size of a vtxdata_t
+const IN_VTXDATA_SIZE = 
+    (IN_VTXDATA_DIMS * 4) +     // xy(z)
+    (2 * 4);                    // uv
+
+// Byte offset of the UV coordinates.
+const IN_VTXDATA_UV_OFFSET =
+    (IN_VTXDATA_DIMS * 4);     // xy(z)
+
 const IN_DRAW_STATE_NORMAL = 0;
 const IN_DRAW_STATE_DEFINE_MASK = 1;
 const IN_DRAW_STATE_MASKED_DRAW = 2;
@@ -160,7 +172,7 @@ function read_drawcmd(ptr) {
     const dv = new DataView(__inochi2d.instance.exports.memory.buffer, ptr, IN_DRAWCMD_SIZE);
     const data_start = 4*IN_MAX_ATTACHMENTS;
     let result = {
-        sources:    [],
+        sources:    new Uint32Array(IN_MAX_ATTACHMENTS),
         state:      dv.getUint32(data_start, true),
         blend_mode: dv.getUint32(data_start+4, true),
         mask_mode:  dv.getUint32(data_start+8, true),
@@ -174,7 +186,8 @@ function read_drawcmd(ptr) {
 
     // Populate texture sources.
     for (let i = 0; i < IN_MAX_ATTACHMENTS; i++) {
-        result.sources.push(dv.getUint32(i*4, true));
+        let ptr = dv.getUint32(i*4, true);
+        result.sources[i] = __inochi2d.instance.exports.in_resource_get_id(ptr);
     }
 
     return result;
@@ -345,7 +358,8 @@ class InTexture {
     /**
         The renderer ID of the texture.
     */
-    get id() { return __inochi2d.instance.exports.in_resource_get_id(); }
+    get id() { return __inochi2d.instance.exports.in_resource_get_id(this.#ptr); }
+    set id(value) { __inochi2d.instance.exports.in_resource_set_id(this.#ptr, value); }
 
     /**
         Width of the texture, in pixels.
@@ -372,6 +386,17 @@ class InTexture {
             __inochi2d.instance.exports.in_resource_get_length(this.#ptr)
         );
         return new ImageData(data, this.width, this.height);
+    }
+
+    /**
+        Gets the image data of the texture.
+    */
+    get bytes() {
+        return new Uint8Array(
+            __inochi2d.instance.exports.memory.buffer, 
+            __inochi2d.instance.exports.in_texture_get_pixels(this.#ptr), 
+            __inochi2d.instance.exports.in_resource_get_length(this.#ptr)
+        );
     }
 
     /**
@@ -411,6 +436,7 @@ class InDrawList {
     */
     constructor(ptr) {
         this.#ptr = ptr;
+        __inochi2d.instance.exports.in_drawlist_set_use_base_vertex(ptr, false);
     }
 
     /**

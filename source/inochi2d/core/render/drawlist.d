@@ -101,7 +101,7 @@ public:
             return null;
 
         // Invalid index buffer check.
-        if (idx.length != 0 && (idx.length % 3) != 0)
+        if (idx.length < 3)
             return null;
 
         // Resize if stuff doesn't fit.
