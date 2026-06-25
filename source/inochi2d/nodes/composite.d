@@ -353,8 +353,8 @@ public:
         that it should re-index them.
     */
     void notifyVisualsChanged() {
-        .findVisuals(this, visuals_, true, false, false);
-        sortNodes(visuals_);
+        nu_cleara(visuals_);
+        .findVisuals(this, visuals_, true, true, false);
     }
 }
 

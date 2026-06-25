@@ -155,27 +155,12 @@ public:
     }
 
     static TextureData load(ubyte[] data) {
-
-        import nulib.io.stream.memstream : MemoryStream;
-        return TextureData.load(nogc_new!MemoryStream(data));
-    }
-
-    /**
-        Loads a texture from a stream.
-
-        Params:
-            stream = The stream to read from.
-    */
-    static TextureData load(Stream stream) {
-        ubyte[] tmpbuffer = nu_malloca!ubyte(stream.length);
-
         TextureData result;
         try {
-            enforce(stream.read(tmpbuffer) >= 0, "Failed reading texture data from stream!");
-            nogc_delete(stream);
-
             Image img;
-            img.loadFromMemory(tmpbuffer, LOAD_NORMAL);
+            if (!img.loadFromMemory(data, LAYOUT_GAPLESS | LAYOUT_VERT_STRAIGHT | LOAD_8BIT))
+                throw nogc_new!NuException(img.errorMessage());
+
             switch(img.type) with(PixelType) {
                 case unknown:   throw nogc_new!NuException("Unknown pixel format for texture!");
 
@@ -198,7 +183,6 @@ public:
             result.data = nu_dup(img.allPixelsAtOnce());
             return result;
         } catch (Exception ex) {
-            nu_freea(tmpbuffer);
             throw ex;
         }
     }

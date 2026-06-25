@@ -45,7 +45,6 @@ Result!DataNode readINP1(Stream stream) @nogc {
 
 
 
-
 //
 //              IMPLEMENTATION DETAILS
 //
@@ -60,7 +59,6 @@ void readINP1Impl()(StreamReader reader, ref DataNode node) {
     ptrdiff_t streamLength = reader.stream.length;
     readLoop: while(reader.stream.tell < streamLength) {
         auto key = reader.readUTF8(8);
-
         switch(key) {
             default:
                 break readLoop;
@@ -69,7 +67,6 @@ void readINP1Impl()(StreamReader reader, ref DataNode node) {
                 ptrdiff_t rstart = reader.stream.tell;
                 uint payloadLength = reader.readU32BE();
                 auto result = reader.readJson(node[INP_TAG_PAYLOAD], payloadLength);
-                reader.stream.seek(rstart+payloadLength);
                 break;
 
             case INP_TAG_TEXTURES:

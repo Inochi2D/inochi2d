@@ -19,17 +19,17 @@ enum INPFileFormat : uint {
 /**
     Tag for the INP payload section.
 */
-enum string INP_TAG_PAYLOAD = "INP_SECT";
+enum char[8] INP_TAG_PAYLOAD = "INP_SECT";
 
 /**
     Tag for the INP texture section.
 */
-enum string INP_TAG_TEXTURES = "TEX_SECT";
+enum char[8] INP_TAG_TEXTURES = "TEX_SECT";
 
 /**
     Tag for the INP extended vendor data section.
 */
-enum string INP_TAG_VENDOR = "EXT_SECT";
+enum char[8] INP_TAG_VENDOR = "EXT_SECT";
 
 /**
     Texture format ID for PNG.

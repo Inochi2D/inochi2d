@@ -165,8 +165,6 @@ ErrorString readJsonArray(StreamReader reader, ref DataNode node) {
 }
 
 ErrorString readJsonObject(StreamReader reader, ref DataNode node) {
-    import std.stdio : writeln;
-
     char c = cast(char)reader.readU8();
     if (c != '{')
         return "Not an object";

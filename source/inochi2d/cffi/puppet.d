@@ -209,7 +209,7 @@ void in_puppet_set_gravity(in_puppet_t* obj, float value) {
         delta = Time since last frame.
 */
 void in_puppet_update(in_puppet_t* obj, float delta) {
-    assumeNoThrowNoGC(&(cast(Puppet)obj).update, delta);
+    (cast(Puppet)obj).update(delta);
 }
 
 /**
@@ -220,7 +220,7 @@ void in_puppet_update(in_puppet_t* obj, float delta) {
         delta = Time since last frame.
 */
 void in_puppet_draw(in_puppet_t* obj, float delta) {
-    assumeNoThrowNoGC(&(cast(Puppet)obj).draw, delta);
+    (cast(Puppet)obj).draw(delta);
 }
 
 /**
@@ -272,6 +272,22 @@ in_parameter_t** in_puppet_get_parameters(in_puppet_t* obj, ref uint count) {
 */
 in_drawlist_t* in_puppet_get_drawlist(in_puppet_t* obj) {
     return cast(in_drawlist_t*)(cast(Puppet)obj).drawList;
+}
+
+/**
+    Gets the root node of the puppet.
+
+    Params:
+        self = The puppet object.
+
+    Returns:
+        The root node of the puppet, or $(D null) on failure.
+*/
+in_node_t* in_puppet_get_root_node(in_puppet_t* self) {
+    if (Puppet n_self = cast(Puppet)self)
+        return cast(in_node_t*)n_self.root;
+    
+    return null;
 }
 
 //

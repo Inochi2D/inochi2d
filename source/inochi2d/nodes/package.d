@@ -457,8 +457,6 @@ public:
         } else {
             this.parent_.children_.insert(this, offset);
         }
-        if (this.puppet !is null)
-            assumeNoThrowNoGC((Puppet puppet) { puppet.rescanNodes(); }, puppet);
     }
 
     /**
@@ -808,5 +806,7 @@ void sortNodes(T)(ref T[] slice) @nogc nothrow if (is(T : Node)) {
 
     // HACK:    nulib doesn't have a float cmp function yet,
     //          as such we convert sorting values to fixed.
-    nu_sort!((Visual a, Visual b) @nogc => fixed32(a.zSort).data < fixed32(b.zSort).data)(slice);
+    nu_sort!((Node a, Node b) @nogc {
+        return fixed32(a.zSort).data < fixed32(b.zSort).data;
+    })(slice);
 }

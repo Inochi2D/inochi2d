@@ -264,7 +264,7 @@ public:
         append =            Whether to append to the visuals list.
 */
 void findVisuals(Node root, ref Visual[] visuals, bool recurseDelegates = false, bool sort = true, bool append = false) @nogc {
-    static void findVisualsImpl(Node node, ref Visual[] visuals, bool recurseDelegates = false) @nogc {
+    static void findVisualsImpl(Node node, ref Visual[] visuals, ref size_t i, bool recurseDelegates = false) @nogc {
         if (!node)
             return;
 
@@ -272,23 +272,23 @@ void findVisuals(Node root, ref Visual[] visuals, bool recurseDelegates = false,
             if (!visual.enabled)
                 return;
 
-            visuals = visuals.nu_resize(visuals.length + 1);
-            visuals[$ - 1] = visual;
+            if (i >= visuals.length)
+                visuals = visuals.nu_resize(visuals.length + 1);
+            visuals[i] = visual;
 
             if (!visual.isDelegated || recurseDelegates) {
                 foreach (child; node.children) {
-                    findVisualsImpl(child, visuals, recurseDelegates);
+                    findVisualsImpl(child, visuals, i, recurseDelegates);
                 }
-            }
-
-            if (visual.isDelegated)
+            } else if (visual.isDelegated) {
                 visual.findVisuals(visuals, recurseDelegates, true);
+            }
         } else {
 
             // Non-part nodes just need to be recursed through,
             // they don't draw anything.
             foreach (child; node.children) {
-                findVisualsImpl(child, visuals, recurseDelegates);
+                findVisualsImpl(child, visuals, i, recurseDelegates);
             }
         }
     }
@@ -297,8 +297,9 @@ void findVisuals(Node root, ref Visual[] visuals, bool recurseDelegates = false,
         nu_cleara(visuals);
 
     // Find all visuals in children.
+    size_t i = 0;
     foreach(child; root.children) {
-        findVisualsImpl(child, visuals, recurseDelegates);
+        findVisualsImpl(child, visuals, i, recurseDelegates);
     }
     if (sort)
         sortNodes(visuals);

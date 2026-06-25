@@ -101,10 +101,10 @@ public:
         Deserializes the type.
     */
     void onDeserialize(ref DataNode object) @nogc {
+
         // 0.8 backwards compatibility.
         object.tryGetRef(author, "rigger", author);
         object.tryGetRef(author, "artist", author);
-
 
         object.tryGetRef(name, "name");
         object.tryGetRef(author, "author", author);
@@ -201,6 +201,7 @@ private:
         texLoadLoop: foreach (i, ref DataNode texture; node.array) {
             TextureData textureData;
 
+
             // Skip invalid texture indices.
             if (!texture.isObject || "encoding" !in texture || "data" !in texture)
                 continue;
@@ -252,7 +253,7 @@ protected:
         Deserializes a puppet
     */
     void onDeserialize(ref DataNode object) @nogc {
-        
+
         // Invalid type.
         if (!object.isObject)
             return;
@@ -274,7 +275,7 @@ protected:
 
         // Add root node if it was found.
         if ("nodes" in object) {
-            object.tryGetRef(root, "nodes", root);
+            object.tryGetRef(root, "nodes");
         }
 
         // TODO: requires handling vector in serde.d
@@ -299,8 +300,7 @@ protected:
         foreach (ref animation; animations_) {
             animation.finalize(this);
         }
-
-        this.scanParts(this.root);
+        this.rescanNodes();
     }
 
 public:
@@ -490,8 +490,9 @@ public:
         //          1. Load textures from TEX_SECT, assigning texture IDs.
         //          2. Deserialize payload, (this MUST be present.)
         //          3. Finalize any data.
-        if (INP_TAG_TEXTURES in node)
+        if (INP_TAG_TEXTURES in node) {
             this.loadTextures(node[INP_TAG_TEXTURES]);
+        }
 
         this.onDeserialize(node[INP_TAG_PAYLOAD]);
         this.onFinalize();

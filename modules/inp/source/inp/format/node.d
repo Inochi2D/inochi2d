@@ -283,6 +283,12 @@ public:
                 else
                     return defaultValue;
             
+            case DataNodeType.boolean_:
+                static if (__traits(isScalar, T))
+                    return cast(T)dataStore.boolean_;
+                else
+                    return defaultValue;
+            
             case DataNodeType.uint_:
                 static if (isNumeric!T)
                     return cast(T)dataStore.uint_;

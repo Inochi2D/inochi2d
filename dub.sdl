@@ -53,8 +53,8 @@ subConfiguration "gamut" "no-codecs"
 subConfiguration "nurt" "nurt-disabled"
 
 // Gamut codecs
-versions "decodeJPEG" "decodePNG" "decodeQOI" "decodeQOIX" \
-         "encodeJPEG" "encodePNG" "encodeQOI" "encodeQOIX"
+versions "decodeJPEG" "decodePNG" "decodeQOI" "decodeQOIX" "decodeTGA" \
+         "encodeJPEG" "encodePNG" "encodeQOI" "encodeQOIX" "encodeTGA"
 
 
 
@@ -113,6 +113,7 @@ configuration "wasm" {
 
     copyFiles "tech-docs" "dist/*"
     subConfiguration "nurt" "nurt-enabled"
+    lflags "--allow-undefined"
 }
 
 // Unit tests

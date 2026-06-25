@@ -41,22 +41,6 @@ in_node_t* in_node_new(in_node_t* parent) {
 }
 
 /**
-    Gets the root node of the puppet.
-
-    Params:
-        self = The puppet object.
-
-    Returns:
-        The root node of the puppet, or $(D null) on failure.
-*/
-in_node_t* in_puppet_get_root_node(in_puppet_t* self) {
-    if (Puppet n_self = cast(Puppet)self)
-        return cast(in_node_t*)n_self.root;
-    
-    return null;
-}
-
-/**
     Gets the puppet that the node belongs to.
 
     Params:

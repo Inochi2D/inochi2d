@@ -197,8 +197,10 @@ public:
     @property Mesh parent() => parent_;
     @property void parent(Mesh value) {
         this.parent_ = value;
-        this.deformed_ = deformed_.nu_resize(value.points.length);
-        this.delta_ = delta_.nu_resize(value.points.length);
+        if (parent_) {
+            this.deformed_ = deformed_.nu_resize(value.points.length);
+            this.delta_ = delta_.nu_resize(value.points.length);
+        }
     }
 
     /**

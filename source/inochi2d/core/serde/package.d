@@ -38,6 +38,7 @@ void deserialize(T)(ref DataNode data, ref T destination) @nogc {
     import inochi2d.core.serde.deserializers;
     import inochi2d.core.math;
     import nulib.collections : MapImpl, VectorImpl;
+    import nulib.string;
     import numem;
 
     static if (is(T == DataNode)) {
@@ -52,7 +53,7 @@ void deserialize(T)(ref DataNode data, ref T destination) @nogc {
             destination.onDeserialize(data);
         else
             destination.deserialize(data);
-    } else static if (is(T : string)) {
+    } else static if (is(T : string) || is(T : nstring)) {
         if (!data.isNull)
             destination = cast(T)data.text;
     } else static if (is(T == bool)) {
