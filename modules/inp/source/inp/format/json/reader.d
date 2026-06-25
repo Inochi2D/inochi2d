@@ -118,8 +118,14 @@ ErrorString readJsonString(StreamReader reader, ref DataNode node) {
 }
 
 ErrorString readJsonNumber(StreamReader reader, ref DataNode node) {
-    nstring num = reader.readNumberJson();
-    node = DataNode(parseFloat!double(num[]));
+    bool isFloating;
+    nstring num = reader.readNumberJson(isFloating);
+
+    if (isFloating)
+        node = DataNode(parseFloat!double(num[]));
+    else
+        node = DataNode(parseInt!long(num[]));
+    
     return null;
 }
 

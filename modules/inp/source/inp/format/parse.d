@@ -113,12 +113,13 @@ bool peekString(StreamReader reader, string key) {
     Reads JSON encoded numbers from the stream.
 
     Params:
-        reader = The stream reader.
+        reader =        The stream reader.
+        isFloating =    Whether the read number was floating point.
 
     Returns:
         The JSON number read from the stream.
 */
-nstring readNumberJson(StreamReader reader) {
+nstring readNumberJson(StreamReader reader, ref bool isFloating) {
     char c = cast(char)reader.readU8();
     if (!c.isNumeric && c != '-' && c != '+') {
         reader.skip(-1);
@@ -130,6 +131,9 @@ nstring readNumberJson(StreamReader reader) {
 
     // Read characters until they're no longer number-like.
     do {
+        if (c == '.')
+            isFloating = true;
+
         c = cast(char)reader.readU8();
         result ~= c;
     } while(c.isNumeric || c == '.' || c == 'e' || c == 'E');
