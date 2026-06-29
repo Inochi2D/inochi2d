@@ -133,9 +133,9 @@ protected:
             return;
 
         CompositeVars compositeVars = CompositeVars(
-                tint * offsetTint,
-                screenTint * offsetScreenTint,
-                opacity * offsetOpacity
+            tint * offsetTint,
+            screenTint * offsetScreenTint,
+            opacity * offsetOpacity
         );
 
         visuals_.sortNodes();

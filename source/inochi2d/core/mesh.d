@@ -409,8 +409,8 @@ struct MeshData {
 
     /// Serialization handler
     void onSerialize(ref DataNode object) {
-        object["verts"] = vertices.serialize();
-        object["uvs"] = uvs.serialize();
+        object["verts"] = (cast(float[])vertices).serialize();
+        object["uvs"] = (cast(float[])uvs).serialize();
         object["indices"] = indices.serialize();
     }
 

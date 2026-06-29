@@ -35,6 +35,7 @@ __gshared TypeRegistry!Node in_node_registry;
     A node in the Inochi2D rendering tree
 */
 @TypeId("Node", 0x00000000)
+@RegisterFallback
 class Node : NuRefCounted, IPropertyOwner, ISerializable, IDeserializable {
 private:
 @nogc:
@@ -42,28 +43,33 @@ private:
     Node parent_;
     weak_vector!Node children_;
     GUID guid_;
-    bool lockToRoot_;
     string nodePath_;
     uint nid_;
 
-    Transform globalTransform_;
-    Transform globalTransformNoParam_;
+    bool lockToRoot_;
+    Basis globalMatrix_;
+    Basis globalMatrixNoParam_;
     offset_value!Transform localTransform_;
     offset_value!float zSort_;
 
     // Implementation of the transform update algorithm.
     void transformUpdateImpl() {
-        localTransform_.base.update();
-        localTransform_.offset.update();
+
+        import std.stdio : writefln;
+
+        // Set base matrices.
+        globalMatrix_ = (localTransform_.base + localTransform_.offset).matrix();
+        globalMatrixNoParam_ = localTransform_.base.matrix();
+
+        //vec3 ptr = parent_ ? globalMatrix_.translation : vec3(0, 0, 0);
+        //debug writefln("Update %s %s -> %s", name, localTransform_.base.translation.data, ptr.data);
+
         if (lockToRoot_) {
-            globalTransform_ = (localTransform_.base + localTransform_.offset) * puppet.root.localTransform_.base;
-            globalTransformNoParam_ = localTransform_.base * puppet.root.localTransform_.base;
-        } else if (parent !is null) {
-            globalTransform_ = (localTransform_.base + localTransform_.offset) * parent.globalTransform;
-            globalTransformNoParam_ = localTransform_.base * parent.globalTransform;
-        } else {
-            globalTransform_ = (localTransform_.base + localTransform_.offset);
-            globalTransformNoParam_ = localTransform_.base;
+            globalMatrix_.matrix =         globalMatrix_ * puppet.root.localTransform_.base.matrix();
+            globalMatrixNoParam_.matrix =  globalMatrixNoParam_ * puppet.root.localTransform_.base.matrix();
+        } else if (parent_ !is null) {
+            globalMatrix_ =         globalMatrix_ * parent_.globalMatrix_;
+            globalMatrixNoParam_ =  globalMatrixNoParam_ * parent_.globalMatrixNoParam_;
         }
     }
 
@@ -142,8 +148,7 @@ protected:
             drawList =  The drawlist for the active scene.
             mode =      The masking mode to draw with.
     */
-    void onDraw(float delta, DrawList drawList, MaskingMode mode = MaskingMode.none) @nogc {
-    }
+    void onDraw(float delta, DrawList drawList, MaskingMode mode = MaskingMode.none) @nogc { }
 
 public:
 
@@ -196,14 +201,14 @@ public:
     @property float zSort() @nogc nothrow pure => (parent ? parent.zSort : 0) + zSort_;
 
     /**
-        The global base transform.
+        The global basis matrix.
     */
-    @property Transform globalBaseTransform() @nogc => globalTransformNoParam_;
+    @property Basis matrix() @nogc => globalMatrix_;
 
     /**
-        The global transform.
+        The global basis matrix with parameter omitted.
     */
-    @property Transform globalTransform() @nogc => globalTransform_;
+    @property Basis baseMatrix() @nogc => globalMatrixNoParam_;
 
     /**
         The transform in local-space.
@@ -216,23 +221,15 @@ public:
     @property ref Transform localTransformOffset() @nogc => localTransform_.offset;
 
     /**
-        The transform in world space without locking
-    */
-    @property Transform transformNoLock() @nogc {
-        localTransform_.base.update();
-        return parent ? localTransform_.base * parent.globalTransform : localTransform_.base;
-    }
-
-    /**
         Whether transformation is locked to the root node.
     */
     @property bool lockToRoot() @nogc nothrow pure => lockToRoot_;
     @property void lockToRoot(bool value) @nogc {
-        if (value && !lockToRoot_) {
-            localTransform_.base.translation = this.transformNoLock.translation;
-        } else if (!value && lockToRoot_) {
-            localTransform_.base.translation = localTransform_.base.translation - parent.transformNoLock.translation;
-        }
+        //if (value && !lockToRoot_) {
+        //    localTransform_.base.translation = this.transformNoLock.translation;
+        //} else if (!value && lockToRoot_) {
+        //    localTransform_.base.translation = localTransform_.base.translation - parent.transformNoLock.translation;
+        //}
 
         lockToRoot_ = value;
     }
@@ -289,30 +286,6 @@ public:
     this(GUID guid, Node parent = null) @nogc {
         this.parent = parent;
         this.guid_ = guid;
-    }
-
-    /**
-        Calculates the relative position between 2 nodes and applies the offset.
-        You should call this before reparenting nodes.
-
-        Params:
-            to = The node to set this node relative to.
-    */
-    void setRelativeTo(Node to) {
-        setRelativeTo(to.transformNoLock.matrix);
-        this.localZSort = this.localZSort - to.localZSort;
-    }
-
-    /**
-        Calculates the relative position between this node and a matrix and applies the offset.
-        This does not handle zSorting. Pass a Node for that.
-
-        Params:
-            to = The matrix to set this node's transform relative to.
-    */
-    void setRelativeTo(mat4 to) {
-        localTransform_.base.translation = to.relativeVectorTo(transformNoLock.matrix);
-        localTransform_.base.update();
     }
 
     /**
@@ -415,20 +388,7 @@ public:
         Set new Parent
     */
     void reparent(Node parent, ulong pOffset) {
-        if (parent !is null)
-            setRelativeTo(parent);
         insertInto(parent, cast(size_t)pOffset);
-    }
-
-    /**
-        Applies an offset to the Node's transform.
-
-        Params:
-            other = The transform to offset the current global transform by.
-    */
-    void offsetTransform(Transform other) @nogc {
-        globalTransform_ = globalTransform_ + other;
-        globalTransform_.update();
     }
 
     /**
@@ -501,8 +461,10 @@ public:
                 //          anything else besides pass it onto the child's
                 //          deserializer.
                 if (Node n = in_node_registry.tryCreateFrom(child)) {
-                    n.parent = this;
-                    child.deserialize(n);
+                    n.parent_ = this;
+                    this.children_ ~= n;
+                    
+                    n.deserialize(child);
                 }
             }
         }
@@ -528,8 +490,6 @@ public:
             Children which have been disabled will not be updated.
     */
     final void updateTransform() @nogc {
-        if (!enabled)
-            return;
 
         // Do the base algorithm first.
         this.transformUpdateImpl();

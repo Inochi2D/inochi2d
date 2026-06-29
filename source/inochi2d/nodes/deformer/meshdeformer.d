@@ -78,8 +78,8 @@ protected:
     */
     override
     void onUpdate(float delta, DrawList drawList) {
-        base_.pushMatrix(worldTransform.matrix);
-        deformed_.pushMatrix(worldTransform.matrix);
+        base_.pushMatrix(this.deformMatrix);
+        deformed_.pushMatrix(this.deformMatrix);
         super.onUpdate(delta, drawList);
     }
 
@@ -167,7 +167,7 @@ public:
         this.deformed_.parent = value;
 
         this.base_.reset();
-        this.base_.pushMatrix(baseTransform.matrix);
+        this.base_.pushMatrix(this.deformBaseMatrix);
     }
 
     /**

@@ -26,15 +26,14 @@ public:
     @property vec2[] deformPoints();
 
     /**
-        The base transform of the object before any 
-        parameters have been applied.
+        The base matrix of the object before any parameters have been applied.
     */
-    @property Transform baseTransform();
+    @property Basis deformBaseMatrix();
 
     /**
-        World transform of the deformable object.
+        World matrix of the deformable object.
     */
-    @property Transform worldTransform();
+    @property Basis deformMatrix();
 
     /**
         Deforms the IDeformable.
@@ -56,14 +55,6 @@ public:
                         replacing the original deformation.
     */
     void deform(size_t offset, vec2 deform, bool absolute = false);
-
-    /**
-        Applies an offset to the IDeformable's transform.
-
-        Params:
-            other = The transform to offset the current global transform by.
-    */
-    void offsetTransform(Transform other);
 
     /**
         Resets the deformation for the IDeformable.

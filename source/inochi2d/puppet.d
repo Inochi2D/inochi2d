@@ -87,8 +87,6 @@ public:
         object["author"] = author[];
         object["thumbnail"] = parent.textureCache.find(thumbnail);
 
-
-
         // Physics properties.
         object["physicsPixelsPerMeter"] = physicsPixelsPerMeter;
         object["physicsGravity"] = physicsGravity;
@@ -504,7 +502,6 @@ public:
     */
     final void update(float delta) {
         drawList_.clear();
-        transform.update();
         root.preUpdate(drawList_);
 
         // Update parameters

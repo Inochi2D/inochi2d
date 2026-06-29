@@ -13,13 +13,14 @@
 */
 module inochi2d.core.math;
 import inochi2d.core;
-public import numath.dampen;
-public import numath;
 import nulib.math;
 import numem;
 
+public import inochi2d.core.math.transform;
 public import inochi2d.core.math.deform;
 public import inochi2d.core.math.trig;
+public import numath.dampen;
+public import numath;
 
 /**
     A camera
@@ -99,120 +100,6 @@ public:
             mat4.scaling(scale, scale, 1) *
             mat4.zRotation(rotation) *
             mat4.translation(pos);
-    }
-}
-
-/**
-    A transform
-*/
-struct Transform {
-private:
-@nogc:
-
-    // NOTE:    This private var is declared here to allow instantiating
-    //          the Transform like prior, but with the added benefit of
-    //          being able to do so with the new auto-generated constructors.
-    mat4 trs = mat4.identity;
-
-public:
-
-    /**
-        The translation of the transform
-    */
-    vec3 translation = vec3(0, 0, 0);
-
-    /**
-        The rotation of the transform
-    */
-    vec3 rotation = vec3(0, 0, 0); //; = quat.identity;
-
-    /**
-        The scale of the transform
-    */
-    vec2 scale = vec2(1, 1);
-
-    /**
-        Whether the transform should snap to pixels
-    */
-    bool pixelSnap = false;
-    
-    /**
-        Returns the result of 2 transforms multiplied together
-    */
-    Transform opBinary(string op : "*")(Transform other) @nogc {
-        Transform tnew;
-
-        mat4 strs = other.trs * this.trs;
-
-        // TRANSLATION
-        tnew.translation = vec3(strs * vec4(1, 1, 1, 1));
-
-        // ROTATION
-        tnew.rotation = this.rotation + other.rotation;
-
-        // SCALE
-        tnew.scale = this.scale * other.scale;
-        tnew.trs = strs;
-        return tnew;
-    }
-
-    /**
-        Returns the result of 2 transforms multiplied together
-    */
-    Transform opBinary(string op : "+")(Transform other) @nogc {
-        Transform tnew;
-
-        tnew.translation = this.translation + other.translation;
-        tnew.rotation = this.rotation + other.rotation;
-        tnew.scale = this.scale * other.scale;
-        tnew.update();
-
-        return tnew;
-    }
-
-    /**
-        Gets the matrix for this transform
-    */
-    mat4 matrix() @nogc {
-        return trs;
-    }
-
-    /**
-        Updates the internal matrix of this transform
-    */
-    void update() {
-        trs =
-            mat4.translation(this.translation) *
-            mat4.zRotation(this.rotation.z) * mat4.yRotation(this.rotation.y) * mat4.xRotation(this.rotation.x) *
-            mat4.scaling(
-                    this.scale.x, this.scale.y, 1);
-    }
-
-    /**
-        Clears the vector
-    */
-    void clear() {
-        translation = vec3(0);
-        rotation = vec3(0);
-        scale = vec2(1, 1);
-    }
-
-    /**
-        Serializes the transform.
-    */
-    void onSerialize(ref DataNode object) {
-        object["trans"] = translation.data.serialize();
-        object["rot"] = rotation.data.serialize();
-        object["scale"] = scale.data.serialize();
-    }
-
-    /**
-        Deserializes a transform from JSON.
-    */
-    void onDeserialize(ref DataNode object) {
-        object.tryGetRef(translation.data, "trans");
-        object.tryGetRef(rotation.data, "rot");
-        object.tryGetRef(scale.data, "scale");
     }
 }
 

@@ -210,8 +210,8 @@ protected:
     override
     void onPostUpdate(DrawList drawList) {
         super.onPostUpdate(drawList);
-        
-        deformed_.pushMatrix(globalTransform.matrix);
+
+        deformed_.pushMatrix(this.deformMatrix);
         this.drawListSlot = drawList.allocate(deformed_.vertices, deformed_.indices);
 
         // Apply mesh effects.
@@ -242,10 +242,10 @@ protected:
             return;
 
         PartVars vars = PartVars(
-                tint * offsetTint,
-                screenTint * offsetScreenTint,
-                opacity * offsetOpacity,
-                emissionStrength * offsetEmissionStrength
+            tint * offsetTint,
+            screenTint * offsetScreenTint,
+            opacity * offsetOpacity,
+            emissionStrength * offsetEmissionStrength
         );
 
         if (masks.length > 0) {
@@ -294,14 +294,14 @@ public:
     final @property MeshEffect[] effects() => effects_;
 
     /**
-        Local matrix of the deformable object.
+        The base matrix of the object before any parameters have been applied.
     */
-    override @property Transform baseTransform() @nogc => globalBaseTransform;
+    override @property Basis deformBaseMatrix() @nogc => baseMatrix;
 
     /**
         World matrix of the deformable object.
     */
-    override @property Transform worldTransform() @nogc => globalTransform;
+    override @property Basis deformMatrix() @nogc => matrix;
 
     /**
         The base position of the deformable's points.
@@ -356,6 +356,7 @@ public:
     ~this() {
         mesh_.release();
         nogc_delete(deformed_);
+        nogc_delete(base_);
         foreach (texture; textures) {
             if (texture)
                 texture.release();
@@ -414,7 +415,7 @@ public:
         deformed_.reset();
 
         base_.reset();
-        base_.pushMatrix(baseTransform.matrix);
+        base_.pushMatrix(this.deformBaseMatrix);
     }
 
     /**
@@ -441,17 +442,6 @@ public:
     */
     override void deform(size_t offset, vec2 deform, bool absolute = false) {
         deformed_.deform(offset, deform);
-    }
-
-    /**
-        Applies an offset to the Node's transform.
-
-        Params:
-            other = The transform to offset the current global transform by.
-    */
-    override
-    void offsetTransform(Transform other) @nogc {
-        super.offsetTransform(other);
     }
 
     /**

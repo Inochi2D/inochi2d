@@ -111,14 +111,14 @@ public:
     abstract @property const(vec2)[] basePoints() @nogc;
 
     /**
-        Local matrix of the deformable object.
+        The base matrix of the object before any parameters have been applied.
     */
-    override @property Transform baseTransform() @nogc => globalBaseTransform;
+    override @property Basis deformBaseMatrix() @nogc => baseMatrix;
 
     /**
         World matrix of the deformable object.
     */
-    override @property Transform worldTransform() @nogc => globalTransform;
+    override @property Basis deformMatrix() @nogc => matrix;
 
     /**
         The points which may be deformed by the deformer.
@@ -160,17 +160,6 @@ public:
             deformPoints[offset] = deform;
         else
             deformPoints[offset] += deform;
-    }
-
-    /**
-        Applies an offset to the Node's transform.
-
-        Params:
-            other = The transform to offset the current global transform by.
-    */
-    override
-    void offsetTransform(Transform other) {
-        super.offsetTransform(other);
     }
 
     /**

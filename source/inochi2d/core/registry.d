@@ -32,6 +32,12 @@ struct TypeId {
 struct TypeIdAbstract;
 
 /**
+    Tells the registry that the type should be used as a fallback
+    if the type can't be resolved.
+*/
+struct RegisterFallback;
+
+/**
     Template which registers a type into a given type registry.
 */
 mixin template Register(T, alias registry) {
@@ -43,6 +49,10 @@ mixin template Register(T, alias registry) {
         pragma(crt_constructor)
         pragma(mangle, "__in_register_"~T.stringof)
         export extern(C) void __register_type() { registry.register!T(); }
+    }
+
+    static if (hasUDA!(T, RegisterFallback)) {
+        pragma(msg, "Registering ", T.stringof, " as fallback type in ", registry.stringof, "...");
     }
 }
 
@@ -68,6 +78,7 @@ private:
     __TypeMap!(void*, TypeId) typeIdStore;
     __TypeMap!(string, factory_t) factoryStoreS;
     __TypeMap!(uint, factory_t) factoryStoreN;
+    factory_t fallbackFactory;
     vector!size_t sizeStore;
 
 public:
@@ -103,9 +114,15 @@ public:
         typeIdStore[cast(void*)typeid(X)] = _tids[0];
         sizeStore ~= AllocSize!X;
 
+        // Register type factory.
         static if (!hasUDA!(X, TypeIdAbstract)) {
             factoryStoreS[_tids[0].sid] = &__construct!X;
             factoryStoreN[_tids[0].nid] = &__construct!X;
+        }
+
+        // Register fallback factory.
+        static if (hasUDA!(X, RegisterFallback)) {
+            fallbackFactory = &__construct!X;
         }
     }
 
@@ -184,7 +201,10 @@ public:
     T create(string sid, Args args) {
         if (sid in factoryStoreS)
             return factoryStoreS[sid](args);
-        return null;
+        
+        return fallbackFactory ? 
+            fallbackFactory(args) : 
+            T.init;
     }
 
     /**
@@ -202,7 +222,10 @@ public:
     T create(uint nid, Args args) {
         if (nid in factoryStoreN)
             return factoryStoreN[nid](args);
-        return null;
+
+        return fallbackFactory ? 
+            fallbackFactory(args) : 
+            T.init;
     }
 
     /**
@@ -231,11 +254,15 @@ public:
         if (object.isObject && "type" in object) {
             if (string type = object["type"].tryCoerce!string(null)) {
                 if (!this.has(type))
-                    return null;
+                    return fallbackFactory ? 
+                        fallbackFactory(args) : 
+                        T.init;
                 
                 return this.create(type, args);
             }
         }
-        return null;
+        return fallbackFactory ? 
+            fallbackFactory(args) : 
+            T.init;
     }
 }
