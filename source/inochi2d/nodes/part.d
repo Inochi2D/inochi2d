@@ -31,12 +31,14 @@ enum TextureUsage : size_t {
 }
 
 struct PartVars {
-align(vec4.sizeof):
     vec3 tint;
     vec3 screenTint;
+    private void[4] __dummy;
     float opacity;
     float emissionStrength;
 }
+
+pragma(msg, PartVars.opacity.offsetof);
 
 /**
     Dynamic Mesh Part
@@ -153,9 +155,9 @@ protected:
             }
         }
 
-        object.tryGetRef(opacity, "opacity");
-        object.tryGetRef(tint, "tint");
-        object.tryGetRef(screenTint, "screenTint");
+        object.tryGetRef(opacity, "opacity", 1);
+        object.tryGetRef(tint.data, "tint");
+        object.tryGetRef(screenTint.data, "screenTint");
         object.tryGetRef(emissionStrength, "emissionStrength");
 
         if ("blend_mode" in object && object["blend_mode"].isNumber)
@@ -203,6 +205,7 @@ protected:
     override
     void onUpdate(float delta, DrawList drawList) {
         super.onUpdate(delta, drawList);
+        deformed_.pushMatrix(this.deformMatrix);
     }
 
     /**
@@ -215,7 +218,6 @@ protected:
     void onPostUpdate(DrawList drawList) {
         super.onPostUpdate(drawList);
 
-        deformed_.pushMatrix(this.deformMatrix);
         this.drawListSlot = drawList.allocate(deformed_.vertices, deformed_.indices);
 
         // Apply mesh effects.
@@ -246,10 +248,10 @@ protected:
             return;
 
         PartVars vars = PartVars(
-            tint * offsetTint,
-            screenTint * offsetScreenTint,
-            opacity * offsetOpacity,
-            emissionStrength * offsetEmissionStrength
+            tint: tint * offsetTint,
+            screenTint: screenTint * offsetScreenTint,
+            opacity: opacity * offsetOpacity,
+            emissionStrength: emissionStrength * offsetEmissionStrength
         );
 
         if (masks.length > 0) {

@@ -176,7 +176,7 @@ public:
     */
     void setVariables(T)(uint nid, T value) if (T.sizeof <= _ccmd.variables.sizeof) {
         _ccmd.typeId = nid;
-        _ccmd.variables[0 .. T.sizeof] = (cast(void*)&value)[0 .. T.sizeof];
+        nu_memcpy(_ccmd.variables.ptr, cast(void*)&value, T.sizeof);
     }
 
     /**

@@ -81,9 +81,9 @@ public:
         Deserializes a transform from JSON.
     */
     void onDeserialize(ref DataNode object) {
-        object.tryGetRef(translation.data, "trans");
-        object.tryGetRef(rotation.data, "rot");
-        object.tryGetRef(scale.data, "scale");
+        object.tryGetRef(translation.data, "trans", [0, 0, 0]);
+        object.tryGetRef(rotation.data, "rot", [0, 0, 0]);
+        object.tryGetRef(scale.data, "scale", [1, 1]);
     }
 }
 

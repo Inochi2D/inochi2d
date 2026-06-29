@@ -67,11 +67,11 @@ private:
         //debug writefln("Update %s %s -> %s", name, localTransform_.base.translation.data, ptr.data);
 
         if (lockToRoot_) {
-            globalMatrix_.matrix =         globalMatrix_ * puppet.root.localTransform_.base.matrix();
-            globalMatrixNoParam_.matrix =  globalMatrixNoParam_ * puppet.root.localTransform_.base.matrix();
+            globalMatrix_.matrix =          puppet.root.localTransform_.base.matrix() * globalMatrix_;
+            globalMatrixNoParam_.matrix =   puppet.root.localTransform_.base.matrix() * globalMatrixNoParam_;
         } else if (parent_ !is null) {
-            globalMatrix_ =         globalMatrix_ * parent_.globalMatrix_;
-            globalMatrixNoParam_ =  globalMatrixNoParam_ * parent_.globalMatrixNoParam_;
+            globalMatrix_ =                 parent_.globalMatrix_ * globalMatrix_;
+            globalMatrixNoParam_ =          parent_.globalMatrixNoParam_ * globalMatrixNoParam_;
         }
     }
 

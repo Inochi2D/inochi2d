@@ -113,7 +113,7 @@ void simd_mul(ref vec2[] mesh, mat4 matrix) @nogc nothrow {
 @("simd_mul")
 unittest {
     mat4 testMatrix = mat4.translation(1.0, 0.0, 0.0);
-    vec2[] testArray = new vec2[10_000];
+    vec2[] testArray = new vec2[10_001];
     testArray[] = vec2(1.0, 1.0);
 
     simd_mul(testArray, testMatrix);
@@ -155,7 +155,7 @@ void simd_offset(ref vec2[] mesh, vec2 offset) @nogc nothrow {
                 _mm_add_ps(
                     _mm_loadl_pi(
                         IN_SIMD_IDENTITY, 
-                        cast(const(__m64)*)mesh[i].ptr
+                        cast(const(__m64)*)&mesh[i]
                     ),
                     m_offset
                 )
@@ -172,7 +172,7 @@ void simd_offset(ref vec2[] mesh, vec2 offset) @nogc nothrow {
 
 @("simd_offset")
 unittest {
-    vec2[] array1 = new vec2[10_000];
+    vec2[] array1 = new vec2[10_001];
     array1[] = vec2(0);
 
     simd_offset(array1, vec2(1, 1));
@@ -205,7 +205,7 @@ void simd_mul_weight(ref vec2[] mesh, ref float[] weights) @nogc nothrow {
 
             // Load weights and vector
             __m128 w0011 = _mm_i32gather_ps!(4)(cast(const(float)*)&weights[i], WEIGHT_OFFSETS);
-            __m128 xyzw = _mm_load_ps(cast(const(float)*)mesh[i].ptr);
+            __m128 xyzw = _mm_load_ps(cast(const(float)*)&mesh[i]);
 
             // Perform matrix multiplication and
             // Store 2 multiplied elements at once to mesh.
@@ -216,11 +216,7 @@ void simd_mul_weight(ref vec2[] mesh, ref float[] weights) @nogc nothrow {
 
         // Tail iteration to finalize the multiplication
         if (i < w_length) {
-            __m128 ww01 = _mm_loadl_pi(IN_SIMD_IDENTITY, cast(const(__m64)*)&weights[i]);
-            __m128 xy01 = _mm_loadl_pi(IN_SIMD_IDENTITY, cast(const(__m64)*)mesh[i].ptr);
-
-            __m128 weighted = _mm_mul_ps(xy01, ww01);
-            _mm_storel_pi(cast(__m64*)mesh[i].ptr, weighted);
+            mesh[i] = mesh[i] * weights[i];
         }
     } else {
 
@@ -233,10 +229,10 @@ void simd_mul_weight(ref vec2[] mesh, ref float[] weights) @nogc nothrow {
 
 @("simd_mul_weight")
 unittest {
-    vec2[] array1 = new vec2[10_000];
+    vec2[] array1 = new vec2[10_001];
     array1[] = vec2(0.5);
 
-    float[] weights = new float[10_000];
+    float[] weights = new float[10_001];
     weights[] = 0.5;
 
     simd_mul_weight(array1, weights);

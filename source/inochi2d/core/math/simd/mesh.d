@@ -37,32 +37,32 @@ void simd_deform(ref vec2[] mesh, vec2[] deform) @nogc nothrow {
         for (; i < nu_aligndown(w_length, 4); i += 4) {
 
             // Get 4 values at the same from both the mesh and deform.
-            __m256 m_xyzwuvst = _mm256_loadu_ps(mesh[i].ptr);
-            __m256 d_xyzwuvst = _mm256_loadu_ps(deform[i].ptr);
+            __m256 m_xyzwuvst = _mm256_loadu_ps(cast(float*)&mesh[i]);
+            __m256 d_xyzwuvst = _mm256_loadu_ps(cast(float*)&deform[i]);
 
             // Add and store 2 vectors at the same time.
             __m256 xyzwuvst = _mm256_add_ps(m_xyzwuvst, d_xyzwuvst);
-            _mm256_storeu_ps(cast(float*)mesh[i].ptr, xyzwuvst);
+            _mm256_storeu_ps(cast(float*)&mesh[i], xyzwuvst);
         }
 
         // SSE for 2-3 remaining values.
         if (i < nu_aligndown(w_length, 2)) {
 
             // Get 4 values at the same from both the mesh and deform.
-            __m128 m_xyzw = _mm_loadu_ps(mesh[i].ptr);
-            __m128 d_xyzw = _mm_loadu_ps(deform[i].ptr);
+            __m128 m_xyzw = _mm_loadu_ps(cast(float*)&mesh[i]);
+            __m128 d_xyzw = _mm_loadu_ps(cast(float*)&deform[i]);
 
             // Add and store 2 vectors at the same time.
             __m128 xyzw = _mm_add_ps(m_xyzw, d_xyzw);
-            _mm_storeu_ps(cast(float*)mesh[i].ptr, xyzw);
+            _mm_storeu_ps(cast(float*)&mesh[i], xyzw);
 
             i += 2;
         }
 
         // Tail iteration to finalize the broadcast
         if (i < w_length) {
-            __m128 m_xy01 = _mm_loadl_pi(IN_SIMD_IDENTITY, cast(const(__m64)*)mesh[i].ptr);
-            __m128 d_xy01 = _mm_loadl_pi(IN_SIMD_IDENTITY, cast(const(__m64)*)deform[i].ptr);
+            __m128 m_xy01 = _mm_loadl_pi(IN_SIMD_IDENTITY, cast(const(__m64)*)&mesh[i]);
+            __m128 d_xy01 = _mm_loadl_pi(IN_SIMD_IDENTITY, cast(const(__m64)*)&deform[i]);
             __m128 xy01 = _mm_add_ps(m_xy01, d_xy01);
             _mm_storel_pi(cast(__m64*)mesh[i].ptr, xy01);
         }
@@ -77,20 +77,20 @@ void simd_deform(ref vec2[] mesh, vec2[] deform) @nogc nothrow {
         for (; i < nu_aligndown(w_length, 2); i += 2) {
 
             // Get 4 values at the same from both the mesh and deform.
-            __m128 m_xyzw = _mm_loadu_ps(mesh[i].ptr);
-            __m128 d_xyzw = _mm_loadu_ps(deform[i].ptr);
+            __m128 m_xyzw = _mm_loadu_ps(cast(float*)&mesh[i]);
+            __m128 d_xyzw = _mm_loadu_ps(cast(float*)&deform[i]);
 
             // Add and store 2 vectors at the same time.
             __m128 xyzw = _mm_add_ps(m_xyzw, d_xyzw);
-            _mm_storeu_ps(cast(float*)mesh[i].ptr, xyzw);
+            _mm_storeu_ps(cast(float*)&mesh[i], xyzw);
         }
 
         // Tail iteration to finalize the broadcast
         if (i < w_length) {
-            __m128 m_xy01 = _mm_loadl_pi(IN_SIMD_IDENTITY, cast(const(__m64)*)mesh[i].ptr);
-            __m128 d_xy01 = _mm_loadl_pi(IN_SIMD_IDENTITY, cast(const(__m64)*)deform[i].ptr);
+            __m128 m_xy01 = _mm_loadl_pi(IN_SIMD_IDENTITY, cast(const(__m64)*)&mesh[i]);
+            __m128 d_xy01 = _mm_loadl_pi(IN_SIMD_IDENTITY, cast(const(__m64)*)&deform[i]);
             __m128 xy01 = _mm_add_ps(m_xy01, d_xy01);
-            _mm_storel_pi(cast(__m64*)mesh[i].ptr, xy01);
+            _mm_storel_pi(cast(__m64*)&mesh[i], xy01);
         }
     } else {
 
@@ -103,15 +103,15 @@ void simd_deform(ref vec2[] mesh, vec2[] deform) @nogc nothrow {
 
 @("simd_deform")
 unittest {
-    vec2[] array1 = new vec2[10_000];
-    vec2[] array2 = new vec2[10_000];
+    vec2[] array1 = new vec2[10_001];
+    vec2[] array2 = new vec2[10_001];
     
-    array1[] = vec2(0.0, 0.0);
+    array1[] = vec2(1.0, 1.0);
     array2[] = vec2(1.0, 0.0);
 
     simd_deform(array1, array2);
     foreach(value; array1) {
-        assert(value == vec2(1.0, 0.0));
+        assert(value == vec2(2.0, 1.0));
     }
 }
 

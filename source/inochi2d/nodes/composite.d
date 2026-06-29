@@ -357,7 +357,7 @@ public:
         that it should re-index them.
     */
     void notifyVisualsChanged() {
-        .findVisuals(this, visuals_, true, true, false);
+        .findVisuals(this, visuals_, false, true, false);
     }
 }
 
