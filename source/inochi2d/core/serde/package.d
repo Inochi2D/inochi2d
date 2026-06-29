@@ -70,7 +70,7 @@ void deserialize(T)(ref DataNode data, ref T destination) @nogc {
             return;
 
         foreach (i, ref value; data.array) {
-            if (i > T.length)
+            if (i >= T.length)
                 break;
 
             destination[i] = value.deserialize!(ElementType!T)();
