@@ -21,24 +21,6 @@ import inteli;
 */
 rect simd_calcbounds(vec2[] mesh) @nogc nothrow {
 
-    // For meshes with a lower vertex count, we don't want to do SIMD
-    // due to pipelining stalls it may cause for low vertex counts.
-    if (mesh.length < IN_SIMD_THRESHOLD) {
-        vec2 v_min = vec2(float.max, float.max);
-        vec2 v_max = vec2(-float.min_normal, -float.min_normal);
-        foreach(i; 0..mesh.length) {
-            v_min = min(mesh[i], v_min);
-            v_max = max(mesh[i], v_max);
-        }
-
-        return rect(
-            v_min.x,
-            v_min.y,
-            v_max.x-v_min.x,
-            v_max.y-v_min.y,
-        );
-    }
-
     // SIMD implementation will compare 2 vertices at the same time.
     // Then do a final pass on the result.
     __m128i m_off = __m128i([0, 1, 2, 3]);
