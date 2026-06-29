@@ -62,7 +62,6 @@ versions "decodeJPEG" "decodePNG" "decodeQOI" "decodeQOIX" "decodeTGA" \
 //          BUILD FLAGS
 //
 
-stringImportPaths "shaders/"
 copyFiles "LICENSE"
 targetPath "out/"
 
