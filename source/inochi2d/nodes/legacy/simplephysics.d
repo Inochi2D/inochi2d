@@ -1,10 +1,14 @@
 /**
     Inochi2D Simple Physics Node
 
-    Copyright © 2022, Inochi2D Project
-    Distributed under the 2-Clause BSD License, see LICENSE file.
-
-    Authors: Hoshino Lina
+    Copyright: 
+        Copyright © 2020-2026, Inochi2D Project
+    
+    License:
+        $(LINK2 https://github.com/Inochi2D/inochi2d/blob/main/LICENSE, BSD 2-clause License)
+    
+    Authors:
+        Hoshino Lina
 */
 module inochi2d.nodes.legacy.simplephysics;
 import inochi2d.core.serde;

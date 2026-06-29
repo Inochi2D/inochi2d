@@ -1,12 +1,16 @@
-/*
+/**
     Inochi2D Effect Nodes
 
     Effect nodes apply effects to other nodes in the tree.
 
-    Copyright © 2020, Inochi2D Project
-    Distributed under the 2-Clause BSD License, see LICENSE file.
+    Copyright: 
+        Copyright © 2020-2026, Inochi2D Project
     
-    Authors: Luna Nielsen
+    License:
+        $(LINK2 https://github.com/Inochi2D/inochi2d/blob/main/LICENSE, BSD 2-clause License)
+    
+    Authors:
+        Luna Nielsen
 */
 module inochi2d.nodes.effect;
 import inochi2d.nodes.visual;

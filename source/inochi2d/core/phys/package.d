@@ -1,10 +1,14 @@
 /**
-    Inochi2D Puppet Physics
+    Inochi2D Puppet Physics (Legacy)
 
-    Copyright © 2020, Inochi2D Project
-    Distributed under the 2-Clause BSD License, see LICENSE file.
+    Copyright: 
+        Copyright © 2020-2026, Inochi2D Project
     
-    Authors: Luna Nielsen
+    License:
+        $(LINK2 https://github.com/Inochi2D/inochi2d/blob/main/LICENSE, BSD 2-clause License)
+    
+    Authors:
+        Hoshino Lina
 */
 module inochi2d.core.phys;
 

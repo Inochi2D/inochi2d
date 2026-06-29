@@ -1,10 +1,14 @@
 /**
     INP2 Format
 
-    Copyright © 2020-2025, Inochi2D Project
-    Distributed under the 2-Clause BSD License, see LICENSE file.
+    Copyright: 
+        Copyright © 2020-2026, Inochi2D Project
     
-    Authors: Luna Nielsen
+    License:
+        $(LINK2 https://github.com/Inochi2D/inochi2d/blob/main/LICENSE, BSD 2-clause License)
+    
+    Authors:
+        Luna Nielsen
 */
 module inp.format.inp2;
 

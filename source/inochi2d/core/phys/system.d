@@ -1,10 +1,14 @@
 /**
     Inochi2D Physics Subsystem
 
-    Copyright © 2022, Inochi2D Project
-    Distributed under the 2-Clause BSD License, see LICENSE file.
-
-    Author: Hoshino Lina
+    Copyright: 
+        Copyright © 2020-2026, Inochi2D Project
+    
+    License:
+        $(LINK2 https://github.com/Inochi2D/inochi2d/blob/main/LICENSE, BSD 2-clause License)
+    
+    Authors:
+        Hoshino Lina
 */
 module inochi2d.core.phys.system;
 import inochi2d;

@@ -1,10 +1,14 @@
-/*
-    Inochi2D Deformers
+/**
+    Inochi2D Deformer Nodes
 
-    Copyright © 2020, Inochi2D Project
-    Distributed under the 2-Clause BSD License, see LICENSE file.
+    Copyright: 
+        Copyright © 2020-2026, Inochi2D Project
     
-    Authors: Luna Nielsen
+    License:
+        $(LINK2 https://github.com/Inochi2D/inochi2d/blob/main/LICENSE, BSD 2-clause License)
+    
+    Authors:
+        Luna Nielsen
 */
 module inochi2d.nodes.deformer;
 import inochi2d.nodes;

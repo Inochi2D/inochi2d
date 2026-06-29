@@ -12,7 +12,7 @@ toolchainRequirements dmd="no" gdc="no" ldc=">=1.40.0"
 name "inochi2d"
 description "A bring-your-own-renderer realtime 2D puppet library"
 authors "Luna Nielsen"
-copyright "Copyright © 2020, Inochi2D Project"
+copyright "Copyright © 2020-2026, Inochi2D Project"
 license "BSD-2-Clause"
 
 
