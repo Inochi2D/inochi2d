@@ -7,25 +7,17 @@
     Authors: Luna Nielsen
 */
 module inochi2d.core.math.simd;
+import inteli;
 
-version(Have_intel_intrinsics) {
-    import inteli;
+/**
+    An identity 4-dimensional vector.
+*/
+static const __m128 IN_SIMD_IDENTITY = __m128([0, 0, 0, 1]);
 
-    /**
-        The minimum threshold size of a mesh before SIMD operations kick in.
-    */
-    enum IN_SIMD_THRESHOLD = 100;
-
-    /**
-        An identity 4-dimensional vector.
-    */
-    static const __m128 IN_SIMD_IDENTITY = __m128([0, 0, 0, 1]);
-
-    /**
-        An identity 8-dimensional vector.
-    */
-    static const __m256 IN_AVX_IDENTITY = __m256([0, 0, 0, 1, 0, 0, 0, 1]);
-}
+/**
+    An identity 8-dimensional vector.
+*/
+static const __m256 IN_AVX_IDENTITY = __m256([0, 0, 0, 1, 0, 0, 0, 1]);
 
 public import inochi2d.core.math.simd.matrix;
 public import inochi2d.core.math.simd.vector;
