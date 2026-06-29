@@ -201,18 +201,18 @@ public:
         Serializes the transform.
     */
     void onSerialize(ref DataNode object) {
-        object["trans"] = translation.serialize();
-        object["rot"] = rotation.serialize();
-        object["scale"] = scale.serialize();
+        object["trans"] = translation.data.serialize();
+        object["rot"] = rotation.data.serialize();
+        object["scale"] = scale.data.serialize();
     }
 
     /**
         Deserializes a transform from JSON.
     */
     void onDeserialize(ref DataNode object) {
-        object.tryGetRef(translation, "trans");
-        object.tryGetRef(rotation, "rot");
-        object.tryGetRef(scale, "scale");
+        object.tryGetRef(translation.data, "trans");
+        object.tryGetRef(rotation.data, "rot");
+        object.tryGetRef(scale.data, "scale");
     }
 }
 

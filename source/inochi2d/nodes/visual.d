@@ -60,11 +60,10 @@ protected:
 
         Params:
             object =    The DataNode to serialize to.
-            recursive = Whether to recurse through children.
     */
     override
-    void onSerialize(ref DataNode object, bool recursive = true) {
-        super.onSerialize(object, recursive);
+    void onSerialize(ref DataNode object) {
+        super.onSerialize(object);
 
         // Serialize masks, if any are applied.
         if (masks_.length > 0) {

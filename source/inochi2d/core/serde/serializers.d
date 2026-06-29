@@ -19,5 +19,5 @@ interface ISerializable {
     /**
         Custom serializer function
     */
-    void onSerialize(ref DataNode object, bool recursive = true);
+    void onSerialize(ref DataNode object);
 }

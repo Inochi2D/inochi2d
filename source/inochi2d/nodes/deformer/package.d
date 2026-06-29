@@ -56,11 +56,10 @@ protected:
 
         Params:
             object =    The DataNode to serialize to.
-            recursive = Whether to recurse through children.
     */
     override
-    void onSerialize(ref DataNode object, bool recursive = true) {
-        super.onSerialize(object, recursive);
+    void onSerialize(ref DataNode object) {
+        super.onSerialize(object);
     }
 
     /**
@@ -114,12 +113,12 @@ public:
     /**
         Local matrix of the deformable object.
     */
-    override @property Transform baseTransform() @nogc => transform!true;
+    override @property Transform baseTransform() @nogc => globalBaseTransform;
 
     /**
         World matrix of the deformable object.
     */
-    override @property Transform worldTransform() @nogc => transform!false;
+    override @property Transform worldTransform() @nogc => globalTransform;
 
     /**
         The points which may be deformed by the deformer.

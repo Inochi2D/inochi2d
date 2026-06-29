@@ -65,6 +65,16 @@ void deserialize(T)(ref DataNode data, ref T destination) @nogc {
             destination = cast(T)data.tryCoerce!ulong;
         else
             destination = cast(T)data.tryCoerce!long;
+    } else static if (__traits(isStaticArray, T)) {
+        if (!data.isArray)
+            return;
+
+        foreach (i, ref value; data.array) {
+            if (i > T.length)
+                break;
+
+            destination[i] = value.deserialize!(ElementType!T)();
+        }
     } else static if (is(T == VectorImpl!(VT, Args), VT, Args...)) {
         if (!data.isArray)
             return;

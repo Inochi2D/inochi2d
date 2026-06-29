@@ -272,7 +272,7 @@ public:
         Serialize this binding.
     */
     override
-    void onSerialize(ref DataNode object, bool recursive = true) {
+    void onSerialize(ref DataNode object) {
         object["node"] = target.node.guid.toString()[];
         object["param_name"] = target.prop;
         object["values"] = values.data.serialize();

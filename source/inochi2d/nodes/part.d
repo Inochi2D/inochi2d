@@ -73,11 +73,10 @@ protected:
 
         Params:
             object =    The DataNode to serialize to.
-            recursive = Whether to recurse through children.
     */
     override
-    void onSerialize(ref DataNode object, bool recursive = true) {
-        super.onSerialize(object, recursive);
+    void onSerialize(ref DataNode object) {
+        super.onSerialize(object);
 
         MeshData data = MeshData(mesh_);
         object["mesh"] = data.serialize();
@@ -200,7 +199,6 @@ protected:
     override
     void onUpdate(float delta, DrawList drawList) {
         super.onUpdate(delta, drawList);
-        deformed_.pushMatrix(transform.matrix);
     }
 
     /**
@@ -212,6 +210,8 @@ protected:
     override
     void onPostUpdate(DrawList drawList) {
         super.onPostUpdate(drawList);
+        
+        deformed_.pushMatrix(globalTransform.matrix);
         this.drawListSlot = drawList.allocate(deformed_.vertices, deformed_.indices);
 
         // Apply mesh effects.
@@ -296,12 +296,12 @@ public:
     /**
         Local matrix of the deformable object.
     */
-    override @property Transform baseTransform() @nogc => transform!true;
+    override @property Transform baseTransform() @nogc => globalBaseTransform;
 
     /**
         World matrix of the deformable object.
     */
-    override @property Transform worldTransform() @nogc => transform!false;
+    override @property Transform worldTransform() @nogc => globalTransform;
 
     /**
         The base position of the deformable's points.

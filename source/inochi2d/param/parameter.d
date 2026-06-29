@@ -131,7 +131,7 @@ public:
         Serialize this parameter.
     */
     override
-    void onSerialize(ref DataNode object, bool) {
+    void onSerialize(ref DataNode object) {
         object["guid"] = guid.toString()[];
         object["name"] = name[];
         // object["bindings"] = bindings.serialize();
@@ -309,8 +309,8 @@ public:
         Serialize this parameter.
     */
     override
-    void onSerialize(ref DataNode object, bool) {
-        super.onSerialize(object, false);
+    void onSerialize(ref DataNode object) {
+        super.onSerialize(object);
         object["axes"] = cast(uint)1;
         object["min"] = min.serialize();
         object["max"] = max.serialize();
@@ -498,8 +498,8 @@ public:
         Serialize this parameter.
     */
     override
-    void onSerialize(ref DataNode object, bool) {
-        super.onSerialize(object, false);
+    void onSerialize(ref DataNode object) {
+        super.onSerialize(object);
         object["axes"] = cast(uint)2;
         object["min"] = min.serialize();
         object["max"] = max.serialize();

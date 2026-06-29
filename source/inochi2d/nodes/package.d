@@ -46,25 +46,24 @@ private:
     string nodePath_;
     uint nid_;
 
-    bool recalculateTransform_ = true;
     Transform globalTransform_;
     Transform globalTransformNoParam_;
     offset_value!Transform localTransform_;
     offset_value!float zSort_;
-    void recalculateTransforms() {
-        if (recalculateTransform_) {
-            localTransform_.base.update();
-            localTransform_.offset.update();
-            if (lockToRoot_) {
-                globalTransform_ = (localTransform_.base + localTransform_.offset) * puppet.root.localTransform_.base;
-                globalTransformNoParam_ = localTransform_.base * puppet.root.localTransform_.base;
-            } else if (parent !is null) {
-                globalTransform_ = (localTransform_.base + localTransform_.offset) * parent.transform();
-                globalTransformNoParam_ = localTransform_.base * parent.transform();
-            } else {
-                globalTransform_ = (localTransform_.base + localTransform_.offset);
-                globalTransformNoParam_ = localTransform_.base;
-            }
+
+    // Implementation of the transform update algorithm.
+    void transformUpdateImpl() {
+        localTransform_.base.update();
+        localTransform_.offset.update();
+        if (lockToRoot_) {
+            globalTransform_ = (localTransform_.base + localTransform_.offset) * puppet.root.localTransform_.base;
+            globalTransformNoParam_ = localTransform_.base * puppet.root.localTransform_.base;
+        } else if (parent !is null) {
+            globalTransform_ = (localTransform_.base + localTransform_.offset) * parent.globalTransform;
+            globalTransformNoParam_ = localTransform_.base * parent.globalTransform;
+        } else {
+            globalTransform_ = (localTransform_.base + localTransform_.offset);
+            globalTransformNoParam_ = localTransform_.base;
         }
     }
 
@@ -89,29 +88,8 @@ protected:
 
         Params:
             object =    The DataNode to serialize to.
-            recursive = Whether to recurse through children.
     */
-    void onSerialize(ref DataNode object, bool recursive = true) @nogc {
-        nstring guid = guid_.toString();
-        object["guid"] = guid[];
-        object["name"] = name[];
-        object["type"] = typeId.sid;
-        object["enabled"] = enabled;
-        object["zsort"] = zSort_.base;
-        object["transform"] = localTransform_.base.serialize();
-        object["lockToRoot"] = lockToRoot_;
-
-        // Recurse through children if enabled.
-        if (recursive) {
-            object["children"] = DataNode.createArray();
-            foreach (child; children) {
-                auto childObject = DataNode.createObject();
-                child.serialize(childObject);
-
-                object["children"] ~= childObject;
-            }
-        }
-    }
+    void onSerialize(ref DataNode object) @nogc { }
 
     /**
         Deserializes this node from a DataNode.
@@ -119,40 +97,12 @@ protected:
         Params:
             object = The DataNode to deserialize from.
     */
-    void onDeserialize(ref DataNode object) @nogc {
-
-        this.guid_ = object.tryGetGUID("uuid", "guid");
-        object.tryGetRef(name, "name");
-        object.tryGetRef(enabled, "enabled");
-        object.tryGetRef(zSort_.base, "zsort");
-        object.tryGetRef(localTransform_.base, "transform");
-        object.tryGetRef(lockToRoot_, "lockToRoot");
-
-        // Pre-populate our children with the correct types
-        if ("children" in object && object["children"].isArray) {
-            foreach (ref child; object["children"].array) {
-
-                // NOTE:    inInstantiateNode implicitly handles setting the
-                //          Parent-child relationship, so we don't need to do
-                //          anything else besides pass it onto the child's
-                //          deserializer.
-                if (Node n = in_node_registry.tryCreateFrom(child)) {
-                    n.parent = this;
-                    child.deserialize(n);
-                }
-            }
-        }
-    }
+    void onDeserialize(ref DataNode object) @nogc { }
 
     /**
         Called when the node is to finalize its deserialization from disk.
     */
-    void onFinalize() @nogc {
-        nid_ = typeId.nid;
-        foreach (child; children) {
-            child.onFinalize();
-        }
-    }
+    void onFinalize() @nogc { }
 
     /**
         Called during the early update phase of a new frame.
@@ -160,8 +110,7 @@ protected:
         Params:
             drawList =  The drawlist for the active scene.
     */
-    void onPreUpdate(DrawList drawList) @nogc {
-    }
+    void onPreUpdate(DrawList drawList) @nogc { }
 
     /**
         Called during the update phase of a new frame.
@@ -170,8 +119,7 @@ protected:
             delta =     Time since the last frame.
             drawList =  The drawlist for the active scene.
     */
-    void onUpdate(float delta, DrawList drawList) @nogc {
-    }
+    void onUpdate(float delta, DrawList drawList) @nogc { }
 
     /**
         Called during the late update phase of a new frame.
@@ -179,8 +127,12 @@ protected:
         Params:
             drawList =  The drawlist for the active scene.
     */
-    void onPostUpdate(DrawList drawList) @nogc {
-    }
+    void onPostUpdate(DrawList drawList) @nogc { }
+
+    /**
+        Called when the node is asked to update its transform.
+    */
+    void onTransformUpdate() @nogc { }
 
     /**
         Called when the node is to be redrawn.
@@ -244,6 +196,16 @@ public:
     @property float zSort() @nogc nothrow pure => (parent ? parent.zSort : 0) + zSort_;
 
     /**
+        The global base transform.
+    */
+    @property Transform globalBaseTransform() @nogc => globalTransformNoParam_;
+
+    /**
+        The global transform.
+    */
+    @property Transform globalTransform() @nogc => globalTransform_;
+
+    /**
         The transform in local-space.
     */
     @property ref Transform localTransform() @nogc => localTransform_.base;
@@ -258,21 +220,7 @@ public:
     */
     @property Transform transformNoLock() @nogc {
         localTransform_.base.update();
-
-        if (parent !is null)
-            return localTransform_.base * parent.transform();
-        return localTransform_.base;
-    }
-
-    /**
-        The transform in world space
-    */
-    @property Transform transform(bool ignoreParams = false)() @nogc {
-        this.recalculateTransforms();
-        static if (ignoreParams)
-            return globalTransformNoParam_;
-        else
-            return globalTransform_;
+        return parent ? localTransform_.base * parent.globalTransform : localTransform_.base;
     }
 
     /**
@@ -341,17 +289,6 @@ public:
     this(GUID guid, Node parent = null) @nogc {
         this.parent = parent;
         this.guid_ = guid;
-    }
-
-    /**
-        Notifies this node and its children that the transform 
-        has changed.
-    */
-    final void notifyTransformChanged() @nogc nothrow {
-        recalculateTransform_ = true;
-        foreach (child; children) {
-            child.notifyTransformChanged();
-        }
     }
 
     /**
@@ -502,7 +439,7 @@ public:
     */
     final DataNode serialize(bool recursive = true) @nogc {
         auto result = DataNode.createObject();
-        this.onSerialize(result, recursive);
+        this.serialize(result, recursive);
         return result;
     }
 
@@ -514,7 +451,28 @@ public:
             recursive = Whether to recurse through children.
     */
     final void serialize(ref DataNode object, bool recursive = true) @nogc {
-        this.onSerialize(object, recursive);
+        nstring guid = guid_.toString();
+        object["guid"] = guid[];
+        object["name"] = name[];
+        object["type"] = typeId.sid;
+        object["enabled"] = enabled;
+        object["zsort"] = zSort_.base;
+        object["transform"] = localTransform_.base.serialize();
+        object["lockToRoot"] = lockToRoot_;
+
+        // Call callback and iterate to children.
+        this.onSerialize(object);
+
+        // Recurse through children if enabled.
+        if (recursive) {
+            object["children"] = DataNode.createArray();
+            foreach (child; children) {
+                auto childObject = DataNode.createObject();
+                child.serialize(childObject);
+
+                object["children"] ~= childObject;
+            }
+        }
     }
 
     /**
@@ -524,14 +482,63 @@ public:
             object = The DataNode to deserialize from.
     */
     final void deserialize(ref DataNode object) @nogc {
+        this.guid_ = object.tryGetGUID("uuid", "guid");
+        object.tryGetRef(name, "name");
+        object.tryGetRef(enabled, "enabled");
+        object.tryGetRef(zSort_.base, "zsort");
+        object.tryGetRef(localTransform_.base, "transform");
+        object.tryGetRef(lockToRoot_, "lockToRoot");
+
+        // Call callback and iterate to children.
         this.onDeserialize(object);
+
+        // Pre-populate our children with the correct types
+        if ("children" in object && object["children"].isArray) {
+            foreach (ref child; object["children"].array) {
+
+                // NOTE:    inInstantiateNode implicitly handles setting the
+                //          Parent-child relationship, so we don't need to do
+                //          anything else besides pass it onto the child's
+                //          deserializer.
+                if (Node n = in_node_registry.tryCreateFrom(child)) {
+                    n.parent = this;
+                    child.deserialize(n);
+                }
+            }
+        }
     }
 
     /**
         Finalizes this node and its children.
     */
     final void finalize() @nogc {
+        nid_ = typeId.nid;
+
+        // Call callback and iterate to children.
         this.onFinalize();
+        foreach(child; this.children_) {
+            child.finalize();
+        }
+    }
+
+    /**
+        Updates the transform of the node and all nodes underneath it.
+
+        Note:
+            Children which have been disabled will not be updated.
+    */
+    final void updateTransform() @nogc {
+        if (!enabled)
+            return;
+
+        // Do the base algorithm first.
+        this.transformUpdateImpl();
+
+        // Then pass on to callback and iterate to children.
+        this.onTransformUpdate();
+        foreach(child; children_) {
+            child.updateTransform();
+        }
     }
 
     /**
@@ -720,35 +727,27 @@ public:
             return;
         case "transform.t.x":
             localTransform_.offset.translation.x += value;
-            this.notifyTransformChanged();
             return;
         case "transform.t.y":
             localTransform_.offset.translation.y += value;
-            this.notifyTransformChanged();
             return;
         case "transform.t.z":
             localTransform_.offset.translation.z += value;
-            this.notifyTransformChanged();
             return;
         case "transform.r.x":
             localTransform_.offset.rotation.x += value;
-            this.notifyTransformChanged();
             return;
         case "transform.r.y":
             localTransform_.offset.rotation.y += value;
-            this.notifyTransformChanged();
             return;
         case "transform.r.z":
             localTransform_.offset.rotation.z += value;
-            this.notifyTransformChanged();
             return;
         case "transform.s.x":
             localTransform_.offset.scale.x *= value;
-            this.notifyTransformChanged();
             return;
         case "transform.s.y":
             localTransform_.offset.scale.y *= value;
-            this.notifyTransformChanged();
             return;
         default:
             return;
@@ -806,5 +805,5 @@ void sortNodes(T)(T[] slice) @nogc nothrow if (is(T : Node)) {
 
     // HACK:    nulib doesn't have a float cmp function yet,
     //          as such we convert sorting values to fixed.
-    nu_sort!((a, b) @nogc => fixed32(a.zSort).data < fixed32(b.zSort).data)(slice);
+    nu_sort!((a, b) @nogc => fixed32(a.zSort).data > fixed32(b.zSort).data)(slice);
 }

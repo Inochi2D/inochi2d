@@ -80,7 +80,7 @@ public:
     /**
         Serializes the type.
     */
-    void onSerialize(ref DataNode object, bool recursive = true) @nogc {
+    void onSerialize(ref DataNode object) @nogc {
 
         // General Properties.
         object["name"] = name[];
@@ -237,7 +237,7 @@ protected:
     /**
         Serializes a puppet into an existing object.
     */
-    void onSerialize(ref DataNode object, bool recursive) @nogc {
+    void onSerialize(ref DataNode object) @nogc {
         object["properties"] = properties.serialize();
 
         // Create objects for nodes, params, automation and animation.
@@ -292,6 +292,7 @@ protected:
 
         // Finally update link etc.
         this.root.finalize();
+        this.root.updateTransform();
 
         foreach (parameter; parameters_) {
             parameter.bind(this);
@@ -473,7 +474,7 @@ public:
     final void serialize(ref DataNode node) {
         assert(node.isObject, "Target DataNode was not an Object!");
         node[INP_TAG_PAYLOAD] = DataNode.createObject();
-        this.onSerialize(node[INP_TAG_PAYLOAD], true);
+        this.onSerialize(node[INP_TAG_PAYLOAD]);
     }
 
     /**
@@ -514,7 +515,7 @@ public:
         }
 
         // Ensure the transform tree is updated
-        root.notifyTransformChanged();
+        root.updateTransform();
 
         version (IN_LEGACY) {
             if (renderParameters && enableDrivers) {
@@ -523,6 +524,9 @@ public:
                     driver.updateDriver(delta);
                 }
             }
+
+            // Update again after drivers.
+            root.updateTransform();
         }
 
         // Update nodes

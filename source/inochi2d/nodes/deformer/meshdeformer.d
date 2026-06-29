@@ -30,11 +30,10 @@ protected:
 
         Params:
             object =    The DataNode to serialize to.
-            recursive = Whether to recurse through children.
     */
     override
-    void onSerialize(ref DataNode object, bool recursive = true) {
-        super.onSerialize(object, recursive);
+    void onSerialize(ref DataNode object) {
+        super.onSerialize(object);
 
         // NOTE:    MeshData is set up to free its contents on
         //          scope exit.
@@ -51,9 +50,9 @@ protected:
     override
     void onDeserialize(ref DataNode object) {
         super.onDeserialize(object);
+
         this.deformed_ = nogc_new!DeformedMesh();
         this.base_ = nogc_new!DeformedMesh();
-
         auto meshData = object.tryGet!MeshData("mesh");
         this.mesh = Mesh.fromMeshData(meshData);
     }
@@ -168,7 +167,7 @@ public:
         this.deformed_.parent = value;
 
         this.base_.reset();
-        this.base_.pushMatrix(transform!false.matrix);
+        this.base_.pushMatrix(baseTransform.matrix);
     }
 
     /**

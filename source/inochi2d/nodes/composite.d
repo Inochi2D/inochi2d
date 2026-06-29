@@ -46,11 +46,10 @@ protected:
 
         Params:
             object =    The DataNode to serialize to.
-            recursive = Whether to recurse through children.
     */
     override
-    void onSerialize(ref DataNode object, bool recursive = true) {
-        super.onSerialize(object, recursive);
+    void onSerialize(ref DataNode object) {
+        super.onSerialize(object);
         object["blend_mode"] = cast(uint)blendingMode;
         object["tint"] = tint.serialize();
         object["screenTint"] = screenTint.serialize();

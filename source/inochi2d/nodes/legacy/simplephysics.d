@@ -197,11 +197,10 @@ protected:
 
         Params:
             object =    The DataNode to serialize to.
-            recursive = Whether to recurse through children.
     */
     override
-    void onSerialize(ref DataNode object, bool recursive = true) {
-        super.onSerialize(object, recursive);
+    void onSerialize(ref DataNode object) {
+        super.onSerialize(object);
 
         auto target = paramRef.toString();
         object["target"] = target[];
@@ -439,7 +438,7 @@ public:
 
     void updateInputs() {
         auto anchorPos = localOnly ?
-            (vec4(localTransform.translation, 1)) : (transform.matrix * vec4(0, 0, 0, 1));
+            (vec4(localTransform.translation, 1)) : (globalTransform.matrix * vec4(0, 0, 0, 1));
         anchor = vec2(anchorPos.x, anchorPos.y);
     }
 
@@ -455,7 +454,7 @@ public:
         // Transform the physics output back into local space.
         // The origin here is the anchor. This gives us the local angle.
         auto localPos4 = localOnly ?
-            vec4(output.x, output.y, 0, 1) : (transform.matrix.inverse * vec4(output.x, output.y, 0, 1));
+            vec4(output.x, output.y, 0, 1) : (globalTransform.matrix.inverse * vec4(output.x, output.y, 0, 1));
         vec2 localAngle = vec2(localPos4.x, localPos4.y).normalized;
 
         // Figure out the relative length. We can work this out directly in global space.
