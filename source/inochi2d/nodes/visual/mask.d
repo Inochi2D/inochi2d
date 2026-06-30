@@ -55,8 +55,8 @@ public:
     /**
         Finalizer
     */
-    void onFinalize(Puppet puppet) {
-        this.maskSrc = puppet.find!Visual(maskSrcGUID);
+    void onFinalize(Mask mask) {
+        this.maskSrc = mask.puppet.find!Visual(maskSrcGUID);
     }
 }
 
@@ -113,12 +113,24 @@ protected:
 
     /**
         Called when the node is to finalize its deserialization from disk.
+
+        Params:
+            state =     The state of the deserializer.
     */
     override
-    void onFinalize() @nogc {
-        super.onFinalize();
-        foreach(ref src; sources_)
-            src.onFinalize(puppet);
+    void onFinalize(ref ModelState state) @nogc {
+        super.onFinalize(state);
+
+        // Finalize all masks.
+        foreach_reverse(i; 0..sources_.length) {
+            sources_[i].onFinalize(this);
+
+            // Remove invalid masks.
+            if (!sources_[i].maskSrc) {
+                state.warning(nstring("Removed mask source ", i.toString(), " from ", this.name[], ", ID was invalid..."));
+                sources_.removeAt(i);
+            }
+        }
     }
 
     /**

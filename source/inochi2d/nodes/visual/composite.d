@@ -83,9 +83,12 @@ protected:
 
     /**
         Called when the node is to finalize its deserialization from disk.
+
+        Params:
+            state =     The state of the deserializer.
     */
     override
-    void onFinalize() {
+    void onFinalize(ref ModelState state) {
         this.notifyVisualsChanged();
     }
 

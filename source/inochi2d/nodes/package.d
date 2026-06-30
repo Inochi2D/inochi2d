@@ -105,8 +105,11 @@ protected:
 
     /**
         Called when the node is to finalize its deserialization from disk.
+
+        Params:
+            state =     The state of the deserializer.
     */
-    void onFinalize() @nogc { }
+    void onFinalize(ref ModelState state) @nogc { }
 
     /**
         Called during the early update phase of a new frame.
@@ -463,14 +466,17 @@ public:
 
     /**
         Finalizes this node and its children.
+
+        Params:
+            state =     The state of the deserializer.
     */
-    final void finalize() @nogc {
+    final void finalize(ref ModelState state) @nogc {
         nid_ = typeId.nid;
 
         // Call callback and iterate to children.
-        this.onFinalize();
+        this.onFinalize(state);
         foreach(child; this.children_) {
-            child.finalize();
+            child.finalize(state);
         }
     }
 

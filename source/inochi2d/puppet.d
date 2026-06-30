@@ -286,10 +286,10 @@ protected:
         }
     }
 
-    void onFinalize() @nogc {
+    void onFinalize(ref ModelState state) @nogc {
 
         // Finally update link etc.
-        this.root.finalize();
+        this.root.finalize(state);
         this.root.updateTransform();
 
         foreach (parameter; parameters_) {
@@ -509,7 +509,7 @@ public:
         }
 
         this.onDeserialize(node[INP_TAG_PAYLOAD], state);
-        this.onFinalize();
+        this.onFinalize(state);
     }
 
     /**

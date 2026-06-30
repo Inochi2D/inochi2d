@@ -50,9 +50,12 @@ protected:
     void onDeserialize(ref DataNode object, ref ModelState state) { }
 
     /**
-        Called when the node is to finalize its deserialization from disk.
+        Called when the Effect is to be finalized during loading.
+
+        Params:
+            state =     The state of the deserializer.
     */
-    void onFinalize() @nogc { }
+    void onFinalize(ref ModelState state) @nogc { }
 
     /**
         Called after the full node update cycle.
@@ -103,9 +106,12 @@ public:
 
     /**
         Finalizes this mesh effect.
+
+        Params:
+            state =     The state of the deserializer.
     */
-    final void finalize() @nogc {
-        this.onFinalize();
+    final void finalize(ref ModelState state) @nogc {
+        this.onFinalize(state);
     }
 
     /**

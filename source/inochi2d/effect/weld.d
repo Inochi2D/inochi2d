@@ -77,10 +77,13 @@ protected:
     }
 
     /**
-        Called when the node is to finalize its deserialization from disk.
+        Called when the Effect is to be finalized during loading.
+
+        Params:
+            state =     The state of the deserializer.
     */
     override
-    void onFinalize() {
+    void onFinalize(ref ModelState state) {
         if (targetGUID != GUID.nil) {
             this.target_ = cast(IDeformable)parent.puppet.find(targetGUID);
             this.rebuildWeights();
