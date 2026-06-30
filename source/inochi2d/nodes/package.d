@@ -43,7 +43,7 @@ private:
 @nogc:
     Puppet puppet_;
     Node parent_;
-    weak_vector!Node children_;
+    vector!Node children_;
     GUID guid_;
     string nodePath_;
     uint nid_;
@@ -172,8 +172,17 @@ public:
     */
     final @property Node parent() @nogc nothrow pure => parent_;
     final @property void parent(Node node) @nogc {
-        this.insertInto(node, OFFSET_END);
+        if (node) {
+            node.addChild(this);
+        } else if (parent_) {
+            parent_.removeChild(this);
+        }
     }
+
+    /**
+        The index of this node within ints parent.
+    */
+    final @property ptrdiff_t parentIndex() => parent ? parent.findChild(this) : -1;
 
     /**
         Gets a list of this node's children
@@ -257,6 +266,8 @@ public:
     */
     this(Puppet parent) @nogc {
         this.puppet_ = parent;
+        this.zSort_.base = 0;
+        this.zSort_.offset = 0;
         this.guid_ = inNewGUID();
     }
 
@@ -280,6 +291,8 @@ public:
     this(GUID guid, Node parent = null) @nogc {
         this.parent = parent;
         this.guid_ = guid;
+        this.zSort_.base = 0;
+        this.zSort_.offset = 0;
     }
 
     /**
@@ -293,81 +306,17 @@ public:
     }
 
     /**
-        Adds a node as a child of this node.
-    */
-    final void addChild(Node child) {
-        child.parent = this;
-    }
-
-    /**
-        Finds this node within its parent node.
-
-        Returns:
-            A positive value if this node was found,
-            otherwise $(D -1).
-    */
-    final ptrdiff_t getIndexInParent() {
-        return this.getIndexInNode(parent_);
-    }
-
-    /**
-        Finds this node within the given node.
+        Gets whether this node can be moved to the 
+        given target node.
 
         Params:
-            node = The node to look within
+            to = The move destination.
 
         Returns:
-            A positive value if this node was found,
-            otherwise $(D -1).
+            $(D true) if the node can be moved inside of the given node,
+            $(D false) otherwise.
     */
-    final ptrdiff_t getIndexInNode(Node node) {
-        if (node) {
-            foreach (i, ref child; node.children_) {
-                if (child is this)
-                    return i;
-            }
-        }
-        return -1;
-    }
-
-    enum OFFSET_START = size_t.min;
-    enum OFFSET_END = size_t.max;
-    final void insertInto(Node node, size_t offset) @nogc {
-        nodePath_ = null;
-        this.retain();
-
-        // Remove ourselves from our current parent if we are
-        // the child of one already.
-        if (this.parent_ !is null) {
-            this.parent_.children_.remove(this);
-            this.release();
-        }
-
-        // If we want to become parentless we need to handle that
-        // seperately, as null parents have no children to update
-        if (node is null) {
-            this.parent_ = null;
-            this.release();
-            return;
-        }
-
-        // Update our relationship with our new parent
-        this.parent_ = node;
-
-        // Update position
-        if (offset == OFFSET_START) {
-            this.parent_.children_.insert(this, 0);
-        } else if (offset == OFFSET_END || offset >= parent_.children_.length) {
-            this.parent_.children_ ~= this;
-        } else {
-            this.parent_.children_.insert(this, offset);
-        }
-    }
-
-    /**
-        Gets whether nodes can be reparented
-    */
-    bool canReparent(Node to) {
+    final bool canMoveTo(Node to) {
         Node tmp = to;
         while (tmp !is null) {
             if (tmp.guid == this.guid)
@@ -379,11 +328,87 @@ public:
         return true;
     }
 
+    /**
+        Finds the index of the given direct child node
+        within this node.
+
+        Params:
+            child = The node to find.
+
+        Returns:
+            The index of the node,
+            $(D -1) if not found.
+    */
+    final ptrdiff_t findChild(Node child) {
+        return children_.find(child);
+    }
+
+    /**
+        Removes a given node from this node's children.
+
+        Params:
+            child = A direct child to remove.
+
+        Returns:
+            $(D true) if the given node was removed,
+            $(D false) otherwise.
+    */
+    final bool removeChild(Node child) {
+        auto idx = this.findChild(child);
+        if (idx >= 0) {
+            child.release();
+            this.children_.removeAt(idx);
+            child.parent_ = null;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+        Adds a node as a child of this node.
+    */
+    final void addChild(Node child) {
+        child.retain();
+
+        // Remove this node from its parent, if needed.
+        if (child.parent_) {
+            child.parent_.removeChild(child);
+        }
+
+        this.children_ ~= child;
+        child.parent_ = this;
+    }
+
+    /**
+        Moves the child to the given offset in this
+        node's child list.
+
+        Params:
+            child =     The child the move
+            to =        The index to move to.
+    */
+    final void moveChild(Node child, ptrdiff_t to) {
+        auto idx = this.findChild(child);
+        if (idx >= 0) {
+            size_t dst = to < 0 ? children_.length-(abs(to)+1) : to;
+            
+            // Don't swap with itself.
+            if (dst == idx)
+                return;
+
+            // Swap if valid.
+            if (dst < this.children_.length) {
+                nu_swap(this.children_[idx], this.children_[to]);
+            }
+        }
+    }
+
     /** 
         Set new Parent
     */
     void reparent(Node parent, ulong pOffset) {
-        insertInto(parent, cast(size_t)pOffset);
+        parent.addChild(this);
+        parent.moveChild(this, pOffset);
     }
 
     /**
