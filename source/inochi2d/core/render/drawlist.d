@@ -168,8 +168,9 @@ public:
     /**
         Pushes render targets to the draw list's stack.
     */
-    void pushMask() {
+    void pushMask(MaskingMode mode) {
         _ccmd.state = DrawState.pushMask;
+        _ccmd.maskMode = mode;
         this.next();
     }
 

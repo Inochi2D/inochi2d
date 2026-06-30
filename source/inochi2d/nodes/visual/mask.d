@@ -16,6 +16,8 @@ import inochi2d.common;
 import inochi2d.core;
 import nulib.collections;
 import nulib.math.fixed;
+import nulib.string;
+import nulib.conv;
 import nulib.math;
 import numem;
 
@@ -48,6 +50,14 @@ public:
         Deserialization function
     */
     void onDeserialize(ref DataNode object, ref ModelState state) {
+        
+        // 0.8 uses a string for the masking mode.
+        if (state.doUpgrade08) {
+            this.maskSrcGUID = object.tryGetGUID(state, "source", "source");
+            this.mode = object.tryGet!nstring(state, "mode").toMaskingMode;
+            return;
+        }
+
         this.maskSrcGUID = object.tryGetGUID(state, "source", "source");
         this.mode = cast(MaskingMode)object.tryGet!uint(state, "mode");
     }
@@ -146,12 +156,11 @@ protected:
             return;
 
         if (sources_.length > 0) {
-            drawList.pushMask();
+            drawList.pushMask(sources_[0].mode);
 
             visuals_.sortNodes();
             foreach(ref src; sources_) {
-                if (src.maskSrc)
-                    src.maskSrc.drawMask(delta, drawList, src.mode);
+                src.maskSrc.drawMask(delta, drawList, src.mode);
             }
 
             foreach (ref child; visuals_) {
