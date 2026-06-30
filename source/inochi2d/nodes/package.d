@@ -15,17 +15,15 @@ import inochi2d.core.serde;
 import inochi2d.core.math;
 import inochi2d.core.guid;
 import inochi2d.core;
+import inochi2d.common;
 import nulib.string;
 import numem;
 import nulib;
 
 public import inochi2d.puppet;
-public import inochi2d.nodes.composite;
 public import inochi2d.nodes.deformer;
-public import inochi2d.nodes.legacy;
 public import inochi2d.nodes.visual;
-public import inochi2d.nodes.part;
-public import inochi2d.nodes.animatedpart;
+public import inochi2d.nodes.legacy;
 public import inochi2d.core.registry;
 public import inochi2d.core.property;
 public import inochi2d.core.render;
@@ -38,9 +36,9 @@ __gshared TypeRegistry!Node in_node_registry;
 /**
     A node in the Inochi2D rendering tree
 */
-@TypeId("Node", 0x00000000)
+@TypeId("Node", MAKE_I2D_TAG!(0, 0))
 @RegisterFallback
-class Node : NuRefCounted, IPropertyOwner, ISerializable, IDeserializable {
+class Node : NuRefCounted, IPropertyOwner, ISerializable, IDeserializable!ModelState {
 private:
 @nogc:
     Puppet puppet_;
@@ -62,9 +60,6 @@ private:
         // Set base matrices.
         globalMatrix_ = (localTransform_.base + localTransform_.offset).matrix();
         globalMatrixNoParam_ = localTransform_.base.matrix();
-
-        //vec3 ptr = parent_ ? globalMatrix_.translation : vec3(0, 0, 0);
-        //debug writefln("Update %s %s -> %s", name, localTransform_.base.translation.data, ptr.data);
 
         if (lockToRoot_) {
             globalMatrix_.matrix =          puppet.root.localTransform_.base.matrix() * globalMatrix_;
@@ -103,9 +98,10 @@ protected:
         Deserializes this node from a DataNode.
 
         Params:
-            object = The DataNode to deserialize from.
+            object =    The DataNode to deserialize from.
+            state =     The state of the deserializer.
     */
-    void onDeserialize(ref DataNode object) @nogc { }
+    void onDeserialize(ref DataNode object, ref ModelState state) @nogc { }
 
     /**
         Called when the node is to finalize its deserialization from disk.
@@ -148,9 +144,8 @@ protected:
         Params:
             delta =     Time since the last frame.
             drawList =  The drawlist for the active scene.
-            mode =      The masking mode to draw with.
     */
-    void onDraw(float delta, DrawList drawList, MaskingMode mode = MaskingMode.none) @nogc { }
+    void onDraw(float delta, DrawList drawList) @nogc { }
 
 public:
 
@@ -227,12 +222,6 @@ public:
     */
     @property bool lockToRoot() @nogc nothrow pure => lockToRoot_;
     @property void lockToRoot(bool value) @nogc {
-        //if (value && !lockToRoot_) {
-        //    localTransform_.base.translation = this.transformNoLock.translation;
-        //} else if (!value && lockToRoot_) {
-        //    localTransform_.base.translation = localTransform_.base.translation - parent.transformNoLock.translation;
-        //}
-
         lockToRoot_ = value;
     }
 
@@ -342,24 +331,25 @@ public:
     enum OFFSET_END = size_t.max;
     final void insertInto(Node node, size_t offset) @nogc {
         nodePath_ = null;
+        this.retain();
 
         // Remove ourselves from our current parent if we are
         // the child of one already.
-        if (parent_ !is null) {
-            parent_.children_.remove(this);
-            parent_.release();
+        if (this.parent_ !is null) {
+            this.parent_.children_.remove(this);
+            this.release();
         }
 
         // If we want to become parentless we need to handle that
         // seperately, as null parents have no children to update
         if (node is null) {
             this.parent_ = null;
+            this.release();
             return;
         }
 
         // Update our relationship with our new parent
         this.parent_ = node;
-        this.parent_.retain();
 
         // Update position
         if (offset == OFFSET_START) {
@@ -441,18 +431,19 @@ public:
         Deserializes this node from a DataNode.
 
         Params:
-            object = The DataNode to deserialize from.
+            object =    The DataNode to deserialize from.
+            state =     The state of the deserializer.
     */
-    final void deserialize(ref DataNode object) @nogc {
-        this.guid_ = object.tryGetGUID("uuid", "guid");
-        object.tryGetRef(name, "name");
-        object.tryGetRef(enabled, "enabled");
-        object.tryGetRef(zSort_.base, "zsort");
-        object.tryGetRef(localTransform_.base, "transform");
-        object.tryGetRef(lockToRoot_, "lockToRoot");
+    final void deserialize(ref DataNode object, ref ModelState state) @nogc {
+        this.guid_ = object.tryGetGUID(state, "uuid", "guid");
+        object.tryGetRef(state, name, "name");
+        object.tryGetRef(state, enabled, "enabled");
+        object.tryGetRef(state, zSort_.base, "zsort");
+        object.tryGetRef(state, localTransform_.base, "transform");
+        object.tryGetRef(state, lockToRoot_, "lockToRoot");
 
         // Call callback and iterate to children.
-        this.onDeserialize(object);
+        this.onDeserialize(object, state);
 
         // Pre-populate our children with the correct types
         if ("children" in object && object["children"].isArray) {
@@ -463,10 +454,8 @@ public:
                 //          anything else besides pass it onto the child's
                 //          deserializer.
                 if (Node n = in_node_registry.tryCreateFrom(child)) {
-                    n.parent_ = this;
-                    this.children_ ~= n;
-                    
-                    n.deserialize(child);
+                    n.parent = this;
+                    n.deserialize(child, state);
                 }
             }
         }
@@ -583,7 +572,7 @@ public:
             controlling rendering.
     */
     final void draw(float delta, DrawList drawList) @nogc {
-        this.onDraw(delta, drawList, MaskingMode.none);
+        this.onDraw(delta, drawList);
     }
 
     /**

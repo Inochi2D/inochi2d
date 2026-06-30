@@ -10,7 +10,7 @@
     Authors:
         Luna Nielsen
 */
-module inochi2d.nodes.solo;
+module inochi2d.nodes.visual.solo;
 import inochi2d.nodes.visual;
 import inochi2d.nodes;
 import inochi2d.core.math;
@@ -22,7 +22,7 @@ import numem;
     A node which only allows a single child node to be displayed
     at a time.
 */
-@TypeId("Solo", 0x0401)
+@TypeId("Solo", MAKE_I2D_TAG!(4, 1))
 class Solo : Visual {
 private:
 @nogc:
@@ -76,6 +76,11 @@ public:
         to the visual node.
     */
     override @property bool isDelegated() @nogc nothrow pure => true;
+
+    /**
+        Whether the node can be used as a source of masking operations.
+    */
+    override @property bool isMasking() @nogc nothrow pure => true;
     
     /**
         The active layer that will be rendered.

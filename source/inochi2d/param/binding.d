@@ -14,6 +14,7 @@
 */
 module inochi2d.param.binding;
 import inochi2d.param.parameter;
+import inochi2d.common;
 import inochi2d.puppet;
 import inochi2d.nodes;
 import inochi2d.core;
@@ -43,7 +44,7 @@ struct BindingTarget {
     Parameter binding base class.
 */
 abstract
-class ParameterBinding : NuRefCounted, ISerializable, IDeserializable {
+class ParameterBinding : NuRefCounted, ISerializable, IDeserializable!ModelState {
 public:
 @nogc:
     GUID nodeId;
@@ -287,17 +288,17 @@ public:
         Deserialize this binding.
     */
     override
-    void onDeserialize(ref DataNode object) {
-        nodeId = object.tryGetGUID("node", "target");
-        object.tryGetRef(target.prop, "param_name");
+    void onDeserialize(ref DataNode object, ref ModelState state) {
+        nodeId = object.tryGetGUID(state, "node", "target");
+        object.tryGetRef(state, target.prop, "param_name");
         // object.tryGetRef(values, "values");
         // object.tryGetRef(isSet_, "isSet");
 
         if (auto mode = "interpolate_mode" in object) {
             if (mode.isNumber) {
-                interpMode = cast(InterpolateMode)((*mode).tryGet!uint());
+                interpMode = cast(InterpolateMode)((*mode).tryGet!uint(state));
             } else {
-                interpMode = (*mode).tryGet!string().toInterpolateMode();
+                interpMode = (*mode).tryGet!string(state).toInterpolateMode();
             }
         }
     }
@@ -580,15 +581,15 @@ public:
     If the property name is "deform", assume it is a deformation binding.
         Otherwise, assume it is a numeric value binding.
 */
-ParameterBinding tryGetBinding(ref DataNode object, Parameter param) @nogc {
-    if (auto prop = object.tryGet!string("prop", null)) {
+ParameterBinding tryGetBinding(ref DataNode object, ref ModelState state, Parameter param) @nogc {
+    if (auto prop = object.tryGet!string(state, "prop", null)) {
         if (prop == "deform") {
             auto binding = nogc_new!ParameterDeformBinding(param);
-            object.deserialize(binding);
+            object.deserialize(state, binding);
             return cast(ParameterBinding)binding;
         } else {
             auto binding = nogc_new!ParameterScalarBinding(param);
-            object.deserialize(binding);
+            object.deserialize(state, binding);
             return cast(ParameterBinding)binding;
         }
     }

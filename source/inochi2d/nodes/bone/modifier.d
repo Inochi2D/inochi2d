@@ -18,7 +18,7 @@ import inochi2d.nodes;
     child bones in the skeleton chain.
 */
 @TypeIdAbstract
-@TypeId("BoneModifier", 0x0011)
+@TypeId("BoneModifier", MAKE_I2D_TAG!(0, 4))
 abstract class BoneModifier : Node {
 
 }

@@ -14,6 +14,7 @@
 module inochi2d.nodes.deformer.meshdeformer;
 import inochi2d.nodes.deformer;
 import inochi2d.nodes;
+import inochi2d.common;
 import inochi2d.core;
 import numem;
 
@@ -50,15 +51,16 @@ protected:
         Deserializes this node from a DataNode.
 
         Params:
-            object = The DataNode to deserialize from.
+            object =    The DataNode to deserialize from.
+            state =     The state of the deserializer.
     */
     override
-    void onDeserialize(ref DataNode object) {
-        super.onDeserialize(object);
+    void onDeserialize(ref DataNode object, ref ModelState state) {
+        super.onDeserialize(object, state);
 
         this.deformed_ = nogc_new!DeformedMesh();
         this.base_ = nogc_new!DeformedMesh();
-        auto meshData = object.tryGet!MeshData("mesh");
+        auto meshData = object.tryGet!MeshData(state, "mesh");
         this.mesh = Mesh.fromMeshData(meshData);
     }
 

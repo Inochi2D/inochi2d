@@ -12,7 +12,7 @@
 */
 module inochi2d.nodes.deformer;
 import inochi2d.nodes;
-import inochi2d.core.math;
+import inochi2d.common;
 import inochi2d.core;
 import nulib;
 import numem;
@@ -26,7 +26,7 @@ public import inochi2d.nodes.deformer.latticedeformer;
 
     Deformations happen in world space
 */
-@TypeId("Deformer", 0x0002)
+@TypeId("Deformer", MAKE_I2D_TAG!(0, 2))
 @TypeIdAbstract
 abstract
 class Deformer : Node, IDeformable {
@@ -70,11 +70,12 @@ protected:
         Deserializes this node from a DataNode.
 
         Params:
-            object = The DataNode to deserialize from.
+            object =    The DataNode to deserialize from.
+            state =     The state of the deserializer.
     */
     override
-    void onDeserialize(ref DataNode object) {
-        super.onDeserialize(object);
+    void onDeserialize(ref DataNode object, ref ModelState state) {
+        super.onDeserialize(object, state);
     }
 
     /**

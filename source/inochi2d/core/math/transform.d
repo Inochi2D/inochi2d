@@ -13,6 +13,7 @@
 module inochi2d.core.math.transform;
 import inochi2d.core.math;
 import inochi2d.core;
+import inochi2d.common;
 import numath;
 
 /**
@@ -30,7 +31,7 @@ public:
     /**
         The rotation of the transform
     */
-    vec3 rotation = vec3(0, 0, 0); //; = quat.identity;
+    vec3 rotation = vec3(0, 0, 0);
 
     /**
         The scale of the transform
@@ -40,7 +41,7 @@ public:
     /**
         Returns the result of 2 transforms multiplied together
     */
-    Transform opBinaryRight(string op : "+")(Transform other) @nogc {
+    Transform opBinary(string op : "+")(Transform other) @nogc {
         Transform tnew;
         tnew.translation = this.translation + other.translation;
         tnew.rotation = this.rotation + other.rotation;
@@ -80,10 +81,10 @@ public:
     /**
         Deserializes a transform from JSON.
     */
-    void onDeserialize(ref DataNode object) {
-        object.tryGetRef(translation.data, "trans", [0, 0, 0]);
-        object.tryGetRef(rotation.data, "rot", [0, 0, 0]);
-        object.tryGetRef(scale.data, "scale", [1, 1]);
+    void onDeserialize(ref DataNode object, ref ModelState state) {
+        object.tryGetRef(state, translation.data, "trans", [0, 0, 0]);
+        object.tryGetRef(state, rotation.data, "rot", [0, 0, 0]);
+        object.tryGetRef(state, scale.data, "scale", [1, 1]);
     }
 }
 
@@ -97,11 +98,19 @@ public:
     /**
         The underlying matrix of the basis
     */
-    mat4 matrix;
+    mat4 matrix = mat4.identity;
     alias matrix this;
 
     /**
         The translation of the basis.
     */
     @property vec3 translation() pure => vec3(matrix.matrix[0][3], matrix.matrix[1][3], matrix.matrix[2][3]);
+
+    /**
+        The scale of the basis
+    */
+    @property vec2 scale() pure => vec2(
+        vec3(matrix.matrix[0][0], matrix.matrix[1][0], matrix.matrix[2][0]).length(),
+        vec3(matrix.matrix[0][1], matrix.matrix[1][1], matrix.matrix[2][1]).length()
+    );
 }

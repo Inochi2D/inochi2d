@@ -171,19 +171,14 @@ BlendMode toBlendMode(string name) @nogc {
 enum MaskingMode : uint {
 
     /**
-        The part should not be rendered to the masking buffer.
-    */
-    none = 0,
-
-    /**
         The part should be masked by the drawables specified
     */
-    mask = 1,
+    mask = 0,
 
     /**
         The path should be dodge masked by the drawables specified
     */
-    dodge = 2,
+    dodge = 1,
 }
 
 MaskingMode toMaskingMode(string name) @nogc {

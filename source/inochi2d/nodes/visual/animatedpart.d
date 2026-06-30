@@ -10,15 +10,16 @@
     Authors:
         Luna Nielsen
 */
-module inochi2d.nodes.animatedpart;
-import inochi2d.nodes.part;
+module inochi2d.nodes.visual.animatedpart;
+import inochi2d.nodes.visual.part;
+import inochi2d.common;
 import inochi2d.nodes;
 import inochi2d.core;
 
 /**
     Parts which contain spritesheet animation
 */
-@TypeId("AnimatedPart", 0x0201)
+@TypeId("AnimatedPart", MAKE_I2D_TAG!(2, 1))
 class AnimatedPart : Part {
 private:
 @nogc:
@@ -46,14 +47,15 @@ protected:
         Deserializes this node from a DataNode.
 
         Params:
-            object = The DataNode to deserialize from.
+            object =    The DataNode to deserialize from.
+            state =     The state of the deserializer.
     */
     override
-    void onDeserialize(ref DataNode object) {
-        super.onDeserialize(object);
+    void onDeserialize(ref DataNode object, ref ModelState state) {
+        super.onDeserialize(object, state);
 
-        object.tryGetRef(frameSize_, "frameSize");
-        object.tryGetRef(frameCount_, "frameCount");
+        object.tryGetRef(state, frameSize_, "frameSize");
+        object.tryGetRef(state, frameCount_, "frameCount");
     }
 
     /**

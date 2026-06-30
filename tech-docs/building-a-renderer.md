@@ -65,15 +65,20 @@ Following is a table of all the core node types of Inochi2D.
 |         ID | Name            |
 | ---------: | :-------------- |
 | 0x00000000 | Node            |
-| 0x00000001 | Drawable        |
+| 0x00000001 | Visual          |
 | 0x00000101 | Part            |
 | 0x00000201 | AnimatedPart    |
+| 0x00000301 | Composite       |
+| 0x00000401 | Solo            |
+| 0x00000501 | Mask            |
 | 0x00000002 | Deformer        |
-| 0x00000102 | MeshGroup       |
+| 0x00000102 | MeshDeformer    |
 | 0x00000202 | LatticeDeformer |
-| 0x00000003 | Driver          |
-| 0x00000103 | SimplePhysics   |
-| 0x00000004 | Composite       |
+| 0x00000003 | Bone            |
+| 0x00000004 | Bone Modifier   |
+| 0x000000FF | SimplePhysics*  |
+
+* = Node is deprecated, should not be used for new models.
 
 All Inochi2D node types follow a numeric ID sequence of `0x0000SSBB` where  
  * `SS` is the subnode id

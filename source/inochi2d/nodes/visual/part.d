@@ -10,8 +10,9 @@
     Authors:
         Luna Nielsen
 */
-module inochi2d.nodes.part;
+module inochi2d.nodes.visual.part;
 import inochi2d.nodes.visual;
+import inochi2d.common;
 import inochi2d.effect;
 import inochi2d.nodes;
 import inochi2d.core;
@@ -43,7 +44,7 @@ pragma(msg, PartVars.opacity.offsetof);
 /**
     Dynamic Mesh Part
 */
-@TypeId("Part", 0x0101)
+@TypeId("Part", MAKE_I2D_TAG!(1, 1))
 class Part : Visual, IDeformable {
 private:
 @nogc:
@@ -112,7 +113,6 @@ protected:
         object["tint"] = tint.serialize();
         object["screenTint"] = screenTint.serialize();
         object["emissionStrength"] = emissionStrength;
-        object["masks"] = masks.serialize();
         object["opacity"] = opacity;
     }
 
@@ -120,13 +120,14 @@ protected:
         Deserializes this node from a DataNode.
 
         Params:
-            object = The DataNode to deserialize from.
+            object =    The DataNode to deserialize from.
+            state =     The state of the deserializer.
     */
     override
-    void onDeserialize(ref DataNode object) {
-        super.onDeserialize(object);
+    void onDeserialize(ref DataNode object, ref ModelState state) {
+        super.onDeserialize(object, state);
 
-        auto meshData = object.tryGet!MeshData("mesh");
+        auto meshData = object.tryGet!MeshData(state, "mesh");
         this.deformed_ = nogc_new!DeformedMesh();
         this.base_ = nogc_new!DeformedMesh();
         this.mesh = Mesh.fromMeshData(meshData);
@@ -135,7 +136,7 @@ protected:
         if ("textures" in object && object["textures"].isArray) {
             foreach (i, ref DataNode element; object["textures"].array) {
 
-                uint textureId = element.tryGet!uint(NO_TEXTURE);
+                uint textureId = element.tryGet!uint(state, NO_TEXTURE);
                 if (textureId == NO_TEXTURE)
                     continue;
 
@@ -148,22 +149,22 @@ protected:
 
         // Effects
         if ("effects" in object && object["effects"].isArray) {
-            foreach(i, ref DataNode element; object["effects"].array) {
+            foreach(i, ref element; object["effects"].array) {
                 if (MeshEffect effect = in_effect_registry.tryCreateFrom(element, this)) {
-                    effect.deserialize(element);
+                    effect.deserialize(element, state);
                 }
             }
         }
 
-        object.tryGetRef(opacity, "opacity", 1);
-        object.tryGetRef(tint.data, "tint");
-        object.tryGetRef(screenTint.data, "screenTint");
-        object.tryGetRef(emissionStrength, "emissionStrength");
+        object.tryGetRef(state, opacity, "opacity", 1);
+        object.tryGetRef(state, tint.data, "tint");
+        object.tryGetRef(state, screenTint.data, "screenTint");
+        object.tryGetRef(state, emissionStrength, "emissionStrength");
 
         if ("blend_mode" in object && object["blend_mode"].isNumber)
-            blendingMode = cast(BlendMode)object.tryGet!uint("blend_mode", blendingMode.normal);
+            blendingMode = cast(BlendMode)object.tryGet!uint(state, "blend_mode", blendingMode.normal);
         else
-            blendingMode = object.tryGet!string("blend_mode", "Normal").toBlendMode();
+            blendingMode = object.tryGet!string(state, "blend_mode", "Normal").toBlendMode();
     }
 
     /**
@@ -231,19 +232,9 @@ protected:
         Params:
             delta =     Time since the last frame.
             drawList =  The drawlist for the active scene.
-            mode =      The masking mode to draw with.
     */
     override
-    void onDraw(float delta, DrawList drawList, MaskingMode mode) {
-        if (mode >= MaskingMode.mask) {
-            drawList.setMesh(drawListSlot);
-            drawList.setDrawState(DrawState.defineMask);
-            drawList.setSources(textures);
-            drawList.setMasking(mode);
-            drawList.next();
-            return;
-        }
-
+    void onDraw(float delta, DrawList drawList) {
         if (!this.enabled)
             return;
 
@@ -254,29 +245,35 @@ protected:
             emissionStrength: emissionStrength * offsetEmissionStrength
         );
 
-        if (masks.length > 0) {
-            foreach (ref mask; masks) {
-                if (mask.maskSrc)
-                    mask.maskSrc.onDraw(delta, drawList, mask.mode);
-            }
+        drawList.setMesh(drawListSlot);
+        drawList.setVariables!PartVars(nid, vars);
+        drawList.setBlending(blendingMode);
+        drawList.setSources(textures);
+        drawList.next();
+    }
 
-            drawList.setMesh(drawListSlot);
-            drawList.setDrawState(DrawState.maskedDraw);
-            drawList.setVariables!PartVars(nid, vars);
-            drawList.setBlending(blendingMode);
-            drawList.setSources(textures);
-            drawList.next();
-            return;
-        }
-
+    /**
+        Called when the node should be drawn to a mask.
+        
+        Params:
+            delta =     Time since the last frame.
+            drawList =  The drawlist for the active scene.
+            mode =      The masking mode to draw with.
+    */
+    override
+    void onDrawMask(float delta, DrawList drawList, MaskingMode mode) {
         drawList.setMesh(drawListSlot);
         drawList.setSources(textures);
-        drawList.setBlending(blendingMode);
-        drawList.setVariables!PartVars(nid, vars);
+        drawList.setMasking(mode);
         drawList.next();
     }
 
 public:
+
+    /**
+        Whether the node can be used as a source of masking operations.
+    */
+    override @property bool isMasking() @nogc nothrow pure => true;
 
     /**
         The mesh of the part..
@@ -446,7 +443,8 @@ public:
             absolute =  Whether the deformation is absolute,
                         replacing the original deformation.
     */
-    override void deform(size_t offset, vec2 deform, bool absolute = false) {
+    override
+    void deform(size_t offset, vec2 deform, bool absolute = false) {
         deformed_.deform(offset, deform);
     }
 
@@ -609,5 +607,4 @@ public:
         }
     }
 }
-
 mixin Register!(Part, in_node_registry);

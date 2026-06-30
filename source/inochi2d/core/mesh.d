@@ -15,6 +15,7 @@ import inochi2d.core.render.state;
 import inochi2d.core.serde;
 import inochi2d.core.math.simd;
 import inochi2d.core.math.trig;
+import inochi2d.common;
 import numath;
 import numem;
 
@@ -419,23 +420,22 @@ struct MeshData {
     }
 
     /// Deserialization handler
-    void onDeserialize(ref DataNode object) {
+    void onDeserialize(ref DataNode object, ref ModelState state) {
         if (object.isNull)
             return;
 
         // Load vertices as tightly packed floats.
         float[] vtxbuf;
-        object.tryGetRef(vtxbuf, "verts");
+        object.tryGetRef(state, vtxbuf, "verts");
         this.vertices = cast(vec2[])vtxbuf[0..nu_aligndown(vtxbuf.length, 2)];
 
         // Load UVs as tightly packed floats.
         float[] uvbuf;
-        object.tryGetRef(uvbuf, "uvs");
+        object.tryGetRef(state, uvbuf, "uvs");
         this.uvs = cast(vec2[])uvbuf[0..nu_aligndown(uvbuf.length, 2)];
 
-        object.tryGetRef(indices, "indices");
-
-        vec2 origin = object.tryGet!vec2("origin");
+        object.tryGetRef(state, indices, "indices");
+        vec2 origin = object.tryGet!vec2(state, "origin");
         if (origin.isFinite) {
             foreach (i; 0 .. vertices.length) {
                 vertices[i] -= origin;

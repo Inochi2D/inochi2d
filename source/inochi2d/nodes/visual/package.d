@@ -1,0 +1,196 @@
+/**
+    Inochi2D Visual Node
+
+    Copyright: 
+        Copyright © 2020-2026, Inochi2D Project
+    
+    License:
+        $(LINK2 https://github.com/Inochi2D/inochi2d/blob/main/LICENSE, BSD 2-clause License)
+    
+    Authors:
+        Luna Nielsen
+*/
+module inochi2d.nodes.visual;
+import inochi2d.nodes;
+import inochi2d.common;
+import inochi2d.core;
+import nulib.collections;
+import nulib.math.fixed;
+import nulib.string;
+import nulib.math;
+import numem;
+
+public import inochi2d.nodes.visual.part;
+public import inochi2d.nodes.visual.animatedpart;
+public import inochi2d.nodes.visual.composite;
+public import inochi2d.nodes.visual.solo;
+public import inochi2d.nodes.visual.mask;
+
+/**
+    A node which can be drawn to the screen.
+*/
+@TypeId("Visual", MAKE_I2D_TAG!(0, 1))
+@TypeIdAbstract
+abstract
+class Visual : Node {
+protected:
+@nogc:
+
+    /**
+        Constructs a new visual
+    */
+    this(Node parent = null) {
+        super(parent);
+    }
+
+    /**
+        Constructs a new visual
+    */
+    this(GUID guid, Node parent = null) {
+        super(guid, parent);
+    }
+
+    /**
+        Deserializes this node from a DataNode.
+
+        Params:
+            object =    The DataNode to deserialize from.
+            state =     The state of the deserializer.
+    */
+    override
+    void onDeserialize(ref DataNode object, ref ModelState state) {
+        super.onDeserialize(object, state);
+
+        // Upgrade masks from previous format to new format.
+        if (state.doUpgrade08 && !cast(Mask)this) {
+            if ("masks" in object && object["masks"].length > 0) {
+                state.info(nstring("wrapping ", this.name[], " in 0.9 mask..."));
+
+                // Create a new mask object to wrap ourselves in.
+                Visual mask = nogc_new!Mask(inNewGUID(), parent);
+                mask.name = "Mask";
+                mask.onDeserialize(object, state);
+                mask.localZSort = this.localZSort;
+
+                // Move ourselves into a new mask.
+                this.parent = mask;
+                this.localZSort = 0;
+            }
+        }
+    }
+
+    /**
+        Callback for when the Visual is being requested to find its
+        sub-visuals.
+
+        Params:
+            visuals =           The array to append the visuals to.
+            recurseDelegates =  Whether to recurse through delegate visuals.
+            append =            Whether to append to the visuals list.
+    */
+    void onDelegateFindVisuals(ref weak_vector!Visual visuals, bool recurseDelegates, bool append) { }
+
+    /**
+        Called when the node should be drawn to a mask.
+        
+        Params:
+            delta =     Time since the last frame.
+            drawList =  The drawlist for the active scene.
+            mode =      The masking mode to draw with.
+    */
+    void onDrawMask(float delta, DrawList drawList, MaskingMode mode) { }
+
+public:
+
+    /**
+        Whether the renderer should delegate rendering logic
+        to the visual node.
+    */
+    @property bool isDelegated() @nogc nothrow pure => false;
+
+    /**
+        Whether the node can be used as a source of masking operations.
+    */
+    @property bool isMasking() @nogc nothrow pure => false;
+
+    /// Destructor
+    ~this() { }
+
+    /**
+        Draws this visual as a mask.
+        
+        Params:
+            delta =     Time since the last frame.
+            drawList =  The drawlist for the active scene.
+            mode =      The masking mode to draw with.
+    */
+    final void drawMask(float delta, DrawList drawList, MaskingMode mode) @nogc {
+        this.onDrawMask(delta, drawList, mode);
+    }
+
+    /**
+        Requests that the list gather sub-visuals to be rendered, if applicable.
+
+        Params:
+            visuals =           The list to write to, the list may be resized by the
+                                implementation.
+            recurseDelegates =  Whether to recurse through delegate visuals.
+            append =            Whether to append to the visuals list.
+    */
+    void findVisuals(ref weak_vector!Visual visuals, bool recurseDelegates = false, bool append = false) {
+        this.onDelegateFindVisuals(visuals, recurseDelegates, append);
+    }
+}
+
+mixin Register!(Visual, in_node_registry);
+
+/**
+    Finds visuals that are within the hirearchy of the given node.
+
+    Params:
+        root =              The root node to start looking from
+        visuals =           The list to write to, the list may be resized by the
+                            implementation.
+        recurseDelegates =  Whether to recurse through delegate visuals.
+        sort =              Whether to sort the list of visuals.
+        append =            Whether to append to the visuals list.
+*/
+void findVisuals(Node root, ref weak_vector!Visual visuals, bool recurseDelegates = false, bool sort = true, bool append = false) @nogc {
+    static void findVisualsImpl(Node node, ref weak_vector!Visual visuals, ref size_t i, bool recurseDelegates = false) @nogc {
+        if (!node)
+            return;
+
+        if (auto visual = cast(Visual)node) {
+            if (!visual.enabled)
+                return;
+            
+            visuals ~= visual;
+            if (!visual.isDelegated || recurseDelegates) {
+                foreach (child; node.children) {
+                    findVisualsImpl(child, visuals, i, recurseDelegates);
+                }
+            } else if (visual.isDelegated) {
+                visual.findVisuals(visuals, recurseDelegates, true);
+            }
+        } else {
+
+            // Non-part nodes just need to be recursed through,
+            // they don't draw anything.
+            foreach (child; node.children) {
+                findVisualsImpl(child, visuals, i, recurseDelegates);
+            }
+        }
+    }
+
+    if (!append)
+        visuals.clear();
+
+    // Find all visuals in children.
+    size_t i = 0;
+    foreach(child; root.children) {
+        findVisualsImpl(child, visuals, i, recurseDelegates);
+    }
+
+    if (sort)
+        sortNodes(visuals.value);
+}

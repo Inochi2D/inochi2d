@@ -14,6 +14,7 @@ module inochi2d.animation.animation;
 import inochi2d.puppet;
 import inochi2d.param;
 import inochi2d.core;
+import inochi2d.common;
 import numath;
 import numem.sorting;
 import numem;
@@ -95,14 +96,14 @@ public:
     /**
         Deserialization function
     */
-    void onDeserialize(ref DataNode object) @nogc {
-        object.tryGetRef(timestep, "timestep", timestep.init);
-        object.tryGetRef(additive, "additive", additive.init);
-        object.tryGetRef(animationWeight, "animationWeight", animationWeight.init);
-        object.tryGetRef(length, "length", length.init);
-        object.tryGetRef(leadIn, "leadIn", leadIn.init);
-        object.tryGetRef(leadOut, "leadOut", leadOut.init);
-        object.tryGetRef(lanes, "lanes", lanes.init);
+    void onDeserialize(ref DataNode object, ref ModelState state) @nogc {
+        object.tryGetRef(state, timestep, "timestep", timestep.init);
+        object.tryGetRef(state, additive, "additive", additive.init);
+        object.tryGetRef(state, animationWeight, "animationWeight", animationWeight.init);
+        object.tryGetRef(state, length, "length", length.init);
+        object.tryGetRef(state, leadIn, "leadIn", leadIn.init);
+        object.tryGetRef(state, leadOut, "leadOut", leadOut.init);
+        object.tryGetRef(state, lanes, "lanes", lanes.init);
     }
 }
 
@@ -152,14 +153,14 @@ public:
     /**
         Deserialization function
     */
-    void onDeserialize(ref DataNode object) @nogc {
+    void onDeserialize(ref DataNode object, ref ModelState state) @nogc {
         this.paramRef = nogc_new!AnimationParameterRef(null, 0);
-        this.refguid = object.tryGetGUID("uuid", "guid");
+        this.refguid = object.tryGetGUID(state, "uuid", "guid");
 
-        object.tryGetRef(interpolation, "interpolation");
-        object.tryGetRef(paramRef.targetAxis, "target");
-        object.tryGetRef(frames, "keyframes");
-        object.tryGetRef(mergeMode, "merge_mode", mergeMode.init);
+        object.tryGetRef(state, interpolation, "interpolation");
+        object.tryGetRef(state, paramRef.targetAxis, "target");
+        object.tryGetRef(state, frames, "keyframes");
+        object.tryGetRef(state, mergeMode, "merge_mode", mergeMode.init);
     }
 
     /**
@@ -298,9 +299,9 @@ struct Keyframe {
     /**
         Deserialization function
     */
-    void onDeserialize(ref DataNode object) @nogc {
-        object.tryGetRef(frame, "frame");
-        object.tryGetRef(value, "value");
-        object.tryGetRef(tension, "tension");
+    void onDeserialize(ref DataNode object, ref ModelState state) @nogc {
+        object.tryGetRef(state, frame, "frame");
+        object.tryGetRef(state, value, "value");
+        object.tryGetRef(state, tension, "tension");
     }
 }

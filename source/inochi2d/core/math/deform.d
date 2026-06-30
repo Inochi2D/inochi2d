@@ -13,6 +13,7 @@
 module inochi2d.core.math.deform;
 import inochi2d.core;
 import inochi2d.core.math;
+import inochi2d.common;
 import inochi2d;
 import nulib.collections.vector;
 import numem;
@@ -244,10 +245,10 @@ struct Deformation {
         }
     }
 
-    void onDeserialize(ref DataNode data) @nogc {
+    void onDeserialize(ref DataNode data, ref ModelState state) @nogc {
         this.vertexOffsets = nu_malloca!vec2(data.length);
         foreach (i, ref element; data.array) {
-            this.vertexOffsets[i / 2] = element.deserialize!vec2();
+            this.vertexOffsets[i / 2] = element.deserialize!vec2(state);
         }
     }
 

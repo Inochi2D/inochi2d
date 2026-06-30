@@ -15,6 +15,7 @@ import inochi2d.core.serde;
 import inochi2d.core.guid;
 import inochi2d.core.math;
 import inochi2d.core.phys;
+import inochi2d.common;
 import inochi2d;
 import numem;
 
@@ -177,7 +178,7 @@ public:
 /**
     Simple Physics Node
 */
-@TypeId("SimplePhysics", 0x00000103)
+@TypeId("SimplePhysics", MAKE_I2D_TAG!(0, 0xFF))
 class SimplePhysics : Node {
 private:
 @nogc:
@@ -223,22 +224,23 @@ protected:
         Deserializes this node from a DataNode.
 
         Params:
-            object = The DataNode to deserialize from.
+            object =    The DataNode to deserialize from.
+            state =     The state of the deserializer.
     */
     override
-    void onDeserialize(ref DataNode object) {
-        super.onDeserialize(object);
+    void onDeserialize(ref DataNode object, ref ModelState state) {
+        super.onDeserialize(object, state);
 
-        this.paramRef = object.tryGetGUID("param", "target");
-        object.tryGetRef(modelType_, "model_type", PhysicsModel.Pendulum);
-        object.tryGetRef(mapMode, "map_mode", ParamMapMode.AngleLength);
-        object.tryGetRef(gravity, "gravity", 1.0);
-        object.tryGetRef(length, "length", 100);
-        object.tryGetRef(frequency, "frequency", 1.0);
-        object.tryGetRef(angleDamping, "angle_damping", 0.5);
-        object.tryGetRef(lengthDamping, "length_damping", 0.5);
-        object.tryGetRef(outputScale, "output_scale", vec2(1, 1));
-        object.tryGetRef(localOnly, "local_only", false);
+        this.paramRef = object.tryGetGUID(state, "param", "target");
+        object.tryGetRef(state, modelType_, "model_type", PhysicsModel.Pendulum);
+        object.tryGetRef(state, mapMode, "map_mode", ParamMapMode.AngleLength);
+        object.tryGetRef(state, gravity, "gravity", 1.0);
+        object.tryGetRef(state, length, "length", 100);
+        object.tryGetRef(state, frequency, "frequency", 1.0);
+        object.tryGetRef(state, angleDamping, "angle_damping", 0.5);
+        object.tryGetRef(state, lengthDamping, "length_damping", 0.5);
+        object.tryGetRef(state, outputScale, "output_scale", vec2(1, 1));
+        object.tryGetRef(state, localOnly, "local_only", false);
     }
 
     /**

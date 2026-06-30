@@ -8,8 +8,9 @@
 */
 module inochi2d.effect;
 import inochi2d.core.math.deform;
-import inochi2d.nodes.part;
+import inochi2d.nodes.visual.part;
 import inochi2d.core;
+import inochi2d.common;
 import inp.format;
 import numem;
 
@@ -22,7 +23,7 @@ __gshared TypeRegistry!(MeshEffect, Part) in_effect_registry;
     Base class of effects that modify meshes.
 */
 @TypeId("MeshEffect", 0x0000)
-class MeshEffect : NuRefCounted {
+class MeshEffect : NuRefCounted, IDeserializable!ModelState {
 private:
 @nogc:
     Part parent_;
@@ -43,9 +44,10 @@ protected:
         Deserializes this node from a DataNode.
 
         Params:
-            object = The DataNode to deserialize from.
+            object =    The DataNode to deserialize from.
+            state =     The state of the deserializer.
     */
-    void onDeserialize(ref DataNode object) { }
+    void onDeserialize(ref DataNode object, ref ModelState state) { }
 
     /**
         Called when the node is to finalize its deserialization from disk.
@@ -92,10 +94,11 @@ public:
         Deserializes this mesh effect from a DataNode.
 
         Params:
-            object = The DataNode to deserialize from.
+            object =    The DataNode to deserialize from.
+            state =     The state of the deserializer.
     */
-    final void deserialize(ref DataNode object) @nogc {
-        this.onDeserialize(object);
+    final void deserialize(ref DataNode object, ref ModelState state) @nogc {
+        this.onDeserialize(object, state);
     }
 
     /**

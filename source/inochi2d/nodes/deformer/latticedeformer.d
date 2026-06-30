@@ -13,6 +13,7 @@
 module inochi2d.nodes.deformer.latticedeformer;
 import inochi2d.nodes.deformer;
 import inochi2d.nodes;
+import inochi2d.common;
 import inochi2d.core;
 import numath;
 import numem;
@@ -21,7 +22,7 @@ import numem;
     A deformer which uses a 2D lattice as the basis for
     its deformation.
 */
-@TypeId("LatticeDeformer", 0x0202)
+@TypeId("LatticeDeformer", MAKE_I2D_TAG!(2, 2))
 class LatticeDeformer : Deformer {
 private:
 @nogc:
@@ -75,13 +76,14 @@ protected:
         Deserializes this node from a DataNode.
 
         Params:
-            object = The DataNode to deserialize from.
+            object =    The DataNode to deserialize from.
+            state =     The state of the deserializer.
     */
     override
-    void onDeserialize(ref DataNode object) {
-        super.onDeserialize(object);
-        object.tryGetRef(subdivs, "subdivisions");
-        object.tryGetRef(size_, "size");
+    void onDeserialize(ref DataNode object, ref ModelState state) {
+        super.onDeserialize(object, state);
+        object.tryGetRef(state, subdivs, "subdivisions");
+        object.tryGetRef(state, size_, "size");
     }
 
     /**

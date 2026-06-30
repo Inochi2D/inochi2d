@@ -11,6 +11,7 @@
         Luna Nielsen
 */
 module inochi2d.puppet;
+import inochi2d.common;
 import inochi2d.nodes;
 import inochi2d.param;
 import inochi2d.animation;
@@ -28,14 +29,9 @@ version (IN_NO_LEGACY) {
 }
 
 /**
-    Magic value meaning that the model has no thumbnail
-*/
-enum NO_THUMBNAIL = uint.max;
-
-/**
     Puppet properties
 */
-class PuppetProperties : NuObject, ISerializable, IDeserializable {
+class PuppetProperties : NuObject, ISerializable, IDeserializable!ModelState {
 public:
 
     /**
@@ -102,23 +98,23 @@ public:
     /**
         Deserializes the type.
     */
-    void onDeserialize(ref DataNode object) @nogc {
+    void onDeserialize(ref DataNode object, ref ModelState state) @nogc {
 
         // 0.8 backwards compatibility.
-        object.tryGetRef(author, "rigger", author);
-        object.tryGetRef(author, "artist", author);
+        object.tryGetRef(state, author, "rigger", author);
+        object.tryGetRef(state, author, "artist", author);
 
-        object.tryGetRef(name, "name");
-        object.tryGetRef(author, "author", author);
-        object.tryGetRef(physicsPixelsPerMeter, "pixelsPerMeter");
-        object.tryGetRef(physicsGravity, "gravity");
+        object.tryGetRef(state, name, "name");
+        object.tryGetRef(state, author, "author", author);
+        object.tryGetRef(state, physicsPixelsPerMeter, "pixelsPerMeter");
+        object.tryGetRef(state, physicsGravity, "gravity");
     }
 }
 
 /**
     A puppet
 */
-class Puppet : NuRefCounted, ISerializable, IDeserializable {
+class Puppet : NuRefCounted, ISerializable, IDeserializable!ModelState {
 private:
 @nogc:
 
@@ -254,30 +250,30 @@ protected:
     /**
         Deserializes a puppet
     */
-    void onDeserialize(ref DataNode object) @nogc {
+    void onDeserialize(ref DataNode object, ref ModelState state) @nogc {
 
         // Invalid type.
         if (!object.isObject)
             return;
 
         // Just set to basic initialized object if none was found.
-        object.tryGetRef(properties, "properties", properties);
+        object.tryGetRef(state, properties, "properties", properties);
 
         // Legacy "meta" key.
         if ("meta" in object) {
-            object.tryGetRef(properties, "meta", properties);
-            object["meta"].tryGetRef(properties.graphicsUsePointFiltering, "preservePixels");
+            object.tryGetRef(state, properties, "meta", properties);
+            object["meta"].tryGetRef(state, properties.graphicsUsePointFiltering, "preservePixels");
         }
 
         // Legacy "physics" key.
         if ("physics" in object) {
-            object["physics"].tryGetRef(properties.physicsPixelsPerMeter, "pixelsPerMeter");
-            object["physics"].tryGetRef(properties.physicsGravity, "gravity");
+            object["physics"].tryGetRef(state, properties.physicsPixelsPerMeter, "pixelsPerMeter");
+            object["physics"].tryGetRef(state, properties.physicsGravity, "gravity");
         }
 
         // Add root node if it was found.
         if ("nodes" in object) {
-            object.tryGetRef(root, "nodes", root);
+            object.tryGetRef(state, root, "nodes", root);
         }
 
         // TODO: requires handling vector in serde.d
@@ -286,7 +282,7 @@ protected:
         // }
 
         if (auto anim = "animation" in object) {
-            (*anim).deserialize(animations_);
+            (*anim).deserialize(animations_, state);
         }
     }
 
@@ -410,15 +406,16 @@ public:
 
             Params:
                 path =  Path to the file to load.
+                sink =  A sink to write logs to.
             
             Notes:
                 Not available when compiling for WebAssembly.
         */
-        static Result!Puppet fromFile(string path) @nogc {
+        static Result!Puppet fromFile(string path, IOSink sink = IOSink.init) @nogc {
             import nulib.io.stream.file : FileStream;
 
             if (FileStream fstream = nogc_new!FileStream(path, "r+b")) {
-                return Puppet.fromStream(fstream);
+                return Puppet.fromStream(fstream, sink);
             }
             return error!Puppet("Could not open file.");
         }
@@ -429,10 +426,23 @@ public:
 
         Params:
             stream =    The readable stream to load the puppet from.
+            sink =      A sink to write logs to.
     */
-    static Result!Puppet fromStream(Stream stream) @nogc {
+    static Result!Puppet fromStream(Stream stream, IOSink sink = IOSink.init) @nogc {
         assert(stream);
         assert(stream.canRead);
+
+        // Set up model state.
+        ModelState state;
+        state.io = sink;
+
+        // Identify Inochi2D 0.8 models.
+        INPFileFormat fileFormat = stream.detectFormat();
+        if (fileFormat == INPFileFormat.inp1) {
+            state.doUpgrade08 = true;
+            state.version_ = IN_MAKE_VERSION!(0, 8, 6);
+            state.warning("Inochi2D 0.8's file format is deprecated, it is recommended that you upgrade to Inochi2D 0.9.");
+        }
 
         auto result = stream.readINP();
         if (!result)
@@ -444,7 +454,7 @@ public:
 
         // Create new puppet and deserialize the data.
         Puppet puppet = nogc_new!Puppet(nogc_new!TextureCache());
-        puppet.deserialize(node);
+        puppet.deserialize(node, state);
         return ok(puppet);
     }
 
@@ -483,9 +493,10 @@ public:
         Deserializes a Puppet from a payload $(D DataNode).
 
         Params:
-            node =  The payload DataNode to deserialize from.
+            node =  The DataNode to deserialize from.
+            state = The state of the deserializer.
     */
-    final void deserialize(ref DataNode node) @nogc {
+    final void deserialize(ref DataNode node, ref ModelState state) @nogc {
         assert(INP_TAG_PAYLOAD in node, "No payload was found!");
         assert(node[INP_TAG_PAYLOAD].isObject, "Invalid payload object.");
 
@@ -497,7 +508,7 @@ public:
             this.loadTextures(node[INP_TAG_TEXTURES]);
         }
 
-        this.onDeserialize(node[INP_TAG_PAYLOAD]);
+        this.onDeserialize(node[INP_TAG_PAYLOAD], state);
         this.onFinalize();
     }
 

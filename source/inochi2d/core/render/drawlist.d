@@ -158,6 +158,30 @@ public:
     }
 
     /**
+        Enqueues a composite blit for a recently ended composite.
+    */
+    void blit() {
+        _ccmd.state = DrawState.compositeBlit;
+        this.next();
+    }
+
+    /**
+        Pushes render targets to the draw list's stack.
+    */
+    void pushMask() {
+        _ccmd.state = DrawState.pushMask;
+        this.next();
+    }
+
+    /**
+        Pops the top render target from the list's stack.
+    */
+    void popMask() {
+        _ccmd.state = DrawState.popMask;
+        this.next();
+    }
+
+    /**
         Sets sources for the current draw call.
     */
     void setSources(Texture[IN_MAX_ATTACHMENTS] sources) {
@@ -183,6 +207,7 @@ public:
         Sets the masking mode for the current draw call.
     */
     void setMasking(MaskingMode value) {
+        _ccmd.state = DrawState.defineMask;
         _ccmd.maskMode = value;
     }
 
@@ -200,13 +225,6 @@ public:
         _ccmd.idxOffset = alloc.idxOffset;
         _ccmd.vtxOffset = alloc.vtxOffset;
         _ccmd.elemCount = alloc.idxCount;
-    }
-
-    /**
-        Sets the active state for the current command.
-    */
-    void setDrawState(DrawState state) {
-        _ccmd.state = state;
     }
 
     /**
@@ -283,34 +301,38 @@ enum DrawState : uint {
     normal = 0,
 
     /**
-        A masking run is being defined.
+        Draws a mask source to the top level mask buffer.
     */
     defineMask = 1,
 
     /**
-        Use the mask to draw the current command,
-        reuse the mask if the next state also is
-        maskedDraw.
+        Finalizes the current mask, then pushes it onto the stack.
     */
-    maskedDraw = 2,
+    pushMask = 2,
+
+    /**
+        Pops the current mask from the stack, restoring the higher level
+        mask, or exits mask mode.
+    */
+    popMask = 3,
 
     /**
         A composition into composition textures
         has begun.
     */
-    compositeBegin = 3,
+    compositeBegin = 4,
 
     /**
         A composition into composition textures
         has ended.
     */
-    compositeEnd = 4,
+    compositeEnd = 5,
 
     /**
         Sources should be drawn to targets using
         the given blending mode.
     */
-    compositeBlit = 5,
+    compositeBlit = 6,
 }
 
 /**

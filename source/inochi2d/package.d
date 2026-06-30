@@ -12,8 +12,14 @@
 */
 module inochi2d;
 
+public import inochi2d.common;
 public import inochi2d.puppet;
 public import inochi2d.nodes;
 public import inochi2d.animation;
 public import inochi2d.param;
 public import inochi2d.ver;
+
+/**
+    The current version number of Inochi2D.
+*/
+const uint in_version = IN_MAKE_VERSION!(0, 9, 0);

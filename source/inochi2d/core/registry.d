@@ -30,6 +30,13 @@ struct TypeId {
 }
 
 /**
+    Creates a reserved Inochi2D ID tag.
+*/
+enum MAKE_I2D_TAG(ubyte subclass, ubyte superclass) =
+    (cast(uint)subclass << 8) |
+    (cast(uint)superclass);
+
+/**
     Tells the registry only to register the TypeId,
     but not the factories for a type.
 */
@@ -141,7 +148,9 @@ public:
             or $(D TypeId.nil) if it wasn't found.
     */
     TypeId lookup(T object) {
-        return this.lookup(cast(TypeInfo)typeid(object));
+        if (object)
+            return this.lookup(cast(TypeInfo)typeid(object));
+        return TypeId.nil;
     }
 
     /**
@@ -265,8 +274,6 @@ public:
                 return this.create(type, args);
             }
         }
-        return fallbackFactory ? 
-            fallbackFactory(args) : 
-            T.init;
+        return T.init;
     }
 }

@@ -14,6 +14,7 @@
 */
 module inochi2d.param.parameter;
 import inochi2d.param.binding;
+import inochi2d.common;
 import inochi2d.puppet;
 import inochi2d.nodes;
 import inochi2d.core;
@@ -32,7 +33,7 @@ import numath;
         deformations, property overrides, and more.
 */
 abstract
-class Parameter : NuRefCounted, ISerializable, IDeserializable {
+class Parameter : NuRefCounted, ISerializable, IDeserializable!ModelState {
 public:
 @nogc:
     /**
@@ -144,13 +145,13 @@ public:
         Deserialize this parameter.
     */
     override
-    void onDeserialize(ref DataNode object) {
-        guid = object.tryGetGUID("uuid");
-        object.tryGetRef(name, "name");
+    void onDeserialize(ref DataNode object, ref ModelState state) {
+        guid = object.tryGetGUID(state, "uuid");
+        object.tryGetRef(state, name, "name");
 
         if (auto bindings = "bindings" in object) {
             foreach (ref binding; bindings.array) {
-                this.bindings ~= tryGetBinding(binding, this);
+                this.bindings ~= binding.tryGetBinding(state, this);
             }
         }
 
@@ -161,7 +162,7 @@ public:
 
         // Migrate old way of storing keypoints.
         if (auto axes = "axis_points" in object) {
-            switch (object.tryGet!uint("axes")) {
+            switch (object.tryGet!uint(state, "axes")) {
                 case 1:
                     auto axis1 = axes.array[0];
                     object["points"] = axis1;
@@ -325,13 +326,13 @@ public:
         Deserialize this parameter.
     */
     override
-    void onDeserialize(ref DataNode object) {
-        super.onDeserialize(object);
+    void onDeserialize(ref DataNode object, ref ModelState state) {
+        super.onDeserialize(object, state);
         assert(object["axes"] == 1);
-        object.tryGetRef(min, "min");
-        object.tryGetRef(max, "max");
-        object.tryGetRef(defaults, "defaults");
-        object.tryGetRef(points, "points");
+        object.tryGetRef(state, min, "min");
+        object.tryGetRef(state, max, "max");
+        object.tryGetRef(state, defaults, "defaults");
+        object.tryGetRef(state, points, "points");
     }
 
     /**
@@ -515,14 +516,14 @@ public:
         Deserialize this parameter.
     */
     override
-    void onDeserialize(ref DataNode object) {
-        super.onDeserialize(object);
+    void onDeserialize(ref DataNode object, ref ModelState state) {
+        super.onDeserialize(object, state);
         assert(object["axes"] == 2);
-        object.tryGetRef(min, "min");
-        object.tryGetRef(max, "max");
-        object.tryGetRef(defaults, "defaults");
-        object.tryGetRef(hpoints, "hpoints");
-        object.tryGetRef(vpoints, "vpoints");
+        object.tryGetRef(state, min, "min");
+        object.tryGetRef(state, max, "max");
+        object.tryGetRef(state, defaults, "defaults");
+        object.tryGetRef(state, hpoints, "hpoints");
+        object.tryGetRef(state, vpoints, "vpoints");
     }
 
     /**
@@ -538,14 +539,14 @@ public:
 /**
     Deserialize a parameter depending on its shape.
 */
-Parameter tryGetParameter(ref DataNode object) @nogc {
-    if (object.tryGet!bool("is_vec2") || object.tryGet!uint("axes") == 2) {
+Parameter tryGetParameter(ref DataNode object, ref ModelState state) @nogc {
+    if (object.tryGet!bool(state, "is_vec2") || object.tryGet!uint(state, "axes") == 2) {
         auto param = nogc_new!Parameter2D(null);
-        object.deserialize(param);
+        object.deserialize(param, state);
         return cast(Parameter)param;
     } else {
         auto param = nogc_new!Parameter1D(null);
-        object.deserialize(param);
+        object.deserialize(param, state);
         return cast(Parameter)param;
     }
 

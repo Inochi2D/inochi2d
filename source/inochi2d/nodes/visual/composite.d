@@ -10,10 +10,10 @@
     Authors:
         Luna Nielsen
 */
-module inochi2d.nodes.composite;
+module inochi2d.nodes.visual.composite;
 import inochi2d.nodes.visual;
+import inochi2d.common;
 import inochi2d.nodes;
-import inochi2d.core.math;
 import inochi2d.core;
 import numem;
 import nulib;
@@ -21,16 +21,16 @@ import nulib;
 public import inochi2d.core.render.state;
 
 struct CompositeVars {
-align(vec4.sizeof):
     vec3 tint;
     vec3 screenTint;
+    private void[4] __dummy0;
     float opacity;
 }
 
 /**
     Composite Node
 */
-@TypeId("Composite", 0x0301)
+@TypeId("Composite", MAKE_I2D_TAG!(3, 1))
 class Composite : Visual {
 private:
 @nogc:
@@ -58,28 +58,27 @@ protected:
         object["tint"] = tint.serialize();
         object["screenTint"] = screenTint.serialize();
         object["opacity"] = opacity;
-        object["masks"] = masks.serialize();
     }
 
     /**
         Deserializes this node from a DataNode.
 
         Params:
-            object = The DataNode to deserialize from.
+            object =    The DataNode to deserialize from.
+            state =     The state of the deserializer.
     */
     override
-    void onDeserialize(ref DataNode object) {
-        super.onDeserialize(object);
+    void onDeserialize(ref DataNode object, ref ModelState state) {
+        super.onDeserialize(object, state);
 
-        object.tryGetRef(opacity, "opacity");
-        object.tryGetRef(tint, "tint");
-        object.tryGetRef(screenTint, "screenTint");
-        object.tryGetRef(masks, "masks");
+        object.tryGetRef(state, opacity, "opacity");
+        object.tryGetRef(state, tint, "tint");
+        object.tryGetRef(state, screenTint, "screenTint");
 
         if ("blend_mode" in object && object["blend_mode"].isNumber)
-            blendingMode = cast(BlendMode)object.tryGet!uint("blend_mode", blendingMode.normal);
+            blendingMode = cast(BlendMode)object.tryGet!uint(state, "blend_mode", blendingMode.normal);
         else
-            blendingMode = object.tryGet!string("blend_mode", "Normal").toBlendMode();
+            blendingMode = object.tryGet!string(state, "blend_mode", "Normal").toBlendMode();
     }
 
     /**
@@ -129,40 +128,49 @@ protected:
         Params:
             delta =     Time since the last frame.
             drawList =  The drawlist for the active scene.
-            mode =      The masking mode to draw with.
     */
     override
-    void onDraw(float delta, DrawList drawList, MaskingMode mode) {
+    void onDraw(float delta, DrawList drawList) {
         if (visuals_.length == 0)
             return;
 
         CompositeVars compositeVars = CompositeVars(
-            tint * offsetTint,
-            screenTint * offsetScreenTint,
-            opacity * offsetOpacity
+            tint: tint * offsetTint,
+            screenTint: screenTint * offsetScreenTint,
+            opacity: opacity * offsetOpacity
         );
-
+        
         visuals_.sortNodes();
 
         // Push sub render area.
         drawList.beginComposite();
-        foreach (Node child; visuals_) {
-            child.draw(delta, drawList);
+        foreach (ref visual; visuals_) {
+            visual.draw(delta, drawList);
         }
         drawList.endComposite();
-
-        if (masks.length > 0) {
-            foreach (ref mask; masks) {
-                mask.maskSrc.onDraw(delta, drawList, mask.mode);
-            }
-        }
 
         // Then blit it to the main framebuffer
         drawList.setVariables!CompositeVars(nid, compositeVars);
         drawList.setMesh(ssDrawList_);
-        drawList.setDrawState(DrawState.compositeBlit);
         drawList.setBlending(blendingMode);
-        drawList.next();
+        drawList.blit();
+    }
+
+    /**
+        Called when the node should be drawn to a mask.
+        
+        Params:
+            delta =     Time since the last frame.
+            drawList =  The drawlist for the active scene.
+            mode =      The masking mode to draw with.
+    */
+    override
+    void onDrawMask(float delta, DrawList drawList, MaskingMode mode) {
+        visuals_.sortNodes();
+        foreach (ref visual; visuals_) {
+            if (visual.isMasking)
+                visual.drawMask(delta, drawList, mode);
+        }
     }
 
     /**
@@ -188,6 +196,11 @@ public:
     override @property bool isDelegated() @nogc => true;
 
     /**
+        Whether the node can be used as a source of masking operations.
+    */
+    override @property bool isMasking() @nogc nothrow pure => true;
+
+    /**
         The blending mode
     */
     BlendMode blendingMode;
@@ -206,11 +219,6 @@ public:
         Screen tint color
     */
     vec3 screenTint = vec3(0, 0, 0);
-
-    /**
-        List of masks to apply
-    */
-    MaskBinding[] masks;
 
     /// Destructor
     ~this() {
@@ -357,10 +365,9 @@ public:
         that it should re-index them.
     */
     void notifyVisualsChanged() {
-        .findVisuals(this, visuals_, false, true, false);
+        .findVisuals(this, visuals_, false, false, false);
     }
 }
-
 mixin Register!(Composite, in_node_registry);
 
 //

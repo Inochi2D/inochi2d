@@ -13,6 +13,7 @@
 */
 module inochi2d.core.guid;
 import inochi2d.core.serde;
+import inochi2d.common;
 import nulib.random;
 import nulib.uuid;
 
@@ -57,17 +58,18 @@ GUID inNewGUID() @nogc {
 
     Params:
         obj =       The object to get the GUID from.
+        state =     The state of the deserializer.
         uuidKey =   The legacy UUID key to check for.
         guidKey =   The GUID key to check for.
 
     Returns:
         A GUID.
 */
-GUID tryGetGUID(ref DataNode obj, string uuidKey, string guidKey = "guid") @nogc {
+GUID tryGetGUID(ref DataNode obj, ref ModelState state, string uuidKey, string guidKey = "guid") @nogc {
     if (uuidKey in obj && obj[uuidKey].isNumber)
-        return obj.tryGet!uint(uuidKey).toGuid;
+        return obj.tryGet!uint(state, uuidKey).toGuid;
     else {
-        return GUID(obj.tryGet!string(guidKey));
+        return GUID(obj.tryGet!string(state, guidKey));
     }
 }
 
@@ -76,10 +78,11 @@ GUID tryGetGUID(ref DataNode obj, string uuidKey, string guidKey = "guid") @nogc
 
     Params:
         obj =       The object to get the GUID from.
+        state =     The state of the deserializer.
 */
-GUID tryGetGUID(ref DataNode obj) @nogc {
+GUID tryGetGUID(ref DataNode obj, ref ModelState state) @nogc {
     return obj.isNumber ?
-        obj.tryGet!uint(uint.max).toGuid : GUID(obj.text);
+        obj.tryGet!uint(state, uint.max).toGuid : GUID(obj.text);
 }
 
 //
