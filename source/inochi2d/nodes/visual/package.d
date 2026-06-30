@@ -64,13 +64,13 @@ protected:
         // Upgrade masks from previous format to new format.
         if (state.doUpgrade08 && !cast(Mask)this) {
             if ("masks" in object && object["masks"].length > 0) {
-                state.info(nstring("wrapping ", this.name[], " in 0.9 mask..."));
+                state.info(nstring("0.8->0.9: wrapping ", this.name[], " in Mask node..."));
 
                 // Create a new mask object to wrap ourselves in.
-                Visual mask = nogc_new!Mask(inNewGUID(), parent);
-                mask.name = "Mask";
+                Visual mask = nogc_new!Mask(inNewGUID(), this.parent);
                 mask.onDeserialize(object, state);
                 mask.localZSort = this.localZSort;
+                mask.name = "Mask";
 
                 // Move ourselves into a new mask.
                 this.parent = mask;
