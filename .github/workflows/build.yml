@@ -44,6 +44,9 @@ jobs:
 
           - platform: 'linux'
             os: ubuntu-latest
+
+          - platform: 'wasm'
+            os: ubuntu-latest
     outputs:
       artifact: '${{ steps.finalize.outputs.artifact }}'
       
@@ -54,8 +57,18 @@ jobs:
         
     # Setup D Compiler
     - uses: dlang-community/setup-dlang@v1.4.0
+      if: ${{ matrix.config.platform != 'wasm' }}
       with:
         compiler: ldc-latest
+    
+    # Setup WASI D compiler
+    - name: 'Install WASM toolchain'
+      if: ${{ matrix.config.platform == 'wasm' }}
+      id: wasm-toolchain
+      run: |
+        wget https://github.com/Inochi2D/sdk-toolchain/releases/download/v0.9.0-testing/ldc2-wasm32-wasi.tar.gz
+        tar -xf ldc2-wasm32-wasi -C /opt/hostedtoolcache
+        echo "/opt/hostedtoolcache/ldc2/bin:/opt/hostedtoolcache/ldc2/lib:$GITHUB_PATH" >> $GITHUB_PATH
 
     - name: 'Build (OSX Universal)'
       if: ${{ matrix.config.platform == 'osx' }}
@@ -76,13 +89,22 @@ jobs:
       shell: powershell
       run: |
         dub build --compiler=ldc2 --build=${{ inputs.build_type }} --config=${{ inputs.variant }}
+        cp -r examples/ out/
 
     - name: 'Build (Linux)'
       if: ${{ matrix.config.platform == 'linux' }}
       id: posix-build
       run: |
         dub build --compiler=ldc2 --build=${{ inputs.build_type }} --config=${{ inputs.variant }}
-    
+        cp -r examples/ out/
+
+    - name: 'Build (WebAssembly)'
+      if: ${{ matrix.config.platform == 'wasm' }}
+      id: wasm-build
+      run: |
+        dub build --compiler=ldc2 --build=${{ inputs.build_type }} --config=wasm --arch=wasm32-wasip2
+        cp -r examples/ out/
+
     - name: 'Archive'
       id: archive
       run: |
