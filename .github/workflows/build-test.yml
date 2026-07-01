@@ -33,6 +33,7 @@ jobs:
       run: |
         dub build --build=${{ matrix.build }} --arch=arm64-apple-darwin
         dub build --build=${{ matrix.build }} --arch=x86_64-apple-darwin
+        dub test
   
   test-linux:
     name: 'Build (Linux)'
@@ -54,6 +55,7 @@ jobs:
     - name: 'Build (Linux, ${{ matrix.build }}, ${{ matrix.arch }})' 
       run: |
         dub build --build=${{ matrix.build }} --arch=${{ matrix.arch }}
+        dub test
   
   test-windows:
     name: 'Build (Windows)'
@@ -75,3 +77,4 @@ jobs:
     - name: 'Build (Linux, ${{ matrix.build }}, ${{ matrix.arch }})' 
       run: |
         dub build --build=${{ matrix.build }}
+        dub test
