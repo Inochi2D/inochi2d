@@ -54,6 +54,13 @@
 extern "C" {
 #endif
 
+
+
+
+//
+//      BASE DATA TYPES
+//
+
 /**
     2D Vector
 */
@@ -88,6 +95,31 @@ typedef struct in_guid_t {
     uint8_t data[16];
 } in_guid_t;
 
+/**
+    IO sink functions
+*/
+typedef struct io_sink_t {
+
+    /**
+        Error sink to write errors to.
+    */
+    void (*error)(const char *msg, const char *file, uint32_t line);
+
+    /**
+        Warning sink to write warnings to.
+    */
+    void (*warning)(const char *msg, const char *file, uint32_t line);
+
+    /**
+        Info sink to write informational messages to.
+    */
+    void (*info)(const char *msg, const char *file, uint32_t line);
+
+} io_sink_t;
+
+
+
+
 //
 //          STATIC DEFINITIONS
 //
@@ -96,6 +128,7 @@ typedef struct in_guid_t {
     A nil GUID.
 */
 #define IN_GUID_NIL in_guid_t({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
+
 
 
 
@@ -175,6 +208,9 @@ void* I2D_CALL in_release(void* obj);
 */
 const char* I2D_CALL in_get_last_error();
 
+
+
+
 //
 //              PUPPET
 //
@@ -183,7 +219,8 @@ const char* I2D_CALL in_get_last_error();
     Loads a puppet into memory.
 
     Params:
-        file = The file to load.
+        file =  The file to load.
+        sink =  Optional IO sink to write messages to.
     
     Returns:
         A new puppet instance, or $(D null) on failure.
@@ -191,14 +228,15 @@ const char* I2D_CALL in_get_last_error();
     See_Also:
         $(D in_get_last_error)
 */
-in_puppet_t* I2D_CALL in_puppet_load(const char* file);
+in_puppet_t* I2D_CALL in_puppet_load(const char* file, io_sink_t *sink);
 
 /**
     Loads a puppet into memory.
 
     Params:
-        data = The data of the puppet.
-        length = The length of that data in bytes.
+        data =      The data of the puppet.
+        length =    The length of that data in bytes.
+        sink =      Optional IO sink to write messages to.
     
     Returns:
         A new puppet instance, or $(D null) on failure.
@@ -206,7 +244,7 @@ in_puppet_t* I2D_CALL in_puppet_load(const char* file);
     See_Also:
         $(D in_get_last_error)
 */
-in_puppet_t* I2D_CALL in_puppet_load_from_memory(const uint8_t* data, uint32_t length);
+in_puppet_t* I2D_CALL in_puppet_load_from_memory(const uint8_t* data, uint32_t length, io_sink_t *sink);
 
 /**
     Frees a puppet from memory.
@@ -232,6 +270,17 @@ void I2D_CALL in_puppet_free(in_puppet_t* obj);
         its author.
 */
 const char* I2D_CALL in_puppet_get_name(in_puppet_t* obj);
+
+/**
+    Gets the author of a puppet.
+
+    Params:
+        obj = The puppet object.
+
+    Returns:
+        The author of the puppet.
+*/
+const char* I2D_CALL in_puppet_get_author(in_puppet_t* obj);
 
 /**
     Gets whether to calculate physics for the puppet.
@@ -352,6 +401,9 @@ in_parameter_t** I2D_CALL in_puppet_get_parameters(in_puppet_t* obj, uint32_t* c
         The drawlist used by the puppet.
 */
 in_drawlist_t* I2D_CALL in_puppet_get_drawlist(in_puppet_t* obj);
+
+
+
 
 //
 //              NODES
@@ -585,6 +637,9 @@ float I2D_CALL in_node_get_property_default(in_node_t* self, const char* key);
 */
 void I2D_CALL in_node_set_property(in_node_t* self, const char* key, float value) ;
 
+
+
+
 //
 //              PART & MESH EFFECT
 //
@@ -600,6 +655,9 @@ void I2D_CALL in_node_set_property(in_node_t* self, const char* key, float value
         A Part-owned array of mesh effects.
 */
 in_mesh_effect_t** I2D_CALL in_node_part_get_mesh_effects(in_node_t* self, uint32_t* count);
+
+
+
 
 //
 //              PARAMETERS
@@ -685,6 +743,9 @@ float *I2D_CALL in_parameter_get_value(in_parameter_t* obj);
 */
 void I2D_CALL in_parameter_set_value(in_parameter_t* obj, float* values);
 
+
+
+
 //
 //              TEXTURE CACHE
 //
@@ -734,6 +795,9 @@ in_texture_t** I2D_CALL in_texture_cache_get_textures(in_texture_cache_t* obj, u
 */
 void I2D_CALL in_texture_cache_prune(in_texture_cache_t* obj);
 
+
+
+
 //
 //              RESOURCES
 //
@@ -768,6 +832,9 @@ void* I2D_CALL in_resource_get_id(in_resource_t* obj);
         value = The value to set.
 */
 void I2D_CALL in_resource_set_id(in_resource_t* obj, void* value);
+
+
+
 
 //
 //              TEXTURES
@@ -863,6 +930,9 @@ void I2D_CALL in_texture_pad(in_texture_t* obj, uint32_t thickness);
         The pixels of the texture.
 */
 void* I2D_CALL in_texture_get_pixels(in_texture_t* obj);
+
+
+
 
 //
 //              DRAWLIST

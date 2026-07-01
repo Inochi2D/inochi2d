@@ -14,6 +14,7 @@ module inochi2d.cffi.puppet;
 import inochi2d.cffi.render;
 import inochi2d.cffi.nodes;
 import inochi2d.cffi.eh;
+import inochi2d.common;
 import inochi2d.puppet;
 import inochi2d.param;
 import inochi2d.core;
@@ -34,13 +35,35 @@ extern (C) export @nogc:
 */
 struct in_puppet_t;
 
+/**
+    IO sink functions
+*/
+struct io_sink_t {
+
+    /**
+        Error sink to write errors to.
+    */
+    extern(C) void function(const(char)* msg, const(char)* file, uint line) @nogc nothrow error;
+
+    /**
+        Warning sink to write warnings to.
+    */
+    extern(C) void function(const(char)* msg, const(char)* file, uint line) @nogc nothrow warning;
+
+    /**
+        Info sink to write informational messages to.
+    */
+    extern(C) void function(const(char)* msg, const(char)* file, uint line) @nogc nothrow info;
+}
+
 version (WebAssembly) {
 } else {
     /**
         Loads a puppet into memory.
 
         Params:
-            file = The file to load.
+            file =  The file to load.
+            sink =  Optional IO sink to write messages to.
         
         Returns:
             A new puppet instance, or $(D null) on failure.
@@ -48,11 +71,11 @@ version (WebAssembly) {
         See_Also:
             $(D in_get_last_error)
     */
-    in_puppet_t* in_puppet_load(const(char)* file) {
+    in_puppet_t* in_puppet_load(const(char)* file, io_sink_t* sink) {
         import nulib.string : fromStringz;
 
         __in_clear_error();
-        return cast(in_puppet_t*)Puppet.fromFile(cast(string)file.fromStringz);
+        return cast(in_puppet_t*)Puppet.fromFile(cast(string)file.fromStringz, sink ? *cast(IOSink*)sink : IOSink.init).getOr(null);
     }
 }
 
@@ -60,8 +83,9 @@ version (WebAssembly) {
     Loads a puppet into memory.
 
     Params:
-        data = The data of the puppet.
-        length = The length of that data in bytes.
+        data =      The data of the puppet.
+        length =    The length of that data in bytes.
+        sink =      Optional IO sink to write messages to.
     
     Returns:
         A new puppet instance, or $(D null) on failure.
@@ -69,7 +93,7 @@ version (WebAssembly) {
     See_Also:
         $(D in_get_last_error)
 */
-in_puppet_t* in_puppet_load_from_memory(const(ubyte)* data, uint length) {
+in_puppet_t* in_puppet_load_from_memory(const(ubyte)* data, uint length, io_sink_t* sink) {
     import nulib.io.stream : MemoryStream;
 
     __in_clear_error();
@@ -78,8 +102,8 @@ in_puppet_t* in_puppet_load_from_memory(const(ubyte)* data, uint length) {
         stream.take();
         nogc_delete(stream);
     }
-
-    auto result = Puppet.fromStream(stream);
+    
+    auto result = Puppet.fromStream(stream, sink ? *cast(IOSink*)sink : IOSink.init);
     if (!result) {
         __in_set_error(result.error);
         return null;
