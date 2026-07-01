@@ -150,6 +150,17 @@ protected:
     */
     void onDraw(float delta, DrawList drawList) @nogc { }
 
+    /**
+        Called when the node is moved from one parent
+        to another.
+
+        Params:
+            from =  The node that used to be this node's parent.
+            to =    The node it was moved to.
+            index = The index the node was moved to.
+    */
+    void onMoved(Node from, Node to, ptrdiff_t index) { }
+
 public:
 
     /**
@@ -356,7 +367,9 @@ public:
     final bool removeChild(Node child) {
         auto idx = this.findChild(child);
         if (idx >= 0) {
+            child.onMoved(this, null, -1);
             child.release();
+
             this.children_.removeAt(idx);
             child.parent_ = null;
             return true;
@@ -368,6 +381,7 @@ public:
         Adds a node as a child of this node.
     */
     final void addChild(Node child) {
+        child.onMoved(child.parent_, this, this.children_.length);
         child.retain();
 
         // Remove this node from its parent, if needed.
@@ -398,6 +412,7 @@ public:
 
             // Swap if valid.
             if (dst < this.children_.length) {
+                child.onMoved(child.parent_, child.parent_, dst);
                 nu_swap(this.children_[idx], this.children_[to]);
             }
         }

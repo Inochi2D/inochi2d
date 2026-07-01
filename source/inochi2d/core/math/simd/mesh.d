@@ -14,6 +14,7 @@ module inochi2d.core.math.simd.mesh;
 import inochi2d.core.math.simd;
 import inochi2d.core.mesh;
 import numem.core.math;
+import numem.core.hooks;
 import numath;
 import inteli;
 
@@ -170,5 +171,136 @@ unittest {
     simd_broadcast_mesh(array1, array2);
     foreach(value; array1) {
         assert(value.vtx.xy == vec2(1.0, 1.0));
+    }
+}
+
+/**
+    Copies the data from the source buffer into the destination.
+
+    Params:
+        dst = Destination
+        src = Source
+*/
+void simd_meshcopy(T)(ref T[] dst, T[] src) @nogc nothrow {
+    nu_memcpy(dst.ptr, src.ptr, nu_min(dst.length, src.length)*T.sizeof);
+}
+
+/**
+    Adds the values in the $(D rhs) mesh 
+    to the $(D lhs) mesh.
+
+    Params:
+        lhs =   The left-hand side mesh.
+        rhs =   The right-hand side mesh.
+*/
+void simd_add(T)(ref T[] lhs, T[] rhs) @nogc nothrow
+if (is(T == VectorImpl!U, U...) && T.dimensions == 2) {
+    size_t w_length = nu_min(lhs.length, rhs.length);
+    
+    // NOTE:    SSE version of the algorithm.
+    //          This algorithm loads 128 bits of mesh data at a time, then deforms it.
+    //          Value is stored unaligned to memory.
+    //          
+    // TODO:    Add aligned version?
+    static if (!SSESizedVectorsAreEmulated) {
+
+        // SIMD version
+        size_t i = 0;
+        for (; i < nu_aligndown(w_length, 2); i += 2) {
+            __m128 xyzw = _mm_load_ps(cast(const(float)*)&lhs[i]);
+            __m128 abcd = _mm_load_ps(cast(const(float)*)&rhs[i]);
+            _mm_storeu_ps(cast(float*)&lhs[i], _mm_add_ps(xyzw, abcd));
+        }
+
+        // Tail iteration to finalize the multiplication
+        if (i < w_length) {
+            lhs[i] = lhs[i] + rhs[i];
+        }
+    } else {
+
+        // Non-SIMD version
+        foreach(i; 0..w_length) {
+            lhs[i] = lhs[i] + rhs[i];
+        }
+    }
+}
+
+/**
+    Subtracts the values in the $(D rhs) mesh 
+    from the $(D lhs) mesh.
+
+    Params:
+        lhs =   The left-hand side mesh.
+        rhs =   The right-hand side mesh.
+*/
+void simd_sub(T)(ref T[] lhs, T[] rhs) @nogc nothrow
+if (is(T == VectorImpl!U, U...) && T.dimensions == 2) {
+    size_t w_length = nu_min(lhs.length, rhs.length);
+    
+    // NOTE:    SSE version of the algorithm.
+    //          This algorithm loads 128 bits of mesh data at a time, then deforms it.
+    //          Value is stored unaligned to memory.
+    //          
+    // TODO:    Add aligned version?
+    static if (!SSESizedVectorsAreEmulated) {
+
+        // SIMD version
+        size_t i = 0;
+        for (; i < nu_aligndown(w_length, 2); i += 2) {
+            __m128 xyzw = _mm_load_ps(cast(const(float)*)&lhs[i]);
+            __m128 abcd = _mm_load_ps(cast(const(float)*)&rhs[i]);
+            _mm_storeu_ps(cast(float*)&lhs[i], _mm_sub_ps(xyzw, abcd));
+        }
+
+        // Tail iteration to finalize the multiplication
+        if (i < w_length) {
+            lhs[i] = lhs[i] - rhs[i];
+        }
+    } else {
+
+        // Non-SIMD version
+        foreach(i; 0..w_length) {
+            lhs[i] = lhs[i] - rhs[i];
+        }
+    }
+}
+
+/**
+    Multiplies the values in the $(D rhs) mesh 
+    with the $(D lhs) mesh.
+
+    Params:
+        lhs =   The left-hand side mesh.
+        rhs =   The right-hand side mesh.
+*/
+void simd_mul(T)(ref T[] lhs, T[] rhs) @nogc nothrow
+if (is(T == VectorImpl!U, U...) && T.dimensions == 2) {
+    size_t w_length = nu_min(lhs.length, rhs.length);
+    
+    // NOTE:    SSE version of the algorithm.
+    //          This algorithm loads 128 bits of mesh data at a time, then deforms it.
+    //          Value is stored unaligned to memory.
+    //          
+    // TODO:    Add aligned version?
+    static if (!SSESizedVectorsAreEmulated) {
+
+        // SIMD version
+        size_t i = 0;
+        for (; i < nu_aligndown(w_length, 2); i += 2) {
+            __m128 xyzw = _mm_load_ps(cast(const(float)*)&lhs[i]);
+            __m128 abcd = _mm_load_ps(cast(const(float)*)&rhs[i]);
+            _mm_storeu_ps(cast(float*)&lhs[i], _mm_mul_ps(xyzw, abcd));
+        }
+
+        // Tail iteration to finalize the multiplication
+        if (i < w_length) {
+            lhs[i] = lhs[i] * rhs[i];
+        }
+    } else {
+
+        // Non-SIMD version
+        foreach(i; 0..w_length) {
+            lhs[i] = lhs[i] * rhs[i];
+        }
     }
 }

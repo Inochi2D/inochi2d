@@ -16,18 +16,63 @@ import inochi2d.nodes.deformer;
 import inochi2d.nodes;
 import inochi2d.common;
 import inochi2d.core;
+import nulib.string;
 import numem;
+
+import inochi2d.core.math.simd;
+import inteli;
+
+alias MeshDeformerLUT = DeformerLUT!((DeformedMesh src, IDeformable target) @nogc {
+    ptrdiff_t[2][] mappings = nu_malloca!(ptrdiff_t[2])(target.deformPoints.length);
+    foreach (j; 0 .. mappings.length) {
+        vec2 mp = target.deformPoints[j];
+
+        mappings[j] = [-1, -1];
+        foreach (k; 0 .. src.elementCount / 3) {
+            uint[3] idx = [
+                src.indices[(k * 3) + 0],
+                src.indices[(k * 3) + 1],
+                src.indices[(k * 3) + 2],
+            ];
+            Triangle tri = Triangle(
+                src.points[idx[0]],
+                src.points[idx[1]],
+                src.points[idx[2]],
+            );
+
+            // Do some cheaper checks first.
+            float minX = min(min(tri.p1.x, tri.p2.x), tri.p3.x);
+            float maxX = max(max(tri.p1.x, tri.p2.x), tri.p3.x);
+            float minY = min(min(tri.p1.y, tri.p2.y), tri.p3.y);
+            float maxY = max(max(tri.p1.y, tri.p2.y), tri.p3.y);
+            if (!(minX < mp.x && maxX > mp.x) &&
+                !(minY < mp.y && maxY > mp.y))
+                    continue;
+
+            // Mapping found, add it!
+            mappings[j] = [k * 3, j];
+            break;
+        }
+    }
+
+    return mappings;
+});
 
 /**
     A deformer which deforms child nodes stored within it,
 */
-@TypeId("MeshGroup", 0x0102)
+@TypeId("MeshDeformer", 0x0102)     // Modern name
+@TypeId("MeshGroup", 0x0102)        // Legacy name
 class MeshDeformer : Deformer {
 private:
     Mesh mesh_;
     DeformedMesh base_;
     DeformedMesh deformed_;
     vec2[] deformDeltas_;
+
+    // Accelleration structures
+    MeshDeformerLUT[] luts_;
+    vec2[] deformBuffer_;
 
 protected:
 
@@ -62,6 +107,14 @@ protected:
         this.base_ = nogc_new!DeformedMesh();
         auto meshData = object.tryGet!MeshData(state, "mesh");
         this.mesh = Mesh.fromMeshData(meshData);
+
+        if (state.doUpgrade08 && !object.tryGet(state, "dynamic_deformation", false)) {
+            state.warning(nstring(this.name[], " uses static deformation, this was removed in 0.9..."));
+        }
+
+        if (state.doUpgrade08 && object.tryGet(state, "translate_children", false)) {
+            state.warning(nstring(this.name[], " translates its children via deformation, this was removed in 0.9..."));
+        }
     }
 
     /**
@@ -106,52 +159,65 @@ protected:
         }
 
         // Calculate the deltas from the world matrix.
-        foreach (i; 0 .. deformDeltas_.length)
-            deformDeltas_[i] = base_.points[i] - deformed_.points[i];
+        simd_meshcopy(deformDeltas_, base_.points);
+        simd_sub(deformDeltas_, deformed_.points);
+        foreach(i, mesh; toDeform) {
+            size_t w_length = nu_min(deformBuffer_.length, mesh.deformPoints.length);
+            deformBuffer_[0..$] = vec2(0, 0);
 
-        // Use the weights to deform each subpoint by a delta determined
-        // by the weight to each vertex in their triangle.
-        foreach (i, mesh; toDeform) {
-            foreach (j; 0 .. mesh.deformPoints.length) {
-                vec2 mp = mesh.deformPoints[j];
+            // Setup temporary buffer.
+            foreach(entry; luts_[i].entries) {
 
-                foreach (k; 0 .. deformed_.elementCount / 3) {
-                    uint[3] idx = [
-                        mesh_.indices[(k * 3) + 0],
-                        mesh_.indices[(k * 3) + 1],
-                        mesh_.indices[(k * 3) + 2],
-                    ];
-                    Triangle tri = Triangle(
-                            base_.points[idx[0]],
-                            base_.points[idx[1]],
-                            base_.points[idx[2]],
-                    );
+                // Skip vertices out of bounds.
+                if (entry[0] < 0 || entry[1] < 0)
+                    continue;
 
-                    // Do some cheaper checks first.
-                    float minX = min(min(tri.p1.x, tri.p2.x), tri.p3.x);
-                    float maxX = max(max(tri.p1.x, tri.p2.x), tri.p3.x);
-                    float minY = min(min(tri.p1.y, tri.p2.y), tri.p3.y);
-                    float maxY = max(max(tri.p1.y, tri.p2.y), tri.p3.y);
-                    if (!(minX < mp.x && maxX > mp.x) &&
-                            !(minY < mp.y && maxY > mp.y))
-                        continue;
+                size_t p0 = mesh_.indices[entry[0]+0];
+                size_t p1 = mesh_.indices[entry[0]+1];
+                size_t p2 = mesh_.indices[entry[0]+2];
 
-                    // Expensive check and barycentric coordinates.
-                    vec3 bc = tri.barycentric(mp);
-                    if (bc.x < 0 || bc.y < 0 || bc.z < 0)
-                        continue;
+                // Build triangle from start index.
+                Triangle tri = Triangle(
+                    deformed_.points[p0],
+                    deformed_.points[p1],
+                    deformed_.points[p2],
+                );
 
-                    mesh.deform(j, -(
-                            (deformDeltas_[idx[0]] * bc.x) +
-                            (deformDeltas_[idx[1]] * bc.y) +
-                            (deformDeltas_[idx[2]] * bc.z)
-                    ));
-                    break;
-                }
+                vec3 bc = tri.barycentric(mesh.deformPoints[entry[1]]);
+                deformBuffer_[entry[1]] = -(
+                    (deformDeltas_[p0] * bc.x) +
+                    (deformDeltas_[p1] * bc.y) +
+                    (deformDeltas_[p2] * bc.z)
+                );
             }
+
+            mesh.deform(deformBuffer_[0..w_length]);
         }
 
         super.onPostUpdate(drawList);
+    }
+
+    /**
+        Called when the deformer's internal data should be
+        rebuilt.
+    */
+    override
+    void onRebuild() {
+        super.onRebuild();
+    
+        // Delete old LUTs
+        if (luts_)
+            nu_freea(luts_);
+
+        // Find children and rebuild.
+        this.luts_ = nu_malloca!MeshDeformerLUT(toDeform.length);
+        foreach(i, target; toDeform) {
+            luts_[i].rebuild(deformed_, target);
+
+            // Resize temporary deformation buffer.
+            if (target.deformPoints.length > deformBuffer_.length)
+                deformBuffer_ = deformBuffer_.nu_resize(target.deformPoints.length);
+        }
     }
 
 public:
@@ -235,5 +301,4 @@ public:
         base_.reset();
     }
 }
-
 mixin Register!(MeshDeformer, in_node_registry);

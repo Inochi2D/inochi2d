@@ -172,42 +172,6 @@ public:
     void resetDeform() {
         lattice[0 .. $] = latticeInitial[0 .. $];
     }
-
-    /**
-        Rescans the children of the deformer.
-    */
-    override
-    void rescan() {
-        super.rescan();
-
-        // // Clear weights lists.
-        // this.clearWeights();
-        // weights_ = nu_malloca!(float[])(toDeform.length);
-
-        // // NOTE:    Here we go through every point in the meshes to be deformed,
-        // //          we'll be assigning them weights based on their position in
-        // //          lattice space and their intersection with each triangle.
-        // vec2[] mLatticeSpace;
-        // foreach(i, IDeformable mesh; toDeform) {
-        //     weights_[i] = nu_malloca!float(mesh.deformPoints.length);
-        //     if (mesh.deformPoints.length > mLatticeSpace.length)
-        //         mLatticeSpace = mLatticeSpace.nu_resize(mesh.deformPoints.length);
-
-        //     mLatticeSpace[0..mesh.deformPoints.length] = mesh.deformPoints[0..$];
-        //     foreach(j; 0..mesh.deformPoints.length) {
-        //         mLatticeSpace[j] = vec2(
-        //             (deformPoints[j].x - area.left) / area.width,
-        //             (deformPoints[j].y - area.left) / area.height,
-        //         );
-        //     }
-
-        //     foreach(j; 0..mesh.deformPoints.length) {
-
-        //         // 
-        //     }
-        // }
-        // nu_freea(mLatticeSpace);
-    }
 }
 
 mixin Register!(LatticeDeformer, in_node_registry);

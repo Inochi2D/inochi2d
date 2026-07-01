@@ -14,6 +14,7 @@ module inochi2d.nodes.deformer;
 import inochi2d.nodes;
 import inochi2d.common;
 import inochi2d.core;
+import numem.core.traits;
 import nulib;
 import numem;
 
@@ -87,6 +88,26 @@ protected:
     override
     void onFinalize(ref ModelState state) @nogc {
         super.onFinalize(state);
+        this.rescan();
+    }
+
+    /**
+        Called when the deformer's internal data should be
+        rebuilt.
+    */
+    void onRebuild() { }
+
+    /**
+        Called when the node is moved from one parent
+        to another.
+
+        Params:
+            from =  The node that used to be this node's parent.
+            to =    The node it was moved to.
+            index = The index the node was moved to.
+    */
+    override
+    void onMoved(Node from, Node to, ptrdiff_t index) {
         this.rescan();
     }
 
@@ -178,12 +199,35 @@ public:
     /**
         Rescans the children of the deformer.
     */
-    void rescan() {
+    final void rescan() {
         toDeform_.clear();
         foreach (child; children) {
             this.scanPartsRecurse(child);
         }
+
+        // We now know what we're deforming, rebuild.
+        this.onRebuild();
     }
 }
-
 mixin Register!(Deformer, in_node_registry);
+
+/**
+    A deformer look-up-table for a deformer-to-mesh
+    mapping.
+*/
+struct DeformerLUT(alias mapfn) {
+@nogc:
+
+    /**
+        LUT entries
+    */
+    ptrdiff_t[2][] entries;
+
+    /**
+        Rebuilds the LUT.
+    */
+    void rebuild(Parameters!(mapfn) params) {
+        nu_freea(entries);
+        entries = mapfn(params);
+    }
+}

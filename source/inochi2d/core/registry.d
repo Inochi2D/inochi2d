@@ -127,8 +127,10 @@ public:
 
         // Register type factory.
         static if (!hasUDA!(X, TypeIdAbstract)) {
-            factoryStoreS[_tids[0].sid] = &__construct!X;
-            factoryStoreN[_tids[0].nid] = &__construct!X;
+            static foreach(tid; _tids) {
+                factoryStoreS[tid.sid] = &__construct!X;
+                factoryStoreN[tid.nid] = &__construct!X;
+            }
         }
 
         // Register fallback factory.
