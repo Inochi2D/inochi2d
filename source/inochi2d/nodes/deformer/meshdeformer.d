@@ -61,8 +61,8 @@ alias MeshDeformerLUT = DeformerLUT!((DeformedMesh src, IDeformable target) @nog
 /**
     A deformer which deforms child nodes stored within it,
 */
-@TypeId("MeshDeformer", 0x0102)     // Modern name
-@TypeId("MeshGroup", 0x0102)        // Legacy name
+@TypeId("MeshDeformer", IN_MAKE_TAG!(1, 2))     // Modern name
+@TypeId("MeshGroup",    IN_MAKE_TAG!(1, 2))        // Legacy name
 class MeshDeformer : Deformer {
 private:
     Mesh mesh_;
@@ -163,13 +163,13 @@ protected:
         simd_sub(deformDeltas_, deformed_.points);
         foreach(i, mesh; toDeform) {
             size_t w_length = nu_min(deformBuffer_.length, mesh.deformPoints.length);
-            deformBuffer_[0..$] = vec2(0, 0);
+            deformBuffer_[0..w_length] = vec2(0, 0);
 
             // Setup temporary buffer.
             foreach(entry; luts_[i].entries) {
 
                 // Skip vertices out of bounds.
-                if (entry[0] < 0 || entry[1] < 0)
+                if (entry[0] < 0 || entry[1] < 0 || entry[1] >= w_length)
                     continue;
 
                 size_t p0 = mesh_.indices[entry[0]+0];

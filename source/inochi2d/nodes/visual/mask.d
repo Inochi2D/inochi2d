@@ -73,7 +73,7 @@ public:
 /**
     A mask.
 */
-@TypeId("Mask", MAKE_I2D_TAG!(5, 1))
+@TypeId("Mask", IN_MAKE_TAG!(5, 1))
 class Mask : Visual {
 private:
 @nogc:

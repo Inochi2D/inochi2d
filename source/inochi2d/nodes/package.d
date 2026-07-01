@@ -36,7 +36,7 @@ __gshared TypeRegistry!Node in_node_registry;
 /**
     A node in the Inochi2D rendering tree
 */
-@TypeId("Node", MAKE_I2D_TAG!(0, 0))
+@TypeId("Node", IN_MAKE_TAG!(0, 0))
 @RegisterFallback
 class Node : NuRefCounted, IPropertyOwner, ISerializable, IDeserializable!ModelState {
 private:

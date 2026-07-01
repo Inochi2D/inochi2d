@@ -23,7 +23,7 @@ import numem;
     other nodes via the use of bone weights.
 */
 @TypeIdAbstract
-@TypeId("Bone", MAKE_I2D_TAG!(0, 3))
+@TypeId("Bone", IN_MAKE_TAG!(0, 3))
 class Bone : Node {
 private:
 @nogc:

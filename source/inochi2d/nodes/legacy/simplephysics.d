@@ -23,20 +23,20 @@ import numem;
 version (IN_NO_LEGACY) {
 } else:
 
-    /**
+/**
     Physics model to use for simple physics
 */
-    enum PhysicsModel {
-        /**
+enum PhysicsModel {
+    /**
         Rigid pendulum
     */
-        Pendulum = "pendulum",
+    Pendulum = "pendulum",
 
-        /**
+    /**
         Springy pendulum
     */
-        SpringPendulum = "spring_pendulum",
-    }
+    SpringPendulum = "spring_pendulum",
+}
 
 enum ParamMapMode {
     AngleLength = "angle_length",
@@ -178,7 +178,7 @@ public:
 /**
     Simple Physics Node
 */
-@TypeId("SimplePhysics", MAKE_I2D_TAG!(0, 0xFF))
+@TypeId("SimplePhysics", IN_MAKE_TAG!(0, 0xFF))
 class SimplePhysics : Node {
 private:
 @nogc:

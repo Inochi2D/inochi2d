@@ -22,7 +22,7 @@ import numem;
     A deformer which uses a 2D lattice as the basis for
     its deformation.
 */
-@TypeId("LatticeDeformer", MAKE_I2D_TAG!(2, 2))
+@TypeId("LatticeDeformer", IN_MAKE_TAG!(2, 2))
 class LatticeDeformer : Deformer {
 private:
 @nogc:

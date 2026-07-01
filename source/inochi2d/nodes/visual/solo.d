@@ -22,7 +22,7 @@ import numem;
     A node which only allows a single child node to be displayed
     at a time.
 */
-@TypeId("Solo", MAKE_I2D_TAG!(4, 1))
+@TypeId("Solo", IN_MAKE_TAG!(4, 1))
 class Solo : Visual {
 private:
 @nogc:

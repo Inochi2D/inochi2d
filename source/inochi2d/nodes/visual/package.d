@@ -29,7 +29,7 @@ public import inochi2d.nodes.visual.mask;
 /**
     A node which can be drawn to the screen.
 */
-@TypeId("Visual", MAKE_I2D_TAG!(0, 1))
+@TypeId("Visual", IN_MAKE_TAG!(0, 1))
 @TypeIdAbstract
 abstract
 class Visual : Node {

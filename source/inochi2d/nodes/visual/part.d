@@ -44,7 +44,7 @@ pragma(msg, PartVars.opacity.offsetof);
 /**
     Dynamic Mesh Part
 */
-@TypeId("Part", MAKE_I2D_TAG!(1, 1))
+@TypeId("Part", IN_MAKE_TAG!(1, 1))
 class Part : Visual, IDeformable {
 private:
 @nogc:

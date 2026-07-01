@@ -30,7 +30,7 @@ struct CompositeVars {
 /**
     Composite Node
 */
-@TypeId("Composite", MAKE_I2D_TAG!(3, 1))
+@TypeId("Composite", IN_MAKE_TAG!(3, 1))
 class Composite : Visual {
 private:
 @nogc:

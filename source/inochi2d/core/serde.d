@@ -30,7 +30,8 @@ public import inp.format;
 */
 enum isSerializable(T) =
     is(T : ISerializable) ||
-    is(typeof((ref DataNode obj) { T a; a.onSerialize(obj); }));
+    is(typeof((ref DataNode obj) { T.init.onSerialize(obj); })) ||
+    is(typeof((ref DataNode obj) { T.init.serialize(obj); }));
 
 /**
     Interface for classes that can be serialized to JSON with custom code
@@ -78,7 +79,7 @@ pragma(inline, true)
 T deserialize(T, ST)(ref DataNode data, ref ST state) {
     import numem : nogc_new;
 
-    static if (is(T == class))
+    static if (is(T == class) && is(typeof((ref T a) { a = new T; })))
         T tmp = nogc_new!T;
     else
         T tmp;
@@ -101,13 +102,13 @@ void deserialize(T, ST)(ref DataNode data, ref T destination, ref ST state) @nog
             if (!destination)
                 destination = nogc_new!T;
         }
-
-        static if (is(typeof((ref DataNode obj) { T a; a.onDeserialize(obj); })))
+        
+        static if (is(typeof((ref DataNode obj, ref ST state) { T a; a.deserialize(obj, state); })))
+            destination.deserialize(data, state);
+        else static if (is(typeof((ref DataNode obj) { T a; a.onDeserialize(obj); })))
             destination.onDeserialize(data);
         else static if (is(typeof((ref DataNode obj, ref ST state) { T a; a.onDeserialize(obj, state); })))
             destination.onDeserialize(data, state);
-        else static if (is(typeof((ref DataNode obj, ref ST state) { T a; a.deserialize(obj, state); })))
-            destination.deserialize(data, state);
         else static assert(0, "Can't deserialize "~T.stringof);
 
     } else static if (is(T : string) || is(T : nstring)) {
@@ -175,6 +176,20 @@ DataNode serialize(T)(auto ref T toSerialize) @nogc {
         return toSerialize;
     } else static if (VType == DataNodeType.undefined) {
         return DataNode.init;
+    } else static if (isSerializable!T) {
+        static if (is(typeof((ref DataNode object) { T.init.serialize(object); }))) {
+            DataNode result;
+            toSerialize.serialize(result);
+            return result;
+        } else static if (is(T : ISerializable)) {
+            DataNode result;
+            toSerialize.onSerialize(result);
+            return result;
+        } else static if (is(typeof((ref DataNode object) { T.init.onSerialize(object); }))) {
+            DataNode result;
+            toSerialize.onSerialize(result);
+            return result;
+        } else static assert(0, T.stringof~" does not support serialization.");
     } else static if (VType == DataNodeType.object_) {
         static if (is(T == MapImpl!(string, VT, Args), VT, Args...)) {
 

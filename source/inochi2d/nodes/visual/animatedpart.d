@@ -19,7 +19,7 @@ import inochi2d.core;
 /**
     Parts which contain spritesheet animation
 */
-@TypeId("AnimatedPart", MAKE_I2D_TAG!(2, 1))
+@TypeId("AnimatedPart", IN_MAKE_TAG!(2, 1))
 class AnimatedPart : Part {
 private:
 @nogc:

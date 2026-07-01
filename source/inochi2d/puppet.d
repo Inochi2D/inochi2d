@@ -237,13 +237,8 @@ protected:
     */
     void onSerialize(ref DataNode object) @nogc {
         object["properties"] = properties.serialize();
-
-        // Create objects for nodes, params, automation and animation.
         object["nodes"] = root.serialize();
-
-        // TODO: requires handling vector in serde.d
-        // object["param"] = parameters_.serialize();
-
+        object["param"] = parameters_.serialize();
         object["animations"] = animations_.serialize();
     }
 
@@ -276,10 +271,14 @@ protected:
             object.tryGetRef(state, root, "nodes", root);
         }
 
-        // TODO: requires handling vector in serde.d
-        // if (auto param = "param" in object) {
-        //     (*param).deserialize(parameters_);
-        // }
+        if (auto params = "param" in object) {
+            if ((*params).isArray) {
+                parameters_.resize((*params).length);
+                foreach(i, ref param; (*params).array) {
+                    parameters_[i] = param.tryDeserializeParam(state);
+                }
+            }
+        }
 
         if (auto anim = "animation" in object) {
             (*anim).deserialize(animations_, state);

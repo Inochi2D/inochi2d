@@ -35,17 +35,17 @@ struct IOSink {
     /**
         Error sink to write errors to.
     */
-    void function(const(char)* msg, const(char)* file, uint line) @nogc nothrow error;
+    extern(C) void function(const(char)* msg, const(char)* file, uint line) @nogc nothrow error;
 
     /**
         Warning sink to write warnings to.
     */
-    void function(const(char)* msg, const(char)* file, uint line) @nogc nothrow warning;
+    extern(C) void function(const(char)* msg, const(char)* file, uint line) @nogc nothrow warning;
 
     /**
         Info sink to write informational messages to.
     */
-    void function(const(char)* msg, const(char)* file, uint line) @nogc nothrow info;
+    extern(C) void function(const(char)* msg, const(char)* file, uint line) @nogc nothrow info;
 }
 
 /**

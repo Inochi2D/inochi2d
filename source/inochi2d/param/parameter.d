@@ -29,13 +29,99 @@ import nulib.string;
 import numath;
 
 /**
+    The public parameter registry.
+*/
+__gshared TypeRegistry!Parameter in_param_registry;
+
+/**
+    Top-level parameter deserialization function.
+*/
+Parameter tryDeserializeParam(ref DataNode node, ref ModelState state) @nogc {
+    if (state.doUpgrade08) {
+        state.info(nstring("0.8->0.9: upgrading legacy parameter ", node["name"].text));
+        auto param = node.tryGet!bool(state, "is_vec2", false) ?
+            nogc_new!Parameter2D() :
+            nogc_new!Parameter1D();
+
+        param.deserialize(node, state);
+        return param;
+    }
+
+    if (auto param = in_param_registry.tryCreateFrom(node)) {
+        param.deserialize(node, state);
+        return param;
+    }
+    return null;
+}
+
+/**
     Parameters are configurable values that are used to drive mesh
         deformations, property overrides, and more.
 */
+@TypeId("Parameter", IN_MAKE_TAG!(0, 0))
+@TypeIdAbstract
 abstract
 class Parameter : NuRefCounted, ISerializable, IDeserializable!ModelState {
-public:
+protected:
 @nogc:
+
+    /**
+        Serialize this parameter.
+    */
+    override
+    void onSerialize(ref DataNode object) {
+        object["guid"] = guid.toString()[];
+        object["name"] = name[];
+        // object["bindings"] = bindings.serialize();
+    }
+
+    /**
+        Deserialize this parameter.
+    */
+    override
+    void onDeserialize(ref DataNode object, ref ModelState state) {
+        guid = object.tryGetGUID(state, "uuid");
+        object.tryGetRef(state, name, "name");
+
+        if (auto bindings = "bindings" in object) {
+            foreach (ref binding; bindings.array) {
+                this.bindings ~= binding.tryGetBinding(state, this);
+            }
+        }
+
+        // Migrate old way of differentiating 1D/2D parameters.
+        if (auto isVec2 = "is_vec2" in object) {
+            object["axes"] = cast(uint)(isVec2.boolean ? 2 : 1);
+        }
+
+        // Migrate old way of storing keypoints.
+        if (auto axes = "axis_points" in object) {
+            switch (object.tryGet!uint(state, "axes")) {
+                case 1:
+                    auto axis1 = axes.array[0];
+                    object["points"] = axis1;
+                    break;
+
+                case 2:
+                    auto axis1 = axes.array[0];
+                    auto axis2 = axes.array[1];
+                    object["hpoints"] = axis1;
+                    object["vpoints"] = axis2;
+                    break;
+
+                default:
+                    assert(false, "Invalid number of point axes");
+                    break;
+            }
+        }
+    }
+
+    void onFinalize(ref ModelState state) {
+        
+    }
+
+public:
+
     /**
         The globally unique ID of this parameter.
     */
@@ -132,54 +218,17 @@ public:
     }
 
     /**
-        Serialize this parameter.
+        Serializes this parameter.
     */
-    override
-    void onSerialize(ref DataNode object) {
-        object["guid"] = guid.toString()[];
-        object["name"] = name[];
-        // object["bindings"] = bindings.serialize();
+    final void serialize(ref DataNode object) {
+        this.onSerialize(object);
     }
 
     /**
-        Deserialize this parameter.
+        Deserializes this parameter.
     */
-    override
-    void onDeserialize(ref DataNode object, ref ModelState state) {
-        guid = object.tryGetGUID(state, "uuid");
-        object.tryGetRef(state, name, "name");
-
-        if (auto bindings = "bindings" in object) {
-            foreach (ref binding; bindings.array) {
-                this.bindings ~= binding.tryGetBinding(state, this);
-            }
-        }
-
-        // Migrate old way of differentiating 1D/2D parameters.
-        if (auto isVec2 = "is_vec2" in object) {
-            object["axes"] = cast(uint)(isVec2.boolean ? 2 : 1);
-        }
-
-        // Migrate old way of storing keypoints.
-        if (auto axes = "axis_points" in object) {
-            switch (object.tryGet!uint(state, "axes")) {
-                case 1:
-                    auto axis1 = axes.array[0];
-                    object["points"] = axis1;
-                    break;
-
-                case 2:
-                    auto axis1 = axes.array[0];
-                    auto axis2 = axes.array[1];
-                    object["hpoints"] = axis1;
-                    object["vpoints"] = axis2;
-                    break;
-
-                default:
-                    assert(false, "Invalid number of point axes");
-                    break;
-            }
-        }
+    final void deserialize(ref DataNode object, ref ModelState state) {
+        this.onDeserialize(object, state);
     }
 
     /**
@@ -187,10 +236,12 @@ public:
     */
     abstract void updateBindings();
 }
+mixin Register!(Parameter, in_param_registry);
 
 /**
     1D variant of a parameter.
 */
+@TypeId("1d", IN_MAKE_TAG!(1, 0))
 class Parameter1D : Parameter {
 public:
 @nogc:
@@ -247,7 +298,7 @@ public:
     /**
         Construct a new named parameter.
     */
-    this(string name) {
+    this(string name = null) {
         float[2] points_init = [0, 1];
         points = points_init;
         guid = inNewGUID();
@@ -344,10 +395,12 @@ public:
         super.bind(puppet);
     }
 }
+mixin Register!(Parameter1D, in_param_registry);
 
 /**
     2D variant of a parameter.
 */
+@TypeId("2d", IN_MAKE_TAG!(2, 0))
 class Parameter2D : Parameter {
 public:
 @nogc:
@@ -409,7 +462,7 @@ public:
     /**
         Construct a new named parameter.
     */
-    this(string name) {
+    this(string name = null) {
         float[2] points_init = [0, 1];
         hpoints = points_init;
         vpoints = points_init;
@@ -535,23 +588,7 @@ public:
         super.bind(puppet);
     }
 }
-
-/**
-    Deserialize a parameter depending on its shape.
-*/
-Parameter tryGetParameter(ref DataNode object, ref ModelState state) @nogc {
-    if (object.tryGet!bool(state, "is_vec2") || object.tryGet!uint(state, "axes") == 2) {
-        auto param = nogc_new!Parameter2D(null);
-        object.deserialize(param, state);
-        return cast(Parameter)param;
-    } else {
-        auto param = nogc_new!Parameter1D(null);
-        object.deserialize(param, state);
-        return cast(Parameter)param;
-    }
-
-    return null;
-}
+mixin Register!(Parameter2D, in_param_registry);
 
 enum ParameterAxis {
     /**

@@ -32,7 +32,7 @@ struct TypeId {
 /**
     Creates a reserved Inochi2D ID tag.
 */
-enum MAKE_I2D_TAG(ubyte subclass, ubyte superclass) =
+enum IN_MAKE_TAG(ubyte subclass, ubyte superclass) =
     (cast(uint)subclass << 8) |
     (cast(uint)superclass);
 
