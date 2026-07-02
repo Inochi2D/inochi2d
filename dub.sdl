@@ -46,7 +46,7 @@ dependency "nulib:io" version="*"
 dependency "numem" version=">=1.6.5"
 
 // NuRT
-dependency "nurt" version=">=0.2.2"
+dependency "nurt" version=">=0.2.3"
 
 // Base sub-configurations
 subConfiguration "gamut" "no-codecs"
