@@ -16,10 +16,7 @@ Inochi2D is a library for realtime 2D puppet animation and the reference impleme
 
 &nbsp;
 
-
-https://user-images.githubusercontent.com/7032834/166389697-02eeeedb-6a44-4570-9254-f6aa4f095300.mp4
-
-*Video from Beta 0.7.2, [LunaFoxgirlVT](https://twitter.com/LunaFoxgirlVT), model art by [kpon](https://twitter.com/kawaiipony2)*
+<iframe width="560" height="315" src="https://www.youtube.com/embed/4TWIa5gdcxw?si=SJhLlPYR2O00fOWT" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 &nbsp;
 
@@ -71,10 +68,13 @@ You can alternatively download precompiled versions of the SDK from the [Release
 ## Build Configurations
 Add with `--config=`
 
-|      Type | Use                         |
-| --------: | :-------------------------- |
-|  `static` | Static D-only library.      |
-| `dynamic` | Dynamic library with C FFI. |
+|          Type | Use                                    |
+| ------------: | :------------------------------------- |
+|      `static` | Static D-only library.                 |
+| `static-nurt` | Static D-only nogc-only library.       |
+|     `dynamic` | Dynamic library with C FFI.            |
+|        `wasm` | WebAssembly module, wasm-sdk required. |
+|    `unittest` | Unit test runner                       |
 
 ## Build Types
 Add with `--build=`
@@ -86,7 +86,6 @@ You can pass the following build types to Inochi2D.
 | `release-debug` | Optimized build with some stack traces.        |
 |       `release` | Full release build.                            |
 
-
 ## Build Options
 Add with `--d-version=`
 
@@ -95,7 +94,27 @@ Add with `--d-version=`
 | `IN_VEC3_POSITION` | Use 3D vectors to store the `POSITION` portion of the vertex data. |
 |     `IN_NO_LEGACY` | Disables legacy features.                                          |
 
-## Inochi2D Godot
+## D
+To use Inochi2D from D, simply add it as a package to your dub file.
+
+## C, C++, Rust, etc.
+To use Inochi2D from C, C++, Rust, etc. build the SDK with the `dynamic` configuration.
+
+A C header will be copied to the out directory, said header can be found in `include/`.
+
+Note that if you're writing your own bindings that Inochi2D uses the `cdecl` 
+calling convention on **all** platforms.
+
+## WebAssembly
+Inochi2D may be used on the web via WebAssembly, currently this requires a patched `druntime` source 
+tree, which can be installed (Linux-only) from the releases at https://github.com/Inochi2D/sdk-toolchain.
+
+Alternatively, pre-compiled release and debug versions of the SDK are available in our nightly releases,
+and starting with 0.9, our main releases.
+
+You can find javascript wrappers, etc. in `dist/`.
+
+## Godot
 We provide an official binding for Godot, using GDExtension and the `nugodot` bindings.
 To build it you **must** either have your target version of Godot in your `PATH` environment variable,
 or specify the full path to godot with the `GODOT_PATH` environment variable.
@@ -105,6 +124,10 @@ the GDExtension will be written to `modules/godot/out/`. Move the contents of th
 Godot project under a subfolder called `inochi2d`, then reload your Project.
 
 You should then be able to load in `inx` and `inp` model files.
+
+## Examples
+
+You may find examples in the `examples/` directory.
 
 # Inochi2D Technical Documentation
 Technical documentation for Inochi2D is provided in the `tech-docs/` directory, 
