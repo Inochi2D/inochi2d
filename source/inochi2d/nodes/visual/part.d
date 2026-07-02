@@ -39,8 +39,6 @@ struct PartVars {
     float emissionStrength;
 }
 
-pragma(msg, PartVars.opacity.offsetof);
-
 /**
     Dynamic Mesh Part
 */
