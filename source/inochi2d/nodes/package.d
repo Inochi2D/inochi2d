@@ -421,7 +421,7 @@ public:
     /** 
         Set new Parent
     */
-    void reparent(Node parent, ulong pOffset) {
+    void reparent(Node parent, size_t pOffset) {
         parent.addChild(this);
         parent.moveChild(this, pOffset);
     }
