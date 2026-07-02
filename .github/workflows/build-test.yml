@@ -78,3 +78,23 @@ jobs:
       run: |
         dub build --build=${{ matrix.build }}
         dub test
+
+  test-wasm:
+    name: 'Build (WebAssembly)'
+    strategy:
+      fail-fast: false
+      matrix:
+        build: [debug, release]
+    
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: './.github/workflows/get-sdk.yml'
+      with:
+        sdk: ldc2-wasm32-wasi
+
+    - name: 'Build (WebAssembly)' 
+      run: |
+        dub build --config=wasm --arch=wasm32-wasip2 --build=${{ matrix.build }}
+
