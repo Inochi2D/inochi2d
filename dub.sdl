@@ -110,9 +110,9 @@ configuration "wasm" {
     targetType "executable"
     versions "IN_DYNLIB" "IN_WASM"
 
-    copyFiles "tech-docs" "dist/*"
     subConfiguration "nurt" "nurt-enabled"
-    lflags "--allow-undefined"
+    copyFiles "tech-docs" "dist/*"
+    lflags "--entry=in_init"
 }
 
 // Unit tests

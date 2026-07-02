@@ -20,3 +20,11 @@ extern(C) export @nogc nothrow:
 
 int getErrno() { return errno; }
 int setErrno(int value) { errno = value; return errno; }
+
+// Set up WASM constructors.
+//
+//
+extern void __wasm_call_ctors();
+export void in_init() {
+    __wasm_call_ctors();
+}
