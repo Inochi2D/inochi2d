@@ -944,10 +944,11 @@ void* I2D_CALL in_texture_get_pixels(in_texture_t* obj);
 typedef enum {
     IN_DRAW_STATE_NORMAL            = 0,
     IN_DRAW_STATE_DEFINE_MASK       = 1,
-    IN_DRAW_STATE_MASKED_DRAW       = 2,
-    IN_DRAW_STATE_COMPOSITE_BEGIN   = 3,
-    IN_DRAW_STATE_COMPOSITE_END     = 4,
-    IN_DRAW_STATE_COMPOSITE_BLIT    = 5,
+    IN_DRAW_STATE_PUSH_MASK         = 2,
+    IN_DRAW_STATE_POP_MASK          = 3,
+    IN_DRAW_STATE_COMPOSITE_BEGIN   = 4,
+    IN_DRAW_STATE_COMPOSITE_END     = 5,
+    IN_DRAW_STATE_COMPOSITE_BLIT    = 6,
     IN_DRAW_STATE_MAX               = 0xFFFFFFFFU
 } in_drawstate_t;
 
