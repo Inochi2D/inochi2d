@@ -112,7 +112,7 @@ configuration "wasm" {
 
     subConfiguration "nurt" "nurt-enabled"
     copyFiles "tech-docs" "dist/*"
-    lflags "--entry=in_init"
+    lflags "--entry=in_init" "--allow-undefined"
 }
 
 // Unit tests
