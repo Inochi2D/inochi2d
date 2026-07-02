@@ -292,7 +292,7 @@ protected:
         this.root.updateTransform();
 
         foreach (parameter; parameters_) {
-            parameter.bind(this);
+            parameter.finalize(this, state);
         }
 
         foreach (ref animation; animations_) {

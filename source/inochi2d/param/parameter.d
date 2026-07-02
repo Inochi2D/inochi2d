@@ -116,8 +116,26 @@ protected:
         }
     }
 
-    void onFinalize(ref ModelState state) {
-        
+    /**
+        Finalizes the parameter.
+
+        Params:
+            puppet =    The parent puppet
+            state =     The state of the deserializer.
+    */
+    void onFinalize(Puppet puppet, ref ModelState state) {
+        foreach_reverse (i; 0 .. bindings.length) {
+            if (auto binding = bindings[i]) {
+
+                if (puppet.find!Node(binding.nodeId)) {
+                    binding.bind(puppet);
+                } else {
+                    bindings.removeAt(i);
+                }
+            } else {
+               bindings.removeAt(i);
+            }
+        }
     }
 
 public:
@@ -204,20 +222,6 @@ public:
     }
 
     /**
-        Bind to a puppet, clearing dangling bindings in the process.
-    */
-    void bind(Puppet puppet) {
-        foreach_reverse (i; 0 .. bindings.length) {
-            ref binding = bindings[i];
-            if (puppet.find!Node(binding.nodeId)) {
-                binding.bind(puppet);
-            } else {
-                bindings.removeAt(i);
-            }
-        }
-    }
-
-    /**
         Serializes this parameter.
     */
     final void serialize(ref DataNode object) {
@@ -232,9 +236,20 @@ public:
     }
 
     /**
+        Finalizes the parameter.
+
+        Params:
+            puppet =    The parent puppet
+            state =     The state of the deserializer.
+    */
+    final void finalize(Puppet puppet, ref ModelState state) {
+        this.onFinalize(puppet, state);
+    }
+
+    /**
         Update our bindings with the value of this parameter.
     */
-    abstract void updateBindings();
+    abstract void update();
 }
 mixin Register!(Parameter, in_param_registry);
 
@@ -243,8 +258,50 @@ mixin Register!(Parameter, in_param_registry);
 */
 @TypeId("1d", IN_MAKE_TAG!(1, 0))
 class Parameter1D : Parameter {
-public:
+protected:
 @nogc:
+
+    /**
+        Serialize this parameter.
+    */
+    override
+    void onSerialize(ref DataNode object) {
+        super.onSerialize(object);
+        object["axes"] = cast(uint)1;
+        object["min"] = min.serialize();
+        object["max"] = max.serialize();
+        object["defaults"] = defaults.serialize();
+        object["points"] = points.serialize();
+    }
+
+    /**
+        Deserialize this parameter.
+    */
+    override
+    void onDeserialize(ref DataNode object, ref ModelState state) {
+        super.onDeserialize(object, state);
+        assert(object["axes"] == 1);
+        object.tryGetRef(state, min, "min");
+        object.tryGetRef(state, max, "max");
+        object.tryGetRef(state, defaults, "defaults");
+        object.tryGetRef(state, points, "points");
+    }
+
+    /**
+        Finalizes the parameter.
+
+        Params:
+            puppet =    The parent puppet
+            state =     The state of the deserializer.
+    */
+    override
+    void onFinalize(Puppet puppet, ref ModelState state) {
+        super.onFinalize(puppet, state);
+        value = defaults;
+    }
+
+public:
+
     /**
         The current value of this parameter.
     */
@@ -325,8 +382,7 @@ public:
         Returns:
             The index of the keypoint the given position falls on.
     */
-    uint findKeypointAndNormal(float pos, out float norm) {
-        assert(pos >= min && pos <= max);
+    ptrdiff_t findKeypointAndNormal(float pos, out float norm) {
         return searchPoints(points, pos, norm);
     }
 
@@ -348,51 +404,17 @@ public:
         Update our bindings with the value of this parameter.
     */
     override
-    void updateBindings() {
+    void update() {
         if (!active)
             return;
 
         float norm;
-        uint index = findKeypointAndNormal(value, norm);
-
-        foreach (binding; bindings) {
-            binding.apply(vec2u(index, 0), vec2(norm, 0));
+        ptrdiff_t index = findKeypointAndNormal(value, norm);
+        if (index >= 0) {
+            foreach (binding; bindings) {
+                binding.apply(vec2u(index, 0), vec2(norm, 0));
+            }
         }
-    }
-
-    /**
-        Serialize this parameter.
-    */
-    override
-    void onSerialize(ref DataNode object) {
-        super.onSerialize(object);
-        object["axes"] = cast(uint)1;
-        object["min"] = min.serialize();
-        object["max"] = max.serialize();
-        object["defaults"] = defaults.serialize();
-        object["points"] = points.serialize();
-    }
-
-    /**
-        Deserialize this parameter.
-    */
-    override
-    void onDeserialize(ref DataNode object, ref ModelState state) {
-        super.onDeserialize(object, state);
-        assert(object["axes"] == 1);
-        object.tryGetRef(state, min, "min");
-        object.tryGetRef(state, max, "max");
-        object.tryGetRef(state, defaults, "defaults");
-        object.tryGetRef(state, points, "points");
-    }
-
-    /**
-        Bind to a puppet.
-    */
-    override
-    void bind(Puppet puppet) {
-        value = defaults;
-        super.bind(puppet);
     }
 }
 mixin Register!(Parameter1D, in_param_registry);
@@ -402,8 +424,52 @@ mixin Register!(Parameter1D, in_param_registry);
 */
 @TypeId("2d", IN_MAKE_TAG!(2, 0))
 class Parameter2D : Parameter {
-public:
+protected:
 @nogc:
+
+    /**
+        Serialize this parameter.
+    */
+    override
+    void onSerialize(ref DataNode object) {
+        super.onSerialize(object);
+        object["axes"] = cast(uint)2;
+        object["min"] = min.serialize();
+        object["max"] = max.serialize();
+        object["defaults"] = defaults.serialize();
+        object["hpoints"] = hpoints.serialize();
+        object["vpoints"] = vpoints.serialize();
+    }
+
+    /**
+        Deserialize this parameter.
+    */
+    override
+    void onDeserialize(ref DataNode object, ref ModelState state) {
+        super.onDeserialize(object, state);
+        assert(object["axes"] == 2);
+        object.tryGetRef(state, min, "min");
+        object.tryGetRef(state, max, "max");
+        object.tryGetRef(state, defaults, "defaults");
+        object.tryGetRef(state, hpoints, "hpoints");
+        object.tryGetRef(state, vpoints, "vpoints");
+    }
+
+    /**
+        Finalizes the parameter.
+
+        Params:
+            puppet =    The parent puppet
+            state =     The state of the deserializer.
+    */
+    override
+    void onFinalize(Puppet puppet, ref ModelState state) {
+        super.onFinalize(puppet, state);
+        value = defaults;
+    }
+
+public:
+
     /**
         The current value of this parameter.
     */
@@ -474,7 +540,7 @@ public:
         Update our bindings with the value of this parameter.
     */
     override
-    void updateBindings() {
+    void update() {
         if (!active)
             return;
 
@@ -525,12 +591,12 @@ public:
         Returns:
             The index of the keypoint the given position falls on.
     */
-    vec2u findKeypointAndNormal(vec2 pos, out vec2 norm) {
+    vec2i findKeypointAndNormal(vec2 pos, out vec2 norm) {
         assert(pos.x >= min.x && pos.x <= max.x);
         assert(pos.y >= min.y && pos.y <= max.y);
         const x = searchPoints(hpoints, pos.x, norm.x);
         const y = searchPoints(vpoints, pos.y, norm.y);
-        return vec2u(x, y);
+        return vec2i(x, y);
     }
 
     /**
@@ -549,43 +615,6 @@ public:
         const x = .lerp(min.x, max.x, norm.x);
         const y = .lerp(min.y, max.y, norm.y);
         return vec2(x, y);
-    }
-
-    /**
-        Serialize this parameter.
-    */
-    override
-    void onSerialize(ref DataNode object) {
-        super.onSerialize(object);
-        object["axes"] = cast(uint)2;
-        object["min"] = min.serialize();
-        object["max"] = max.serialize();
-        object["defaults"] = defaults.serialize();
-        object["hpoints"] = hpoints.serialize();
-        object["vpoints"] = vpoints.serialize();
-    }
-
-    /**
-        Deserialize this parameter.
-    */
-    override
-    void onDeserialize(ref DataNode object, ref ModelState state) {
-        super.onDeserialize(object, state);
-        assert(object["axes"] == 2);
-        object.tryGetRef(state, min, "min");
-        object.tryGetRef(state, max, "max");
-        object.tryGetRef(state, defaults, "defaults");
-        object.tryGetRef(state, hpoints, "hpoints");
-        object.tryGetRef(state, vpoints, "vpoints");
-    }
-
-    /**
-        Bind to a puppet.
-    */
-    override
-    void bind(Puppet puppet) {
-        value = defaults;
-        super.bind(puppet);
     }
 }
 mixin Register!(Parameter2D, in_param_registry);
@@ -657,6 +686,15 @@ ParameterMergeMode toParameterMergeMode(string value) @nogc {
     }
 }
 
+
+
+
+//
+//          IMPLEMENTATION DETAILS
+//
+
+private:
+
 /**
     Find the index and normal of the given position among the given points.
 
@@ -666,16 +704,21 @@ ParameterMergeMode toParameterMergeMode(string value) @nogc {
         norm = The given position, normalized between its two adjacent points.
 
     Returns:
-        The index of the point right *before* the given position.
+        The index of the point right *before* the given position,
+        or $(D -1) if not found.
 */
-private uint searchPoints(float[] points, float pos, out float norm) pure @nogc {
+ptrdiff_t searchPoints(float[] points, float pos, out float norm) pure @nogc {
+
     // Find index of given position.
     const index = searchPoints(points, pos);
 
-    // Normalize along two adjacent points.
-    const lo = points[index];
-    const hi = points[index + 1];
-    norm = (pos - lo) / (hi - lo);
+    if (index >= 0) {
+    
+        // Normalize along two adjacent points.
+        const lo = points[index];
+        const hi = points[index + 1];
+        norm = (pos - lo) / (hi - lo);
+    }
 
     return index;
 }
@@ -688,9 +731,10 @@ private uint searchPoints(float[] points, float pos, out float norm) pure @nogc 
         pos = The position for which to search among the given points.
 
     Returns:
-        The index of the point right *before* the given position.
+        The index of the point right *before* the given position,
+        or $(D -1) if not found.
 */
-private uint searchPoints(float[] points, float pos) pure @nogc {
+ptrdiff_t searchPoints(float[] points, float pos) pure @nogc {
     assert(points.length >= 2, "Cannot search lists of points with fewer than 2 elements.");
 
     // Binary-search points list for our position.
@@ -704,5 +748,5 @@ private uint searchPoints(float[] points, float pos) pure @nogc {
     }
 
     // Pointer distance from points start to cursor start.
-    return cast(uint)(&cursor[0] - &points[0]);
+    return cast(ptrdiff_t)(&cursor[0] - &points[0]);
 }
