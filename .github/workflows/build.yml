@@ -101,7 +101,6 @@ jobs:
       id: wasm-build
       run: |
         dub build --compiler=ldc2 --config=wasm --arch=wasm32-wasip2 --build=${{ inputs.build_type }}
-        cp -r examples/ out/
 
     - name: 'Archive'
       id: archive
