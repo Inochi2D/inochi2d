@@ -521,7 +521,7 @@ public:
         // Update parameters
         if (renderParameters) {
             foreach (parameter; parameters_) {
-                parameter.updateBindings();
+                parameter.update();
             }
         }
 

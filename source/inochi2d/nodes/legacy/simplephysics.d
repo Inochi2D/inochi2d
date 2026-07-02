@@ -497,11 +497,11 @@ public:
         if (auto param1d = cast(Parameter1D)param) {
             auto value = paramVal.x * oscale.x;
             param1d.pushValue(value);
-            param1d.updateBindings();
+            param1d.update();
         } else if (auto param2d = cast(Parameter2D)param) {
             auto value = vec2(paramVal.x * oscale.x, paramVal.y * oscale.y);
             param2d.pushValue(value);
-            param2d.updateBindings();
+            param2d.update();
         }
     }
 
