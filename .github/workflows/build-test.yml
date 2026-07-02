@@ -92,6 +92,7 @@ jobs:
 
     - uses: Inochi2D/get-sdk-action@v1
       with:
+        tag: v0.9.0-testing
         sdk: ldc2-wasm32-wasi
 
     - name: 'Build (WebAssembly)' 
