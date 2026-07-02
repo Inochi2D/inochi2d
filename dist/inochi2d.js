@@ -45,9 +45,11 @@ async function in_init(url = "inochi2d.wasm") {
         let result = await WebAssembly.instantiateStreaming(fetch(url), __inochi2d.__import_object);
         __inochi2d.module = result.module;
         __inochi2d.instance = result.instance;
-        __inochi2d.instance.exports._start();
         __inochi2d.nu_malloc = __inochi2d.instance.exports.nu_malloc;
         __inochi2d.nu_free = __inochi2d.instance.exports.nu_free;
+
+        // Initialize Inochi2D.
+        __inochi2d.instance.exports.in_init();
         __inochi2d.scratchpad = __inochi2d.nu_malloc(128);
     } catch(error) {
         throw error;
