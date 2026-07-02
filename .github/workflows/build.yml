@@ -62,7 +62,7 @@ jobs:
         compiler: ldc-latest
     
     # Setup WASI D compiler
-    - uses: './.github/workflows/get-sdk.yml'
+    - uses: Inochi2D/get-sdk-action@v1
       if: ${{ matrix.config.platform == 'wasm' }}
       with:
         sdk: ldc2-wasm32-wasi
