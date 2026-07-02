@@ -16,7 +16,7 @@ Inochi2D is a library for realtime 2D puppet animation and the reference impleme
 
 &nbsp;
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/4TWIa5gdcxw?si=SJhLlPYR2O00fOWT" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+[![Youtube Video](https://github.com/user-attachments/assets/6d68d1e7-c681-4dea-9868-ebd69fc871f6)](https://youtu.be/4TWIa5gdcxw?si=J5iB-ZIVlMCQfkMf)
 
 &nbsp;
 
