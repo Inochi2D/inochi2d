@@ -21,3 +21,7 @@ extension_api.json
 # Other Junk
 .DS_Store
 .vscode/
+
+# JS Junk
+node_modules/
+dist/
