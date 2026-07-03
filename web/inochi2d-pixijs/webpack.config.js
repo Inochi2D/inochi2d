@@ -10,12 +10,12 @@ const isProduction = process.env.NODE_ENV === "production";
 const config = {
     entry: {
         inochi2d: {
-            import: ["./src/inochi2d.ts", "./src/core.ts"]
+            import: ["./src/inpixi.ts"]
         }
     },
     output: {
-        path: path.resolve(__dirname, "..", "dist"),
-        filename: "inochi2d.js"
+        path: path.resolve(__dirname, "..", "..", "dist"),
+        filename: "inochi2d.pixi.js"
     },
     plugins: [
         // Add your plugins here

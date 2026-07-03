@@ -1,0 +1,24 @@
+{
+  "name": "inochi2d-pixijs",
+  "version": "1.0.0",
+  "description": "Inochi2D for pixi.js",
+  "type": "module",
+  "scripts": {
+    "debug": "NODE_ENV=development webpack build",
+    "build": "NODE_ENV=production webpack build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.33.0",
+  "dependencies": {
+    "inochi2d-ts": "file:../inochi2d-ts"
+  },
+  "devDependencies": {
+    "pixi.js": "^8.19.0",
+    "ts-loader": "^9.6.2",
+    "typescript": "^6.0.3",
+    "webpack": "^5.108.3",
+    "webpack-cli": "^7.1.0"
+  }
+}

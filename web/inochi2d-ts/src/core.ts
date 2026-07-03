@@ -404,6 +404,168 @@ export function in_node_part_get_mesh_effects(ptr: ptr_t): [ptr: ptr_t, count: n
 
 
 //
+//			PARAMETERS
+//
+
+/**
+	Gets the name of a given parameter.
+*/
+export function in_parameter_get_name(ptr: ptr_t): string {
+	return ldstr(__inochi2d.exports.in_parameter_get_name(ptr));
+}
+
+/**
+	Gets whether the given parameter is active.
+*/
+export function in_parameter_get_active(ptr: ptr_t): boolean {
+	return __inochi2d.exports.in_parameter_get_active(ptr);
+}
+
+export function in_parameter_get_dimensions(ptr: ptr_t): number {
+	return __inochi2d.exports.in_parameter_get_dimensions(ptr);
+}
+
+export function in_parameter_get_lower_bounds(ptr: ptr_t): number[] {
+	return ldf32arr(__inochi2d.exports.in_parameter_get_lower_bounds(ptr), in_parameter_get_dimensions(ptr));
+}
+
+export function in_parameter_get_upper_bounds(ptr: ptr_t): number[] {
+	return ldf32arr(__inochi2d.exports.in_parameter_get_upper_bounds(ptr), in_parameter_get_dimensions(ptr));
+}
+
+export function in_parameter_get_value(ptr: ptr_t): number[] {
+	return ldf32arr(__inochi2d.exports.in_parameter_get_value(ptr), in_parameter_get_dimensions(ptr));
+}
+
+export function in_parameter_set_value(ptr: ptr_t, values: number[]): void {
+	let dims = in_parameter_get_dimensions(ptr);
+	let wptr = scrptr(dims*4);
+	for (let i = 0; i < dims; i++) {
+		if (i < values.length)
+			stf32(wptr+(i*4), values[i] as number);
+		else
+			stf32(wptr+(i*4), 0);
+	}
+
+	__inochi2d.exports.in_parameter_set_value(ptr, wptr);
+}
+
+
+
+
+//
+//			TEXTURE CACHE
+//
+
+export function in_texture_cache_get_size(ptr: ptr_t): number {
+	return __inochi2d.exports.in_texture_cache_get_size(ptr);
+}
+
+export function in_texture_cache_get_texture(ptr: ptr_t, slot: number): ptr_t {
+	return __inochi2d.exports.in_texture_cache_get_texture(ptr, slot);
+}
+
+export function in_texture_cache_get_textures(ptr: ptr_t): [ptr: ptr_t, count: number] {
+	let rptr = __inochi2d.exports.in_texture_cache_get_textures(ptr, scrptr(4));
+	return [rptr, ldu32(scrptr(4))];
+}
+
+export function in_texture_cache_prune(ptr: ptr_t): void {
+	__inochi2d.exports.in_texture_cache_prune(ptr);
+}
+
+
+
+
+//
+//			RESOURCES
+//
+export function in_resource_get_length(ptr: ptr_t): number {
+	return __inochi2d.exports.in_resource_get_length(ptr);
+}
+
+export function in_resource_get_id(ptr: ptr_t): ptr_t {
+	return __inochi2d.exports.in_resource_get_id(ptr);
+}
+
+export function in_resource_set_id(ptr: ptr_t, value: ptr_t): void {
+	__inochi2d.exports.in_resource_set_id(ptr, value);
+}
+
+
+
+
+//
+//			TEXTURES
+//
+export function in_texture_get_width(ptr: ptr_t): number {
+	return __inochi2d.exports.in_texture_get_width(ptr);
+}
+
+export function in_texture_get_height(ptr: ptr_t): number {
+	return __inochi2d.exports.in_texture_get_height(ptr);
+}
+
+export function in_texture_get_channels(ptr: ptr_t): number {
+	return __inochi2d.exports.in_texture_get_channels(ptr);
+}
+
+export function in_texture_flip_vertically(ptr: ptr_t): void {
+	__inochi2d.exports.in_texture_flip_vertically(ptr);
+}
+
+export function in_texture_premultiply(ptr: ptr_t): void {
+	__inochi2d.exports.in_texture_premultiply(ptr);
+}
+
+export function in_texture_unpremultiply(ptr: ptr_t): void {
+	__inochi2d.exports.in_texture_unpremultiply(ptr);
+}
+
+export function in_texture_pad(ptr: ptr_t, thickness: number): void {
+	__inochi2d.exports.in_texture_pad(ptr, thickness);
+}
+
+export function in_texture_get_pixels(ptr: ptr_t): ptr_t {
+	return __inochi2d.exports.in_texture_get_pixels(ptr);
+}
+
+
+
+
+
+//
+//			DRAWLIST
+//
+export function in_drawlist_get_use_base_vertex(ptr: ptr_t): boolean {
+	return __inochi2d.exports.in_drawlist_get_use_base_vertex(ptr);
+}
+
+export function in_drawlist_set_use_base_vertex(ptr: ptr_t, value: boolean): void {
+	__inochi2d.exports.in_drawlist_set_use_base_vertex(ptr, value);
+}
+
+export function in_drawlist_get_commands(ptr: ptr_t) {
+
+}
+
+export function in_drawlist_get_vertex_data(ptr: ptr_t) {
+
+}
+
+export function in_drawlist_get_index_data(ptr: ptr_t) {
+
+}
+
+export function in_drawlist_get_allocations(ptr: ptr_t) {
+
+}
+
+
+
+
+
+//
 //			IMPLEMENTATION DETAILS
 //
 const __wasi = {
@@ -512,6 +674,14 @@ type wasm_exports = {
 	in_texture_unpremultiply(ptr: ptr_t): void;
 	in_texture_pad(ptr: ptr_t, thickness: number): void;
 	in_texture_get_pixels(ptr: ptr_t): ptr_t;
+
+	// Drawlist
+	in_drawlist_get_use_base_vertex(ptr: ptr_t): boolean;
+	in_drawlist_set_use_base_vertex(ptr: ptr_t, value: boolean): void;
+	in_drawlist_get_commands(ptr: ptr_t, count: ptr_t): ptr_t;
+	in_drawlist_get_vertex_data(ptr: ptr_t, bytes: ptr_t): ptr_t;
+	in_drawlist_get_index_data(ptr: ptr_t, bytes: ptr_t): ptr_t;
+	in_drawlist_get_allocations(ptr: ptr_t, count: ptr_t): ptr_t;
 }
 
 let __inochi2d: {
@@ -593,6 +763,15 @@ function ldf32(ptr: ptr_t): number { return (new DataView(__inochi2d.exports.mem
 function ldbuf<T extends ArrayBufferLike>(ptr: ptr_t, length: number, buf: new(...args: any[]) => T): T {
 	return (new buf(__inochi2d.exports.memory.buffer, ptr, length));
 }
+
+function ldf32arr(ptr: ptr_t, count: number): number[] {
+    let wasm_view = new DataView(__inochi2d.exports.memory.buffer, ptr);
+    let result: number[] = [];
+    for (let i = 0; i < count; i++)
+    	result.push(wasm_view.getFloat32(i*4, true));
+    return result;
+}
+
 function ldstr(ptr: ptr_t): string {
 	if (ptr == 0)
 		return "";
@@ -619,6 +798,7 @@ function stbuf<T extends ArrayBufferLike>(buffer: T, ptr: ptr_t): void {
 function ststr(value: string, offset: number = 0): ptr_t {
 	const encoder = new TextEncoder();
 	let buf = encoder.encode(value);
-	stbuf(buf.buffer, scrptr(buf.byteLength, offset));
+	stbuf(buf.buffer, scrptr(buf.byteLength+1, offset));
+	stu8(buf.byteLength, 0); // null terminator.
 	return scrptr(buf.byteLength, offset);
 }
