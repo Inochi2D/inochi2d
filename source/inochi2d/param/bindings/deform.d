@@ -28,9 +28,29 @@ import numem;
 /**
     Parameter binding to a deformation property.
 */
+@TypeId("deform", IN_MAKE_TAG!(1, 0))
 class ParameterDeformBinding : ParameterBindingImpl!Deformation {
-public:
+protected:  
 @nogc:
+
+    /**
+        Serialize this parameter binding.
+    */
+    override
+    void onSerialize(ref DataNode object) {
+
+    }
+    
+    /**
+        Deserialize this parameter.
+    */
+    override
+    void onDeserialize(ref DataNode object, ref ModelState state) {
+        
+    }
+
+public:
+    
     /**
         Construct a deformation binding without a target.
 
@@ -86,3 +106,4 @@ public:
         return false;
     }
 }
+mixin Register!(ParameterDeformBinding, in_binding_registry);

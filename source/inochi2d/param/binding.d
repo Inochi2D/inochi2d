@@ -18,6 +18,7 @@ import inochi2d.common;
 import inochi2d.puppet;
 import inochi2d.nodes;
 import inochi2d.core;
+import inochi2d.core.serde;
 
 import numem;
 import numem.core.memory;
@@ -33,19 +34,28 @@ public import inochi2d.param.bindings;
     If the property name is "deform", assume it is a deformation binding.
         Otherwise, assume it is a numeric value binding.
 */
-ParameterBinding tryGetBinding(ref DataNode object, ref ModelState state, Parameter param) @nogc {
-    if (auto prop = object.tryGet!string(state, "prop", null)) {
-        if (prop == "deform") {
-            auto binding = nogc_new!ParameterDeformBinding(param);
-            object.deserialize(state, binding);
-            return cast(ParameterBinding)binding;
-        } else {
-            auto binding = nogc_new!ParameterPropertyBinding(param);
-            object.deserialize(state, binding);
+ParameterBinding tryDeserializeBinding(ref DataNode object, ref ModelState state, Parameter param) @nogc {
+    if (state.doUpgrade08) {
+        if (auto prop = object.tryGet!string(state, "param_name", null)) {
+            state.info(nstring("0.8->0.9: upgrading binding ", prop, "..."));
+            auto binding = prop == "deform" ?
+                nogc_new!ParameterDeformBinding(param) :
+                nogc_new!ParameterPropertyBinding(param);
+
+            binding.deserialize(object, state);
             return cast(ParameterBinding)binding;
         }
+
+        state.warning(nstring("0.8->0.9: Encountered a unnamed binding, ignoring..."));
+        return null;
     }
 
+    if (auto binding = in_binding_registry.tryCreateFrom(object, param)) {
+        binding.deserialize(object, state);
+        return binding;
+    }
+
+    state.warning(nstring("Encountered untyped binding, ignoring..."));
     return null;
 }
 
@@ -54,14 +64,33 @@ ParameterBinding tryGetBinding(ref DataNode object, ref ModelState state, Parame
 */
 abstract
 class ParameterBinding : NuRefCounted, ISerializable, IDeserializable!ModelState {
-public:
+protected:
 @nogc:
+
+    /**
+        Serializes this binding.
+    */
+    override void onSerialize(ref DataNode object) { }
+
+    /**
+        Deserialize this binding.
+    */
+    override void onDeserialize(ref DataNode object, ref ModelState state) { }
+
+    /**
+        Finalizes the parameter binding.
+
+        Params:
+            param = The parent parameter
+            state = The state of the deserializer.
+    */
+    void onFinalize(Parameter param, ref ModelState state) { }
+
+public:
+
     GUID nodeId;
-
     Parameter parameter;
-
     BindingTarget target;
-
     InterpolateMode interpMode = InterpolateMode.linear;
 
     /**
@@ -72,7 +101,7 @@ public:
     */
     this(Parameter parameter) {
         this.parameter = parameter;
-        target = BindingTarget(null, null);
+        this.target = BindingTarget(null, null);
     }
 
     /**
@@ -84,9 +113,9 @@ public:
             prop = The target node property being affected by this binding.
     */
     this(Parameter parameter, Node node, string prop) {
-        nodeId = node.guid;
         this.parameter = parameter;
-        target = BindingTarget(node, prop);
+        this.nodeId = node.guid;
+        this.target = BindingTarget(node, prop);
     }
 
     /**
@@ -162,13 +191,11 @@ public:
     abstract
     void disable(vec2u index);
 
-
     /**
         Fill undefined keypoints with sensible defaults.
     */
     abstract
     void fillBlanks();
-
 
     /**
         Check whether the keypoint at the given index is defined.
@@ -181,6 +208,38 @@ public:
     */
     abstract
     bool isCompatibleWith(Node other) const;
+
+    /**
+        Serializes this parameter.
+
+        Params:
+            object = The data node to deserialize.
+    */
+    final void serialize(ref DataNode object) {
+        this.onSerialize(object);
+    }
+
+    /**
+        Deserializes this parameter.
+
+        Params:
+            object =    The data node to deserialize.
+            state =     The state of the deserializer.
+    */
+    final void deserialize(ref DataNode object, ref ModelState state) {
+        this.onDeserialize(object, state);
+    }
+
+    /**
+        Finalizes the parameter.
+
+        Params:
+            param = The parent parameter
+            state = The state of the deserializer.
+    */
+    final void finalize(Parameter param, ref ModelState state) {
+        this.onFinalize(param, state);
+    }
 }
 
 /**

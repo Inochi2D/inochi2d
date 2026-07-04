@@ -14,6 +14,7 @@ module inochi2d.core.serde;
 import inochi2d.core.math;
 import inochi2d.core;
 import numem.core.traits;
+import nulib.string;
 import numath;
 
 public import inp.format;
@@ -272,6 +273,17 @@ T tryGet(T, ST)(ref DataNode object, ref ST state, string key, T defaultValue = 
 /**
     Attempts to get a value from a JSON object by its key and type.
 */
+T tryGet(T, ST)(ref DataNode object, ref ST state, string key)
+if (is(T == nstring)) {
+    if (key !in object)
+        return nstring.init;
+
+    return nstring(object[key].text());
+}
+
+/**
+    Attempts to get a value from a JSON object by its key and type.
+*/
 void tryGetRef(T, ST)(ref DataNode object, ref ST state, ref T dst, string key) if (__traits(isFloating, T)) {
     if (key !in object) {
         dst = 0.0;
@@ -291,4 +303,28 @@ void tryGetRef(T, ST)(ref DataNode object, ref ST state, ref T dst, string key, 
     }
 
     object[key].deserialize!(T, ST)(dst, state);
+}
+
+/**
+    Attempts to get a value from a JSON array by its index and type.
+*/
+void tryGetRef(T, ST)(ref DataNode object, ref ST state, ref T dst, size_t i) if (__traits(isFloating, T)) {
+    if (i >= object.length) {
+        dst = 0.0;
+        return;
+    }
+
+    object[i].deserialize!T(dst, state);
+}
+
+/**
+    Attempts to get a value from a JSON array by its index and type.
+*/
+void tryGetRef(T, ST)(ref DataNode object, ref ST state, ref T dst, size_t i, T defaultValue = T.init) {
+    if (i >= object.length) {
+        dst = __rvalue(defaultValue);
+        return;
+    }
+
+    object[i].deserialize!(T, ST)(dst, state);
 }

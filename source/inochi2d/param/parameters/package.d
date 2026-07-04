@@ -13,6 +13,13 @@
         Hoshino Lina
 */
 module inochi2d.param.parameters;
+import inochi2d.param.parameter;
+import inochi2d.core.registry;
+
+/**
+    The public parameter registry.
+*/
+__gshared TypeRegistry!Parameter in_param_registry;
 
 public import inochi2d.param.parameters.param1d;
 public import inochi2d.param.parameters.param2d;

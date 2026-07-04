@@ -37,7 +37,6 @@ protected:
     override
     void onSerialize(ref DataNode object) {
         super.onSerialize(object);
-        object["axes"] = cast(uint)1;
         object["min"] = min.serialize();
         object["max"] = max.serialize();
         object["defaults"] = defaults.serialize();
@@ -50,10 +49,18 @@ protected:
     override
     void onDeserialize(ref DataNode object, ref ModelState state) {
         super.onDeserialize(object, state);
-        assert(object["axes"] == 1);
         object.tryGetRef(state, min, "min");
         object.tryGetRef(state, max, "max");
         object.tryGetRef(state, defaults, "defaults");
+
+
+        // 0.8->0.9 upgrades
+        if (state.doUpgrade08) {
+            state.info("0.8->0.9: Upgrading 1D axis mapping...");
+            object.tryGetRef(state, points, "axis_points");
+            return;
+        }
+
         object.tryGetRef(state, points, "points");
     }
 

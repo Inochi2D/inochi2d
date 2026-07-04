@@ -15,6 +15,7 @@
 module inochi2d.param.bindings;
 import inochi2d.param.parameter;
 import inochi2d.param.binding;
+import inochi2d.core.registry;
 import inochi2d.core.vector2d;
 import inochi2d.core.serde;
 import inochi2d.core.math;
@@ -29,12 +30,50 @@ public import inochi2d.param.bindings.deform;
 public import inochi2d.param.bindings.property;
 
 /**
+    The public parameter binding registry.
+*/
+__gshared TypeRegistry!(ParameterBinding, Parameter) in_binding_registry;
+
+/**
     Parameter binding to a property of a given type.
 */
 abstract
 class ParameterBindingImpl(T) : ParameterBinding {
-public:
+protected:
 @nogc:
+
+    /**
+        Serialize this binding.
+    */
+    override
+    void onSerialize(ref DataNode object) {
+        object["node"] = target.node.guid.toString()[];
+        object["param_name"] = target.prop;
+        object["values"] = values.data.serialize();
+        object["defined"] = defined.data.serialize();
+        object["interpolate_mode"] = cast(uint)interpMode;
+    }
+
+    /**
+        Deserialize this binding.
+    */
+    override
+    void onDeserialize(ref DataNode object, ref ModelState state) {
+        nodeId = object.tryGetGUID(state, "node", "target");
+        object.tryGetRef(state, target.prop, "param_name");
+        // object.tryGetRef(values, "values");
+        // object.tryGetRef(isSet_, "isSet");
+
+        if (auto mode = "interpolate_mode" in object) {
+            if (mode.isNumber) {
+                interpMode = cast(InterpolateMode)((*mode).tryGet!uint(state));
+            } else {
+                interpMode = (*mode).tryGet!string(state).toInterpolateMode();
+            }
+        }
+    }
+
+public:
     vector2d!T values;
     vector2d!bool defined;
 
@@ -122,37 +161,6 @@ public:
 
     private T getInterpolatedKeypoint_cubic(vec2u index, vec2 norm) const {
         assert(false, "not implemented");
-    }
-
-    /**
-        Serialize this binding.
-    */
-    override
-    void onSerialize(ref DataNode object) {
-        object["node"] = target.node.guid.toString()[];
-        object["param_name"] = target.prop;
-        object["values"] = values.data.serialize();
-        object["defined"] = defined.data.serialize();
-        object["interpolate_mode"] = cast(uint)interpMode;
-    }
-
-    /**
-        Deserialize this binding.
-    */
-    override
-    void onDeserialize(ref DataNode object, ref ModelState state) {
-        nodeId = object.tryGetGUID(state, "node", "target");
-        object.tryGetRef(state, target.prop, "param_name");
-        // object.tryGetRef(values, "values");
-        // object.tryGetRef(isSet_, "isSet");
-
-        if (auto mode = "interpolate_mode" in object) {
-            if (mode.isNumber) {
-                interpMode = cast(InterpolateMode)((*mode).tryGet!uint(state));
-            } else {
-                interpMode = (*mode).tryGet!string(state).toInterpolateMode();
-            }
-        }
     }
 
     /**

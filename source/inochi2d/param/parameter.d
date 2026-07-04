@@ -31,28 +31,25 @@ import numath;
 public import inochi2d.param.parameters;
 
 /**
-    The public parameter registry.
-*/
-__gshared TypeRegistry!Parameter in_param_registry;
-
-/**
     Top-level parameter deserialization function.
 */
-Parameter tryDeserializeParam(ref DataNode node, ref ModelState state) @nogc {
+Parameter tryDeserializeParam(ref DataNode object, ref ModelState state) @nogc {
     if (state.doUpgrade08) {
-        state.info(nstring("0.8->0.9: upgrading legacy parameter ", node["name"].text));
-        auto param = node.tryGet!bool(state, "is_vec2", false) ?
+        state.info(nstring("0.8->0.9: upgrading legacy parameter ", object["name"].text));
+        auto param = object.tryGet!bool(state, "is_vec2", false) ?
             nogc_new!Parameter2D() :
             nogc_new!Parameter1D();
 
-        param.deserialize(node, state);
+        param.deserialize(object, state);
         return param;
     }
 
-    if (auto param = in_param_registry.tryCreateFrom(node)) {
-        param.deserialize(node, state);
+    if (auto param = in_param_registry.tryCreateFrom(object)) {
+        param.deserialize(object, state);
         return param;
     }
+
+    state.warning(nstring("Encountered untyped parameter, ignoring..."));
     return null;
 }
 
@@ -60,8 +57,6 @@ Parameter tryDeserializeParam(ref DataNode node, ref ModelState state) @nogc {
     Parameters are configurable values that are used to drive mesh
         deformations, property overrides, and more.
 */
-@TypeId("Parameter", IN_MAKE_TAG!(0, 0))
-@TypeIdAbstract
 abstract
 class Parameter : NuRefCounted, ISerializable, IDeserializable!ModelState {
 protected:
@@ -85,35 +80,10 @@ protected:
         guid = object.tryGetGUID(state, "uuid");
         object.tryGetRef(state, name, "name");
 
-        if (auto bindings = "bindings" in object) {
-            foreach (ref binding; bindings.array) {
-                this.bindings ~= binding.tryGetBinding(state, this);
-            }
-        }
-
-        // Migrate old way of differentiating 1D/2D parameters.
-        if (auto isVec2 = "is_vec2" in object) {
-            object["axes"] = cast(uint)(isVec2.boolean ? 2 : 1);
-        }
-
-        // Migrate old way of storing keypoints.
-        if (auto axes = "axis_points" in object) {
-            switch (object.tryGet!uint(state, "axes")) {
-                case 1:
-                    auto axis1 = axes.array[0];
-                    object["points"] = axis1;
-                    break;
-
-                case 2:
-                    auto axis1 = axes.array[0];
-                    auto axis2 = axes.array[1];
-                    object["hpoints"] = axis1;
-                    object["vpoints"] = axis2;
-                    break;
-
-                default:
-                    assert(false, "Invalid number of point axes");
-                    break;
+        auto pbindings = "bindings" in object;
+        if (pbindings && (*pbindings).isArray) {
+            foreach (ref binding; (*pbindings).array) {
+                this.bindings ~= binding.tryDeserializeBinding(state, this);
             }
         }
     }
@@ -258,8 +228,6 @@ public:
     */
     abstract void update();
 }
-mixin Register!(Parameter, in_param_registry);
-
 
 enum ParameterAxis {
     /**

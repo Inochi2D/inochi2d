@@ -28,9 +28,29 @@ import numem;
 /**
     Parameter binding to a single numeric property.
 */
+@TypeId("property", IN_MAKE_TAG!(0, 0))
 class ParameterPropertyBinding : ParameterBindingImpl!float {
-public:
+protected:
 @nogc:
+
+    /**
+        Serialize this parameter binding.
+    */
+    override
+    void onSerialize(ref DataNode object) {
+
+    }
+    
+    /**
+        Deserialize this parameter.
+    */
+    override
+    void onDeserialize(ref DataNode object, ref ModelState state) {
+        
+    }
+
+public:
+
     this(Parameter parameter) {
         super(parameter);
     }
@@ -63,3 +83,4 @@ public:
         return other.hasProperty(target.prop);
     }
 }
+mixin Register!(ParameterPropertyBinding, in_binding_registry);
