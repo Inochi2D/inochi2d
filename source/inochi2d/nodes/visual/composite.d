@@ -36,13 +36,7 @@ private:
 @nogc:
     DrawListAlloc* ssDrawList_;
     weak_vector!Visual visuals_;
-
-    //
-    //      PARAMETER OFFSETS
-    //
-    float offsetOpacity = 1;
-    vec3 offsetTint = vec3(0);
-    vec3 offsetScreenTint = vec3(0);
+    
 protected:
 
     /**
@@ -93,6 +87,31 @@ protected:
     }
 
     /**
+        Called when the node is to define its properties.
+
+        Call $(D propList.define) with a quark to do this.
+
+        Params:
+            propList = The property list to populate.
+    */
+    override
+    void onDefineProperties(ref PropertyStore propList) {
+        super.onDefineProperties(propList);
+        
+        propList.define!float(PROP_SCREEN_R,          0);
+        propList.define!float(PROP_SCREEN_G,          0);
+        propList.define!float(PROP_SCREEN_B,          0);
+        propList.define!float(PROP_TINT_R,            1);
+        propList.define!float(PROP_TINT_G,            1);
+        propList.define!float(PROP_TINT_B,            1);
+        propList.define!float(PROP_OPACITY,           1);
+
+        // Define combined overlays.
+        propList.defineOverlay!vec3(PROP_SCREEN_RGB, propList.offsetOf(PROP_SCREEN_R));
+        propList.defineOverlay!vec3(PROP_TINT_RGB,   propList.offsetOf(PROP_TINT_R));
+    }
+
+    /**
         Called during the early update phase of a new frame.
         
         Params:
@@ -102,10 +121,6 @@ protected:
     void onPreUpdate(DrawList drawList) {
         super.onPreUpdate(drawList);
         ssDrawList_ = null;
-
-        offsetOpacity = 1;
-        offsetTint = vec3(1, 1, 1);
-        offsetScreenTint = vec3(0, 0, 0);
     }
 
     /**
@@ -138,9 +153,9 @@ protected:
             return;
 
         CompositeVars compositeVars = CompositeVars(
-            tint: tint * offsetTint,
-            screenTint: screenTint * offsetScreenTint,
-            opacity: opacity * offsetOpacity
+            tint: tint * props.get!vec3(PROP_TINT_RGB),
+            screenTint: screenTint * props.get!vec3(PROP_SCREEN_RGB),
+            opacity: opacity * props.get!float(PROP_OPACITY)
         );
         
         visuals_.sortNodes();

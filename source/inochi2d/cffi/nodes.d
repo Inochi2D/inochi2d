@@ -184,40 +184,6 @@ void in_node_set_enabled(in_node_t* self, bool value) {
 }
 
 /**
-    Gets the local z-sorting index of the given node.
-
-    Params:
-        self = The node to operate on.
-
-    Returns:
-        The local z-sorting value of the given node,
-        or NaN value if the node reference was invalid. 
-*/
-float in_node_get_local_zsort(in_node_t* self) {
-    if (Node n_self = cast(Node)self)
-        return n_self.localZSort;
-
-    return float.nan;
-}
-
-/**
-    Gets the z-sorting index of the given node.
-
-    Params:
-        self = The node to operate on.
-
-    Returns:
-        The z-sorting value of the given node,
-        or NaN value if the node reference was invalid. 
-*/
-float in_node_get_zsort(in_node_t* self) {
-    if (Node n_self = cast(Node)self)
-        return n_self.zSort;
-
-    return float.nan;
-}
-
-/**
     Gets whether the node's transform is locked to the root
     node.
 

@@ -59,6 +59,25 @@ protected:
     }
 
     /**
+        Called when the node is to define its properties.
+
+        Call $(D propList.define) with a quark to do this.
+
+        Params:
+            propList = The property list to populate.
+    */
+    override
+    void onDefineProperties(ref PropertyStore propList) {
+        super.onDefineProperties(propList);
+
+        propList.define!float(PROP_FRAME_X, 0);
+        propList.define!float(PROP_FRAME_Y, 0);
+
+        // Define combined overlays.
+        propList.defineOverlay!vec3(PROP_FRAME_XY, propList.offsetOf(PROP_FRAME_X));
+    }
+
+    /**
         Called during the late update phase of a new frame.
         
         Params:
@@ -85,5 +104,31 @@ public:
     */
     @property ref vec2u frameCount() => frameCount_;
 }
-
 mixin Register!(AnimatedPart, in_node_registry);
+
+
+
+
+//
+//          QUARKS
+//
+
+mixin RegisterQuarks!();
+
+/**
+    X frame index.
+*/
+@propkey("frame.xy")
+__gshared immutable(quark) PROP_FRAME_XY;
+
+/**
+    X frame index.
+*/
+@propkey("frame.x")
+__gshared immutable(quark) PROP_FRAME_X;
+
+/**
+    Y frame index.
+*/
+@propkey("frame.y")
+__gshared immutable(quark) PROP_FRAME_Y;

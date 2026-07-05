@@ -104,11 +104,6 @@ protected:
     final @property uint nid() @nogc pure => nid_;
 
     /**
-        The Node's numeric ID
-    */
-    final @property ref PropertyStore props() @nogc nothrow pure => props_;
-
-    /**
         Serializes this node to a DataNode.
 
         Params:
@@ -241,6 +236,11 @@ public:
         The node's GUID.
     */
     @property GUID guid() @nogc nothrow pure => guid_;
+
+    /**
+        The node's property store, should generally not be directly used.
+    */
+    final @property ref PropertyStore props() @nogc nothrow pure => props_;
 
     /**
         The transform in local-space.

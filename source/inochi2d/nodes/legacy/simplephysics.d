@@ -20,8 +20,7 @@ import inochi2d;
 import numem;
 
 // Allow disabling legacy node.
-version (IN_NO_LEGACY) {
-} else:
+version (IN_NO_LEGACY) { } else:
 
 /**
     Physics model to use for simple physics
@@ -182,13 +181,6 @@ public:
 class SimplePhysics : Node {
 private:
 @nogc:
-    float offsetGravity = 1.0;
-    float offsetLength = 0;
-    float offsetFrequency = 1;
-    float offsetAngleDamping = 0.5;
-    float offsetLengthDamping = 0.5;
-    vec2 offsetOutputScale = vec2(1, 1);
-
     GUID paramRef = GUID.nil;
     PhysicsModel modelType_ = PhysicsModel.Pendulum;
     Parameter param_;
@@ -257,6 +249,30 @@ protected:
     }
 
     /**
+        Called when the node is to define its properties.
+
+        Call $(D propList.define) with a quark to do this.
+
+        Params:
+            propList = The property list to populate.
+    */
+    override void onDefineProperties(ref PropertyStore propList) {
+        super.onDefineProperties(propList);
+
+        propList.define!float(PROP_LENGTH,          0);
+        propList.define!float(PROP_GRAVITY,         1);
+        propList.define!float(PROP_FREQUENCY,       1);
+        propList.define!float(PROP_ANGLE_DAMPING,   1);
+        propList.define!float(PROP_LENGTH_DAMPING,  1);
+        propList.define!float(PROP_LENGTH_DAMPING,  1);
+        propList.define!float(PROP_OUTPUT_SCALE_X,  1);
+        propList.define!float(PROP_OUTPUT_SCALE_Y,  1);
+
+        // Define combined overlays.
+        propList.defineOverlay!vec2(PROP_OUTPUT_SCALE_XY, propList.offsetOf(PROP_OUTPUT_SCALE_X));
+    }
+
+    /**
         Called during the early update phase of a new frame.
         
         Params:
@@ -265,12 +281,6 @@ protected:
     override
     void onPreUpdate(DrawList drawList) {
         super.onPreUpdate(drawList);
-        offsetGravity = 1;
-        offsetLength = 0;
-        offsetFrequency = 1;
-        offsetAngleDamping = 1;
-        offsetLengthDamping = 1;
-        offsetOutputScale = vec2(1, 1);
     }
 
 public:
@@ -356,32 +366,32 @@ public:
     /**
         The final gravity
     */
-    @property float finalGravity() @nogc => (gravity * offsetGravity) * puppet.properties.physicsGravity * this.scale;
+    @property float finalGravity() @nogc => (gravity * props.get!float(PROP_GRAVITY)) * puppet.properties.physicsGravity * this.scale;
 
     /**
         The final length
     */
-    @property float finalLength() @nogc => length + offsetLength;
+    @property float finalLength() @nogc => length + props.get!float(PROP_LENGTH);
 
     /**
         The final frequency
     */
-    @property float finalFrequency() @nogc => frequency * offsetFrequency;
+    @property float finalFrequency() @nogc => frequency * props.get!float(PROP_FREQUENCY);
 
     /**
         The final angle damping
     */
-    @property float finalAngleDamping() @nogc => angleDamping * offsetAngleDamping;
+    @property float finalAngleDamping() @nogc => angleDamping * props.get!float(PROP_ANGLE_DAMPING);
 
     /**
         The final length damping
     */
-    @property float finalLengthDamping() @nogc => lengthDamping * offsetLengthDamping;
+    @property float finalLengthDamping() @nogc => lengthDamping * props.get!float(PROP_LENGTH_DAMPING);
 
     /**
         The final output scale
     */
-    @property vec2 finalOutputScale() @nogc => outputScale * offsetOutputScale;
+    @property vec2 finalOutputScale() @nogc => outputScale * props.get!vec2(PROP_OUTPUT_SCALE_XY);
 
     ~this() {
         nogc_delete(system);
@@ -520,5 +530,61 @@ public:
         }
     }
 }
-
 mixin Register!(SimplePhysics, in_node_registry);
+
+
+
+
+//
+//          QUARKS
+//
+
+mixin RegisterQuarks!();
+
+/**
+    Gravity
+*/
+@propkey("gravity")
+__gshared immutable(quark) PROP_GRAVITY;
+
+/**
+    Length
+*/
+@propkey("length")
+__gshared immutable(quark) PROP_LENGTH;
+
+/**
+    Frequency
+*/
+@propkey("frequency")
+__gshared immutable(quark) PROP_FREQUENCY;
+
+/**
+    Angle damping
+*/
+@propkey("angleDamping")
+__gshared immutable(quark) PROP_ANGLE_DAMPING;
+
+/**
+    Length damping
+*/
+@propkey("lengthDamping")
+__gshared immutable(quark) PROP_LENGTH_DAMPING;
+
+/**
+    Output scale xy
+*/
+@propkey("outputScale.xy")
+__gshared immutable(quark) PROP_OUTPUT_SCALE_XY;
+
+/**
+    Output scale x
+*/
+@propkey("outputScale.x")
+__gshared immutable(quark) PROP_OUTPUT_SCALE_X;
+
+/**
+    Output scale y
+*/
+@propkey("outputScale.y")
+__gshared immutable(quark) PROP_OUTPUT_SCALE_Y;
