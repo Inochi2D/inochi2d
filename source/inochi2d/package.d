@@ -11,6 +11,7 @@
         Luna Nielsen
 */
 module inochi2d;
+// dfmt off
 
 public import inochi2d.common;
 public import inochi2d.puppet;

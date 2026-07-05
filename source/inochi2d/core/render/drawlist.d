@@ -199,7 +199,8 @@ public:
     /**
         Sets the blending mode for the current draw call.
     */
-    void setVariables(T)(uint nid, T value) if (T.sizeof <= _ccmd.variables.sizeof) {
+    void setVariables(T)(uint nid, T value)
+    if (T.sizeof <= _ccmd.variables.sizeof) {
         _ccmd.typeId = nid;
         nu_memcpy(_ccmd.variables.ptr, cast(void*)&value, T.sizeof);
     }

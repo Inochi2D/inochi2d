@@ -19,24 +19,25 @@ import inochi2d.common;
 import inochi2d;
 import numem;
 
+// dfmt off
 // Allow disabling legacy node.
-version (IN_NO_LEGACY) {
-} else:
+version (IN_NO_LEGACY) {} else:
+// dfmt on
 
-    /**
+/**
     Physics model to use for simple physics
 */
-    enum PhysicsModel {
-        /**
+enum PhysicsModel {
+    /**
         Rigid pendulum
     */
-        Pendulum = "pendulum",
+    Pendulum = "pendulum",
 
-        /**
+    /**
         Springy pendulum
     */
-        SpringPendulum = "spring_pendulum",
-    }
+    SpringPendulum = "spring_pendulum",
+}
 
 enum ParamMapMode {
     AngleLength = "angle_length",
@@ -534,6 +535,10 @@ public:
 }
 
 mixin Register!(SimplePhysics, in_node_registry);
+// dfmt off
+
+
+
 
 //
 //          QUARKS

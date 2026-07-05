@@ -11,15 +11,24 @@
         Luna Nielsen
 */
 module inochi2d.cffi;
-import inochi2d.core.guid;
+import inochi2d.common;
+import inochi2d.nodes;
+import inochi2d.param;
+import inochi2d.core;
 import nulib.string;
 import nulib.quark;
 import numem;
 
-version (IN_DYNLIB)  : extern (C) export @nogc:
+// dfmt off
 
-version (WebAssembly) {
-} else version = hasFileIO;
+version (IN_DYNLIB):
+extern (C) export @nogc:
+
+version (WebAssembly) { }
+else version = hasFileIO;
+
+
+
 
 //
 //      BASE DATA TYPES
@@ -51,6 +60,13 @@ struct in_vtxdata_t {
 }
 
 /**
+    A GUID.
+*/
+struct in_guid_t {
+    ubyte[16] data = 0;
+}
+
+/**
     IO sink functions
 */
 struct io_sink_t {
@@ -70,6 +86,9 @@ struct io_sink_t {
     */
     extern (C) void function(const(char)* msg, const(char)* file, uint line) @nogc nothrow info;
 }
+
+
+
 
 //
 //          TYPEDEFS
@@ -120,6 +139,9 @@ struct in_texture_t;
 */
 struct in_drawlist_t;
 
+
+
+
 //
 //          CORE API
 //
@@ -163,6 +185,9 @@ quark_t quarkof(const(char)* key) {
     return nu_quarkof(cast(string)key.fromStringz());
 }
 
+
+
+
 //
 //              PUPPET
 //
@@ -176,17 +201,14 @@ quark_t quarkof(const(char)* key) {
     
     Returns:
         A new puppet instance, or $(D null) on failure.
-    
-    See_Also:
-        $(D in_get_last_error)
 */
 version(hasFileIO)
 in_puppet_t* in_puppet_load(const(char)* file, io_sink_t* sink) {
     import nulib.string : fromStringz;
-
-    __in_clear_error();
-    return cast(in_puppet_t*)Puppet.fromFile(cast(string)file.fromStringz, sink ? *cast(IOSink*)sink : IOSink.init).getOr(
-            null);
+    return cast(in_puppet_t*)Puppet.fromFile(
+        cast(string)file.fromStringz, 
+        sink ? *cast(IOSink*)sink : IOSink.init
+    ).getOr(null);
 }
 
 /**
@@ -199,26 +221,19 @@ in_puppet_t* in_puppet_load(const(char)* file, io_sink_t* sink) {
     
     Returns:
         A new puppet instance, or $(D null) on failure.
-    
-    See_Also:
-        $(D in_get_last_error)
 */
 in_puppet_t* in_puppet_load_from_memory(const(ubyte)* data, uint length, io_sink_t* sink) {
     import nulib.io.stream : MemoryStream;
-
-    __in_clear_error();
     auto stream = nogc_new!MemoryStream(cast(ubyte[])data[0 .. length]);
     scope (exit) {
         stream.take();
         nogc_delete(stream);
     }
 
-    auto result = Puppet.fromStream(stream, sink ? *cast(IOSink*)sink : IOSink.init);
-    if (!result) {
-        __in_set_error(result.error);
-        return null;
-    }
-    return cast(in_puppet_t*)result.getOr(null);
+    return cast(in_puppet_t*)Puppet.fromStream(
+        stream, 
+        sink ? *cast(IOSink*)sink : IOSink.init
+    ).getOr(null);
 }
 
 /**
@@ -233,8 +248,9 @@ in_puppet_t* in_puppet_load_from_memory(const(ubyte)* data, uint length, io_sink
         obj = The puppet object.
 */
 void in_puppet_free(in_puppet_t* obj) {
-    Puppet puppet = cast(Puppet)obj;
-    nogc_delete(puppet);
+    if (Puppet puppet = cast(Puppet)cast(NuObject)obj) {
+        nogc_delete(puppet);
+    }
 }
 
 /**
@@ -428,6 +444,9 @@ in_node_t* in_puppet_get_root_node(in_puppet_t* self) {
     return null;
 }
 
+
+
+
 //
 //              PARAMETERS
 //
@@ -527,6 +546,9 @@ void in_parameter_set_value(in_parameter_t* obj, float* values) {
     (cast(Parameter)obj).currentValue[0 .. dims] = values[0 .. dims];
 }
 
+
+
+
 //
 //              TEXTURE CACHE
 //
@@ -583,6 +605,9 @@ in_texture_t** in_texture_cache_get_textures(in_texture_cache_t* obj, ref uint c
 void in_texture_cache_prune(in_texture_cache_t* obj) {
     (cast(TextureCache)obj).prune();
 }
+
+
+
 
 //
 //              NODE
@@ -844,6 +869,9 @@ void in_node_set_property(in_node_t* self, quark_t key, float value) {
     }
 }
 
+
+
+
 //
 //              PART & MESH EFFECT
 //
@@ -905,6 +933,9 @@ void* in_resource_get_id(in_resource_t* obj) {
 void in_resource_set_id(in_resource_t* obj, void* value) {
     (cast(Resource)obj).id = value;
 }
+
+
+
 
 //
 //              TEXTURES
@@ -1019,6 +1050,9 @@ void* in_texture_get_pixels(in_texture_t* obj) {
     return (cast(Texture)obj).pixels.ptr;
 }
 
+
+
+
 //
 //              DRAWLIST
 //
@@ -1027,43 +1061,50 @@ void* in_texture_get_pixels(in_texture_t* obj) {
     DrawState flags
 */
 alias in_drawstate_t = uint;
-enum in_drawstate_t IN_DRAW_STATE_NORMAL = 0,
-    IN_DRAW_STATE_DEFINE_MASK = 1,
-    IN_DRAW_STATE_MASKED_DRAW = 2,
-    IN_DRAW_STATE_COMPOSITE_BEGIN = 3,
-    IN_DRAW_STATE_COMPOSITE_END = 4,
-    IN_DRAW_STATE_COMPOSITE_BLIT = 5;
+enum : in_drawstate_t {
+    IN_DRAW_STATE_NORMAL            = 0,
+    IN_DRAW_STATE_DEFINE_MASK       = 1,
+    IN_DRAW_STATE_PUSH_MASK         = 2,
+    IN_DRAW_STATE_POP_MASK          = 3,
+    IN_DRAW_STATE_COMPOSITE_BEGIN   = 4,
+    IN_DRAW_STATE_COMPOSITE_END     = 5,
+    IN_DRAW_STATE_COMPOSITE_BLIT    = 6
+}
 
 /**
     Masking modes
 */
 alias in_mask_mode_t = uint;
-enum in_mask_mode_t IN_MASK_MODE_MASK = 0,
-    IN_MASK_MODE_DODGE = 1;
+enum : in_mask_mode_t {
+    IN_MASK_MODE_MASK   = 0,
+    IN_MASK_MODE_DODGE  = 1
+}
 
 /**
     Blending modes
 */
 alias in_blend_mode_t = uint;
-enum in_blend_mode_t IN_BLEND_MODE_NORMAL = 0x00,
-    IN_BLEND_MODE_MULTIPLY = 0x01,
-    IN_BLEND_MODE_SCREEN = 0x02,
-    IN_BLEND_MODE_OVERLAY = 0x03,
-    IN_BLEND_MODE_DARKEN = 0x04,
-    IN_BLEND_MODE_LIGHTEN = 0x05,
-    IN_BLEND_MODE_COLOR_DODGE = 0x06,
-    IN_BLEND_MODE_LINEAR_DODGE = 0x07,
-    IN_BLEND_MODE_ADD_GLOW = 0x08,
-    IN_BLEND_MODE_COLOR_BURN = 0x09,
-    IN_BLEND_MODE_HARD_LIGHT = 0x0A,
-    IN_BLEND_MODE_SOFT_LIGHT = 0x0B,
-    IN_BLEND_MODE_DIFFERENCE = 0x0C,
-    IN_BLEND_MODE_EXCLUSION = 0x0D,
-    IN_BLEND_MODE_SUBTRACT = 0x0E,
-    IN_BLEND_MODE_INVERSE = 0x0F,
-    IN_BLEND_MODE_DESTINATION_IN = 0x10,
-    IN_BLEND_MODE_SOURCE_IN = 0x11,
-    IN_BLEND_MODE_SOURCE_OUT = 0x12;
+enum : in_blend_mode_t { 
+    IN_BLEND_MODE_NORMAL        = 0x00,
+    IN_BLEND_MODE_MULTIPLY      = 0x01,
+    IN_BLEND_MODE_SCREEN        = 0x02,
+    IN_BLEND_MODE_OVERLAY       = 0x03,
+    IN_BLEND_MODE_DARKEN        = 0x04,
+    IN_BLEND_MODE_LIGHTEN       = 0x05,
+    IN_BLEND_MODE_COLOR_DODGE   = 0x06,
+    IN_BLEND_MODE_LINEAR_DODGE  = 0x07,
+    IN_BLEND_MODE_ADD_GLOW      = 0x08,
+    IN_BLEND_MODE_COLOR_BURN    = 0x09,
+    IN_BLEND_MODE_HARD_LIGHT    = 0x0A,
+    IN_BLEND_MODE_SOFT_LIGHT    = 0x0B,
+    IN_BLEND_MODE_DIFFERENCE    = 0x0C,
+    IN_BLEND_MODE_EXCLUSION     = 0x0D,
+    IN_BLEND_MODE_SUBTRACT      = 0x0E,
+    IN_BLEND_MODE_INVERSE       = 0x0F,
+    IN_BLEND_MODE_DESTINATION_IN= 0x10,
+    IN_BLEND_MODE_SOURCE_IN     = 0x11,
+    IN_BLEND_MODE_SOURCE_OUT    = 0x12
+}
 
 /**
     A drawing command from the Inochi2D draw list

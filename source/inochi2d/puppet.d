@@ -628,14 +628,16 @@ public:
     /**
         Finds Node by its name
     */
-    T find(T = Node)(string name) @nogc if (is(T : Node)) {
+    T find(T = Node)(string name) @nogc
+    if (is(T : Node)) {
         return cast(T)findNode(root, name);
     }
 
     /**
         Finds Node by its unique id
     */
-    T find(T = Node)(GUID guid) @nogc if (is(T : Node)) {
+    T find(T = Node)(GUID guid) @nogc
+    if (is(T : Node)) {
         return cast(T)findNode(root, guid);
     }
 

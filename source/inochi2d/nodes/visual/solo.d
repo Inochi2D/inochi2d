@@ -127,6 +127,10 @@ public:
 }
 
 mixin Register!(Solo, in_node_registry);
+// dfmt off
+
+
+
 
 //
 //          QUARKS

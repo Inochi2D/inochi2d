@@ -8,9 +8,11 @@ max_line_length = 120
 tab_width = 4
 
 dfmt_soft_max_line_length = 120
+dfmt_template_constraint_style = always_newline
 dfmt_compact_labeled_statements = true
 dfmt_align_switch_statements = true
 dfmt_selective_import_space = true
+dfmt_space_after_keywords = true
 dfmt_space_after_cast = false
 dfmt_keep_line_breaks = true
 dfmt_outdent_labels = true

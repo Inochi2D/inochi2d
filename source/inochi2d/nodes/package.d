@@ -740,6 +740,10 @@ public:
 }
 
 mixin Register!(Node, in_node_registry);
+// dfmt off
+
+
+
 
 //
 //          TYPES AND REGISTRIES
@@ -749,6 +753,9 @@ mixin Register!(Node, in_node_registry);
     The public node registry.
 */
 __gshared TypeRegistry!Node in_node_registry;
+
+
+
 
 //
 //          QUARKS
@@ -810,6 +817,9 @@ __gshared immutable(quark) PROP_SCALE_X;
 */
 @propkey("transform.s.y")
 __gshared immutable(quark) PROP_SCALE_Y;
+
+
+
 
 //
 //          HELPER FUNCTIONS

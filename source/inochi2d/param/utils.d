@@ -29,7 +29,7 @@ import numem;
         dims =      The dimensionality expected.
 */
 void deserialize08NestedArrays(T)(ref DataNode object, ref T target, ref ModelState state, vec2u dims) @nogc
-        if (is(T == vector2d!U, U)) {
+if (is(T == vector2d!U, U)) {
     import inochi2d.core.math.deform : Deformation;
 
     // Invalid array.

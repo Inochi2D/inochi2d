@@ -229,7 +229,8 @@ alias vec4us = VectorImpl!(ushort, 4); /// ditto
     Returns:
         The serialized vector
 */
-void onSerialize(T)(ref T value, ref DataNode dst) @nogc if (isVector!T) {
+void onSerialize(T)(ref T value, ref DataNode dst) @nogc
+if (isVector!T) {
     dst = DataNode.createArray();
     static foreach (i; 0 .. T.dimensions) {
         static if (__traits(isFloating, T)) {

@@ -130,6 +130,10 @@ public:
 }
 
 mixin Register!(Bone, in_node_registry);
+// dfmt off
+
+
+
 
 /**
     A target of a bone.

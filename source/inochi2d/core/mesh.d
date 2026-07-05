@@ -460,7 +460,8 @@ struct MeshData {
     Returns:
         A rectangle enclosing the mesh.
 */
-rect getBounds(T)(T[] mesh) @nogc nothrow pure if (isVector!T) {
+rect getBounds(T)(T[] mesh) @nogc nothrow pure
+if (isVector!T) {
     vec2 minp = vec2(float.max, float.max);
     vec2 maxp = vec2(-float.max, -float.max);
 

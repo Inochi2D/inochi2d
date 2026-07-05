@@ -12,9 +12,8 @@
         Hoshino Lina
 */
 module inochi2d.nodes.legacy;
+// dfmt off
 
 // Allow disabling legacy nodes.
-version (IN_NO_LEGACY) {
-} else:
-
-    public import inochi2d.nodes.legacy.simplephysics;
+version (IN_NO_LEGACY) { } else:
+public import inochi2d.nodes.legacy.simplephysics;

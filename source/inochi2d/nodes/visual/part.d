@@ -467,7 +467,8 @@ public:
             T =     The type of the mesh effect to add.
             args =  The arguments to pass to the effect's constructor.
     */
-    void addEffect(T, Args...)(Args args) if (is(T : MeshEffect)) {
+    void addEffect(T, Args...)(Args args)
+    if (is(T : MeshEffect)) {
         this.effects_ ~= nogc_new!T(this, args);
     }
 
