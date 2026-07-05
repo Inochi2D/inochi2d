@@ -13,7 +13,8 @@
         Hoshino Lina
 */
 module inochi2d.param.parameters.param2d;
-import inochi2d.param.parameter;
+import inochi2d.param.parameters;
+import inochi2d.param.utils;
 import inochi2d.core.registry;
 import inochi2d.core.serde;
 import inochi2d.core.math;

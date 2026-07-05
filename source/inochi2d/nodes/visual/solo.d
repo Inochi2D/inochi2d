@@ -69,6 +69,20 @@ protected:
         }
     }
 
+    /**
+        Called when the node is to define its properties.
+
+        Call $(D propList.define) with a quark to do this.
+
+        Params:
+            propList = The property list to populate.
+    */
+    override
+    void onDefineProperties(ref PropertyStore propList) {
+        super.onDefineProperties(propList);
+        propList.define(PROP_ACTIVE_LAYER, 0);
+    }
+
 public:
 
     /**
@@ -107,82 +121,20 @@ public:
     this(GUID guid, Node parent = null) {
         super(guid, parent);
     }
-
-    /**
-        Gets whether a property with the given name exists
-        in the object.
-
-        Params:
-            key = The name of the property.
-        
-        Returns:
-            $(D true) if the property exists,
-            $(D false) otherwise.
-    */
-    override
-    bool hasProperty(string key) const @nogc nothrow {
-        switch (key) {
-        case "activeLayer":
-            return true;
-        default:
-            return super.hasProperty(key);
-        }
-    }
-
-    /**
-        Gets the value of a given property.
-
-        Params:
-            key = The name of the property.
-        
-        Returns:
-            The floating point value of the property.
-    */
-    override
-    float getProperty(string key) const @nogc nothrow {
-        switch (key) {
-        case "activeLayer":
-            return activeLayer_;
-        default:
-            return super.getProperty(key);
-        }
-    }
-
-    /**
-        Gets the default value of a given property.
-
-        Params:
-            key = The name of the property.
-        
-        Returns:
-            The default value of the property.
-    */
-    override
-    float getPropertyDefault(string key) const @nogc nothrow {
-        switch (key) {
-        case "activeLayer":
-            return 0;
-        default:
-            return super.getPropertyDefault(key);
-        }
-    }
-
-    /**
-        Sets the value of the property.
-
-        Params:
-            key =   The name of the property.
-            value = The value to set the property to.
-    */
-    override
-    void setProperty(string key, float value) @nogc nothrow {
-        switch (key) {
-        case "activeLayer":
-            this.changeLayer(cast(uint)value);
-            return;
-        default:
-            return super.setProperty(key, value);
-        }
-    }
 }
 mixin Register!(Solo, in_node_registry);
+
+
+
+
+//
+//          QUARKS
+//
+
+mixin RegisterQuarks!();
+
+/**
+    Active layer.
+*/
+@propkey("activeLayer")
+__gshared immutable(quark) PROP_ACTIVE_LAYER;

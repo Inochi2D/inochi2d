@@ -246,9 +246,13 @@ struct Deformation {
     }
 
     void onDeserialize(ref DataNode data, ref ModelState state) @nogc {
-        this.vertexOffsets = nu_malloca!vec2(data.length);
-        foreach (i, ref element; data.array) {
-            this.vertexOffsets[i / 2] = element.deserialize!vec2(state);
+        if (state.doUpgrade08) {
+            
+            this.vertexOffsets = nu_malloca!vec2(data.length);
+            foreach (i, ref element; data.array) {
+                this.vertexOffsets[i / 2] = element.deserialize!vec2(state);
+            }
+            return;
         }
     }
 

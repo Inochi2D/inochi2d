@@ -558,6 +558,47 @@ public:
     }
 }
 
+/**
+    Gets the type name for a given DataNodeType.
+
+    Params:
+        type = The data node type.
+
+    Returns:
+        The name of the type.
+*/
+string toTypeName(DataNodeType type) @nogc nothrow pure {
+    final switch(type) {
+            
+            case DataNodeType.string_:
+                return "string";
+            
+            case DataNodeType.boolean_:
+                return "boolean";
+            
+            case DataNodeType.int_:
+                return "int32";
+            
+            case DataNodeType.uint_:
+                return "uint32";
+            
+            case DataNodeType.float_:
+                return "float32";
+            
+            case DataNodeType.array_:
+                return "array";
+            
+            case DataNodeType.object_:
+                return "object";
+            
+            case DataNodeType.blob_:
+                return "blob";
+            
+            case DataNodeType.undefined:
+                return "undefined";
+    }
+}
+
 @("Create node.")
 unittest {
     DataNode n = DataNode.createObject();

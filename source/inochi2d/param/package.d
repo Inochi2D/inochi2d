@@ -14,5 +14,5 @@
 */
 module inochi2d.param;
 
-public import inochi2d.param.parameter;
-public import inochi2d.param.binding;
+public import inochi2d.param.parameters;
+public import inochi2d.param.bindings;

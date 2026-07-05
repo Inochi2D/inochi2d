@@ -29,6 +29,12 @@ private:
     size_t _columns = 0;
 
 public:
+    
+    /**
+        Type of the data stored within.
+    */
+    alias DT = T;
+
     /**
         Pointer to the start of the data.
     */

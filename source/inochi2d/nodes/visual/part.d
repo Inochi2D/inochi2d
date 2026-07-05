@@ -51,15 +51,6 @@ private:
     DeformedMesh base_;
     weak_vector!MeshEffect effects_;
 
-    //
-    //      PARAMETER OFFSETS
-    //
-    float offsetMaskThreshold = 0;
-    float offsetOpacity = 1;
-    float offsetEmissionStrength = 1;
-    vec3 offsetTint = vec3(0);
-    vec3 offsetScreenTint = vec3(0);
-
 protected:
 
     /**
@@ -187,12 +178,6 @@ protected:
     */
     override
     void onPreUpdate(DrawList drawList) {
-        offsetMaskThreshold = 0;
-        offsetOpacity = 1;
-        offsetTint = vec3(1, 1, 1);
-        offsetScreenTint = vec3(0, 0, 0);
-        offsetEmissionStrength = 1;
-
         super.onPreUpdate(drawList);
         this.resetDeform();
     }
@@ -240,10 +225,10 @@ protected:
             return;
 
         PartVars vars = PartVars(
-            tint: tint * offsetTint,
-            screenTint: screenTint * offsetScreenTint,
-            opacity: opacity * offsetOpacity,
-            emissionStrength: emissionStrength * offsetEmissionStrength
+            tint: tint * props.get!vec3(PROP_TINT_RGB),
+            screenTint: screenTint * props.get!vec3(PROP_SCREEN_RGB),
+            opacity: opacity * props.get!float(PROP_OPACITY),
+            emissionStrength: emissionStrength * props.get!float(PROP_EMISSION_STRENGTH)
         );
 
         drawList.setMesh(drawListSlot);
@@ -267,6 +252,32 @@ protected:
         drawList.setSources(textures);
         drawList.setMasking(mode);
         drawList.next();
+    }
+
+    /**
+        Called when the node is to define its properties.
+
+        Call $(D propList.define) with a quark to do this.
+
+        Params:
+            propList = The property list to populate.
+    */
+    override
+    void onDefineProperties(ref PropertyStore propList) {
+        super.onDefineProperties(propList);
+        
+        propList.define!float(PROP_SCREEN_R,          0);
+        propList.define!float(PROP_SCREEN_G,          0);
+        propList.define!float(PROP_SCREEN_B,          0);
+        propList.define!float(PROP_TINT_R,            1);
+        propList.define!float(PROP_TINT_G,            1);
+        propList.define!float(PROP_TINT_B,            1);
+        propList.define!float(PROP_OPACITY,           1);
+        propList.define!float(PROP_EMISSION_STRENGTH, 1);
+
+        // Define combined overlays.
+        propList.defineOverlay!vec3(PROP_SCREEN_RGB, propList.offsetOf(PROP_SCREEN_R));
+        propList.defineOverlay!vec3(PROP_TINT_RGB,   propList.offsetOf(PROP_TINT_R));
     }
 
 public:
@@ -476,136 +487,74 @@ public:
             }
         }
     }
-
-    /**
-        Gets whether a property with the given name exists
-        in the object.
-
-        Params:
-            key = The name of the property.
-        
-        Returns:
-            $(D true) if the property exists,
-            $(D false) otherwise.
-    */
-    override
-    bool hasProperty(string key) const {
-        switch (key) {
-        case "opacity":
-        case "tint.r":
-        case "tint.g":
-        case "tint.b":
-        case "screenTint.r":
-        case "screenTint.g":
-        case "screenTint.b":
-        case "emissionStrength":
-            return true;
-
-        default:
-            return super.hasProperty(key);
-        }
-    }
-
-    /**
-        Gets the value of a given property.
-
-        Params:
-            key = The name of the property.
-        
-        Returns:
-            The floating point value of the property.
-    */
-    override
-    float getProperty(string key) const {
-        switch (key) {
-        case "opacity":
-            return offsetOpacity;
-        case "tint.r":
-            return offsetTint.x;
-        case "tint.g":
-            return offsetTint.y;
-        case "tint.b":
-            return offsetTint.z;
-        case "screenTint.r":
-            return offsetScreenTint.x;
-        case "screenTint.g":
-            return offsetScreenTint.y;
-        case "screenTint.b":
-            return offsetScreenTint.z;
-        case "emissionStrength":
-            return offsetEmissionStrength;
-        default:
-            return super.getProperty(key);
-        }
-    }
-
-    /**
-        Gets the default value of a given property.
-
-        Params:
-            key = The name of the property.
-        
-        Returns:
-            The default value of the property.
-    */
-    override
-    float getPropertyDefault(string key) const {
-        switch (key) {
-        case "alphaThreshold":
-            return 0;
-        case "opacity":
-        case "tint.r":
-        case "tint.g":
-        case "tint.b":
-            return 1;
-        case "screenTint.r":
-        case "screenTint.g":
-        case "screenTint.b":
-            return 0;
-        case "emissionStrength":
-            return 1;
-        default:
-            return super.getPropertyDefault(key);
-        }
-    }
-
-    /**
-        Sets the value of the property.
-
-        Params:
-            key =   The name of the property.
-            value = The value to set the property to.
-    */
-    override
-    void setProperty(string key, float value) {
-        switch (key) {
-        case "opacity":
-            offsetOpacity *= value;
-            return;
-        case "tint.r":
-            offsetTint.x *= value;
-            return;
-        case "tint.g":
-            offsetTint.y *= value;
-            return;
-        case "tint.b":
-            offsetTint.z *= value;
-            return;
-        case "screenTint.r":
-            offsetScreenTint.x += value;
-            return;
-        case "screenTint.g":
-            offsetScreenTint.y += value;
-            return;
-        case "screenTint.b":
-            offsetScreenTint.z += value;
-            return;
-        case "emissionStrength":
-            offsetEmissionStrength += value;
-            return;
-        default:
-            return super.setProperty(key, value);
-        }
-    }
 }
 mixin Register!(Part, in_node_registry);
+
+
+
+
+//
+//          QUARKS
+//
+
+mixin RegisterQuarks!();
+
+/**
+    Opacity.
+*/
+@propkey("opacity")
+__gshared immutable(quark) PROP_OPACITY;
+
+/**
+    Tint RGB
+*/
+@propkey("tint.rgb")
+__gshared immutable(quark) PROP_TINT_RGB;
+
+/**
+    Tint red
+*/
+@propkey("tint.r")
+__gshared immutable(quark) PROP_TINT_R;
+
+/**
+    Tint green
+*/
+@propkey("tint.g")
+__gshared immutable(quark) PROP_TINT_G;
+
+/**
+    Tint blue
+*/
+@propkey("tint.b")
+__gshared immutable(quark) PROP_TINT_B;
+
+/**
+    Screen-tint RGB
+*/
+@propkey("screenTint.rgb")
+__gshared immutable(quark) PROP_SCREEN_RGB;
+
+/**
+    Screen-tint red
+*/
+@propkey("screenTint.r")
+__gshared immutable(quark) PROP_SCREEN_R;
+
+/**
+    Screen-tint green
+*/
+@propkey("screenTint.g")
+__gshared immutable(quark) PROP_SCREEN_G;
+
+/**
+    Screen-tint blue
+*/
+@propkey("screenTint.b")
+__gshared immutable(quark) PROP_SCREEN_B;
+
+/**
+    Emission strength
+*/
+@propkey("emissionStrength")
+__gshared immutable(quark) PROP_EMISSION_STRENGTH;

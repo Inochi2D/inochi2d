@@ -11,6 +11,7 @@
         Luna Nielsen
 */
 module inochi2d.common;
+import nulib.collections;
 import nulib.string;
 
 /**
@@ -60,9 +61,14 @@ struct ModelState {
     IOSink io;
 
     /**
-        Is the model a 0.8 legacy model?
+        Is the puppet a 0.8 legacy puppet?
     */
     bool doUpgrade08;
+
+    /**
+        Simple model upgrade context data
+    */
+    HashTable!(string, float) upctx;
 
     /**
         Inochi2D Specification version.

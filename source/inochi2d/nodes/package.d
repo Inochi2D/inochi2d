@@ -27,11 +27,7 @@ public import inochi2d.nodes.legacy;
 public import inochi2d.core.registry;
 public import inochi2d.core.property;
 public import inochi2d.core.render;
-
-/**
-    The public node registry.
-*/
-__gshared TypeRegistry!Node in_node_registry;
+public import nulib.quark;
 
 /**
     A node in the Inochi2D rendering tree
@@ -48,26 +44,47 @@ private:
     string nodePath_;
     uint nid_;
 
+    // The property store for the node.
+    PropertyStore props_;
+
     bool lockToRoot_;
     Basis globalMatrix_;
     Basis globalMatrixNoParam_;
-    offset_value!Transform localTransform_;
-    offset_value!float zSort_;
+
+    Transform localTransform_;
 
     // Implementation of the transform update algorithm.
     void transformUpdateImpl() {
 
         // Set base matrices.
-        globalMatrix_ = (localTransform_.base + localTransform_.offset).matrix();
-        globalMatrixNoParam_ = localTransform_.base.matrix();
+        globalMatrix_ = (localTransform_ + localTransformOffset).matrix();
+        globalMatrixNoParam_ = localTransform_.matrix();
 
         if (lockToRoot_) {
-            globalMatrix_.matrix =          puppet.root.localTransform_.base.matrix() * globalMatrix_;
-            globalMatrixNoParam_.matrix =   puppet.root.localTransform_.base.matrix() * globalMatrixNoParam_;
+            globalMatrix_.matrix =          puppet.root.localTransform_.matrix() * globalMatrix_;
+            globalMatrixNoParam_.matrix =   puppet.root.localTransform_.matrix() * globalMatrixNoParam_;
         } else if (parent_ !is null) {
             globalMatrix_ =                 parent_.globalMatrix_ * globalMatrix_;
             globalMatrixNoParam_ =          parent_.globalMatrixNoParam_ * globalMatrixNoParam_;
         }
+    }
+
+    // Define property list
+    void defineProperties(ref PropertyStore propList) {
+        propList.define!float(PROP_TRANSLATE_X, 0);
+        propList.define!float(PROP_TRANSLATE_Y, 0);
+        propList.define!float(PROP_TRANSLATE_Z, 0);
+        propList.define!float(PROP_ROTATE_X, 0);
+        propList.define!float(PROP_ROTATE_Y, 0);
+        propList.define!float(PROP_ROTATE_Z, 0);
+        propList.define!float(PROP_SCALE_X, 1);
+        propList.define!float(PROP_SCALE_Y, 1);
+
+        // Overlays that lets us get the values in bulk.
+        propList.defineOverlay!Transform(PROP_TRANSFORM, propList.offsetOf(PROP_TRANSLATE_X));
+
+        this.onDefineProperties(propList);
+        propList.resetAll();
     }
 
 package(inochi2d):
@@ -85,6 +102,11 @@ protected:
         The Node's numeric ID
     */
     final @property uint nid() @nogc pure => nid_;
+
+    /**
+        The Node's numeric ID
+    */
+    final @property ref PropertyStore props() @nogc nothrow pure => props_;
 
     /**
         Serializes this node to a DataNode.
@@ -161,6 +183,16 @@ protected:
     */
     void onMoved(Node from, Node to, ptrdiff_t index) { }
 
+    /**
+        Called when the node is to define its properties.
+
+        Call $(D propList.define) with a quark to do this.
+
+        Params:
+            propList = The property list to populate.
+    */
+    void onDefineProperties(ref PropertyStore propList) { }
+
 public:
 
     /**
@@ -211,14 +243,14 @@ public:
     @property GUID guid() @nogc nothrow pure => guid_;
 
     /**
-        Local-space Z-sorting value
+        The transform in local-space.
     */
-    @property ref float localZSort() @nogc nothrow pure => zSort_.base;
+    @property ref Transform localTransform() @nogc => localTransform_;
 
     /**
-        World-space Z-sorting value
+        The offset transform in local-space.
     */
-    @property float zSort() @nogc nothrow pure => (parent ? parent.zSort : 0) + zSort_;
+    @property Transform localTransformOffset() @nogc => props_.get!Transform(PROP_TRANSFORM);
 
     /**
         The global basis matrix.
@@ -229,16 +261,6 @@ public:
         The global basis matrix with parameter omitted.
     */
     @property Basis baseMatrix() @nogc => globalMatrixNoParam_;
-
-    /**
-        The transform in local-space.
-    */
-    @property ref Transform localTransform() @nogc => localTransform_.base;
-
-    /**
-        The offset transform in local-space.
-    */
-    @property ref Transform localTransformOffset() @nogc => localTransform_.offset;
 
     /**
         Whether transformation is locked to the root node.
@@ -276,10 +298,9 @@ public:
             parent = The puppet this node will belong to.
     */
     this(Puppet parent) @nogc {
-        this.puppet_ = parent;
-        this.zSort_.base = 0;
-        this.zSort_.offset = 0;
+        this.defineProperties(props_);
         this.guid_ = inNewGUID();
+        this.puppet_ = parent;
     }
 
     /**
@@ -300,10 +321,9 @@ public:
             parent =    The node to parent the new node to.
     */
     this(GUID guid, Node parent = null) @nogc {
+        this.defineProperties(props_);
         this.parent = parent;
         this.guid_ = guid;
-        this.zSort_.base = 0;
-        this.zSort_.offset = 0;
     }
 
     /**
@@ -451,8 +471,7 @@ public:
         object["name"] = name[];
         object["type"] = typeId.sid;
         object["enabled"] = enabled;
-        object["zsort"] = zSort_.base;
-        object["transform"] = localTransform_.base.serialize();
+        object["transform"] = localTransform_.serialize();
         object["lockToRoot"] = lockToRoot_;
 
         // Call callback and iterate to children.
@@ -479,11 +498,20 @@ public:
     */
     final void deserialize(ref DataNode object, ref ModelState state) @nogc {
         this.guid_ = object.tryGetGUID(state, "uuid", "guid");
-        object.tryGetRef(state, name, "name");
         object.tryGetRef(state, enabled, "enabled");
-        object.tryGetRef(state, zSort_.base, "zsort");
-        object.tryGetRef(state, localTransform_.base, "transform");
+        object.tryGetRef(state, name, "name");
+        object.tryGetRef(state, localTransform_, "transform");
         object.tryGetRef(state, lockToRoot_, "lockToRoot");
+
+        // This ugly hack exists to upgrade legacy masks to the new masks.
+        float zsort08;
+        if (state.doUpgrade08) {
+            if ("zsort" !in state.upctx)
+                state.upctx["zsort"] = 0.0;
+
+            object.tryGetRef(state, zsort08, "zsort");
+            state.upctx["zsort"] = state.upctx["zsort"] + zsort08;
+        }
 
         // Call callback and iterate to children.
         this.onDeserialize(object, state);
@@ -501,6 +529,11 @@ public:
                     n.deserialize(child, state);
                 }
             }
+        }
+
+        // This ugly hack exists to upgrade legacy masks to the new masks.
+        if (state.doUpgrade08) {
+            state.upctx["zsort"] = state.upctx["zsort"] - zsort08;
         }
     }
 
@@ -528,11 +561,11 @@ public:
     */
     final void updateTransform() @nogc {
 
-        // Do the base algorithm first.
+        // Do the base algorithm first,
+        // then pass on to callback and iterate to children.
         this.transformUpdateImpl();
-
-        // Then pass on to callback and iterate to children.
         this.onTransformUpdate();
+        
         foreach(child; children_) {
             child.updateTransform();
         }
@@ -552,9 +585,6 @@ public:
     final void preUpdate(DrawList drawList) @nogc {
         if (!enabled)
             return;
-
-        localTransform_.offset.clear();
-        zSort_.offset = 0;
 
         this.onPreUpdate(drawList);
         foreach (child; children_) {
@@ -632,21 +662,8 @@ public:
             $(D true) if the property exists,
             $(D false) otherwise.
     */
-    bool hasProperty(string key) const @nogc nothrow {
-        switch (key) {
-        case "zSort":
-        case "transform.t.x":
-        case "transform.t.y":
-        case "transform.t.z":
-        case "transform.r.x":
-        case "transform.r.y":
-        case "transform.r.z":
-        case "transform.s.x":
-        case "transform.s.y":
-            return true;
-        default:
-            return false;
-        }
+    bool hasProperty(quark key) const @nogc nothrow {
+        return props_.offsetOf(key) != -1;
     }
 
     /**
@@ -658,29 +675,8 @@ public:
         Returns:
             The floating point value of the property.
     */
-    float getProperty(string key) const @nogc nothrow {
-        switch (key) {
-        case "zSort":
-            return zSort_.offset;
-        case "transform.t.x":
-            return localTransform_.offset.translation.x;
-        case "transform.t.y":
-            return localTransform_.offset.translation.y;
-        case "transform.t.z":
-            return localTransform_.offset.translation.z;
-        case "transform.r.x":
-            return localTransform_.offset.rotation.x;
-        case "transform.r.y":
-            return localTransform_.offset.rotation.y;
-        case "transform.r.z":
-            return localTransform_.offset.rotation.z;
-        case "transform.s.x":
-            return localTransform_.offset.scale.x;
-        case "transform.s.y":
-            return localTransform_.offset.scale.y;
-        default:
-            return 0;
-        }
+    float getProperty(quark key) const @nogc nothrow {
+        return props_.get!float(key);
     }
 
     /**
@@ -692,22 +688,8 @@ public:
         Returns:
             The default value of the property.
     */
-    float getPropertyDefault(string key) const @nogc nothrow {
-        switch (key) {
-        case "zSort":
-        case "transform.t.x":
-        case "transform.t.y":
-        case "transform.t.z":
-        case "transform.r.x":
-        case "transform.r.y":
-        case "transform.r.z":
-            return 0;
-        case "transform.s.x":
-        case "transform.s.y":
-            return 1;
-        default:
-            return 0;
-        }
+    float getPropertyDefault(quark key) const @nogc nothrow {
+        return props_.getDefault!float(key);
     }
 
     /**
@@ -717,38 +699,25 @@ public:
             key =   The name of the property.
             value = The value to set the property to.
     */
-    void setProperty(string key, float value) @nogc nothrow {
-        switch (key) {
-        case "zSort":
-            zSort_.offset += value;
-            return;
-        case "transform.t.x":
-            localTransform_.offset.translation.x += value;
-            return;
-        case "transform.t.y":
-            localTransform_.offset.translation.y += value;
-            return;
-        case "transform.t.z":
-            localTransform_.offset.translation.z += value;
-            return;
-        case "transform.r.x":
-            localTransform_.offset.rotation.x += value;
-            return;
-        case "transform.r.y":
-            localTransform_.offset.rotation.y += value;
-            return;
-        case "transform.r.z":
-            localTransform_.offset.rotation.z += value;
-            return;
-        case "transform.s.x":
-            localTransform_.offset.scale.x *= value;
-            return;
-        case "transform.s.y":
-            localTransform_.offset.scale.y *= value;
-            return;
-        default:
-            return;
-        }
+    void setProperty(quark key, float value) @nogc nothrow {
+        return props_.set!float(key, value);
+    }
+
+    /**
+        Resets the given property.
+
+        Params:
+            key = The name of the property.
+    */
+    void resetProperty(quark key) @nogc nothrow {
+        props_.reset(key);
+    }
+
+    /**
+        Resets all properties.
+    */
+    void resetProperties() @nogc nothrow {
+        props_.resetAll();
     }
 
     /**
@@ -759,8 +728,90 @@ public:
         return name[];
     }
 }
-
 mixin Register!(Node, in_node_registry);
+
+
+
+
+//
+//          TYPES AND REGISTRIES
+//
+
+/**
+    The public node registry.
+*/
+__gshared TypeRegistry!Node in_node_registry;
+
+
+
+
+//
+//          QUARKS
+//
+
+// Register quarks for this file.
+mixin RegisterQuarks!();
+
+/**
+    A transform
+*/
+@propkey("transform")
+__gshared immutable(quark) PROP_TRANSFORM;
+
+/**
+    X translation.
+*/
+@propkey("transform.t.x")
+__gshared immutable(quark) PROP_TRANSLATE_X;
+
+/**
+    Y translation.
+*/
+@propkey("transform.t.y")
+__gshared immutable(quark) PROP_TRANSLATE_Y;
+
+/**
+    Z translation.
+*/
+@propkey("transform.t.z")
+__gshared immutable(quark) PROP_TRANSLATE_Z;
+
+/**
+    X rotation.
+*/
+@propkey("transform.r.x")
+__gshared immutable(quark) PROP_ROTATE_X;
+
+/**
+    y rotation.
+*/
+@propkey("transform.r.y")
+__gshared immutable(quark) PROP_ROTATE_Y;
+
+/**
+    z rotation.
+*/
+@propkey("transform.r.z")
+__gshared immutable(quark) PROP_ROTATE_Z;
+
+/**
+    X scale.
+*/
+@propkey("transform.s.x")
+__gshared immutable(quark) PROP_SCALE_X;
+
+/**
+    y scale.
+*/
+@propkey("transform.s.y")
+__gshared immutable(quark) PROP_SCALE_Y;
+
+
+
+
+//
+//          HELPER FUNCTIONS
+//
 
 /**
     Finds all nodes of the given type (and subtypes) in the node tree.

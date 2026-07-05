@@ -33,8 +33,11 @@ public import inochi2d.nodes.visual.mask;
 @TypeIdAbstract
 abstract
 class Visual : Node {
-protected:
+private:
 @nogc:
+    int zSort_ = 0;
+
+protected:
 
     /**
         Constructs a new visual
@@ -51,6 +54,18 @@ protected:
     }
 
     /**
+        Serializes this node to a DataNode.
+
+        Params:
+            object =    The DataNode to serialize to.
+    */
+    override
+    void onSerialize(ref DataNode object) @nogc {
+        super.onSerialize(object);
+        object["zsort"] = zSort_;
+    }
+
+    /**
         Deserializes this node from a DataNode.
 
         Params:
@@ -60,23 +75,36 @@ protected:
     override
     void onDeserialize(ref DataNode object, ref ModelState state) {
         super.onDeserialize(object, state);
+        object.tryGetRef(state, zSort_, "zsort");
 
         // Upgrade masks from previous format to new format.
         if (state.doUpgrade08 && !cast(Mask)this) {
+            state.info(nstring("Upgrading legacy z-sorting values for ", name, "..."));
+            int newZSort = cast(int)((state.upctx["zsort"])*100);
+            this.zSort_ = newZSort;
+
             if ("masks" in object && object["masks"].length > 0) {
                 state.info(nstring("0.8->0.9: wrapping ", this.name[], " in Mask node..."));
 
                 // Create a new mask object to wrap ourselves in.
                 Visual mask = nogc_new!Mask(inNewGUID(), this.parent);
                 mask.onDeserialize(object, state);
-                mask.localZSort = this.localZSort;
                 mask.name = "Mask";
-
-                // Move ourselves into a new mask.
+                mask.zSort_ = newZSort;
                 this.parent = mask;
-                this.localZSort = 0;
             }
         }
+    }
+
+    /**
+        Called when the node is to finalize its deserialization from disk.
+
+        Params:
+            state =     The state of the deserializer.
+    */
+    override
+    void onFinalize(ref ModelState state) @nogc {
+        super.onFinalize(state);
     }
 
     /**
@@ -100,6 +128,19 @@ protected:
     */
     void onDrawMask(float delta, DrawList drawList, MaskingMode mode) { }
 
+    /**
+        Called when the node is to define its properties.
+
+        Call $(D propList.define) with a quark to do this.
+
+        Params:
+            propList = The property list to populate.
+    */
+    override void onDefineProperties(ref PropertyStore propList) {
+        super.onDefineProperties(propList);
+        propList.define(PROP_ZSORT, 0);
+    }
+
 public:
 
     /**
@@ -112,6 +153,16 @@ public:
         Whether the node can be used as a source of masking operations.
     */
     @property bool isMasking() @nogc nothrow pure => false;
+
+    /**
+        World-space Z-sorting value
+    */
+    @property ref int zSort() @nogc nothrow pure => zSort_;
+
+    /**
+        World-space z-sorting value taking in to account properties.
+    */
+    @property float zSortRender() @nogc nothrow pure => (zSort_ + props.get!float(PROP_ZSORT));
 
     /// Destructor
     ~this() { }
@@ -141,8 +192,29 @@ public:
         this.onDelegateFindVisuals(visuals, recurseDelegates, append);
     }
 }
-
 mixin Register!(Visual, in_node_registry);
+
+
+
+
+//
+//          QUARKS
+//
+
+mixin RegisterQuarks!();
+
+/**
+    z-sort value.
+*/
+@propkey("zsort")
+__gshared immutable(quark) PROP_ZSORT;
+
+
+
+
+//
+//          HELPER FUNCTIONS
+//
 
 /**
     Finds visuals that are within the hirearchy of the given node.

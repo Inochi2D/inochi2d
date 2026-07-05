@@ -41,7 +41,7 @@ dependency "intel-intrinsics" version=">=1.14.7"
 dependency "gamut" version=">=3.4.1"
 
 // Numem
-dependency "nulib" version=">=0.4.5"
+dependency "nulib" version=">=0.4.6"
 dependency "nulib:io" version="*"
 dependency "numem" version=">=1.6.5"
 
