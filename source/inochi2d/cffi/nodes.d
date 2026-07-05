@@ -139,22 +139,6 @@ const(char)* in_node_get_type(in_node_t* self) {
 }
 
 /**
-    Gets the GUID of the node.
-
-    Params:
-        self = The node to operate on.
-
-    Returns:
-        The GUID of the node.
-*/
-in_guid_t in_node_get_guid(in_node_t* self) {
-    if (Node n_self = cast(Node)self)
-        return reinterpret_cast!in_guid_t(n_self.guid);
-
-    return reinterpret_cast!in_guid_t(GUID.nil);
-}
-
-/**
     Gets whether the node is enabled.
 
     Params:
@@ -241,10 +225,10 @@ uint in_node_get_tree_depth(in_node_t* self) {
         $(D true) if the node has the given property,
         $(D false) otherwise.
 */
-bool in_node_has_property(in_node_t* self, const(char)* key) {
+bool in_node_has_property(in_node_t* self, quark_t key) {
     if (key) {
         if (Node n_self = cast(Node)self)
-            return n_self.hasProperty(cast(string)key.fromStringz);
+            return n_self.hasProperty(key);
     }
     return false;
 }
@@ -259,10 +243,10 @@ bool in_node_has_property(in_node_t* self, const(char)* key) {
     Returns:
         The value of the property.
 */
-float in_node_get_property(in_node_t* self, const(char)* key) {
+float in_node_get_property(in_node_t* self, quark_t key) {
     if (key) {
         if (Node n_self = cast(Node)self)
-            return n_self.getProperty(cast(string)key.fromStringz);
+            return n_self.getProperty(key);
     }
     return 0;
 }
@@ -277,10 +261,10 @@ float in_node_get_property(in_node_t* self, const(char)* key) {
     Returns:
         The default value of the property.
 */
-float in_node_get_property_default(in_node_t* self, const(char)* key) {
+float in_node_get_property_default(in_node_t* self, quark_t key) {
     if (key) {
         if (Node n_self = cast(Node)self)
-            return n_self.getPropertyDefault(cast(string)key.fromStringz);
+            return n_self.getPropertyDefault(key);
     }
     return 0;
 }
@@ -296,10 +280,10 @@ float in_node_get_property_default(in_node_t* self, const(char)* key) {
     Returns:
         The default value of the property.
 */
-void in_node_set_property(in_node_t* self, const(char)* key, float value) {
+void in_node_set_property(in_node_t* self, quark_t key, float value) {
     if (key) {
         if (Node n_self = cast(Node)self)
-            return n_self.setProperty(cast(string)key.fromStringz, value);
+            return n_self.setProperty(key, value);
     }
 }
 

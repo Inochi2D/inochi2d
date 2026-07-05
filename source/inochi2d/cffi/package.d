@@ -12,20 +12,17 @@
 */
 module inochi2d.cffi;
 import inochi2d.core.guid;
+import nulib.string;
+import nulib.quark;
 import numem;
 
 version (IN_DYNLIB) :
 extern (C) export @nogc:
 
 /**
-    A GUID
+    A quark.
 */
-alias in_guid_t = ubyte[GUID.sizeof];
-
-/**
-    A nil GUID.
-*/
-enum IN_GUID_NIL = GUID.nil;
+alias quark_t = uint;
 
 /**
     Retains a reference to a Inochi2D Object.
@@ -51,4 +48,17 @@ void* in_retain(void* obj) {
 */
 void* in_release(void* obj) {
     return cast(void*)(cast(NuRefCounted)obj).release();
+}
+
+/**
+    Gets the quark associated with the given key string.
+
+    Params:
+        key = The key to look up.
+
+    Returns:
+        The quark for the given key, or 0.
+*/
+quark_t quarkof(const(char)* key) {
+    return nu_quarkof(cast(string)key.fromStringz());
 }
