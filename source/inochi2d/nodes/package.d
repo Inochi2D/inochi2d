@@ -24,6 +24,7 @@ public import inochi2d.puppet;
 public import inochi2d.nodes.deformer;
 public import inochi2d.nodes.visual;
 public import inochi2d.nodes.legacy;
+public import inochi2d.nodes.bone;
 public import inochi2d.core.registry;
 public import inochi2d.core.property;
 public import inochi2d.core.render;
@@ -245,7 +246,7 @@ public:
     /**
         The node's GUID.
     */
-    @property GUID guid() @nogc nothrow pure => guid_;
+    @property ref GUID guid() @nogc nothrow pure => guid_;
 
     /**
         The node's property store, should generally not be directly used.

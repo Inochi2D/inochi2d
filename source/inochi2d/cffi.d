@@ -12,6 +12,7 @@
 */
 module inochi2d.cffi;
 import inochi2d.common;
+import inochi2d.effect;
 import inochi2d.nodes;
 import inochi2d.param;
 import inochi2d.core;
@@ -115,27 +116,78 @@ struct in_parameter_t;
 struct in_node_t;
 
 /**
+    Opaque handle for a visual node.
+*/
+struct in_visual_t;
+
+/**
+    Opaque handle for a part node.
+*/
+struct in_part_t;
+
+/**
+    Opaque handle for a animated part node.
+*/
+struct in_animated_part_t;
+
+/**
+    Opaque handle for a compsite node.
+*/
+struct in_composite_t;
+
+/**
+    Opaque handle for a mask node.
+*/
+struct in_mask_t;
+
+/**
+    Opaque handle for a solo node.
+*/
+struct in_solo_t;
+
+/**
+    Opaque handle for a deformer node.
+*/
+struct in_deformer_t;
+
+/**
+    Opaque handle for a bone node.
+*/
+struct in_bone_t;
+
+/**
+    Opaque handle for a bone modifier node.
+*/
+struct in_bone_modifier_t;
+
+/**
+    Opaque handle for a mesh.
+*/
+struct in_mesh_t;
+
+/**
     Opaque handle for a mesh effect.
 */
 struct in_mesh_effect_t;
 
 /**
-    A texture cache.
+    Opaque handle for a texture cache.
 */
 struct in_texture_cache_t;
 
 /**
-    A resource that can be transferred between CPU and GPU.
+    Opaque handle for a resource that can be 
+    transferred between CPU and GPU.
 */
 struct in_resource_t;
 
 /**
-    A texture.
+    Opaque handle for a texture.
 */
 struct in_texture_t;
 
 /**
-    A drawlist instance
+    Opaque handle for a drawlist.
 */
 struct in_drawlist_t;
 
@@ -627,6 +679,55 @@ in_node_t* in_node_new(in_node_t* parent) {
 }
 
 /**
+    Gets the name of the node.
+
+    Params:
+        self = The node to operate on.
+
+    Returns:
+        The name of the node.
+*/
+const(char)* in_node_get_name(in_node_t* self) {
+    if (Node n_self = cast(Node)self)
+        return n_self.name.ptr;
+
+    return null;
+}
+
+/**
+    Gets the type of the node.
+
+    Params:
+        self = The node to operate on.
+
+    Returns:
+        The type id of the node.
+*/
+const(char)* in_node_get_type(in_node_t* self) {
+    if (Node n_self = cast(Node)self)
+        return n_self.typeId.sid.ptr;
+
+    return null;
+}
+
+/**
+    Gets the GUID of a node.
+
+    Params:
+        self =  The node to operate on.
+
+    Returns:
+        A pointer to node-owned GUID data,
+        $(D null) on failure.
+*/
+const(in_guid_t)* in_node_get_guid(in_node_t* self) {
+    if (Node n_self = cast(Node)self) {
+        return cast(in_guid_t*)n_self.guid.data.ptr;
+    }
+    return null;
+}
+
+/**
     Gets the puppet that the node belongs to.
 
     Params:
@@ -684,38 +785,6 @@ in_node_t** in_node_get_children(in_node_t* self, uint* count) {
         *count = cast(uint)n_self.children.length;
         return cast(in_node_t**)n_self.children.ptr;
     }
-
-    return null;
-}
-
-/**
-    Gets the name of the node.
-
-    Params:
-        self = The node to operate on.
-
-    Returns:
-        The name of the node.
-*/
-const(char)* in_node_get_name(in_node_t* self) {
-    if (Node n_self = cast(Node)self)
-        return n_self.name.ptr;
-
-    return null;
-}
-
-/**
-    Gets the type of the node.
-
-    Params:
-        self = The node to operate on.
-
-    Returns:
-        The type id of the node.
-*/
-const(char)* in_node_get_type(in_node_t* self) {
-    if (Node n_self = cast(Node)self)
-        return n_self.typeId.sid.ptr;
 
     return null;
 }
@@ -869,32 +938,531 @@ void in_node_set_property(in_node_t* self, quark_t key, float value) {
     }
 }
 
+/**
+    Resets the value of the given property.
+
+    Params:
+        self =  The node to operate on.
+        key =   Name of the property to query.
+*/
+void in_node_reset_property(in_node_t* self, quark_t key) {
+    if (key) {
+        if (Node n_self = cast(Node)self)
+            return n_self.resetProperty(key);
+    }
+}
+
+/**
+    Resets the values of all properties in the node.
+
+    Params:
+        self =  The node to operate on.
+*/
+void in_node_reset_properties(in_node_t* self) {
+    if (Node n_self = cast(Node)self)
+        return n_self.resetProperties();
+}
+
+/**
+    Gets all the property keys for the given node.
+    
+    Params:
+        self =  The node to operate on.
+        count = Variable to store the quark count in.
+
+    Returns:
+        A pointer to the key list of the node on success,
+        $(D null) otherwise.
+*/
+const(quark_t)* in_node_get_properties(in_node_t* self, ref uint count) {
+    if (Node n_self = cast(Node)self) {
+        count = cast(uint)n_self.props.keys.length;
+        return cast(const(quark_t)*)n_self.props.keys.ptr;
+    }
+    return null;
+}
+
 
 
 
 //
-//              PART & MESH EFFECT
+//              VISUALS
 //
+
+/**
+    Casts the given node to a visual.
+
+    Params:
+        self =  The node to operate on.
+
+    Returns:
+        A $(D in_visual_t*) representing the Visual,
+        $(D null) if the cast failed.
+*/
+in_visual_t* in_as_visual(in_node_t* self) {
+    return cast(in_visual_t*)(cast(Visual)(cast(Node)self));
+}
+
+/**
+    Gets whether the renderer should delegate 
+    rendering logic to the visual node.
+
+    Params:
+        self =  The visual to operate on.
+    
+    Returns:
+        $(D true) if the visual is delegated,
+        $(D false) otherwise.
+*/
+bool in_visual_get_is_delegated(in_visual_t* self) {
+    if (auto visual = cast(Visual)self)
+        return visual.isDelegated;
+    return false;
+}
+
+/**
+    Gets whether the node can be used as a 
+    source of masking operations.
+
+    Params:
+        self =  The visual to operate on.
+    
+    Returns:
+        $(D true) if the visual can be used for masking,
+        $(D false) otherwise.
+*/
+bool in_visual_get_is_masking(in_visual_t* self) {
+    if (auto visual = cast(Visual)self)
+        return visual.isMasking;
+    return false;
+}
+
+/**
+    Gets the z-sorting value of the given visual.
+
+    Params:
+        self =  The visual to operate on.
+    
+    Returns:
+        The z-sorting value of the visual.
+*/
+int in_visual_get_zsort(in_visual_t* self) {
+    if (auto visual = cast(Visual)self)
+        return visual.zSort;
+    return 0;
+}
+
+/**
+    Sets the z-sorting value of the given visual.
+
+    Params:
+        self =  The visual to operate on.
+        value = The value to set.
+*/
+void in_visual_set_zsort(in_visual_t* self, int value) {
+    if (auto visual = cast(Visual)self)
+        visual.zSort = value;
+}
+
+/**
+    Gets the render-time z-sorting value for the
+    given visual.
+
+    Params:
+        self =  The visual to operate on.
+    
+    Returns:
+        The z-sorting value of the visual.
+*/
+int in_visual_get_zsort_render(in_visual_t* self) {
+    if (auto visual = cast(Visual)self)
+        return cast(int)visual.zSortRender;
+    return 0;
+}
+
+
+
+
+//
+//              PARTS
+//
+
+/**
+    Casts the given node to a part.
+
+    Params:
+        self =  The node to operate on.
+
+    Returns:
+        A $(D in_part_t*) representing the part,
+        $(D null) if the cast failed.
+*/
+in_part_t* in_as_part(in_node_t* self) {
+    return cast(in_part_t*)(cast(Part)(cast(Node)self));
+}
+
+/**
+    Gets the mesh of a part.
+
+    Params:
+        self =  The part to operate on.
+    
+    Returns:
+        The mesh of the part if present,
+        $(D null) otherwise.
+*/
+in_mesh_t* in_part_get_mesh(in_part_t* self) {
+    if (auto n_self = cast(Part)self)
+        return cast(in_mesh_t*)n_self.mesh;
+    return null;
+}
+
+/**
+    Gets the blending mode of the given part.
+
+    Params:
+        self =  The part to operate on.
+
+    Returns:
+        The blending mode of the part.
+*/
+in_blend_mode_t in_part_get_blend_mode(in_part_t* self) {
+    if (auto n_self = cast(Part)self)
+        return cast(in_blend_mode_t)n_self.blendingMode;
+
+    return IN_BLEND_MODE_NORMAL;
+}
+
+/**
+    Sets the blending mode of the given part.
+
+    Params:
+        self =  The part to operate on.
+        value = The value to set.
+*/
+void in_part_set_blend_mode(in_part_t* self, in_blend_mode_t value) {
+    if (auto n_self = cast(Part)self)
+        n_self.blendingMode = cast(BlendMode)value;
+}
+
+/**
+    Gets the opacity of the given part.
+
+    Params:
+        self =  The part to operate on.
+
+    Returns:
+        The opacity of the part.
+*/
+float in_part_get_opacity(in_part_t* self) {
+    if (auto n_self = cast(Part)self)
+        return n_self.opacity;
+
+    return 1;
+}
+
+/**
+    Sets the opacity of the given part.
+
+    Params:
+        self =  The part to operate on.
+        value = The value to set.
+*/
+void in_part_set_opacity(in_part_t* self, float value) {
+    if (auto n_self = cast(Part)self)
+        n_self.opacity = clamp(value, 0, 1);
+}
+
+/**
+    Gets the emission strength of the given part.
+
+    Params:
+        self =  The part to operate on.
+
+    Returns:
+        The opacity of the part.
+*/
+float in_part_get_emission(in_part_t* self) {
+    if (auto n_self = cast(Part)self)
+        return n_self.emissionStrength;
+
+    return 1;
+}
+
+/**
+    Sets the emission strength of the given part.
+
+    Params:
+        self =  The part to operate on.
+        value = The value to set.
+*/
+void in_part_set_emission(in_part_t* self, float value) {
+    if (auto n_self = cast(Part)self)
+        n_self.emissionStrength = value;
+}
+
+/**
+    Adds a mesh effect to the part.
+
+    Params:
+        self =      The part to operate on.
+        effect =    The mesh effect to add.
+*/
+void in_part_add_effect(in_part_t* self, in_mesh_effect_t* effect) {
+    if (auto n_self = cast(Part)self)
+        n_self.addEffect(cast(MeshEffect)effect);
+}
+
+/**
+    Removes a given mesh effect from the part.
+
+    Params:
+        self =      The part to operate on.
+        effect =    The effect to remove.
+*/
+void in_part_remove_effect(in_part_t* self, in_mesh_effect_t* effect) {
+    if (auto n_self = cast(Part)self)
+        n_self.removeEffect(cast(MeshEffect)effect);
+}
 
 /**
     Gets the mesh effects attached to a node.
 
     Params:
-        self =  The node to operate on.
+        self =      The part to operate on.
         count = Variablt to store the effect count in.
     
     Returns:
         A Part-owned array of mesh effects.
 */
-in_mesh_effect_t** in_node_part_get_mesh_effects(in_node_t* self, uint* count) {
-    if (Node n_node = cast(Node)self) {
-        if (Part n_self = cast(Part)n_node) {
-            *count = cast(uint)n_self.effects.length;
-            return cast(in_mesh_effect_t**)n_self.effects.ptr;
-        }
+in_mesh_effect_t** in_node_part_get_mesh_effects(in_part_t* self, ref uint count) {
+    if (auto n_self = cast(Part)self) {
+        count = cast(uint)n_self.effects.length;
+        return cast(in_mesh_effect_t**)n_self.effects.ptr;
     }
     return null;
 }
+
+
+
+
+//
+//              ANIMATED PARTS
+//
+
+/**
+    Casts the given node to a animated part.
+
+    Params:
+        self =  The node to operate on.
+
+    Returns:
+        A $(D in_animated_part_t*) representing the animated part,
+        $(D null) if the cast failed.
+*/
+in_animated_part_t* in_as_animated_part(in_node_t* self) {
+    return cast(in_animated_part_t*)(cast(AnimatedPart)(cast(Node)self));
+}
+
+// TODO: Add the API.
+
+
+
+
+
+//
+//              COMPOSITES
+//
+
+/**
+    Casts the given node to a composite.
+
+    Params:
+        self =  The node to operate on.
+
+    Returns:
+        A $(D in_composite_t*) representing the composite,
+        $(D null) if the cast failed.
+*/
+in_composite_t* in_as_composite(in_node_t* self) {
+    return cast(in_composite_t*)(cast(Composite)(cast(Node)self));
+}
+
+/**
+    Gets the blending mode of the given composite.
+
+    Params:
+        self =  The composite to operate on.
+
+    Returns:
+        The blending mode of the composite.
+*/
+in_blend_mode_t in_composite_get_blend_mode(in_composite_t* self) {
+    if (auto n_self = cast(Composite)self)
+        return cast(in_blend_mode_t)n_self.blendingMode;
+
+    return IN_BLEND_MODE_NORMAL;
+}
+
+/**
+    Sets the blending mode of the given composite.
+
+    Params:
+        self =  The composite to operate on.
+        value = The value to set.
+*/
+void in_composite_set_blend_mode(in_composite_t* self, in_blend_mode_t value) {
+    if (auto n_self = cast(Composite)self)
+        n_self.blendingMode = cast(BlendMode)value;
+}
+
+/**
+    Gets the opacity of the given composite.
+
+    Params:
+        self =  The composite to operate on.
+
+    Returns:
+        The opacity of the composite.
+*/
+float in_composite_get_opacity(in_composite_t* self) {
+    if (auto n_self = cast(Composite)self)
+        return n_self.opacity;
+
+    return 1;
+}
+
+/**
+    Sets the opacity of the given composite.
+
+    Params:
+        self =  The composite to operate on.
+        value = The value to set.
+*/
+void in_composite_set_opacity(in_composite_t* self, float value) {
+    if (auto n_self = cast(Composite)self)
+        n_self.opacity = clamp(value, 0, 1);
+}
+
+
+
+
+//
+//              MASKS
+//
+
+/**
+    Casts the given node to a mask.
+
+    Params:
+        self =  The node to operate on.
+
+    Returns:
+        A $(D in_mask_t*) representing the mask,
+        $(D null) if the cast failed.
+*/
+in_mask_t* in_as_mask(in_node_t* self) {
+    return cast(in_mask_t*)(cast(Mask)(cast(Node)self));
+}
+
+// TODO: Add the API.
+
+
+
+
+//
+//              SOLOS
+//
+
+/**
+    Casts the given node to a solo.
+
+    Params:
+        self =  The node to operate on.
+
+    Returns:
+        A $(D in_solo_t*) representing the solo,
+        $(D null) if the cast failed.
+*/
+in_solo_t* in_as_solo(in_node_t* self) {
+    return cast(in_solo_t*)(cast(Solo)(cast(Node)self));
+}
+
+// TODO: Add the API.
+
+
+
+
+//
+//              DEFORMERS
+//
+
+/**
+    Casts the given node to a deformer.
+
+    Params:
+        self =  The node to operate on.
+
+    Returns:
+        A $(D in_deformer_t*) representing the deformer,
+        $(D null) if the cast failed.
+*/
+in_deformer_t* in_as_deformer(in_node_t* self) {
+    return cast(in_deformer_t*)(cast(Deformer)(cast(Node)self));
+}
+
+// TODO: Add the API.
+
+
+
+//
+//              BONES
+//
+
+/**
+    Casts the given node to a bone.
+
+    Params:
+        self =  The node to operate on.
+
+    Returns:
+        A $(D in_bone_t*) representing the bone,
+        $(D null) if the cast failed.
+*/
+in_bone_t* in_as_bone(in_node_t* self) {
+    return cast(in_bone_t*)(cast(Bone)(cast(Node)self));
+}
+
+// TODO: Add the API.
+
+
+
+//
+//              BONE MODIFIERS
+//
+
+/**
+    Casts the given node to a bone modifier.
+
+    Params:
+        self =  The node to operate on.
+
+    Returns:
+        A $(D in_bone_modifier_t*) representing the solo,
+        $(D null) if the cast failed.
+*/
+in_bone_modifier_t* in_as_bone_modifier(in_node_t* self) {
+    return cast(in_bone_modifier_t*)(cast(BoneModifier)(cast(Node)self));
+}
+
+// TODO: Add the API.
+
+
+
+
+//
+//              RESOURCES
+//
 
 /**
     Gets the length of the resource in bytes.

@@ -360,13 +360,6 @@ public:
     */
     vec3 screenTint = vec3(0, 0, 0);
 
-    /**
-        Gets the active texture
-    */
-    Texture activeTexture() {
-        return textures[0];
-    }
-
     /// Destructor
     ~this() {
         mesh_.release();
@@ -473,18 +466,27 @@ public:
     }
 
     /**
+        Adds a mesh effect to the part.
+
+        Param:
+            effect = The mesh effect to add.
+    */
+    void addEffect(MeshEffect effect) {
+        if (this.effects_.find(effect) == -1)
+            this.effects_ ~= effect.retained();
+    }
+
+    /**
         Removes a given mesh effect from this part.
 
         Params:
             effect = The effect to remove.
     */
     void removeEffect(MeshEffect effect) {
-        foreach (i, applied; effects_) {
-            if (applied is effect) {
-                this.effects_.removeAt(i);
-                effect.release();
-                return;
-            }
+        auto i = this.effects_.find(effect);
+        if (i >= 0) {
+            this.effects_.removeAt(i);
+            effect.release();
         }
     }
 }

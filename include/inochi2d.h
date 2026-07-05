@@ -30,7 +30,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include <cstdint>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -88,6 +87,105 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+//
+//          TYPEDEFS
+//
+
+/**
+    A quark.
+*/
+typedef uint32_t quark_t;
+
+/**
+    Opaque handle to a puppet.
+*/
+typedef struct in_puppet_t in_puppet_t;
+
+/**
+    Opaque handle to a parameter.
+*/
+typedef struct in_parameter_t in_parameter_t;
+
+/**
+    Opaque handle for a node.
+*/
+typedef struct in_node_t in_node_t;
+
+/**
+    Opaque handle for a visual node.
+*/
+typedef struct in_visual_t in_visual_t;
+
+/**
+    Opaque handle for a part node.
+*/
+typedef struct in_part_t in_part_t;
+
+/**
+    Opaque handle for a animated part node.
+*/
+typedef struct in_animated_part_t in_animated_part_t;
+
+/**
+    Opaque handle for a compsite node.
+*/
+typedef struct in_composite_t in_composite_t;
+
+/**
+    Opaque handle for a mask node.
+*/
+typedef struct in_mask_t in_mask_t;
+
+/**
+    Opaque handle for a solo node.
+*/
+typedef struct in_solo_t in_solo_t;
+
+/**
+    Opaque handle for a deformer node.
+*/
+typedef struct in_deformer_t in_deformer_t;
+
+/**
+    Opaque handle for a bone node.
+*/
+typedef struct in_bone_t in_bone_t;
+
+/**
+    Opaque handle for a bone modifier node.
+*/
+typedef struct in_bone_modifier_t in_bone_modifier_t;
+
+/**
+    Opaque handle for a mesh.
+*/
+typedef struct in_mesh_t in_mesh_t;
+
+/**
+    Opaque handle for a mesh effect.
+*/
+typedef struct in_mesh_effect_t in_mesh_effect_t;
+
+/**
+    Opaque handle for a texture cache.
+*/
+typedef struct in_texture_cache_t in_texture_cache_t;
+
+/**
+    Opaque handle for a resource that can be
+    transferred between CPU and GPU.
+*/
+typedef struct in_resource_t in_resource_t;
+
+/**
+    Opaque handle for a texture.
+*/
+typedef struct in_texture_t in_texture_t;
+
+/**
+    Opaque handle for a drawlist.
+*/
+typedef struct in_drawlist_t in_drawlist_t;
 
 
 
@@ -152,6 +250,78 @@ typedef struct io_sink_t {
 
 } io_sink_t;
 
+/**
+    DrawState flags
+*/
+typedef enum {
+    IN_DRAW_STATE_NORMAL = 0,
+    IN_DRAW_STATE_DEFINE_MASK = 1,
+    IN_DRAW_STATE_PUSH_MASK = 2,
+    IN_DRAW_STATE_POP_MASK = 3,
+    IN_DRAW_STATE_COMPOSITE_BEGIN = 4,
+    IN_DRAW_STATE_COMPOSITE_END = 5,
+    IN_DRAW_STATE_COMPOSITE_BLIT = 6,
+    IN_DRAW_STATE_MAX = 0xFFFFFFFFU
+} in_drawstate_t;
+
+/**
+    Masking modes
+*/
+typedef enum { IN_MASK_MODE_MASK = 0, IN_MASK_MODE_DODGE = 1, IN_MASK_MODE_MAX = 0xFFFFFFFFU } in_mask_mode_t;
+
+/**
+    Blending modes
+*/
+typedef enum {
+    IN_BLEND_MODE_NORMAL = 0x00,
+    IN_BLEND_MODE_MULTIPLY = 0x01,
+    IN_BLEND_MODE_SCREEN = 0x02,
+    IN_BLEND_MODE_OVERLAY = 0x03,
+    IN_BLEND_MODE_DARKEN = 0x04,
+    IN_BLEND_MODE_LIGHTEN = 0x05,
+    IN_BLEND_MODE_COLOR_DODGE = 0x06,
+    IN_BLEND_MODE_LINEAR_DODGE = 0x07,
+    IN_BLEND_MODE_ADD_GLOW = 0x08,
+    IN_BLEND_MODE_COLOR_BURN = 0x09,
+    IN_BLEND_MODE_HARD_LIGHT = 0x0A,
+    IN_BLEND_MODE_SOFT_LIGHT = 0x0B,
+    IN_BLEND_MODE_DIFFERENCE = 0x0C,
+    IN_BLEND_MODE_EXCLUSION = 0x0D,
+    IN_BLEND_MODE_SUBTRACT = 0x0E,
+    IN_BLEND_MODE_INVERSE = 0x0F,
+    IN_BLEND_MODE_DESTINATION_IN = 0x10,
+    IN_BLEND_MODE_SOURCE_IN = 0x11,
+    IN_BLEND_MODE_SOURCE_OUT = 0x12,
+    IN_BLEND_MODE_MAX = 0xFFFFFFFFU
+} in_blend_mode_t;
+
+/**
+    A drawing command from the Inochi2D draw list
+*/
+typedef struct in_drawcmd_t {
+    in_texture_t *sources[IN_MAX_ATTACHMENTS];
+    in_drawstate_t state;
+    in_blend_mode_t blendMode;
+    in_mask_mode_t maskMode;
+    uint32_t allocId;
+    uint32_t vtxOffset;
+    uint32_t idxOffset;
+    uint32_t elemCount;
+    uint32_t type;
+    unsigned char vars[64];
+} in_drawcmd_t;
+
+/**
+    A drawlist mesh allocation
+*/
+typedef struct in_drawalloc_t {
+    uint32_t vtxOffset;
+    uint32_t idxOffset;
+    uint32_t idxCount;
+    uint32_t vtxCount;
+    uint32_t allocId;
+} in_drawalloc_t;
+
 
 
 
@@ -163,58 +333,6 @@ typedef struct io_sink_t {
     A nil GUID.
 */
 #define IN_GUID_NIL in_guid_t({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
-
-
-
-
-//
-//          TYPEDEFS
-//
-
-/**
-    A quark
-*/
-typedef uint32_t quark_t;
-
-/**
-    Opaque handle to a puppet.
-*/
-typedef struct in_puppet_t in_puppet_t;
-
-/**
-    A texture cache.
-*/
-typedef struct in_texture_cache_t in_texture_cache_t;
-
-/**
-    A parameter.
-*/
-typedef struct in_parameter_t in_parameter_t;
-
-/**
-    A node.
-*/
-typedef struct in_node_t in_node_t;
-
-/**
-    A mesh effect.
-*/
-typedef struct in_mesh_effect_t in_mesh_effect_t;
-
-/**
-    A resource that can be transferred between CPU and GPU.
-*/
-typedef struct in_resource_t in_resource_t;
-
-/**
-    A texture.
-*/
-typedef struct in_texture_t in_texture_t;
-
-/**
-    A drawlist instance
-*/
-typedef struct in_drawlist_t in_drawlist_t;
 
 
 
@@ -421,6 +539,17 @@ void IN_CALL in_puppet_draw(in_puppet_t *obj, float delta);
 void IN_CALL in_puppet_reset_drivers(in_puppet_t *obj);
 
 /**
+    Gets the root node of the puppet.
+
+    Params:
+        obj = The puppet object.
+
+    Returns:
+        The root node of the object.
+*/
+in_node_t *IN_CALL in_puppet_get_root_node(in_puppet_t *obj);
+
+/**
     Gets the texture cache belonging to the puppet.
 
     Params:
@@ -452,260 +581,6 @@ in_parameter_t **IN_CALL in_puppet_get_parameters(in_puppet_t *obj, uint32_t *co
         The drawlist used by the puppet.
 */
 in_drawlist_t *IN_CALL in_puppet_get_drawlist(in_puppet_t *obj);
-
-
-
-
-//
-//              NODES
-//
-
-/**
-    Creates a new basic node, optionally parented to the given node.
-
-    Params:
-        parent = The parent of the newly created node, or null.
-
-    Returns:
-        The newly allocated node.
-*/
-in_node_t *IN_CALL in_node_new(in_node_t *parent);
-
-/**
-    Gets the root node of the puppet.
-
-    Params:
-        obj = The puppet object.
-
-    Returns:
-        The root node of the object.
-*/
-in_node_t *IN_CALL in_puppet_get_root_node(in_puppet_t *obj);
-
-/**
-    Gets the puppet that the node belongs to.
-
-    Params:
-        self = The node to operate on.
-
-    Returns:
-        The parent puppet or $(D null) if puppet is unrooted.
-*/
-in_puppet_t *IN_CALL in_node_get_puppet(in_node_t *self);
-
-/**
-    Gets the parent node of the given node.
-
-    Params:
-        self = The node to operate on.
-
-    Returns:
-        Pointer to the parent node, or $(D null)
-        if the node is the root of its tree.
-*/
-in_node_t *IN_CALL in_node_get_parent(in_node_t *self);
-
-/**
-    Sets the parent of the given node.
-
-    Params:
-        self =      The node to operate on.
-        parent =    The parent to set, or $(D null).
-*/
-void IN_CALL in_node_set_parent(in_node_t *self, in_node_t *parent);
-
-/**
-    Gets the child nodes of the given node.
-
-    Params:
-        self =  The node to operate on.
-        count = Where to store the node count.
-
-    Returns:
-        A node-owned array of nodes.
-*/
-in_node_t **IN_CALL in_node_get_children(in_node_t *self, uint32_t *count);
-
-/**
-    Gets the name of the node.
-
-    Params:
-        self = The node to operate on.
-
-    Returns:
-        The name of the node.
-*/
-const char *IN_CALL in_node_get_name(in_node_t *node);
-
-/**
-    Gets the type of the node.
-
-    Params:
-        self = The node to operate on.
-
-    Returns:
-        The type id of the node.
-*/
-const char *IN_CALL in_node_get_type(in_node_t *self);
-
-/**
-    Gets the GUID of the node.
-
-    Params:
-        self = The node to operate on.
-
-    Returns:
-        The GUID of the node.
-*/
-in_guid_t IN_CALL in_node_get_guid(in_node_t *self);
-
-/**
-    Gets whether the node is enabled.
-
-    Params:
-        self = The node to operate on.
-
-    Returns:
-        $(D true) if the node is enabled,
-        $(D false) otherwise.
-*/
-bool IN_CALL in_node_get_enabled(in_node_t *self);
-
-/**
-    Sets whether the node is enabled.
-
-    Params:
-        self =  The node to operate on.
-        value = The value to set.
-*/
-void IN_CALL in_node_set_enabled(in_node_t *self, bool value);
-
-/**
-    Gets the local z-sorting index of the given node.
-
-    Params:
-        self = The node to operate on.
-
-    Returns:
-        The local z-sorting value of the given node,
-        or NaN value if the node reference was invalid.
-*/
-float IN_CALL in_node_get_local_zsort(in_node_t *self);
-
-/**
-    Gets the z-sorting index of the given node.
-
-    Params:
-        self = The node to operate on.
-
-    Returns:
-        The z-sorting value of the given node,
-        or NaN value if the node reference was invalid.
-*/
-float IN_CALL in_node_get_zsort(in_node_t *self);
-
-/**
-    Gets whether the node's transform is locked to the root
-    node.
-
-    Params:
-        self = The node to operate on.
-
-    Returns:
-        $(D true) if the transformation of the node is locked
-        to the root node, $(D false) otherwise.
-*/
-bool IN_CALL in_node_get_lock_to_root(in_node_t *self);
-
-/**
-    Sets whether the node's transform is locked to the root
-    node.
-
-    Params:
-        self =  The node to operate on.
-        value = The value to set.
-*/
-void IN_CALL in_node_set_lock_to_root(in_node_t *self, bool value);
-
-/**
-    Gets the depth of the node in the node tree.
-
-    Params:
-        self =  The node to operate on.
-
-    Returns:
-        The depth of the node in the tree.
-*/
-uint32_t IN_CALL in_node_get_tree_depth(in_node_t *self);
-
-/**
-    Gets whether the node has the given property.
-
-    Params:
-        self =  The node to operate on.
-        key =   Name of the property to query.
-
-    Returns:
-        $(D true) if the node has the given property,
-        $(D false) otherwise.
-*/
-bool IN_CALL in_node_has_property(in_node_t *self, const char *key);
-
-/**
-    Gets the value of the given property.
-
-    Params:
-        self =  The node to operate on.
-        key =   Name of the property to query.
-
-    Returns:
-        The value of the property.
-*/
-float IN_CALL in_node_get_property(in_node_t *self, const char *key);
-
-/**
-    Gets the default value of the given property.
-
-    Params:
-        self =  The node to operate on.
-        key =   Name of the property to query.
-
-    Returns:
-        The default value of the property.
-*/
-float IN_CALL in_node_get_property_default(in_node_t *self, const char *key);
-
-/**
-    Sets the value of the given property.
-
-    Params:
-        self =  The node to operate on.
-        key =   Name of the property to query.
-        value = Value to assign the property to.
-
-    Returns:
-        The default value of the property.
-*/
-void IN_CALL in_node_set_property(in_node_t *self, const char *key, float value);
-
-
-
-
-//
-//              PART & MESH EFFECT
-//
-
-/**
-    Gets the mesh effects attached to a node.
-
-    Params:
-        self =  The node to operate on.
-        count = Variablt to store the effect count in.
-
-    Returns:
-        A Part-owned array of mesh effects.
-*/
-in_mesh_effect_t **IN_CALL in_node_part_get_mesh_effects(in_node_t *self, uint32_t *count);
 
 
 
@@ -798,6 +673,237 @@ void IN_CALL in_parameter_set_value(in_parameter_t *obj, float *values);
 
 
 //
+//              NODES
+//
+
+/**
+    Creates a new basic node, optionally parented to the given node.
+
+    Params:
+        parent = The parent of the newly created node, or null.
+
+    Returns:
+        The newly allocated node.
+*/
+in_node_t *IN_CALL in_node_new(in_node_t *parent);
+/**
+    Gets the name of the node.
+
+    Params:
+        self = The node to operate on.
+
+    Returns:
+        The name of the node.
+*/
+const char *IN_CALL in_node_get_name(in_node_t *node);
+
+/**
+    Gets the type of the node.
+
+    Params:
+        self = The node to operate on.
+
+    Returns:
+        The type id of the node.
+*/
+const char *IN_CALL in_node_get_type(in_node_t *self);
+
+/**
+    Gets the GUID of a node.
+
+    Params:
+        self =  The node to operate on.
+
+    Returns:
+        A pointer to node-owned GUID data,
+        $(D null) on failure.
+*/
+const in_guid_t *IN_CALL in_node_get_guid(in_node_t *self);
+
+/**
+    Gets the puppet that the node belongs to.
+
+    Params:
+        self = The node to operate on.
+
+    Returns:
+        The parent puppet or $(D null) if puppet is unrooted.
+*/
+in_puppet_t *IN_CALL in_node_get_puppet(in_node_t *self);
+
+/**
+    Gets the parent node of the given node.
+
+    Params:
+        self = The node to operate on.
+
+    Returns:
+        Pointer to the parent node, or $(D null)
+        if the node is the root of its tree.
+*/
+in_node_t *IN_CALL in_node_get_parent(in_node_t *self);
+
+/**
+    Sets the parent of the given node.
+
+    Params:
+        self =      The node to operate on.
+        parent =    The parent to set, or $(D null).
+*/
+void IN_CALL in_node_set_parent(in_node_t *self, in_node_t *parent);
+
+/**
+    Gets the child nodes of the given node.
+
+    Params:
+        self =  The node to operate on.
+        count = Where to store the node count.
+
+    Returns:
+        A node-owned array of nodes.
+*/
+in_node_t **IN_CALL in_node_get_children(in_node_t *self, uint32_t *count);
+
+
+/**
+    Gets whether the node is enabled.
+
+    Params:
+        self = The node to operate on.
+
+    Returns:
+        $(D true) if the node is enabled,
+        $(D false) otherwise.
+*/
+bool IN_CALL in_node_get_enabled(in_node_t *self);
+
+/**
+    Sets whether the node is enabled.
+
+    Params:
+        self =  The node to operate on.
+        value = The value to set.
+*/
+void IN_CALL in_node_set_enabled(in_node_t *self, bool value);
+
+/**
+    Gets whether the node's transform is locked to the root
+    node.
+
+    Params:
+        self = The node to operate on.
+
+    Returns:
+        $(D true) if the transformation of the node is locked
+        to the root node, $(D false) otherwise.
+*/
+bool IN_CALL in_node_get_lock_to_root(in_node_t *self);
+
+/**
+    Sets whether the node's transform is locked to the root
+    node.
+
+    Params:
+        self =  The node to operate on.
+        value = The value to set.
+*/
+void IN_CALL in_node_set_lock_to_root(in_node_t *self, bool value);
+
+/**
+    Gets the depth of the node in the node tree.
+
+    Params:
+        self =  The node to operate on.
+
+    Returns:
+        The depth of the node in the tree.
+*/
+uint32_t IN_CALL in_node_get_tree_depth(in_node_t *self);
+
+/**
+    Gets whether the node has the given property.
+
+    Params:
+        self =  The node to operate on.
+        key =   Name of the property to query.
+
+    Returns:
+        $(D true) if the node has the given property,
+        $(D false) otherwise.
+*/
+bool IN_CALL in_node_has_property(in_node_t *self, quark_t key);
+
+/**
+    Gets the value of the given property.
+
+    Params:
+        self =  The node to operate on.
+        key =   Name of the property to query.
+
+    Returns:
+        The value of the property.
+*/
+float IN_CALL in_node_get_property(in_node_t *self, quark_t key);
+
+/**
+    Gets the default value of the given property.
+
+    Params:
+        self =  The node to operate on.
+        key =   Name of the property to query.
+
+    Returns:
+        The default value of the property.
+*/
+float IN_CALL in_node_get_property_default(in_node_t *self, quark_t key);
+
+/**
+    Sets the value of the given property.
+
+    Params:
+        self =  The node to operate on.
+        key =   Name of the property to query.
+        value = Value to assign the property to.
+
+    Returns:
+        The default value of the property.
+*/
+void IN_CALL in_node_set_property(in_node_t *self, quark_t key, float value);
+
+/**
+    Resets the value of the given property.
+
+    Params:
+        self =  The node to operate on.
+        key =   Name of the property to query.
+*/
+void IN_CALL in_node_reset_property(in_node_t *self, quark_t key);
+
+/**
+    Resets the values of all properties in the node.
+
+    Params:
+        self =  The node to operate on.
+*/
+void IN_CALL in_node_reset_properties(in_node_t *self);
+
+/**
+    Gets all the property keys for the given node.
+
+    Params:
+        self =  The node to operate on.
+        count = Variable to store the quark count in.
+
+    Returns:
+        A pointer to the key list of the node on success,
+        $(D null) otherwise.
+*/
+const quark_t *IN_CALL in_node_get_properties(in_node_t *self, uint32_t *count);
+
+
+
+
+//
 //              TEXTURE CACHE
 //
 
@@ -845,6 +951,389 @@ in_texture_t **IN_CALL in_texture_cache_get_textures(in_texture_cache_t *obj, ui
         obj = The texture cache object.
 */
 void IN_CALL in_texture_cache_prune(in_texture_cache_t *obj);
+
+
+
+
+//
+//              VISUALS
+//
+
+/**
+    Casts the given node to a visual.
+
+    Params:
+        self =  The node to operate on.
+
+    Returns:
+        A $(D in_visual_t*) representing the Visual,
+        $(D null) if the cast failed.
+*/
+in_visual_t *IN_CALL in_as_visual(in_node_t *self);
+
+/**
+    Gets whether the renderer should delegate
+    rendering logic to the visual node.
+
+    Params:
+        self =  The visual to operate on.
+
+    Returns:
+        $(D true) if the visual is delegated,
+        $(D false) otherwise.
+*/
+bool IN_CALL in_visual_get_is_delegated(in_visual_t *self);
+
+/**
+    Gets whether the node can be used as a
+    source of masking operations.
+
+    Params:
+        self =  The visual to operate on.
+
+    Returns:
+        $(D true) if the visual can be used for masking,
+        $(D false) otherwise.
+*/
+bool IN_CALL in_visual_get_is_masking(in_visual_t *self);
+
+/**
+    Gets the z-sorting value of the given visual.
+
+    Params:
+        self =  The visual to operate on.
+
+    Returns:
+        The z-sorting value of the visual.
+*/
+int IN_CALL in_visual_get_zsort(in_visual_t *self);
+
+/**
+    Sets the z-sorting value of the given visual.
+
+    Params:
+        self =  The visual to operate on.
+        value = The value to set.
+*/
+void IN_CALL in_visual_set_zsort(in_visual_t *self, int value);
+
+/**
+    Gets the render-time z-sorting value for the
+    given visual.
+
+    Params:
+        self =  The visual to operate on.
+
+    Returns:
+        The z-sorting value of the visual.
+*/
+int IN_CALL in_visual_get_zsort_render(in_visual_t *self);
+
+
+
+
+//
+//              PARTS
+//
+
+/**
+    Casts the given node to a part.
+
+    Params:
+        self =  The node to operate on.
+
+    Returns:
+        A $(D in_part_t*) representing the part,
+        $(D null) if the cast failed.
+*/
+in_part_t *IN_CALL in_as_part(in_node_t *self);
+
+/**
+    Gets the mesh of a part.
+
+    Params:
+        self =  The part to operate on.
+
+    Returns:
+        The mesh of the part if present,
+        $(D null) otherwise.
+*/
+in_mesh_t *IN_CALL in_part_get_mesh(in_part_t *self);
+
+/**
+    Gets the blending mode of the given part.
+
+    Params:
+        self =  The part to operate on.
+
+    Returns:
+        The blending mode of the part.
+*/
+in_blend_mode_t IN_CALL in_part_get_blend_mode(in_part_t *self);
+
+/**
+    Sets the blending mode of the given part.
+
+    Params:
+        self =  The part to operate on.
+        value = The value to set.
+*/
+void IN_CALL in_part_set_blend_mode(in_part_t *self, in_blend_mode_t value);
+
+/**
+    Gets the opacity of the given part.
+
+    Params:
+        self =  The part to operate on.
+
+    Returns:
+        The opacity of the part.
+*/
+float IN_CALL in_part_get_opacity(in_part_t *self);
+
+/**
+    Sets the opacity of the given part.
+
+    Params:
+        self =  The part to operate on.
+        value = The value to set.
+*/
+void IN_CALL in_part_set_opacity(in_part_t *self, float value);
+
+/**
+    Gets the emission strength of the given part.
+
+    Params:
+        self =  The part to operate on.
+
+    Returns:
+        The opacity of the part.
+*/
+float IN_CALL in_part_get_emission(in_part_t *self);
+
+/**
+    Sets the emission strength of the given part.
+
+    Params:
+        self =  The part to operate on.
+        value = The value to set.
+*/
+void IN_CALL in_part_set_emission(in_part_t *self, float value);
+
+/**
+    Adds a mesh effect to the part.
+
+    Params:
+        self =      The part to operate on.
+        effect =    The mesh effect to add.
+*/
+void IN_CALL in_part_add_effect(in_part_t *self, in_mesh_effect_t *effect);
+
+/**
+    Removes a given mesh effect from the part.
+
+    Params:
+        self =      The part to operate on.
+        effect =    The effect to remove.
+*/
+void IN_CALL in_part_remove_effect(in_part_t *self, in_mesh_effect_t *effect);
+
+/**
+    Gets the mesh effects attached to a node.
+
+    Params:
+        self =      The part to operate on.
+        count = Variablt to store the effect count in.
+
+    Returns:
+        A Part-owned array of mesh effects.
+*/
+in_mesh_effect_t **IN_CALL in_node_part_get_mesh_effects(in_part_t *self, uint32_t *count);
+
+
+
+
+//
+//              ANIMATED PARTS
+//
+
+/**
+    Casts the given node to a animated part.
+
+    Params:
+        self =  The node to operate on.
+
+    Returns:
+        A $(D in_animated_part_t*) representing the animated part,
+        $(D null) if the cast failed.
+*/
+in_animated_part_t *IN_CALL in_as_animated_part(in_node_t *self);
+
+// TODO: Add the API.
+
+
+
+
+//
+//              COMPOSITES
+//
+
+/**
+    Casts the given node to a composite.
+
+    Params:
+        self =  The node to operate on.
+
+    Returns:
+        A $(D in_composite_t*) representing the composite,
+        $(D null) if the cast failed.
+*/
+in_composite_t *IN_CALL in_as_composite(in_node_t *self);
+
+/**
+    Gets the blending mode of the given composite.
+
+    Params:
+        self =  The composite to operate on.
+
+    Returns:
+        The blending mode of the composite.
+*/
+in_blend_mode_t IN_CALL in_composite_get_blend_mode(in_composite_t *self);
+
+/**
+    Sets the blending mode of the given composite.
+
+    Params:
+        self =  The composite to operate on.
+        value = The value to set.
+*/
+void IN_CALL in_composite_set_blend_mode(in_composite_t *self, in_blend_mode_t value);
+
+/**
+    Gets the opacity of the given composite.
+
+    Params:
+        self =  The composite to operate on.
+
+    Returns:
+        The opacity of the composite.
+*/
+float IN_CALL in_composite_get_opacity(in_composite_t *self);
+
+/**
+    Sets the opacity of the given composite.
+
+    Params:
+        self =  The composite to operate on.
+        value = The value to set.
+*/
+void IN_CALL in_composite_set_opacity(in_composite_t *self, float value);
+
+
+
+
+//
+//              MASKS
+//
+
+/**
+    Casts the given node to a mask.
+
+    Params:
+        self =  The node to operate on.
+
+    Returns:
+        A $(D in_mask_t*) representing the mask,
+        $(D null) if the cast failed.
+*/
+in_mask_t *IN_CALL in_as_mask(in_node_t *self);
+
+// TODO: Add the API.
+
+
+
+
+//
+//              SOLOS
+//
+
+/**
+    Casts the given node to a solo.
+
+    Params:
+        self =  The node to operate on.
+
+    Returns:
+        A $(D in_solo_t*) representing the solo,
+        $(D null) if the cast failed.
+*/
+in_solo_t *IN_CALL in_as_solo(in_node_t *self);
+
+// TODO: Add the API.
+
+
+
+
+//
+//              DEFORMERS
+//
+
+/**
+    Casts the given node to a deformer.
+
+    Params:
+        self =  The node to operate on.
+
+    Returns:
+        A $(D in_deformer_t*) representing the deformer,
+        $(D null) if the cast failed.
+*/
+in_deformer_t *IN_CALL in_as_deformer(in_node_t *self);
+
+// TODO: Add the API.
+
+
+
+
+//
+//              BONES
+//
+
+/**
+    Casts the given node to a bone.
+
+    Params:
+        self =  The node to operate on.
+
+    Returns:
+        A $(D in_bone_t*) representing the bone,
+        $(D null) if the cast failed.
+*/
+in_bone_t *IN_CALL in_as_bone(in_node_t *self);
+
+// TODO: Add the API.
+
+
+
+
+//
+//              BONE MODIFIERS
+//
+
+/**
+    Casts the given node to a bone modifier.
+
+    Params:
+        self =  The node to operate on.
+
+    Returns:
+        A $(D in_bone_modifier_t*) representing the solo,
+        $(D null) if the cast failed.
+*/
+in_bone_modifier_t *IN_CALL in_as_bone_modifier(in_node_t *self);
+
+// TODO: Add the API.
 
 
 
@@ -988,78 +1477,6 @@ void *IN_CALL in_texture_get_pixels(in_texture_t *obj);
 //
 //              DRAWLIST
 //
-
-/**
-    DrawState flags
-*/
-typedef enum {
-    IN_DRAW_STATE_NORMAL = 0,
-    IN_DRAW_STATE_DEFINE_MASK = 1,
-    IN_DRAW_STATE_PUSH_MASK = 2,
-    IN_DRAW_STATE_POP_MASK = 3,
-    IN_DRAW_STATE_COMPOSITE_BEGIN = 4,
-    IN_DRAW_STATE_COMPOSITE_END = 5,
-    IN_DRAW_STATE_COMPOSITE_BLIT = 6,
-    IN_DRAW_STATE_MAX = 0xFFFFFFFFU
-} in_drawstate_t;
-
-/**
-    Masking modes
-*/
-typedef enum { IN_MASK_MODE_MASK = 0, IN_MASK_MODE_DODGE = 1, IN_MASK_MODE_MAX = 0xFFFFFFFFU } in_mask_mode_t;
-
-/**
-    Blending modes
-*/
-typedef enum {
-    IN_BLEND_MODE_NORMAL = 0x00,
-    IN_BLEND_MODE_MULTIPLY = 0x01,
-    IN_BLEND_MODE_SCREEN = 0x02,
-    IN_BLEND_MODE_OVERLAY = 0x03,
-    IN_BLEND_MODE_DARKEN = 0x04,
-    IN_BLEND_MODE_LIGHTEN = 0x05,
-    IN_BLEND_MODE_COLOR_DODGE = 0x06,
-    IN_BLEND_MODE_LINEAR_DODGE = 0x07,
-    IN_BLEND_MODE_ADD_GLOW = 0x08,
-    IN_BLEND_MODE_COLOR_BURN = 0x09,
-    IN_BLEND_MODE_HARD_LIGHT = 0x0A,
-    IN_BLEND_MODE_SOFT_LIGHT = 0x0B,
-    IN_BLEND_MODE_DIFFERENCE = 0x0C,
-    IN_BLEND_MODE_EXCLUSION = 0x0D,
-    IN_BLEND_MODE_SUBTRACT = 0x0E,
-    IN_BLEND_MODE_INVERSE = 0x0F,
-    IN_BLEND_MODE_DESTINATION_IN = 0x10,
-    IN_BLEND_MODE_SOURCE_IN = 0x11,
-    IN_BLEND_MODE_SOURCE_OUT = 0x12,
-    IN_BLEND_MODE_MAX = 0xFFFFFFFFU
-} in_blend_mode_t;
-
-/**
-    A drawing command from the Inochi2D draw list
-*/
-typedef struct in_drawcmd_t {
-    in_texture_t *sources[IN_MAX_ATTACHMENTS];
-    in_drawstate_t state;
-    in_blend_mode_t blendMode;
-    in_mask_mode_t maskMode;
-    uint32_t allocId;
-    uint32_t vtxOffset;
-    uint32_t idxOffset;
-    uint32_t elemCount;
-    uint32_t type;
-    unsigned char vars[64];
-} in_drawcmd_t;
-
-/**
-    A drawlist mesh allocation
-*/
-typedef struct in_drawalloc_t {
-    uint32_t vtxOffset;
-    uint32_t idxOffset;
-    uint32_t idxCount;
-    uint32_t vtxCount;
-    uint32_t allocId;
-} in_drawalloc_t;
 
 /**
     Gets whether the draw list uses base vertex offsets.

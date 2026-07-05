@@ -13,6 +13,7 @@
 module inochi2d.core.sys.wasm;
 import ldc.attributes : llvmAttr;
 import core.stdc.errno;
+
 // dfmt off
 
 version (WebAssembly):

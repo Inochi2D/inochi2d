@@ -261,10 +261,9 @@ public:
         that it should re-index them.
     */
     void notifyVisualsChanged() {
-
-        
-
-            .findVisuals(this, visuals_, false, false, false);
+        // dfmt off
+        .findVisuals(this, visuals_, false, false, false);
+        // dfmt on
     }
 }
 
