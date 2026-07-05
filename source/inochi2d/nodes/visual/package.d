@@ -80,7 +80,7 @@ protected:
         // Upgrade masks from previous format to new format.
         if (state.doUpgrade08 && !cast(Mask)this) {
             state.info(nstring("Upgrading legacy z-sorting values for ", name, "..."));
-            int newZSort = cast(int)((state.upctx["zsort"])*100);
+            int newZSort = cast(int)((state.upctx["zsort"]) * 100);
             this.zSort_ = newZSort;
 
             if ("masks" in object && object["masks"].length > 0) {
@@ -116,7 +116,8 @@ protected:
             recurseDelegates =  Whether to recurse through delegate visuals.
             append =            Whether to append to the visuals list.
     */
-    void onDelegateFindVisuals(ref weak_vector!Visual visuals, bool recurseDelegates, bool append) { }
+    void onDelegateFindVisuals(ref weak_vector!Visual visuals, bool recurseDelegates, bool append) {
+    }
 
     /**
         Called when the node should be drawn to a mask.
@@ -126,7 +127,8 @@ protected:
             drawList =  The drawlist for the active scene.
             mode =      The masking mode to draw with.
     */
-    void onDrawMask(float delta, DrawList drawList, MaskingMode mode) { }
+    void onDrawMask(float delta, DrawList drawList, MaskingMode mode) {
+    }
 
     /**
         Called when the node is to define its properties.
@@ -165,7 +167,8 @@ public:
     @property float zSortRender() @nogc nothrow pure => (zSort_ + props.get!float(PROP_ZSORT));
 
     /// Destructor
-    ~this() { }
+    ~this() {
+    }
 
     /**
         Draws this visual as a mask.
@@ -192,10 +195,8 @@ public:
         this.onDelegateFindVisuals(visuals, recurseDelegates, append);
     }
 }
+
 mixin Register!(Visual, in_node_registry);
-
-
-
 
 //
 //          QUARKS
@@ -269,9 +270,6 @@ __gshared immutable(quark) PROP_SCREEN_B;
 @propkey("emissionStrength")
 __gshared immutable(quark) PROP_EMISSION_STRENGTH;
 
-
-
-
 //
 //          HELPER FUNCTIONS
 //
@@ -295,7 +293,7 @@ void findVisuals(Node root, ref weak_vector!Visual visuals, bool recurseDelegate
         if (auto visual = cast(Visual)node) {
             if (!visual.enabled)
                 return;
-            
+
             visuals ~= visual;
             if (!visual.isDelegated || recurseDelegates) {
                 foreach (child; node.children) {
@@ -319,7 +317,7 @@ void findVisuals(Node root, ref weak_vector!Visual visuals, bool recurseDelegate
 
     // Find all visuals in children.
     size_t i = 0;
-    foreach(child; root.children) {
+    foreach (child; root.children) {
         findVisualsImpl(child, visuals, i, recurseDelegates);
     }
 

@@ -101,7 +101,7 @@ ptrdiff_t[2] findClosest2(inout(vec2) point, inout(vec2)[] mesh) @nogc nothrow p
     ptrdiff_t p1 = -1;
     ptrdiff_t p2 = -1;
     float closestDist = float.max;
-    foreach(i, p; mesh) {
+    foreach (i, p; mesh) {
         if (p.distance(point) < closestDist) {
             p2 = p1;
             p1 = i;
@@ -124,7 +124,7 @@ ptrdiff_t[2] findClosest2(inout(vec2) point, inout(vec2)[] mesh) @nogc nothrow p
 ptrdiff_t findClosest(inout(vec2) point, inout(vec2)[] mesh) @nogc nothrow pure {
     ptrdiff_t p1 = -1;
     float closestDist = float.max;
-    foreach(i, p; mesh) {
+    foreach (i, p; mesh) {
         if (p.distance(point) < closestDist) {
             p1 = i;
         }

@@ -95,7 +95,8 @@ protected:
         Called when the deformer's internal data should be
         rebuilt.
     */
-    void onRebuild() { }
+    void onRebuild() {
+    }
 
     /**
         Called when the node is moved from one parent
@@ -209,6 +210,7 @@ public:
         this.onRebuild();
     }
 }
+
 mixin Register!(Deformer, in_node_registry);
 
 /**

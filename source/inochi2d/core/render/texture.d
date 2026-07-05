@@ -165,21 +165,22 @@ public:
             if (!img.loadFromMemory(data, LAYOUT_GAPLESS | LAYOUT_VERT_STRAIGHT | LOAD_8BIT | LOAD_NO_PREMUL))
                 throw nogc_new!NuException(img.errorMessage());
 
-            switch(img.type) with(PixelType) {
-                case unknown:   throw nogc_new!NuException("Unknown pixel format for texture!");
+            switch (img.type) with (PixelType) {
+            case unknown:
+                throw nogc_new!NuException("Unknown pixel format for texture!");
 
-                case l8:
-                    result.format = TextureFormat.r8;
-                    break;
+            case l8:
+                result.format = TextureFormat.r8;
+                break;
 
-                case rgba8:
-                    result.format = TextureFormat.rgba8Unorm;
-                    break;
+            case rgba8:
+                result.format = TextureFormat.rgba8Unorm;
+                break;
 
-                default:
-                    img.convertTo(PixelType.rgba8, LAYOUT_GAPLESS | LAYOUT_VERT_STRAIGHT);
-                    result.format = TextureFormat.rgba8Unorm;
-                    break;
+            default:
+                img.convertTo(PixelType.rgba8, LAYOUT_GAPLESS | LAYOUT_VERT_STRAIGHT);
+                result.format = TextureFormat.rgba8Unorm;
+                break;
             }
 
             result.width = img.width();
@@ -258,7 +259,7 @@ public:
     void dump(string file) {
         if (data.length > 0) {
             Image img;
-            img.createView(data.ptr, width, height, format.toPixelType, width*channels);
+            img.createView(data.ptr, width, height, format.toPixelType, width * channels);
             img.saveToFile(file);
         }
     }
@@ -462,9 +463,12 @@ public:
         The equivalent pixel type.    
 */
 PixelType toPixelType(TextureFormat format) @nogc nothrow pure {
-    final switch(format) {
-        case TextureFormat.none:        return PixelType.unknown;
-        case TextureFormat.r8:          return PixelType.l8;
-        case TextureFormat.rgba8Unorm:  return PixelType.rgba8;
+    final switch (format) {
+    case TextureFormat.none:
+        return PixelType.unknown;
+    case TextureFormat.r8:
+        return PixelType.l8;
+    case TextureFormat.rgba8Unorm:
+        return PixelType.rgba8;
     }
 }

@@ -22,4 +22,5 @@ import inochi2d.nodes;
 abstract class BoneModifier : Node {
 
 }
+
 mixin Register!(BoneModifier, in_node_registry);

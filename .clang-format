@@ -1,0 +1,22 @@
+Language: Cpp
+MaxEmptyLinesToKeep: 4
+ColumnLimit: 120
+IndentWidth: 4
+UseTab: Never
+IndentCaseLabels: false
+BreakBeforeBraces: Attach
+AlignConsecutiveMacros:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: false
+AlignConsecutiveShortCaseStatements:
+  Enabled: true
+  AcrossEmptyLines: true
+  AcrossComments: true
+  AlignCaseColons: false
+---
+Language: JavaScript
+MaxEmptyLinesToKeep: 4
+ColumnLimit: 120
+IndentWidth: 4
+UseTab: Never

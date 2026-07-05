@@ -199,7 +199,6 @@ private:
         texLoadLoop: foreach (i, ref DataNode texture; node.array) {
             TextureData textureData;
 
-
             // Skip invalid texture indices.
             if (!texture.isObject || "encoding" !in texture || "data" !in texture)
                 continue;
@@ -274,7 +273,7 @@ protected:
         if (auto params = "param" in object) {
             if ((*params).isArray) {
                 parameters_.resize((*params).length);
-                foreach(i, ref param; (*params).array) {
+                foreach (i, ref param; (*params).array) {
                     parameters_[i] = param.tryDeserializeParam(state);
                 }
             }

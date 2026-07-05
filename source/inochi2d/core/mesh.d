@@ -121,9 +121,9 @@ public:
             data =  The mesh data.
             free =  Whether to free the original mesh data.
     */
-    static Mesh fromMeshData(ref MeshData data, bool free=true) {
+    static Mesh fromMeshData(ref MeshData data, bool free = true) {
         auto result = nogc_new!Mesh(data);
-        
+
         if (free)
             data.free();
 
@@ -272,7 +272,8 @@ public:
     /**
         Constructs a new empty DeformedMesh
     */
-    this() { }
+    this() {
+    }
 
     /**
         Deform the mesh by the given amount.
@@ -347,7 +348,7 @@ public:
             offset =    The offset to apply to the texel coordinates.
     */
     void applyUVOffset(vec2 offset) {
-        foreach(ref vtx; vertices_) {
+        foreach (ref vtx; vertices_) {
             vtx.uv += offset;
         }
     }
@@ -427,12 +428,12 @@ struct MeshData {
         // Load vertices as tightly packed floats.
         float[] vtxbuf;
         object.tryGetRef(state, vtxbuf, "verts");
-        this.vertices = cast(vec2[])vtxbuf[0..nu_aligndown(vtxbuf.length, 2)];
+        this.vertices = cast(vec2[])vtxbuf[0 .. nu_aligndown(vtxbuf.length, 2)];
 
         // Load UVs as tightly packed floats.
         float[] uvbuf;
         object.tryGetRef(state, uvbuf, "uvs");
-        this.uvs = cast(vec2[])uvbuf[0..nu_aligndown(uvbuf.length, 2)];
+        this.uvs = cast(vec2[])uvbuf[0 .. nu_aligndown(uvbuf.length, 2)];
 
         object.tryGetRef(state, indices, "indices");
         vec2 origin = object.tryGet!vec2(state, "origin");

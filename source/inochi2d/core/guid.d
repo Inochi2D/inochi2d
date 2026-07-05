@@ -92,7 +92,8 @@ private:
 
 __gshared Random __i2d_uuid_random;
 pragma(crt_constructor)
-export extern(C) void __i2d_init_random() {
+export extern (C) void __i2d_init_random() {
     import numem : nogc_new;
+
     __i2d_uuid_random = nogc_new!Random(0);
 }

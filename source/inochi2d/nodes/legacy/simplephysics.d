@@ -20,22 +20,23 @@ import inochi2d;
 import numem;
 
 // Allow disabling legacy node.
-version (IN_NO_LEGACY) { } else:
+version (IN_NO_LEGACY) {
+} else:
 
-/**
+    /**
     Physics model to use for simple physics
 */
-enum PhysicsModel {
-    /**
+    enum PhysicsModel {
+        /**
         Rigid pendulum
     */
-    Pendulum = "pendulum",
+        Pendulum = "pendulum",
 
-    /**
+        /**
         Springy pendulum
     */
-    SpringPendulum = "spring_pendulum",
-}
+        SpringPendulum = "spring_pendulum",
+    }
 
 enum ParamMapMode {
     AngleLength = "angle_length",
@@ -259,14 +260,14 @@ protected:
     override void onDefineProperties(ref PropertyStore propList) {
         super.onDefineProperties(propList);
 
-        propList.define!float(PROP_LENGTH,          0);
-        propList.define!float(PROP_GRAVITY,         1);
-        propList.define!float(PROP_FREQUENCY,       1);
-        propList.define!float(PROP_ANGLE_DAMPING,   1);
-        propList.define!float(PROP_LENGTH_DAMPING,  1);
-        propList.define!float(PROP_LENGTH_DAMPING,  1);
-        propList.define!float(PROP_OUTPUT_SCALE_X,  1);
-        propList.define!float(PROP_OUTPUT_SCALE_Y,  1);
+        propList.define!float(PROP_LENGTH, 0);
+        propList.define!float(PROP_GRAVITY, 1);
+        propList.define!float(PROP_FREQUENCY, 1);
+        propList.define!float(PROP_ANGLE_DAMPING, 1);
+        propList.define!float(PROP_LENGTH_DAMPING, 1);
+        propList.define!float(PROP_LENGTH_DAMPING, 1);
+        propList.define!float(PROP_OUTPUT_SCALE_X, 1);
+        propList.define!float(PROP_OUTPUT_SCALE_Y, 1);
 
         // Define combined overlays.
         propList.defineOverlay!vec2(PROP_OUTPUT_SCALE_XY, propList.offsetOf(PROP_OUTPUT_SCALE_X));
@@ -366,7 +367,8 @@ public:
     /**
         The final gravity
     */
-    @property float finalGravity() @nogc => (gravity * props.get!float(PROP_GRAVITY)) * puppet.properties.physicsGravity * this.scale;
+    @property float finalGravity() @nogc => (gravity * props.get!float(PROP_GRAVITY)) * puppet.properties.physicsGravity * this
+        .scale;
 
     /**
         The final length
@@ -530,10 +532,8 @@ public:
         }
     }
 }
+
 mixin Register!(SimplePhysics, in_node_registry);
-
-
-
 
 //
 //          QUARKS

@@ -47,7 +47,7 @@ alias MeshDeformerLUT = DeformerLUT!((DeformedMesh src, IDeformable target) @nog
             float maxY = max(max(tri.p1.y, tri.p2.y), tri.p3.y);
             if (!(minX < mp.x && maxX > mp.x) &&
                 !(minY < mp.y && maxY > mp.y))
-                    continue;
+                continue;
 
             // Mapping found, add it!
             mappings[j] = [k * 3, j];
@@ -61,8 +61,8 @@ alias MeshDeformerLUT = DeformerLUT!((DeformedMesh src, IDeformable target) @nog
 /**
     A deformer which deforms child nodes stored within it,
 */
-@TypeId("MeshDeformer", IN_MAKE_TAG!(1, 2))     // Modern name
-@TypeId("MeshGroup",    IN_MAKE_TAG!(1, 2))        // Legacy name
+@TypeId("MeshDeformer", IN_MAKE_TAG!(1, 2))  // Modern name
+@TypeId("MeshGroup", IN_MAKE_TAG!(1, 2))  // Legacy name
 class MeshDeformer : Deformer {
 private:
     Mesh mesh_;
@@ -161,37 +161,37 @@ protected:
         // Calculate the deltas from the world matrix.
         simd_meshcopy(deformDeltas_, base_.points);
         simd_sub(deformDeltas_, deformed_.points);
-        foreach(i, mesh; toDeform) {
+        foreach (i, mesh; toDeform) {
             size_t w_length = nu_min(deformBuffer_.length, mesh.deformPoints.length);
-            deformBuffer_[0..w_length] = vec2(0, 0);
+            deformBuffer_[0 .. w_length] = vec2(0, 0);
 
             // Setup temporary buffer.
-            foreach(entry; luts_[i].entries) {
+            foreach (entry; luts_[i].entries) {
 
                 // Skip vertices out of bounds.
                 if (entry[0] < 0 || entry[1] < 0 || entry[1] >= w_length)
                     continue;
 
-                size_t p0 = mesh_.indices[entry[0]+0];
-                size_t p1 = mesh_.indices[entry[0]+1];
-                size_t p2 = mesh_.indices[entry[0]+2];
+                size_t p0 = mesh_.indices[entry[0] + 0];
+                size_t p1 = mesh_.indices[entry[0] + 1];
+                size_t p2 = mesh_.indices[entry[0] + 2];
 
                 // Build triangle from start index.
                 Triangle tri = Triangle(
-                    deformed_.points[p0],
-                    deformed_.points[p1],
-                    deformed_.points[p2],
+                        deformed_.points[p0],
+                        deformed_.points[p1],
+                        deformed_.points[p2],
                 );
 
                 vec3 bc = tri.barycentric(mesh.deformPoints[entry[1]]);
                 deformBuffer_[entry[1]] = -(
-                    (deformDeltas_[p0] * bc.x) +
-                    (deformDeltas_[p1] * bc.y) +
-                    (deformDeltas_[p2] * bc.z)
+                        (deformDeltas_[p0] * bc.x) +
+                        (deformDeltas_[p1] * bc.y) +
+                        (deformDeltas_[p2] * bc.z)
                 );
             }
 
-            mesh.deform(deformBuffer_[0..w_length]);
+            mesh.deform(deformBuffer_[0 .. w_length]);
         }
 
         super.onPostUpdate(drawList);
@@ -204,14 +204,14 @@ protected:
     override
     void onRebuild() {
         super.onRebuild();
-    
+
         // Delete old LUTs
         if (luts_)
             nu_freea(luts_);
 
         // Find children and rebuild.
         this.luts_ = nu_malloca!MeshDeformerLUT(toDeform.length);
-        foreach(i, target; toDeform) {
+        foreach (i, target; toDeform) {
             luts_[i].rebuild(deformed_, target);
 
             // Resize temporary deformation buffer.
@@ -301,4 +301,5 @@ public:
         base_.reset();
     }
 }
+
 mixin Register!(MeshDeformer, in_node_registry);

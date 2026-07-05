@@ -85,11 +85,11 @@ protected:
                 object["textures"].array ~= DataNode(NO_TEXTURE);
             }
         }
-        
+
         // Serialize attached effects.
         if (effects_.length > 0) {
             object["effects"] = DataNode.createArray();
-            foreach(effect; effects_) {
+            foreach (effect; effects_) {
 
                 DataNode effectObj;
                 effect.serialize(effectObj);
@@ -138,7 +138,7 @@ protected:
 
         // Effects
         if ("effects" in object && object["effects"].isArray) {
-            foreach(i, ref element; object["effects"].array) {
+            foreach (i, ref element; object["effects"].array) {
                 if (MeshEffect effect = in_effect_registry.tryCreateFrom(element, this)) {
                     effect.deserialize(element, state);
                 }
@@ -165,7 +165,7 @@ protected:
     override
     void onFinalize(ref ModelState state) {
         super.onFinalize(state);
-        foreach(effect; effects_) {
+        foreach (effect; effects_) {
             effect.finalize(state);
         }
     }
@@ -208,7 +208,7 @@ protected:
         this.drawListSlot = drawList.allocate(deformed_.vertices, deformed_.indices);
 
         // Apply mesh effects.
-        foreach(effect; effects_)
+        foreach (effect; effects_)
             effect.apply(drawList);
     }
 
@@ -225,10 +225,10 @@ protected:
             return;
 
         PartVars vars = PartVars(
-            tint: tint * props.get!vec3(PROP_TINT_RGB),
-            screenTint: screenTint * props.get!vec3(PROP_SCREEN_RGB),
-            opacity: opacity * props.get!float(PROP_OPACITY),
-            emissionStrength: emissionStrength * props.get!float(PROP_EMISSION_STRENGTH)
+                tint: tint * props.get!vec3(PROP_TINT_RGB),
+                screenTint: screenTint * props.get!vec3(PROP_SCREEN_RGB),
+                opacity: opacity * props.get!float(PROP_OPACITY),
+                emissionStrength: emissionStrength * props.get!float(PROP_EMISSION_STRENGTH)
         );
 
         drawList.setMesh(drawListSlot);
@@ -265,19 +265,19 @@ protected:
     override
     void onDefineProperties(ref PropertyStore propList) {
         super.onDefineProperties(propList);
-        
-        propList.define!float(PROP_SCREEN_R,          0);
-        propList.define!float(PROP_SCREEN_G,          0);
-        propList.define!float(PROP_SCREEN_B,          0);
-        propList.define!float(PROP_TINT_R,            1);
-        propList.define!float(PROP_TINT_G,            1);
-        propList.define!float(PROP_TINT_B,            1);
-        propList.define!float(PROP_OPACITY,           1);
+
+        propList.define!float(PROP_SCREEN_R, 0);
+        propList.define!float(PROP_SCREEN_G, 0);
+        propList.define!float(PROP_SCREEN_B, 0);
+        propList.define!float(PROP_TINT_R, 1);
+        propList.define!float(PROP_TINT_G, 1);
+        propList.define!float(PROP_TINT_B, 1);
+        propList.define!float(PROP_OPACITY, 1);
         propList.define!float(PROP_EMISSION_STRENGTH, 1);
 
         // Define combined overlays.
         propList.defineOverlay!vec3(PROP_SCREEN_RGB, propList.offsetOf(PROP_SCREEN_R));
-        propList.defineOverlay!vec3(PROP_TINT_RGB,   propList.offsetOf(PROP_TINT_R));
+        propList.defineOverlay!vec3(PROP_TINT_RGB, propList.offsetOf(PROP_TINT_R));
     }
 
 public:
@@ -467,8 +467,7 @@ public:
             T =     The type of the mesh effect to add.
             args =  The arguments to pass to the effect's constructor.
     */
-    void addEffect(T, Args...)(Args args)
-    if (is(T : MeshEffect)) {
+    void addEffect(T, Args...)(Args args) if (is(T : MeshEffect)) {
         this.effects_ ~= nogc_new!T(this, args);
     }
 
@@ -479,7 +478,7 @@ public:
             effect = The effect to remove.
     */
     void removeEffect(MeshEffect effect) {
-        foreach(i, applied; effects_) {
+        foreach (i, applied; effects_) {
             if (applied is effect) {
                 this.effects_.removeAt(i);
                 effect.release();
@@ -488,4 +487,5 @@ public:
         }
     }
 }
+
 mixin Register!(Part, in_node_registry);

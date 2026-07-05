@@ -32,10 +32,10 @@ rect simd_calcbounds(vec2[] mesh) @nogc nothrow {
     __m128 m_min = __m128([float.max, float.max, float.max, float.max]);
     __m128 m_max = __m128([-float.min_normal, -float.min_normal, -float.min_normal, -float.min_normal]);
     for (size_t i = 0; i < mesh.length; i += 2) {
-        
+
         // NOTE:    In the case of an unaligned read, we use m_offu which just reads
         //          the same vertex twice.
-        __m128 m1 = _mm_i32gather_ps!(4)(mesh[i].ptr, i+2 > mesh.length ? m_offu : m_off);
+        __m128 m1 = _mm_i32gather_ps!(4)(mesh[i].ptr, i + 2 > mesh.length ? m_offu : m_off);
         m_min = _mm_min_ps(m_min, m1);
         m_max = _mm_max_ps(m_max, m1);
     }
@@ -44,10 +44,10 @@ rect simd_calcbounds(vec2[] mesh) @nogc nothrow {
     vec2 v_min = min(vec2(m_min[0], m_min[1]), vec2(m_min[2], m_min[3]));
     vec2 v_max = min(vec2(m_max[0], m_max[1]), vec2(m_max[2], m_max[3]));
     return rect(
-        v_min.x,
-        v_min.y,
-        v_max.x-v_min.x,
-        v_max.y-v_min.y,
+            v_min.x,
+            v_min.y,
+            v_max.x - v_min.x,
+            v_max.y - v_min.y,
     );
 }
 
@@ -60,14 +60,14 @@ rect simd_calcbounds(vec2[] mesh) @nogc nothrow {
         matrix = The matrix to apply.
 */
 void simd_mul(ref vec2[] mesh, mat4 matrix) @nogc nothrow {
-    
+
     // NOTE:    SSE version of the algorithm.
     //          This algorithm loads 128 bits of mesh data at a time, then deforms it.
     //          Value is stored unaligned to memory.
     //          
     // TODO:    Add aligned version?
     static if (!SSESizedVectorsAreEmulated) {
-    
+
         // Load matrix into SIMD variables.
         __m128 r0 = _mm_loadu_ps(&matrix.matrix[0][0]);
         __m128 r1 = _mm_loadu_ps(&matrix.matrix[1][0]);
@@ -78,7 +78,7 @@ void simd_mul(ref vec2[] mesh, mat4 matrix) @nogc nothrow {
 
             // Load vectors into SIMD variables.
             __m128 xy01 = _mm_loadl_pi(IN_SIMD_IDENTITY, cast(const(__m64)*)mesh[i].ptr);
-            __m128 zw01 = _mm_loadl_pi(IN_SIMD_IDENTITY, cast(const(__m64)*)mesh[i+1].ptr);
+            __m128 zw01 = _mm_loadl_pi(IN_SIMD_IDENTITY, cast(const(__m64)*)mesh[i + 1].ptr);
 
             // Perform matrix multiplication
             __m128 x = _mm_mul_ps(xy01, r0);
@@ -104,7 +104,7 @@ void simd_mul(ref vec2[] mesh, mat4 matrix) @nogc nothrow {
     } else {
 
         // Non-SIMD version
-        foreach(ref vertex; mesh) {
+        foreach (ref vertex; mesh) {
             vertex = (vec4(vertex.x, vertex.y, 0, 1) * matrix).xy;
         }
     }
@@ -117,7 +117,7 @@ unittest {
     testArray[] = vec2(1.0, 1.0);
 
     simd_mul(testArray, testMatrix);
-    foreach(i, value; testArray) {
+    foreach (i, value; testArray) {
         assert(value == vec2(2.0, 1.0));
     }
 }
@@ -138,33 +138,33 @@ void simd_offset(ref vec2[] mesh, vec2 offset) @nogc nothrow {
 
         // SIMD version
         size_t i = 0;
-        for(; i < nu_aligndown(mesh.length, 2); i += 2) {
+        for (; i < nu_aligndown(mesh.length, 2); i += 2) {
             _mm_storeu_ps(
-                cast(float*)mesh[i].ptr, 
-                _mm_add_ps(
-                    _mm_loadu_ps(cast(float*)mesh[i].ptr), 
+                    cast(float*)mesh[i].ptr,
+                    _mm_add_ps(
+                    _mm_loadu_ps(cast(float*)mesh[i].ptr),
                     m_offset
-                )
+            )
             );
         }
 
         // Tail iteration to finalize the offset
         if (i < mesh.length) {
             _mm_storel_pi(
-                cast(__m64*)mesh[i].ptr, 
-                _mm_add_ps(
+                    cast(__m64*)mesh[i].ptr,
+                    _mm_add_ps(
                     _mm_loadl_pi(
-                        IN_SIMD_IDENTITY, 
-                        cast(const(__m64)*)&mesh[i]
+                    IN_SIMD_IDENTITY,
+                    cast(const(__m64)*)&mesh[i]
                     ),
                     m_offset
-                )
+            )
             );
         }
     } else {
 
         // Non-SIMD version
-        foreach(i; 0..mesh.length) {
+        foreach (i; 0 .. mesh.length) {
             mesh[i] += offset;
         }
     }
@@ -176,7 +176,7 @@ unittest {
     array1[] = vec2(0);
 
     simd_offset(array1, vec2(1, 1));
-    foreach(i, value; array1) {
+    foreach (i, value; array1) {
         assert(value == vec2(1.0, 1.0));
     }
 }
@@ -190,7 +190,7 @@ unittest {
 */
 void simd_mul_weight(ref vec2[] mesh, ref float[] weights) @nogc nothrow {
     size_t w_length = nu_min(mesh.length, weights.length);
-    
+
     // NOTE:    SSE version of the algorithm.
     //          This algorithm loads 128 bits of mesh data at a time, then deforms it.
     //          Value is stored unaligned to memory.
@@ -221,7 +221,7 @@ void simd_mul_weight(ref vec2[] mesh, ref float[] weights) @nogc nothrow {
     } else {
 
         // Non-SIMD version
-        foreach(i; 0..w_length) {
+        foreach (i; 0 .. w_length) {
             mesh[i] = mesh[i] * weights[i];
         }
     }
@@ -236,7 +236,7 @@ unittest {
     weights[] = 0.5;
 
     simd_mul_weight(array1, weights);
-    foreach(i, value; array1) {
+    foreach (i, value; array1) {
         assert(value == vec2(0.25, 0.25));
     }
 }

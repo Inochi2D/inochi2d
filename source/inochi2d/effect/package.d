@@ -47,7 +47,8 @@ protected:
             object =    The DataNode to deserialize from.
             state =     The state of the deserializer.
     */
-    void onDeserialize(ref DataNode object, ref ModelState state) { }
+    void onDeserialize(ref DataNode object, ref ModelState state) {
+    }
 
     /**
         Called when the Effect is to be finalized during loading.
@@ -55,7 +56,8 @@ protected:
         Params:
             state =     The state of the deserializer.
     */
-    void onFinalize(ref ModelState state) @nogc { }
+    void onFinalize(ref ModelState state) @nogc {
+    }
 
     /**
         Called after the full node update cycle.
@@ -63,7 +65,8 @@ protected:
         Params:
             drawList =  The drawlist for the active scene.
     */
-    void onApply(DrawList drawList) { }
+    void onApply(DrawList drawList) {
+    }
 
 public:
 
@@ -125,4 +128,5 @@ public:
         this.onApply(drawList);
     }
 }
+
 mixin Register!(MeshEffect, in_effect_registry);

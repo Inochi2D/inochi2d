@@ -18,7 +18,6 @@ import numath;
 import numem;
 import nulib;
 
-
 /**
     An effect that welds other meshes to this mesh, forcing
     the welded meshes to be dragged towards paired vertices
@@ -51,9 +50,9 @@ protected:
     void onSerialize(ref DataNode object) {
         super.onSerialize(object);
 
-        object["target"] = (cast(Node)target_).guid.toString()[0..$];
+        object["target"] = (cast(Node)target_).guid.toString()[0 .. $];
         object["weights"] = DataNode.createArray();
-        foreach(vertex; vertices_) {
+        foreach (vertex; vertices_) {
             object["weights"] ~= DataNode(vertex.weight);
         }
     }
@@ -70,7 +69,7 @@ protected:
         targetGUID = object.tryGetGUID(state, "target", "target");
         if ("weights" in object && object["weights"].isArray) {
             vertices_ = nu_malloca!WeldVertex(object["weights"].length);
-            foreach(i, ref value; object["weights"].array) {
+            foreach (i, ref value; object["weights"].array) {
                 vertices_[i].weight = value.tryCoerce!float(0.0);
             }
         }
@@ -100,7 +99,7 @@ protected:
     void onApply(DrawList drawList) {
         vec2[] targetMesh = target_.deformPoints;
         vec2[] sourceMesh = parent.deformPoints;
-        foreach(i, ref WeldVertex weld; vertices_) {
+        foreach (i, ref WeldVertex weld; vertices_) {
             vec2 pdelta = targetMesh[weld.index] + weld.delta;
             vec2 p = lerp(sourceMesh[i], pdelta, weld.weight);
             parent.deform(i, p, true);
@@ -142,7 +141,7 @@ public:
         Rebuilds the weight deltas for the WeldEffect.
     */
     void rebuildWeights() {
-        foreach(i, ref WeldVertex vtx; vertices_) {
+        foreach (i, ref WeldVertex vtx; vertices_) {
 
             // Rebuild target vertex
             vec2 parentVtx = parent.basePoints[i];

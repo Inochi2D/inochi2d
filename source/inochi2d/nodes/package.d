@@ -61,11 +61,11 @@ private:
         globalMatrixNoParam_ = localTransform_.matrix();
 
         if (lockToRoot_) {
-            globalMatrix_.matrix =          puppet.root.localTransform_.matrix() * globalMatrix_;
-            globalMatrixNoParam_.matrix =   puppet.root.localTransform_.matrix() * globalMatrixNoParam_;
+            globalMatrix_.matrix = puppet.root.localTransform_.matrix() * globalMatrix_;
+            globalMatrixNoParam_.matrix = puppet.root.localTransform_.matrix() * globalMatrixNoParam_;
         } else if (parent_ !is null) {
-            globalMatrix_ =                 parent_.globalMatrix_ * globalMatrix_;
-            globalMatrixNoParam_ =          parent_.globalMatrixNoParam_ * globalMatrixNoParam_;
+            globalMatrix_ = parent_.globalMatrix_ * globalMatrix_;
+            globalMatrixNoParam_ = parent_.globalMatrixNoParam_ * globalMatrixNoParam_;
         }
     }
 
@@ -109,7 +109,8 @@ protected:
         Params:
             object =    The DataNode to serialize to.
     */
-    void onSerialize(ref DataNode object) @nogc { }
+    void onSerialize(ref DataNode object) @nogc {
+    }
 
     /**
         Deserializes this node from a DataNode.
@@ -118,7 +119,8 @@ protected:
             object =    The DataNode to deserialize from.
             state =     The state of the deserializer.
     */
-    void onDeserialize(ref DataNode object, ref ModelState state) @nogc { }
+    void onDeserialize(ref DataNode object, ref ModelState state) @nogc {
+    }
 
     /**
         Called when the node is to finalize its deserialization from disk.
@@ -126,7 +128,8 @@ protected:
         Params:
             state =     The state of the deserializer.
     */
-    void onFinalize(ref ModelState state) @nogc { }
+    void onFinalize(ref ModelState state) @nogc {
+    }
 
     /**
         Called during the early update phase of a new frame.
@@ -134,7 +137,8 @@ protected:
         Params:
             drawList =  The drawlist for the active scene.
     */
-    void onPreUpdate(DrawList drawList) @nogc { }
+    void onPreUpdate(DrawList drawList) @nogc {
+    }
 
     /**
         Called during the update phase of a new frame.
@@ -143,7 +147,8 @@ protected:
             delta =     Time since the last frame.
             drawList =  The drawlist for the active scene.
     */
-    void onUpdate(float delta, DrawList drawList) @nogc { }
+    void onUpdate(float delta, DrawList drawList) @nogc {
+    }
 
     /**
         Called during the late update phase of a new frame.
@@ -151,12 +156,14 @@ protected:
         Params:
             drawList =  The drawlist for the active scene.
     */
-    void onPostUpdate(DrawList drawList) @nogc { }
+    void onPostUpdate(DrawList drawList) @nogc {
+    }
 
     /**
         Called when the node is asked to update its transform.
     */
-    void onTransformUpdate() @nogc { }
+    void onTransformUpdate() @nogc {
+    }
 
     /**
         Called when the node is to be redrawn.
@@ -165,7 +172,8 @@ protected:
             delta =     Time since the last frame.
             drawList =  The drawlist for the active scene.
     */
-    void onDraw(float delta, DrawList drawList) @nogc { }
+    void onDraw(float delta, DrawList drawList) @nogc {
+    }
 
     /**
         Called when the node is moved from one parent
@@ -176,7 +184,8 @@ protected:
             to =    The node it was moved to.
             index = The index the node was moved to.
     */
-    void onMoved(Node from, Node to, ptrdiff_t index) { }
+    void onMoved(Node from, Node to, ptrdiff_t index) {
+    }
 
     /**
         Called when the node is to define its properties.
@@ -186,7 +195,8 @@ protected:
         Params:
             propList = The property list to populate.
     */
-    void onDefineProperties(ref PropertyStore propList) { }
+    void onDefineProperties(ref PropertyStore propList) {
+    }
 
 public:
 
@@ -424,8 +434,8 @@ public:
     final void moveChild(Node child, ptrdiff_t to) {
         auto idx = this.findChild(child);
         if (idx >= 0) {
-            size_t dst = to < 0 ? children_.length-(abs(to)+1) : to;
-            
+            size_t dst = to < 0 ? children_.length - (abs(to) + 1) : to;
+
             // Don't swap with itself.
             if (dst == idx)
                 return;
@@ -548,7 +558,7 @@ public:
 
         // Call callback and iterate to children.
         this.onFinalize(state);
-        foreach(child; this.children_) {
+        foreach (child; this.children_) {
             child.finalize(state);
         }
     }
@@ -565,8 +575,8 @@ public:
         // then pass on to callback and iterate to children.
         this.transformUpdateImpl();
         this.onTransformUpdate();
-        
-        foreach(child; children_) {
+
+        foreach (child; children_) {
             child.updateTransform();
         }
     }
@@ -728,10 +738,8 @@ public:
         return name[];
     }
 }
+
 mixin Register!(Node, in_node_registry);
-
-
-
 
 //
 //          TYPES AND REGISTRIES
@@ -741,9 +749,6 @@ mixin Register!(Node, in_node_registry);
     The public node registry.
 */
 __gshared TypeRegistry!Node in_node_registry;
-
-
-
 
 //
 //          QUARKS
@@ -805,9 +810,6 @@ __gshared immutable(quark) PROP_SCALE_X;
 */
 @propkey("transform.s.y")
 __gshared immutable(quark) PROP_SCALE_Y;
-
-
-
 
 //
 //          HELPER FUNCTIONS

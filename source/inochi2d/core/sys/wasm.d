@@ -14,12 +14,17 @@ module inochi2d.core.sys.wasm;
 import ldc.attributes : llvmAttr;
 import core.stdc.errno;
 
-version(WebAssembly):
+version (WebAssembly) :
+extern (C) export @nogc nothrow:
 
-extern(C) export @nogc nothrow:
+int getErrno() {
+    return errno;
+}
 
-int getErrno() { return errno; }
-int setErrno(int value) { errno = value; return errno; }
+int setErrno(int value) {
+    errno = value;
+    return errno;
+}
 
 // Set up WASM constructors.
 //

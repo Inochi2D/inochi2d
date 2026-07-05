@@ -24,7 +24,7 @@ import numem;
 */
 interface IPropertyOwner {
 @nogc nothrow:
-    
+
     /**
         Gets whether a property with the given name exists
         in the object.
@@ -86,7 +86,9 @@ interface IPropertyOwner {
 /**
     The name of a property quark to initialize it to.
 */
-struct propkey { string key; }
+struct propkey {
+    string key;
+}
 
 /**
     Registers all quarks within the current module on library
@@ -97,11 +99,11 @@ mixin template RegisterQuarks() {
     enum modname = __traits(identifier, module_);
 
     pragma(crt_constructor)
-    pragma(mangle, "__in_"~modname~"_quark_init")
-    export extern(C) void __register_quarks() {
+    pragma(mangle, "__in_" ~ modname ~ "_quark_init")
+    export extern (C) void __register_quarks() {
         import numem.core.traits : getUDAs, hasUDA;
 
-        static foreach(member; __traits(allMembers, module_)) {
+        static foreach (member; __traits(allMembers, module_)) {
             static if (is(typeof(__traits(getMember, module_, member)) == immutable(quark))) {
                 {
                     alias __member = __traits(getMember, module_, member);
@@ -142,7 +144,7 @@ private:
     // of bytes, rounded up to 32-bits.
     size_t grow(size_t by) {
         size_t start = length_;
-        this.length_ += nu_alignup(by-1, 4);
+        this.length_ += nu_alignup(by - 1, 4);
         this.vbuffer_ = nu_realloc(vbuffer_, length_);
         this.dbuffer_ = nu_realloc(dbuffer_, length_);
         return start;
@@ -153,7 +155,7 @@ public:
     /**
         All of the stored properties, untyped.
     */
-    @property void[] properties() => vbuffer_[0..length_];
+    @property void[] properties() => vbuffer_[0 .. length_];
 
     /**
         The keys the store knows about.
@@ -219,7 +221,7 @@ public:
         }
 
         // Make sure we're in range.
-        if (offset+T.sizeof <= this.length_) {
+        if (offset + T.sizeof <= this.length_) {
             lut_[key] = PropInfo(offset, T.sizeof);
             keys_ ~= key;
             return offset;
@@ -255,10 +257,10 @@ public:
             $(D T.init) otherwise.
     */
     T getFromIndex(T)(size_t offset) inout {
-        if (offset+T.sizeof > this.length_)
+        if (offset + T.sizeof > this.length_)
             return T.init;
 
-        return *(cast(T*)(vbuffer_+offset));
+        return *(cast(T*)(vbuffer_ + offset));
     }
 
     /**

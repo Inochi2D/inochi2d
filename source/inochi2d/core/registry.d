@@ -58,8 +58,10 @@ mixin template Register(T, alias registry) {
         pragma(msg, "Registering ", T.stringof, " in ", registry.stringof, "...");
 
         pragma(crt_constructor)
-        pragma(mangle, "__in_register_"~T.stringof)
-        export extern(C) void __register_type() { registry.register!T(); }
+        pragma(mangle, "__in_register_" ~ T.stringof)
+        export extern (C) void __register_type() {
+            registry.register!T();
+        }
     }
 
     static if (hasUDA!(T, RegisterFallback)) {
@@ -104,10 +106,10 @@ public:
     */
     @property size_t alignment() {
         size_t result = 0;
-        foreach(sz; sizeStore)
+        foreach (sz; sizeStore)
             if (sz > result)
                 result = sz;
-            
+
         return result;
     }
 
@@ -119,6 +121,7 @@ public:
     */
     void register(X)() {
         import numem.core.traits : getUDAs, hasUDA;
+
         static assert(hasUDA!(X, TypeId), X.stringof ~ " does not have a TypeId UDA!");
 
         alias _tids = getUDAs!(X, TypeId);
@@ -127,7 +130,7 @@ public:
 
         // Register type factory.
         static if (!hasUDA!(X, TypeIdAbstract)) {
-            static foreach(tid; _tids) {
+            static foreach (tid; _tids) {
                 factoryStoreS[tid.sid] = &__construct!X;
                 factoryStoreN[tid.nid] = &__construct!X;
             }
@@ -216,10 +219,9 @@ public:
     T create(string sid, Args args) {
         if (sid in factoryStoreS)
             return factoryStoreS[sid](args);
-        
-        return fallbackFactory ? 
-            fallbackFactory(args) : 
-            T.init;
+
+        return fallbackFactory ?
+            fallbackFactory(args) : T.init;
     }
 
     /**
@@ -238,9 +240,8 @@ public:
         if (nid in factoryStoreN)
             return factoryStoreN[nid](args);
 
-        return fallbackFactory ? 
-            fallbackFactory(args) : 
-            T.init;
+        return fallbackFactory ?
+            fallbackFactory(args) : T.init;
     }
 
     /**
@@ -269,10 +270,9 @@ public:
         if (object.isObject && "type" in object) {
             if (string type = object["type"].tryCoerce!string(null)) {
                 if (!this.has(type))
-                    return fallbackFactory ? 
-                        fallbackFactory(args) : 
-                        T.init;
-                
+                    return fallbackFactory ?
+                        fallbackFactory(args) : T.init;
+
                 return this.create(type, args);
             }
         }

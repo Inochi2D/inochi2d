@@ -86,14 +86,14 @@ protected:
     override
     void onPostUpdate(DrawList drawList) {
         this.deformedMesh.applyUVOffset(vec2(
-            frameSize_.x * cast(float)frame_.x,
-            frameSize_.y * cast(float)frame_.y,
+                frameSize_.x * cast(float)frame_.x,
+                frameSize_.y * cast(float)frame_.y,
         ));
         super.onPostUpdate(drawList);
     }
 
 public:
-    
+
     /**
         The size of a single frame in texel coordinates.
     */
@@ -104,10 +104,8 @@ public:
     */
     @property ref vec2u frameCount() => frameCount_;
 }
+
 mixin Register!(AnimatedPart, in_node_registry);
-
-
-
 
 //
 //          QUARKS

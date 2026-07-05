@@ -147,7 +147,7 @@ public:
     override @property uint[] elementCounts() {
         static uint[2] counts;
         counts = [cast(uint)hpoints.length, cast(uint)vpoints.length];
-        return counts[0..2];
+        return counts[0 .. 2];
     }
 
     /**
@@ -196,13 +196,13 @@ public:
     */
     void pushValue(ParameterAxis axis, float value) {
         final switch (axis) {
-            case ParameterAxis.rows:
-                this.value.y = value;
-                break;
+        case ParameterAxis.rows:
+            this.value.y = value;
+            break;
 
-            case ParameterAxis.columns:
-                this.value.x = value;
-                break;
+        case ParameterAxis.columns:
+            this.value.x = value;
+            break;
         }
     }
 
@@ -242,4 +242,5 @@ public:
         return vec2(x, y);
     }
 }
+
 mixin Register!(Parameter2D, in_param_registry);

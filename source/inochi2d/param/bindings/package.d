@@ -103,7 +103,8 @@ protected:
             puppet =    The parent puppet
             state =     The state of the deserializer.
     */
-    void onFinalize(Puppet puppet, ref ModelState state) { }
+    void onFinalize(Puppet puppet, ref ModelState state) {
+    }
 
 public:
 
@@ -127,7 +128,6 @@ public:
     abstract
     void apply(vec2u index, vec2 norm);
 
-
     /**
         Keypoint operation to insert a keypoint at the given position.
     */
@@ -146,7 +146,6 @@ public:
     abstract
     void deleteKeypoint(ParameterAxis axis, uint index);
 
-
     /**
         Keypoint operation to scale a keypoint by a given factor.
     */
@@ -158,7 +157,6 @@ public:
     */
     abstract
     void copyKeypoint(vec2u index, ParameterBinding other, vec2u dest);
-
 
     /**
         Clear all keypoint values.

@@ -28,10 +28,10 @@ import numem;
         state =     The state of the deserializer.
         dims =      The dimensionality expected.
 */
-void deserialize08NestedArrays(T)(ref DataNode object, ref T target, ref ModelState state, vec2u dims) @nogc 
-if (is(T == vector2d!U, U)) {
+void deserialize08NestedArrays(T)(ref DataNode object, ref T target, ref ModelState state, vec2u dims) @nogc
+        if (is(T == vector2d!U, U)) {
     import inochi2d.core.math.deform : Deformation;
-    
+
     // Invalid array.
     if (!object.isArray) {
         state.error(nstring("expected array, got ", object.type.toTypeName, "!"));
@@ -50,8 +50,8 @@ if (is(T == vector2d!U, U)) {
     // target.
     size_t px = 0;
     size_t py = 0;
-    foreach(ref DataNode elem; object.array) {
-        
+    foreach (ref DataNode elem; object.array) {
+
         // Not nested??
         if (!elem.isArray) {
             state.error(nstring("expected nested array, got ", elem.type.toTypeName, "!"));
@@ -64,12 +64,12 @@ if (is(T == vector2d!U, U)) {
             return;
         }
 
-        foreach(ref value; elem.array) {
+        foreach (ref value; elem.array) {
             target[px, py] = value.deserialize!(T.DT)(state);
             px++;
         }
         py++;
-        px = 0;    
+        px = 0;
     }
 }
 

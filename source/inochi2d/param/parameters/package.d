@@ -44,8 +44,7 @@ Parameter tryDeserializeParam(ref DataNode object, ref ModelState state) @nogc {
     if (state.doUpgrade08) {
         state.info(nstring("0.8->0.9: upgrading legacy parameter ", object["name"].text));
         auto param = object.tryGet!bool(state, "is_vec2", false) ?
-            nogc_new!Parameter2D() :
-            nogc_new!Parameter1D();
+            nogc_new!Parameter2D() : nogc_new!Parameter1D();
 
         param.deserialize(object, state);
         return param;
@@ -107,7 +106,7 @@ protected:
             if (auto binding = bindings[i]) {
                 binding.finalize(puppet, state);
             } else {
-               bindings.removeAt(i);
+                bindings.removeAt(i);
             }
         }
     }
@@ -275,26 +274,26 @@ enum ParameterMergeMode {
 */
 ParameterMergeMode toParameterMergeMode(string value) @nogc {
     switch (value) {
-        case "additive":
-        case "Additive":
-            return ParameterMergeMode.additive;
+    case "additive":
+    case "Additive":
+        return ParameterMergeMode.additive;
 
-        case "weighted":
-        case "Weighted":
-            return ParameterMergeMode.weighted;
+    case "weighted":
+    case "Weighted":
+        return ParameterMergeMode.weighted;
 
-        case "multiplicative":
-        case "Multiplicative":
-            return ParameterMergeMode.multiplicative;
+    case "multiplicative":
+    case "Multiplicative":
+        return ParameterMergeMode.multiplicative;
 
-        case "forced":
-        case "Forced":
-            return ParameterMergeMode.forced;
+    case "forced":
+    case "Forced":
+        return ParameterMergeMode.forced;
 
-        default:
-        case "passthrough":
-        case "Passthrough":
-            return ParameterMergeMode.passthrough;
+    default:
+    case "passthrough":
+    case "Passthrough":
+        return ParameterMergeMode.passthrough;
     }
 }
 
@@ -316,7 +315,7 @@ ptrdiff_t searchPoints(float[] points, float pos, out float norm) pure @nogc {
     const index = searchPoints(points, pos);
 
     if (index >= 0) {
-    
+
         // Normalize along two adjacent points.
         const lo = points[index];
         const hi = points[index + 1];
@@ -341,12 +340,12 @@ ptrdiff_t searchPoints(float[] points, float pos) pure @nogc {
     assert(points.length >= 2, "Cannot search lists of points with fewer than 2 elements.");
 
     // Binary-search points list for our position.
-    auto cursor = points[0..$ - 1];
+    auto cursor = points[0 .. $ - 1];
     while (cursor.length > 1) {
         if (pos < cursor[$ / 2]) {
-            cursor = cursor[0..$ / 2];
+            cursor = cursor[0 .. $ / 2];
         } else {
-            cursor = cursor[$ / 2..$];
+            cursor = cursor[$ / 2 .. $];
         }
     }
 

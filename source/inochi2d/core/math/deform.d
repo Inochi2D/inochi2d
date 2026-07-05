@@ -140,14 +140,15 @@ struct Deformation {
 
     Deformation opBinaryRight(string op : "*", T)(T other) @trusted nothrow pure {
         static if (is(T == mat4)) {
-            
+
             // Optimized matrix multiplication
             Deformation new_;
             new_.vertexOffsets = self.vertexOffsets.nu_dup();
             simd_mul(new_.vertexOffsets, other);
-            
-            return new_;  
-        } static if (is(T == Deformation)) {
+
+            return new_;
+        }
+        static if (is(T == Deformation)) {
             Deformation new_;
 
             new_.clear(this.vertexOffsets.length);
@@ -247,7 +248,7 @@ struct Deformation {
 
     void onDeserialize(ref DataNode data, ref ModelState state) @nogc {
         if (state.doUpgrade08) {
-            
+
             this.vertexOffsets = nu_malloca!vec2(data.length);
             foreach (i, ref element; data.array) {
                 this.vertexOffsets[i / 2] = element.deserialize!vec2(state);

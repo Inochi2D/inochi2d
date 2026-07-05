@@ -93,7 +93,7 @@ public:
             rotation = 0;
 
         vec2 origin = vec2(size.x / 2, size.y / 2);
-        vec3 pos = vec3(position.x, position.y, -(ushort.max/2));
+        vec3 pos = vec3(position.x, position.y, -(ushort.max / 2));
         projection =
             mat4.orthographic(0f, size.x, size.y, 0, 0.001, ushort.max) *
             mat4.translation(origin.x, origin.y, 0) *

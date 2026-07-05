@@ -54,9 +54,10 @@ public:
     */
     Basis matrix() {
         return Basis(
-            mat4.translation(this.translation) *
-            mat4.zRotation(this.rotation.z) * mat4.yRotation(this.rotation.y) * mat4.xRotation(this.rotation.x) *
-            mat4.scaling(this.scale.x, this.scale.y, 1)
+                mat4.translation(this.translation) *
+                mat4.zRotation(this.rotation.z) * mat4.yRotation(
+                    this.rotation.y) * mat4.xRotation(this.rotation.x) *
+                mat4.scaling(this.scale.x, this.scale.y, 1)
         );
     }
 
@@ -110,7 +111,7 @@ public:
         The scale of the basis
     */
     @property vec2 scale() pure => vec2(
-        vec3(matrix.matrix[0][0], matrix.matrix[1][0], matrix.matrix[2][0]).length(),
-        vec3(matrix.matrix[0][1], matrix.matrix[1][1], matrix.matrix[2][1]).length()
+            vec3(matrix.matrix[0][0], matrix.matrix[1][0], matrix.matrix[2][0]).length(),
+            vec3(matrix.matrix[0][1], matrix.matrix[1][1], matrix.matrix[2][1]).length()
     );
 }

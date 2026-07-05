@@ -54,7 +54,6 @@ protected:
         object.tryGetRef(state, max, "max");
         object.tryGetRef(state, defaults, "defaults");
 
-
         // 0.8->0.9 upgrades
         if (state.doUpgrade08) {
             state.info("0.8->0.9: Upgrading 1D axis mapping...");
@@ -113,17 +112,17 @@ public:
     /**
         The lower bound of this parameter.
     */
-    override @property float[] lowerBound() @trusted => (&min)[0..1];
+    override @property float[] lowerBound() @trusted => (&min)[0 .. 1];
 
     /**
         The upper bound of this parameter.
     */
-    override @property float[] upperBound() @trusted => (&max)[0..1];
+    override @property float[] upperBound() @trusted => (&max)[0 .. 1];
 
     /**
         The current value of the parameter.
     */
-    override @property float[] currentValue() @trusted => (&value)[0..1];
+    override @property float[] currentValue() @trusted => (&value)[0 .. 1];
 
     /**
         The dimensionality of the parameter.
@@ -136,7 +135,7 @@ public:
     override @property uint[] elementCounts() {
         static uint[1] counts;
         counts = [cast(uint)points.length];
-        return counts[0..1];
+        return counts[0 .. 1];
     }
 
     /**
@@ -204,4 +203,5 @@ public:
         }
     }
 }
+
 mixin Register!(Parameter1D, in_param_registry);

@@ -19,9 +19,6 @@ import numath;
 
 public import inp.format;
 
-
-
-
 //
 //              INTERFACES
 //
@@ -45,7 +42,6 @@ interface ISerializable {
     void onSerialize(ref DataNode object);
 }
 
-
 /**
     Interface for classes that can be deserialized to JSON with custom code
 */
@@ -64,9 +60,6 @@ enum isDeserializable(T, ST) =
     is(T : IDeserializable!ST) ||
     is(typeof((ref DataNode obj, ref ST state) { T a; a.onDeserialize(obj, state); })) ||
     is(typeof((ref DataNode obj, ref ST state) { T a; onDeserialize(a, obj, state); }));
-
-
-
 
 //
 //              IMPLEMENTATION
@@ -103,14 +96,15 @@ void deserialize(T, ST)(ref DataNode data, ref T destination, ref ST state) @nog
             if (!destination)
                 destination = nogc_new!T;
         }
-        
+
         static if (is(typeof((ref DataNode obj, ref ST state) { T a; a.deserialize(obj, state); })))
             destination.deserialize(data, state);
         else static if (is(typeof((ref DataNode obj) { T a; a.onDeserialize(obj); })))
             destination.onDeserialize(data);
         else static if (is(typeof((ref DataNode obj, ref ST state) { T a; a.onDeserialize(obj, state); })))
             destination.onDeserialize(data, state);
-        else static assert(0, "Can't deserialize "~T.stringof);
+        else
+            static assert(0, "Can't deserialize " ~ T.stringof);
 
     } else static if (is(T : string) || is(T : nstring)) {
         if (!data.isNull)
@@ -190,7 +184,8 @@ DataNode serialize(T)(auto ref T toSerialize) @nogc {
             DataNode result;
             toSerialize.onSerialize(result);
             return result;
-        } else static assert(0, T.stringof~" does not support serialization.");
+        } else
+            static assert(0, T.stringof ~ " does not support serialization.");
     } else static if (VType == DataNodeType.object_) {
         static if (is(T == MapImpl!(string, VT, Args), VT, Args...)) {
 
@@ -273,8 +268,7 @@ T tryGet(T, ST)(ref DataNode object, ref ST state, string key, T defaultValue = 
 /**
     Attempts to get a value from a JSON object by its key and type.
 */
-T tryGet(T, ST)(ref DataNode object, ref ST state, string key)
-if (is(T == nstring)) {
+T tryGet(T, ST)(ref DataNode object, ref ST state, string key) if (is(T == nstring)) {
     if (key !in object)
         return nstring.init;
 

@@ -96,7 +96,7 @@ void simd_deform(ref vec2[] mesh, vec2[] deform) @nogc nothrow {
     } else {
 
         // Non-SIMD version
-        foreach(i; 0..w_length) {
+        foreach (i; 0 .. w_length) {
             mesh[i] += deform[i];
         }
     }
@@ -106,12 +106,12 @@ void simd_deform(ref vec2[] mesh, vec2[] deform) @nogc nothrow {
 unittest {
     vec2[] array1 = new vec2[10_001];
     vec2[] array2 = new vec2[10_001];
-    
+
     array1[] = vec2(1.0, 1.0);
     array2[] = vec2(1.0, 0.0);
 
     simd_deform(array1, array2);
-    foreach(value; array1) {
+    foreach (value; array1) {
         assert(value == vec2(2.0, 1.0));
     }
 }
@@ -144,18 +144,18 @@ void simd_broadcast_mesh(ref VtxData[] mesh, vec2[] delta) @nogc nothrow {
             // to write it to the XY components of the VtxDatas.
             __m128 xyzw = _mm_loadu_ps(cast(float*)delta[i].ptr);
             _mm_storel_pi(cast(__m64*)&mesh[i], xyzw);
-            _mm_storeh_pi(cast(__m64*)&mesh[i+1], xyzw);
+            _mm_storeh_pi(cast(__m64*)&mesh[i + 1], xyzw);
         }
 
         // Tail iteration to finalize the broadcast
         if (i < w_length) {
-            mesh[i].vtx.data[0..2] = delta[i].data[0..2];
+            mesh[i].vtx.data[0 .. 2] = delta[i].data[0 .. 2];
         }
     } else {
 
         // Non-SIMD version
-        foreach(i; 0..w_length) {
-            mesh[i].vtx.data[0..2] = delta[i].data[0..2];
+        foreach (i; 0 .. w_length) {
+            mesh[i].vtx.data[0 .. 2] = delta[i].data[0 .. 2];
         }
     }
 }
@@ -164,12 +164,12 @@ void simd_broadcast_mesh(ref VtxData[] mesh, vec2[] delta) @nogc nothrow {
 unittest {
     VtxData[] array1 = new VtxData[10_001];
     vec2[] array2 = new vec2[10_001];
-    
+
     array1[] = VtxData(vtx_t(0), vec2(0));
     array2[] = vec2(1.0, 1.0);
 
     simd_broadcast_mesh(array1, array2);
-    foreach(value; array1) {
+    foreach (value; array1) {
         assert(value.vtx.xy == vec2(1.0, 1.0));
     }
 }
@@ -182,7 +182,7 @@ unittest {
         src = Source
 */
 void simd_meshcopy(T)(ref T[] dst, T[] src) @nogc nothrow {
-    nu_memcpy(dst.ptr, src.ptr, nu_min(dst.length, src.length)*T.sizeof);
+    nu_memcpy(dst.ptr, src.ptr, nu_min(dst.length, src.length) * T.sizeof);
 }
 
 /**
@@ -196,7 +196,7 @@ void simd_meshcopy(T)(ref T[] dst, T[] src) @nogc nothrow {
 void simd_add(T)(ref T[] lhs, T[] rhs) @nogc nothrow
 if (is(T == VectorImpl!U, U...) && T.dimensions == 2) {
     size_t w_length = nu_min(lhs.length, rhs.length);
-    
+
     // NOTE:    SSE version of the algorithm.
     //          This algorithm loads 128 bits of mesh data at a time, then deforms it.
     //          Value is stored unaligned to memory.
@@ -219,7 +219,7 @@ if (is(T == VectorImpl!U, U...) && T.dimensions == 2) {
     } else {
 
         // Non-SIMD version
-        foreach(i; 0..w_length) {
+        foreach (i; 0 .. w_length) {
             lhs[i] = lhs[i] + rhs[i];
         }
     }
@@ -236,7 +236,7 @@ if (is(T == VectorImpl!U, U...) && T.dimensions == 2) {
 void simd_sub(T)(ref T[] lhs, T[] rhs) @nogc nothrow
 if (is(T == VectorImpl!U, U...) && T.dimensions == 2) {
     size_t w_length = nu_min(lhs.length, rhs.length);
-    
+
     // NOTE:    SSE version of the algorithm.
     //          This algorithm loads 128 bits of mesh data at a time, then deforms it.
     //          Value is stored unaligned to memory.
@@ -259,7 +259,7 @@ if (is(T == VectorImpl!U, U...) && T.dimensions == 2) {
     } else {
 
         // Non-SIMD version
-        foreach(i; 0..w_length) {
+        foreach (i; 0 .. w_length) {
             lhs[i] = lhs[i] - rhs[i];
         }
     }
@@ -276,7 +276,7 @@ if (is(T == VectorImpl!U, U...) && T.dimensions == 2) {
 void simd_mul(T)(ref T[] lhs, T[] rhs) @nogc nothrow
 if (is(T == VectorImpl!U, U...) && T.dimensions == 2) {
     size_t w_length = nu_min(lhs.length, rhs.length);
-    
+
     // NOTE:    SSE version of the algorithm.
     //          This algorithm loads 128 bits of mesh data at a time, then deforms it.
     //          Value is stored unaligned to memory.
@@ -299,7 +299,7 @@ if (is(T == VectorImpl!U, U...) && T.dimensions == 2) {
     } else {
 
         // Non-SIMD version
-        foreach(i; 0..w_length) {
+        foreach (i; 0 .. w_length) {
             lhs[i] = lhs[i] * rhs[i];
         }
     }

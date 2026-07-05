@@ -36,7 +36,7 @@ private:
 @nogc:
     DrawListAlloc* ssDrawList_;
     weak_vector!Visual visuals_;
-    
+
 protected:
 
     /**
@@ -97,18 +97,18 @@ protected:
     override
     void onDefineProperties(ref PropertyStore propList) {
         super.onDefineProperties(propList);
-        
-        propList.define!float(PROP_SCREEN_R,          0);
-        propList.define!float(PROP_SCREEN_G,          0);
-        propList.define!float(PROP_SCREEN_B,          0);
-        propList.define!float(PROP_TINT_R,            1);
-        propList.define!float(PROP_TINT_G,            1);
-        propList.define!float(PROP_TINT_B,            1);
-        propList.define!float(PROP_OPACITY,           1);
+
+        propList.define!float(PROP_SCREEN_R, 0);
+        propList.define!float(PROP_SCREEN_G, 0);
+        propList.define!float(PROP_SCREEN_B, 0);
+        propList.define!float(PROP_TINT_R, 1);
+        propList.define!float(PROP_TINT_G, 1);
+        propList.define!float(PROP_TINT_B, 1);
+        propList.define!float(PROP_OPACITY, 1);
 
         // Define combined overlays.
         propList.defineOverlay!vec3(PROP_SCREEN_RGB, propList.offsetOf(PROP_SCREEN_R));
-        propList.defineOverlay!vec3(PROP_TINT_RGB,   propList.offsetOf(PROP_TINT_R));
+        propList.defineOverlay!vec3(PROP_TINT_RGB, propList.offsetOf(PROP_TINT_R));
     }
 
     /**
@@ -153,11 +153,11 @@ protected:
             return;
 
         CompositeVars compositeVars = CompositeVars(
-            tint: tint * props.get!vec3(PROP_TINT_RGB),
-            screenTint: screenTint * props.get!vec3(PROP_SCREEN_RGB),
-            opacity: opacity * props.get!float(PROP_OPACITY)
+                tint: tint * props.get!vec3(PROP_TINT_RGB),
+                screenTint: screenTint * props.get!vec3(PROP_SCREEN_RGB),
+                opacity: opacity * props.get!float(PROP_OPACITY)
         );
-        
+
         visuals_.sortNodes();
 
         // Push sub render area.
@@ -261,9 +261,13 @@ public:
         that it should re-index them.
     */
     void notifyVisualsChanged() {
-        .findVisuals(this, visuals_, false, false, false);
+
+        
+
+            .findVisuals(this, visuals_, false, false, false);
     }
 }
+
 mixin Register!(Composite, in_node_registry);
 
 //

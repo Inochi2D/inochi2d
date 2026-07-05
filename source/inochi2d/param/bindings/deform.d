@@ -46,7 +46,7 @@ import numem;
 //        super.onSerialize(object);
 
 //    }
-    
+
 //    /**
 //        Deserialize this parameter.
 //    */
@@ -65,7 +65,7 @@ import numem;
 //            }
 //            return;
 //        }
-        
+
 //    }
 
 //public:

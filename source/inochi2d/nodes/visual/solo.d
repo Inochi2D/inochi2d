@@ -65,7 +65,10 @@ protected:
     override
     void onDelegateFindVisuals(ref weak_vector!Visual visuals, bool recurseDelegates, bool append) {
         if (children.length > 0) {
-            .findVisuals(children[activeLayer_], visuals, recurseDelegates, false, append);
+
+            
+
+                .findVisuals(children[activeLayer_], visuals, recurseDelegates, false, append);
         }
     }
 
@@ -95,7 +98,7 @@ public:
         Whether the node can be used as a source of masking operations.
     */
     override @property bool isMasking() @nogc nothrow pure => true;
-    
+
     /**
         The active layer that will be rendered.
     */
@@ -122,10 +125,8 @@ public:
         super(guid, parent);
     }
 }
+
 mixin Register!(Solo, in_node_registry);
-
-
-
 
 //
 //          QUARKS

@@ -132,7 +132,7 @@ public:
         Returns:
             A "tuple" of our bounds.
     */
-    size_t[2] opSlice(size_t dim: 0)(size_t a, size_t b) const {
+    size_t[2] opSlice(size_t dim : 0)(size_t a, size_t b) const {
         return [a, b];
     }
 
@@ -146,7 +146,7 @@ public:
         Returns:
             A "tuple" of our bounds.
     */
-    size_t[2] opSlice(size_t dim: 1)(size_t a, size_t b) const {
+    size_t[2] opSlice(size_t dim : 1)(size_t a, size_t b) const {
         return [a, b];
     }
 

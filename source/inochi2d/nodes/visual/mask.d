@@ -50,7 +50,7 @@ public:
         Deserialization function
     */
     void onDeserialize(ref DataNode object, ref ModelState state) {
-        
+
         // 0.8 uses a string for the masking mode.
         if (state.doUpgrade08) {
             this.maskSrcGUID = object.tryGetGUID(state, "source", "source");
@@ -132,7 +132,7 @@ protected:
         super.onFinalize(state);
 
         // Finalize all masks.
-        foreach_reverse(i; 0..sources_.length) {
+        foreach_reverse (i; 0 .. sources_.length) {
             sources_[i].onFinalize(this);
 
             // Remove invalid masks.
@@ -159,7 +159,7 @@ protected:
             drawList.pushMask(sources_[0].mode);
 
             visuals_.sortNodes();
-            foreach(ref src; sources_) {
+            foreach (ref src; sources_) {
                 src.maskSrc.drawMask(delta, drawList, src.mode);
             }
 
@@ -188,7 +188,10 @@ protected:
     */
     override
     void onDelegateFindVisuals(ref weak_vector!Visual visuals, bool recurseDelegates, bool append) {
-        .findVisuals(this, visuals_, false, false, false);
+
+        
+
+            .findVisuals(this, visuals_, false, false, false);
     }
 
 public:
@@ -228,4 +231,5 @@ public:
         super(guid, parent);
     }
 }
+
 mixin Register!(Mask, in_node_registry);

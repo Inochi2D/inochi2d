@@ -29,7 +29,7 @@ private:
     size_t _columns = 0;
 
 public:
-    
+
     /**
         Type of the data stored within.
     */
@@ -117,7 +117,7 @@ public:
         if ((_rows == 0 || _columns == 0) && (rows > 0 && cols > 0)) {
             this._rows = rows;
             this._columns = cols;
-            this._data = nu_malloca!T(_rows*_columns);
+            this._data = nu_malloca!T(_rows * _columns);
             return;
         }
 
@@ -127,10 +127,10 @@ public:
         size_t mCols = nu_min(cast(size_t)_columns, cast(size_t)cols);
 
         auto oldData = _data;
-        auto newData = nu_malloca!T(rows*cols);
-        foreach(x; 0..mRows) {
-            foreach(y; 0..mCols) {
-                newData[(rows*y)+x] = oldData[(_rows*y)+x];
+        auto newData = nu_malloca!T(rows * cols);
+        foreach (x; 0 .. mRows) {
+            foreach (y; 0 .. mCols) {
+                newData[(rows * y) + x] = oldData[(_rows * y) + x];
             }
         }
 
@@ -307,7 +307,7 @@ public:
         Returns:
             A "tuple" of our bounds.
     */
-    size_t[2] opSlice(size_t dim: 0)(size_t a, size_t b) const {
+    size_t[2] opSlice(size_t dim : 0)(size_t a, size_t b) const {
         assert(a <= b, "Slice bounds given in the wrong order");
         return [a, b];
     }
@@ -322,7 +322,7 @@ public:
         Returns:
             A "tuple" of our bounds.
     */
-    size_t[2] opSlice(size_t dim: 1)(size_t a, size_t b) const {
+    size_t[2] opSlice(size_t dim : 1)(size_t a, size_t b) const {
         assert(a <= b, "Slice bounds given in the wrong order");
         return [a, b];
     }

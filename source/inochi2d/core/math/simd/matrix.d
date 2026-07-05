@@ -12,7 +12,8 @@
 */
 module inochi2d.core.math.simd.matrix;
 import numath;
-version(Have_intelintrinsics) import inteli;
+
+version (Have_intelintrinsics) import inteli;
 
 ///**
 //    Multiplies 2 4x4 matrices together with SIMD.

@@ -1,16 +1,17 @@
 [*.d]
 charset = utf-8
+insert_final_newline = true
 indent_style = space
 indent_size = 4
 end_of_line = lf
 max_line_length = 120
 tab_width = 4
-dfmt_brace_style = otbs
-dfmt_space_after_keywords = true
+
+dfmt_soft_max_line_length = 120
+dfmt_compact_labeled_statements = true
+dfmt_align_switch_statements = true
+dfmt_selective_import_space = true
 dfmt_space_after_cast = false
 dfmt_keep_line_breaks = true
-dfmt_compact_labeled_statements = true
-dfmt_selective_import_space = true
-dfmt_align_switch_statements = true
 dfmt_outdent_labels = true
-dfmt_soft_max_line_length = 120
+dfmt_brace_style = otbs

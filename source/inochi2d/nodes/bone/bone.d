@@ -37,7 +37,7 @@ private:
             toFind = The deformable to find.
     */
     ptrdiff_t findTargetIdx(IDeformable toFind) {
-        foreach(i, target; targets_) {
+        foreach (i, target; targets_) {
             if (target.target is toFind)
                 return i;
         }
@@ -56,7 +56,7 @@ protected:
     override
     void onUpdate(float delta, DrawList drawList) {
         auto offset = this.localTransformOffset;
-        foreach(ref BoneTarget target; targets_) {
+        foreach (ref BoneTarget target; targets_) {
             size_t w_length = target.target.deformPoints.length;
             vec2[] w_verts = target.target.deformPoints;
 
@@ -67,7 +67,7 @@ protected:
             // Copy over the base bone locations from deformed points.
             // Then add our delta bone offset transformation to every vertex.
             // Finally we apply weights based on the weight paint.
-            boneOffsets[0..w_length] = w_verts[0..w_length];
+            boneOffsets[0 .. w_length] = w_verts[0 .. w_length];
             simd_mul(boneOffsets, offset.matrix);
             simd_mul_weight(boneOffsets, target.weights);
 
@@ -128,6 +128,7 @@ public:
         }
     }
 }
+
 mixin Register!(Bone, in_node_registry);
 
 /**
@@ -135,12 +136,12 @@ mixin Register!(Bone, in_node_registry);
 */
 struct BoneTarget {
 @nogc:
-    
+
     /// Destructor.
-    ~this() {
+     ~this() {
         nu_freea(weights);
     }
-    
+
     /**
         The target of the bone.    
     */
