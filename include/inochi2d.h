@@ -267,7 +267,11 @@ typedef enum {
 /**
     Masking modes
 */
-typedef enum { IN_MASK_MODE_MASK = 0, IN_MASK_MODE_DODGE = 1, IN_MASK_MODE_MAX = 0xFFFFFFFFU } in_mask_mode_t;
+typedef enum { 
+    IN_MASK_MODE_MASK = 0, 
+    IN_MASK_MODE_DODGE = 1, 
+    IN_MASK_MODE_MAX = 0xFFFFFFFFU
+} in_mask_mode_t;
 
 /**
     Blending modes
@@ -1353,6 +1357,7 @@ in_bone_modifier_t *IN_CALL in_as_bone_modifier(in_node_t *self);
         in bytes.
 */
 uint32_t IN_CALL in_resource_get_length(in_resource_t *obj);
+
 /**
     Gets the renderer ID of the resource.
 

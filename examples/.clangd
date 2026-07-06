@@ -1,0 +1,4 @@
+CompileFlags:
+  Add:
+    - "-I../../include"
+    - "-std=c23"
