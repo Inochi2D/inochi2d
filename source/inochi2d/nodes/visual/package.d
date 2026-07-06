@@ -80,8 +80,9 @@ protected:
         // Upgrade masks from previous format to new format.
         if (state.doUpgrade08 && !cast(Mask)this) {
             state.info(nstring("Upgrading legacy z-sorting values for ", name, "..."));
-            int newZSort = cast(int)((state.upctx["zsort"]) * 100);
-            this.zSort_ = newZSort;
+
+            float newZSort = (state.upctx["zsort"] * 100.0);
+            this.zSort_ = cast(int)newZSort;
 
             if ("masks" in object && object["masks"].length > 0) {
                 state.info(nstring("0.8->0.9: wrapping ", this.name[], " in Mask node..."));
@@ -89,9 +90,10 @@ protected:
                 // Create a new mask object to wrap ourselves in.
                 Visual mask = nogc_new!Mask(inNewGUID(), this.parent);
                 mask.onDeserialize(object, state);
+                mask.zSort_ = this.zSort_;
                 mask.name = "Mask";
-                mask.zSort_ = newZSort;
                 this.parent = mask;
+                this.zSort_ = 0;
             }
         }
     }

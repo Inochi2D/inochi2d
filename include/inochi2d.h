@@ -267,10 +267,10 @@ typedef enum {
 /**
     Masking modes
 */
-typedef enum { 
-    IN_MASK_MODE_MASK = 0, 
-    IN_MASK_MODE_DODGE = 1, 
-    IN_MASK_MODE_MAX = 0xFFFFFFFFU
+typedef enum {
+    IN_MASK_MODE_MASK = 0,
+    IN_MASK_MODE_DODGE = 1,
+    IN_MASK_MODE_MAX = 0xFFFFFFFFU,
 } in_mask_mode_t;
 
 /**

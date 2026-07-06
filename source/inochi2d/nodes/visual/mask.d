@@ -188,10 +188,9 @@ protected:
     */
     override
     void onDelegateFindVisuals(ref weak_vector!Visual visuals, bool recurseDelegates, bool append) {
-
-        
-
-            .findVisuals(this, visuals_, false, false, false);
+        // dfmt off
+        .findVisuals(this, visuals_, false, false, false);
+        // dfmt on
     }
 
 public:

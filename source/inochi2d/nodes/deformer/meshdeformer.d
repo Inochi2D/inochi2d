@@ -151,7 +151,7 @@ protected:
     */
     override
     void onPostUpdate(DrawList drawList) {
-        
+
         // No deltas?
         if (deformDeltas_.length == 0) {
             super.onPostUpdate(drawList);

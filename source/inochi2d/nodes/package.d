@@ -515,13 +515,14 @@ public:
         object.tryGetRef(state, lockToRoot_, "lockToRoot");
 
         // This ugly hack exists to upgrade legacy masks to the new masks.
-        float zsort08;
+        float zsort08 = 0;
         if (state.doUpgrade08) {
             if ("zsort" !in state.upctx)
-                state.upctx["zsort"] = 0.0;
+                state.upctx["zsort"] = zsort08;
 
             object.tryGetRef(state, zsort08, "zsort");
-            state.upctx["zsort"] = state.upctx["zsort"] + zsort08;
+            zsort08 += state.upctx["zsort"];
+            state.upctx["zsort"] = zsort08;
         }
 
         // Call callback and iterate to children.
@@ -530,6 +531,11 @@ public:
         // Pre-populate our children with the correct types
         if ("children" in object && object["children"].isArray) {
             foreach (ref child; object["children"].array) {
+
+                // This ugly hack exists to upgrade legacy masks to the new masks.
+                if (state.doUpgrade08) {
+                    state.upctx["zsort"] = zsort08;
+                }
 
                 // NOTE:    inInstantiateNode implicitly handles setting the
                 //          Parent-child relationship, so we don't need to do
@@ -540,11 +546,6 @@ public:
                     n.deserialize(child, state);
                 }
             }
-        }
-
-        // This ugly hack exists to upgrade legacy masks to the new masks.
-        if (state.doUpgrade08) {
-            state.upctx["zsort"] = state.upctx["zsort"] - zsort08;
         }
     }
 
@@ -866,5 +867,5 @@ void sortNodes(T)(T[] slice) @nogc nothrow if (is(T : Node)) {
 
     // HACK:    nulib doesn't have a float cmp function yet,
     //          as such we convert sorting values to fixed.
-    nu_sort!((a, b) @nogc => fixed32(a.zSort).data > fixed32(b.zSort).data)(slice);
+    nu_sort!((a, b) @nogc => a.zSortRender > b.zSortRender)(slice);
 }
