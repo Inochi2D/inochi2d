@@ -72,6 +72,10 @@ GLuint load_model_texture(in_texture_t* texture) {
 			GL_UNSIGNED_BYTE,
 			in_texture_get_pixels(texture)
 		);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 
@@ -212,6 +216,68 @@ mat4_t mat_multiply(mat4_t lhs, mat4_t rhs) {
 		}
 	}
 	return result;
+}
+
+void set_blend_mode(in_blend_mode_t mode) {
+	switch(mode) {
+		
+	// If the advanced blending extension is not supported, force to Normal blending
+	default:
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); break;
+
+	case IN_BLEND_MODE_NORMAL: 
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA); break;
+
+	case IN_BLEND_MODE_MULTIPLY: 
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFunc(GL_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA); break;
+
+	case IN_BLEND_MODE_SCREEN:
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR); break;
+
+	case IN_BLEND_MODE_LIGHTEN:
+		glBlendEquation(GL_MAX);
+		glBlendFunc(GL_ONE, GL_ONE); break;
+
+	case IN_BLEND_MODE_COLOR_DODGE:
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFunc(GL_DST_COLOR, GL_ONE); break;
+
+	case IN_BLEND_MODE_LINEAR_DODGE:
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_COLOR, GL_ONE, GL_ONE_MINUS_SRC_ALPHA); break;
+		
+	case IN_BLEND_MODE_ADD_GLOW:
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ONE_MINUS_SRC_ALPHA); break;
+
+	case IN_BLEND_MODE_SUBTRACT:
+		glBlendEquationSeparate(GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_ADD);
+		glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE); break;
+
+	case IN_BLEND_MODE_EXCLUSION:
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFuncSeparate(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR, GL_ONE, GL_ONE); break;
+
+	case IN_BLEND_MODE_INVERSE:
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA); break;
+	
+	case IN_BLEND_MODE_DESTINATION_IN:
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFunc(GL_ZERO, GL_SRC_ALPHA); break;
+
+	case IN_BLEND_MODE_SOURCE_IN:
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFunc(GL_DST_ALPHA, GL_ONE_MINUS_SRC_ALPHA); break;
+
+	case IN_BLEND_MODE_SOURCE_OUT:
+		glBlendEquation(GL_FUNC_ADD);
+		glBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_ALPHA); break;
+	}
 }
 
 int main(int argc, char *argv[]) {
@@ -408,7 +474,7 @@ int main(int argc, char *argv[]) {
 
 				// NOTE: 	We only render with the albedo texture in this example.
 				//			The albedo texture is reserved into slot 0.
-				size_t id = (size_t)in_resource_get_id((in_resource_t*)cmds->sources[0]);
+				size_t id = (size_t)in_resource_get_id((in_resource_t*)cmds[i].sources[0]);
 				glBindTexture(GL_TEXTURE_2D, id);
 
 				size_t idxOffset = (size_t)(cmds[i].idxOffset)*4;
@@ -416,6 +482,7 @@ int main(int argc, char *argv[]) {
 				// Set up render state.
 				glUseProgram(shader);
 				glUniformMatrix4fv(mtx_mv, 1, GL_TRUE, camera.data);
+				set_blend_mode(cmds[i].blendMode);
 				glDrawElementsBaseVertex(
 					GL_TRIANGLES,
 					cmds[i].elemCount,

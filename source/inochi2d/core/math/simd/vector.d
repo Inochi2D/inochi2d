@@ -66,48 +66,48 @@ void simd_mul(ref vec2[] mesh, mat4 matrix) @nogc nothrow {
     //          Value is stored unaligned to memory.
     //          
     // TODO:    Add aligned version?
-    static if (!SSESizedVectorsAreEmulated) {
+    //static if (!SSESizedVectorsAreEmulated) {
 
-        // Load matrix into SIMD variables.
-        __m128 r0 = _mm_loadu_ps(&matrix.matrix[0][0]);
-        __m128 r1 = _mm_loadu_ps(&matrix.matrix[1][0]);
+    //    // Load matrix into SIMD variables.
+    //    __m128 r0 = _mm_loadu_ps(&matrix.matrix[0][0]);
+    //    __m128 r1 = _mm_loadu_ps(&matrix.matrix[1][0]);
 
-        // SIMD version
-        size_t i = 0;
-        for (; i < nu_aligndown(mesh.length, 2); i += 2) {
+    //    // SIMD version
+    //    size_t i = 0;
+    //    for (; i < nu_aligndown(mesh.length, 2); i += 2) {
 
-            // Load vectors into SIMD variables.
-            __m128 xy01 = _mm_loadl_pi(IN_SIMD_IDENTITY, cast(const(__m64)*)mesh[i].ptr);
-            __m128 zw01 = _mm_loadl_pi(IN_SIMD_IDENTITY, cast(const(__m64)*)mesh[i + 1].ptr);
+    //        // Load vectors into SIMD variables.
+    //        __m128 xy01 = _mm_loadl_pi(IN_SIMD_IDENTITY, cast(const(__m64)*)mesh[i].ptr);
+    //        __m128 zw01 = _mm_loadl_pi(IN_SIMD_IDENTITY, cast(const(__m64)*)mesh[i + 1].ptr);
 
-            // Perform matrix multiplication
-            __m128 x = _mm_mul_ps(xy01, r0);
-            __m128 y = _mm_mul_ps(xy01, r1);
-            __m128 z = _mm_mul_ps(zw01, r0);
-            __m128 w = _mm_mul_ps(zw01, r1);
-            __m128 xy = _mm_hadd_ps(x, y);
-            __m128 zw = _mm_hadd_ps(z, w);
-            __m128 xyzw = _mm_hadd_ps(xy, zw);
+    //        // Perform matrix multiplication
+    //        __m128 x = _mm_mul_ps(xy01, r0);
+    //        __m128 y = _mm_mul_ps(xy01, r1);
+    //        __m128 z = _mm_mul_ps(zw01, r0);
+    //        __m128 w = _mm_mul_ps(zw01, r1);
+    //        __m128 xy = _mm_hadd_ps(x, y);
+    //        __m128 zw = _mm_hadd_ps(z, w);
+    //        __m128 xyzw = _mm_hadd_ps(xy, zw);
 
-            // Store 2 multiplied elements at once to mesh.
-            _mm_storeu_ps(cast(float*)mesh[i].ptr, xyzw);
-        }
+    //        // Store 2 multiplied elements at once to mesh.
+    //        _mm_storeu_ps(cast(float*)mesh[i].ptr, xyzw);
+    //    }
 
-        // Tail iteration to finalize the multiplication
-        if (i < mesh.length) {
-            __m128 xy01 = _mm_loadl_pi(IN_SIMD_IDENTITY, cast(const(__m64)*)mesh[i].ptr);
-            __m128 x = _mm_mul_ps(xy01, r0);
-            __m128 y = _mm_mul_ps(xy01, r1);
-            __m128 xy = _mm_hadd_ps(_mm_hadd_ps(x, y), _mm_hadd_ps(x, y));
-            _mm_storel_pi(cast(__m64*)mesh[i].ptr, xy);
-        }
-    } else {
+    //    // Tail iteration to finalize the multiplication
+    //    if (i < mesh.length) {
+    //        __m128 xy01 = _mm_loadl_pi(IN_SIMD_IDENTITY, cast(const(__m64)*)mesh[i].ptr);
+    //        __m128 x = _mm_mul_ps(xy01, r0);
+    //        __m128 y = _mm_mul_ps(xy01, r1);
+    //        __m128 xy = _mm_hadd_ps(_mm_hadd_ps(x, y), _mm_hadd_ps(x, y));
+    //        _mm_storel_pi(cast(__m64*)mesh[i].ptr, xy);
+    //    }
+    //} else {
 
         // Non-SIMD version
         foreach (ref vertex; mesh) {
             vertex = (vec4(vertex.x, vertex.y, 0, 1) * matrix).xy;
         }
-    }
+    //}
 }
 
 @("simd_mul")
