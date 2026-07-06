@@ -134,13 +134,51 @@ nstring readNumberJson(StreamReader reader, ref bool isFloating) {
     result ~= c;
 
     // Read characters until they're no longer number-like.
-    do {
-        if (c == '.')
-            isFloating = true;
-
+    bool isExponent;
+    while(true) {
         c = cast(char)reader.readU8();
+
+        // Integral part
+        if (!isFloating) {
+            if (c == '.') {
+                isFloating = true;
+                result ~= c;
+                continue;
+            }
+
+            if (c.isNumeric) {
+                result ~= c;
+                continue;
+            }
+
+            // No longer a number.
+            break;
+        }
+
+        // Fractional part
+        if (!isExponent) {
+            if (c == 'e' || c == 'E') {
+                isExponent = true;
+                result ~= c;
+                continue;
+            }
+
+            if (c.isNumeric) {
+                result ~= c;
+                continue;
+            }
+
+            // No longer a number.
+            break;
+        }
+
+        // Exponential part.
+        if (!(c.isNumeric || c == '-' || c == '+'))
+            break;
+
         result ~= c;
-    } while(c.isNumeric || c == '.' || c == 'e' || c == 'E');
+    }
+
     reader.skip(-1);
     return result;
 }
