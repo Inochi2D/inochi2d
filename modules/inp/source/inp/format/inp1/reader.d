@@ -81,6 +81,9 @@ void readINP1Impl()(StreamReader reader, ref DataNode node) {
                     uint dataLength = reader.readU32BE();
                     ubyte encoding = reader.readU8();
 
+                    // NOTE:    Inochi2D 0.8.x sometimes could end up writing textures
+                    //          with 0 length into the file, to allow the loader to handle
+                    //          this we replace it with an undefined DataNode if empty.
                     if (dataLength > 0) {
                         DataNode result = DataNode.createObject();
                         ubyte[] data = nu_malloca!ubyte(dataLength);
@@ -91,6 +94,8 @@ void readINP1Impl()(StreamReader reader, ref DataNode node) {
                         node[INP_TAG_TEXTURES] ~= result;
 
                         nu_freea(data);
+                    } else {
+                        node[INP_TAG_TEXTURES] ~= DataNode.init;
                     }
                 }
                 break;

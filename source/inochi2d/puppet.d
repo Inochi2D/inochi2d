@@ -225,7 +225,7 @@ private:
                 // Unknown format.
                 continue texLoadLoop;
             }
-            textureCache.add(Texture.createForData(textureData.move()));
+            textureCache.insert(Texture.createForData(textureData.move()), i);
         }
     }
 

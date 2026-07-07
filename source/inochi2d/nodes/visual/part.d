@@ -17,6 +17,7 @@ import inochi2d.effect;
 import inochi2d.nodes;
 import inochi2d.core;
 import numath;
+import nulib.conv;
 import nulib;
 import numem;
 
@@ -131,6 +132,10 @@ protected:
 
                 // TODO: Abstract this to properly handle refcounts.
                 this.textures[i] = puppet.textureCache.get(textureId);
+                if (!this.textures[i]) {
+                    state.error(nstring(this.name[], ": failed to find texture ", .toString!ulong(textureId), "..."));
+                }
+
                 if (this.textures[i])
                     this.textures[i].retain();
             }

@@ -14,6 +14,7 @@ module inochi2d.core.render.texture;
 import inochi2d.core.render.resource;
 import nulib.io.stream;
 import numath;
+import nulib;
 import numem;
 import gamut;
 
@@ -355,7 +356,7 @@ final
 class TextureCache : NuObject {
 private:
 @nogc:
-    Texture[] textures;
+    vector!Texture textures;
 
 public:
 
@@ -364,7 +365,7 @@ public:
         foreach (ref texture; textures) {
             texture.release();
         }
-        nu_freea(textures);
+        textures.clear();
     }
 
     /**
@@ -390,14 +391,27 @@ public:
     */
     uint add(Texture texture) {
         ptrdiff_t idx = find(texture);
-        if (idx == -1) {
-            textures = textures.nu_resize(textures.length + 1);
-            textures[$ - 1] = texture;
-            texture.retain();
+        if (idx >= 0) 
+            return cast(uint)idx;
 
-            return cast(uint)(textures.length - 1);
-        }
-        return cast(uint)idx;
+        uint id = cast(uint)textures.length;
+        textures ~= texture.retained;
+        return id;
+    }
+
+    /**
+        Inserts a texture into the texture cache at the given index,
+        the texture cache is resized to accomodate the index.
+
+        Params:
+            texture =   The texture to add to the cache.
+            at =        The index to give the texture.
+    */
+    void insert(Texture texture, size_t at) {
+        if (at >= textures.length)
+            textures.resize(at+1);
+
+        textures[at] = texture.retained();
     }
 
     /**
@@ -418,7 +432,7 @@ public:
                 tex.retain();
             }
         }
-        textures = textures.nu_resize(alive);
+        textures.resize(alive);
     }
 
     /**
