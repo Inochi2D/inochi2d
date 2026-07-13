@@ -13,3 +13,5 @@
 module inochi2d.core.memory;
 import numem.core.hooks;
 import numem;
+
+public import inochi2d.core.memory.pool;
