@@ -22,6 +22,7 @@ public import inochi2d.core.registry;
 public import inochi2d.core.memory;
 public import inochi2d.core.mrange;
 public import inochi2d.core.rlist;
+public import inochi2d.core.buffer;
 
 import inochi2d.core.math;
 

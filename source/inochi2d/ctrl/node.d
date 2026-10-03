@@ -46,19 +46,29 @@ class MacroNode : NuRefCounted {
 private:
 @nogc:
     static
-    struct MacroTarget {
+    struct MacroRef {
         MacroNode target;
         ptrdiff_t refs;
     }
 
     nstring name_;
     vector!NodeConnection connections_;
-    vector!MacroTarget targets_;
+    vector!MacroRef targets_;
+    vector!MacroRef sources_;
 
     // Helper that finds a target macro node in the targets
     // list.
     ptrdiff_t findTarget(MacroNode target) {
         foreach(i, t; targets_)
+            if (t.target is target)
+                return i;
+        return -1;
+    }
+
+    // Helper that finds a target macro node in the sources
+    // list.
+    ptrdiff_t findSource(MacroNode source) {
+        foreach(i, t; sources_)
             if (t.target is target)
                 return i;
         return -1;
@@ -70,10 +80,15 @@ private:
         ptrdiff_t idx = findTarget(target);
         if (idx >= 0) {
             targets_[idx].refs++;
+
+            ptrdiff_t sidx = target.findSource(this);
+            assert(sidx >= 0, "Source and target lists desynced!");
+            target.sources_[sidx].refs++;
             return;
         }
 
-        targets_ ~= MacroTarget(target.retained, 1);
+        targets_ ~= MacroRef(target.retained, 1);
+        target.sources_ ~= MacroRef(this, 1);
     }
 
     void releaseTargetRef(MacroNode target) {
@@ -81,10 +96,16 @@ private:
         if (idx >= 0) {
             targets_[idx].refs--;
 
-            if (targets_[idx].refs <= 0)
-                targets_.removeAt(idx);
+            ptrdiff_t sidx = target.findSource(this);
+            assert(sidx >= 0, "Source and target lists desynced!");
+            target.sources_[sidx].refs--;
+            if (target.sources_[sidx].refs <= 0)
+                target.sources_.removeAt(sidx);
 
-            target.release();
+            if (targets_[idx].refs <= 0) {
+                targets_.removeAt(idx);
+                target.release();
+            }
         }
     }
 
@@ -96,7 +117,8 @@ protected:
         Params:
             delta = Time since last frame.
     */
-    void onUpdate(float delta) { }
+    void onUpdate(float delta) {
+    }
 
 public:
 
@@ -135,6 +157,23 @@ public:
             $(D false) otherwise.
     */
     bool hasInput(quark port) { return false; }
+
+    /**
+        Gets whether this node is connected to the
+        given node.
+
+        Params:
+            node = The node to query connection with.
+
+        Returns:
+            $(D true) if this node is in any way connected 
+            to $(D node), $(D false) otherwise.
+    */
+    bool isConnectedTo(MacroNode node) {
+        return 
+            this.findSource(node) != -1 || 
+            this.findTarget(node) != -1;
+    }
 
     /**
         Try to connect this node to another node's port.
