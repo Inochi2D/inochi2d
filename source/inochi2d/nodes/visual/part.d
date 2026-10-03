@@ -426,9 +426,7 @@ public:
     override
     void resetDeform() {
         deformed_.reset();
-
         base_.reset();
-        base_.pushMatrix(this.deformBaseMatrix);
     }
 
     /**

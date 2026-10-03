@@ -17,41 +17,6 @@ import numath;
 import inteli;
 
 /**
-    Calculates the bounding box of a mesh, for larger meshes SIMD
-    is used to optimize this operation.
-
-    Params:
-        mesh = The points of the mesh.
-*/
-rect simd_calcbounds(vec2[] mesh) @nogc nothrow {
-
-    // SIMD implementation will compare 2 vertices at the same time.
-    // Then do a final pass on the result.
-    __m128i m_off = __m128i([0, 1, 2, 3]);
-    __m128i m_offu = __m128i([0, 1, 0, 1]);
-    __m128 m_min = __m128([float.max, float.max, float.max, float.max]);
-    __m128 m_max = __m128([-float.min_normal, -float.min_normal, -float.min_normal, -float.min_normal]);
-    for (size_t i = 0; i < mesh.length; i += 2) {
-
-        // NOTE:    In the case of an unaligned read, we use m_offu which just reads
-        //          the same vertex twice.
-        __m128 m1 = _mm_i32gather_ps!(4)(mesh[i].ptr, i + 2 > mesh.length ? m_offu : m_off);
-        m_min = _mm_min_ps(m_min, m1);
-        m_max = _mm_max_ps(m_max, m1);
-    }
-
-    // Unpack and construct rectangle.
-    vec2 v_min = min(vec2(m_min[0], m_min[1]), vec2(m_min[2], m_min[3]));
-    vec2 v_max = min(vec2(m_max[0], m_max[1]), vec2(m_max[2], m_max[3]));
-    return rect(
-            v_min.x,
-            v_min.y,
-            v_max.x - v_min.x,
-            v_max.y - v_min.y,
-    );
-}
-
-/**
     Multiplies all of the vertices in a mesh with a given matrix.
     For larger meshes this operation is done with SIMD.
 
@@ -238,5 +203,185 @@ unittest {
     simd_mul_weight(array1, weights);
     foreach (i, value; array1) {
         assert(value == vec2(0.25, 0.25));
+    }
+}
+
+/**
+    Multiplies all vertices in a given mesh with the given weights.
+
+    Params:
+        buffer = The buffer to scale based on weight.
+        weight = The weight to scale by.
+*/
+void simd_scale(float[] buffer, float weight) @nogc nothrow {
+
+    // NOTE:    SSE version of the algorithm.
+    //          This algorithm loads 128 bits of mesh data at a time, then deforms it.
+    //          Value is stored unaligned to memory.
+    //          
+    // TODO:    Add aligned version?
+    static if (!SSESizedVectorsAreEmulated) {
+        __m128 wwww = _mm_set_ps(weight, weight, weight, weight);
+
+        // SIMD version
+        size_t i = 0;
+        for (; i < nu_aligndown(buffer.length, 4); i += 4) {
+
+            // Load weights and vector
+            __m128 xyzw = _mm_loadu_ps(cast(const(float)*)&buffer[i]);
+
+            // Perform matrix multiplication and
+            // Store 2 multiplied elements at once to mesh.
+            __m128 weighted = _mm_mul_ps(xyzw, wwww);
+            _mm_storeu_ps(cast(float*)&buffer[i], weighted);
+        }
+
+        // Tail iteration to finalize the multiplication
+        while (i < buffer.length) {
+            buffer[i] = buffer[i] * weight;
+            i++;
+        }
+    } else {
+
+        // Non-SIMD version
+        foreach (i; 0 .. buffer.length) {
+            buffer[i] = buffer[i] * weight;
+        }
+    }
+}
+
+@("simd_scale")
+unittest {
+    vec2[] array1 = new vec2[10_001];
+    array1[] = vec2(0.5);
+
+    simd_scale(cast(float[])array1, 0.5);
+    foreach (i, value; array1) {
+        assert(value == vec2(0.25, 0.25));
+    }
+}
+
+
+/**
+    Adds the weighted source to the destination buffer.
+
+    Params:
+        dst =       The destination buffer.
+        src =       The buffer of values to add.
+        weight =    The weight to scale the source by.
+*/
+void simd_fma_weight(ref float[] dst, float[] src, float weight) @nogc nothrow {
+    if (weight == 0 || !weight.isFinite)
+        return;
+
+    size_t w_length = nu_min(dst.length, src.length);
+
+    // NOTE:    SSE version of the algorithm.
+    //          This algorithm loads 128 bits of mesh data at a time, then deforms it.
+    //          Value is stored unaligned to memory.
+    //          
+    // TODO:    Add aligned version?
+    static if (!SSESizedVectorsAreEmulated) {
+        __m128 wwww = _mm_set_ps(weight, weight, weight, weight);
+
+        // SIMD version
+        size_t i = 0;
+        for (; i < nu_aligndown(w_length, 4); i += 4) {
+
+            // Load weights and vector
+            __m128 dstxyzw = _mm_loadu_ps(cast(const(float)*)&dst[i]);
+            __m128 srcxyzw = _mm_loadu_ps(cast(const(float)*)&src[i]);
+
+            // Perform multiplication and
+            // Store 2 multiplied elements at once to mesh.
+            srcxyzw = _mm_mul_ps(srcxyzw, wwww);
+            dstxyzw = _mm_add_ps(dstxyzw, srcxyzw);
+            _mm_storeu_ps(cast(float*)&dst[i], dstxyzw);
+        }
+
+        // Tail iteration to finalize the multiplication
+        while (i < w_length) {
+            dst[i] += src[i] * weight;
+            i++;
+        }
+    } else {
+
+        // Non-SIMD version
+        foreach (i; 0 .. w_length) {
+            dst[i] += src[i] * weight;
+        }
+    }
+}
+
+@("simd_fma_weight")
+unittest {
+    float[] dst = new float[10_001];
+    dst[] = 0.0f;
+
+    float[] src = new float[10_001];
+    src[] = 1.0f;
+
+    // Should be zero.
+    foreach (i, value; dst) {
+        assert(value == 0.0f);
+    }
+
+    // Add 1.0 weighted by 1.0
+    simd_fma_weight(dst, src, 1.0);
+    foreach (i, value; dst) {
+        assert(value == 1.0f);
+    }
+
+    // Add 1.0 weighted by 0.5
+    simd_fma_weight(dst, src, 0.5);
+    foreach (i, value; dst) {
+        assert(value == 1.5f);
+    }
+}
+
+void simd_div1(ref float[] dst, float divisor) @nogc nothrow {
+    if (divisor == 0 || !divisor.isFinite)
+        return;
+
+    // NOTE:    SSE version of the algorithm.
+    //          This algorithm loads 128 bits of mesh data at a time, then deforms it.
+    //          Value is stored unaligned to memory.
+    //          
+    // TODO:    Add aligned version?
+    static if (!SSESizedVectorsAreEmulated) {
+        __m128 wwww = _mm_set_ps(divisor, divisor, divisor, divisor);
+
+        // SIMD version
+        size_t i = 0;
+        for (; i < nu_aligndown(dst.length, 4); i += 4) {
+
+            // Load vector, then divide by weights.
+            __m128 dstxyzw = _mm_loadu_ps(cast(const(float)*)&dst[i]);
+            _mm_storeu_ps(cast(float*)&dst[i], _mm_div_ps(dstxyzw, wwww));
+        }
+
+        // Tail iteration to finalize the multiplication
+        while (i < dst.length) {
+            dst[i] /= divisor;
+            i++;
+        }
+    } else {
+
+        // Non-SIMD version
+        foreach (i; 0 .. dst.length) {
+            dst[i] /= divisor;
+        }
+    }
+}
+
+@("simd_div1")
+unittest {
+    float[] dst = new float[10_001];
+    dst[] = 10.0f;
+
+    // Add 1.0 weighted by 1.0
+    simd_div1(dst, 10.0);
+    foreach (i, value; dst) {
+        assert(value == 1.0f);
     }
 }

@@ -8,7 +8,7 @@ build-inochi2d:
 	- rm -rf __dummy_docs/
 
 build: build-inochi2d
-	$(CC) -std=c23 main.c -Iout/include/ -Lout/ -linochi2d -lGLEW -lGL -lSDL3 -lm -o out/in_glrender
+	$(CC) -std=c23 src/main.c -Isrc/ -Ishaders/ -Iout/include/ -Lout/ -linochi2d -lGLEW -lGL -lSDL3 -lm -o out/in_glrender
 
 run: build
 	LD_LIBRARY_PATH="out/:$LD_LIBRARY_PATH" ./out/in_glrender $(MODEL)

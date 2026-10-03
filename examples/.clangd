@@ -1,4 +1,4 @@
 CompileFlags:
   Add:
-    - "-I../../include"
+    - "-Iout/include"
     - "-std=c23"

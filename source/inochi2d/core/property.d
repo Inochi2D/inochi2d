@@ -158,6 +158,11 @@ public:
     @property void[] properties() => vbuffer_[0 .. length_];
 
     /**
+        All of the stored property defaults, untyped.
+    */
+    @property void[] defaults() => dbuffer_[0 .. length_];
+
+    /**
         The keys the store knows about.
     */
     @property quark[] keys() => keys_[];
@@ -279,7 +284,7 @@ public:
             if (i.size != T.sizeof)
                 return T.init;
 
-            return (*cast(T*)(&vbuffer_[i.offset]));
+            return (*cast(T*)(vbuffer_ + i.offset));
         }
         return T.init;
     }
@@ -319,6 +324,7 @@ public:
                 return;
 
             (*cast(T*)(&vbuffer_[i.offset])) = value;
+            return;
         }
     }
 

@@ -18,12 +18,12 @@
 #include <errno.h>
 
 const char vertex[] = {
-	#embed "shaders/shader.vert"
+	#embed "../shaders/shader.vert"
 	, '\0'
 };
 
 const char fragment[] = {
-	#embed "shaders/shader.frag"
+	#embed "../shaders/shader.frag"
 	, '\0'
 };
 

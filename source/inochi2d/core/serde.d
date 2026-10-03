@@ -39,7 +39,7 @@ interface ISerializable {
     /**
         Custom serializer function
     */
-    void onSerialize(ref DataNode object);
+    void onSerialize(ref DataNode object) @nogc;
 }
 
 /**

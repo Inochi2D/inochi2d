@@ -162,7 +162,32 @@ public:
     */
     override
     void deform(vec2[] deformed, bool absolute) {
-        super.deform(deformed, absolute);
+        size_t w_length = nu_min(lattice.length, deformed.length);
+
+        if (absolute)
+            lattice[0 .. w_length] = deformed[0 .. w_length];
+        else
+            lattice[0 .. w_length] += deformed[0 .. w_length];
+    }
+
+    /**
+        Deforms a single vertex in the IDeformable
+
+        Params:
+            offset =    The offset into the point list to deform.
+            deform =    The deformation delta.
+            absolute =  Whether the deformation is absolute,
+                        replacing the original deformation.
+    */
+    override
+    void deform(size_t offset, vec2 deform, bool absolute = false) {
+        if (offset >= lattice.length)
+            return;
+        
+        if (absolute)
+            lattice[offset] = deform;
+        else
+            lattice[offset] += deform;
     }
 
     /**

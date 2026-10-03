@@ -17,6 +17,7 @@ import inochi2d.nodes;
 import inochi2d.common;
 import inochi2d.core;
 import nulib.string;
+import numath.tri;
 import numem;
 
 import inochi2d.core.math.simd;
@@ -98,9 +99,8 @@ protected:
     */
     override
     void onUpdate(float delta, DrawList drawList) @nogc {
-        base_.pushMatrix(this.deformMatrix);
-        deformed_.pushMatrix(this.deformMatrix);
-        shape_.update(base_.points, deformed_.points);
+        base_.pushMatrix(this.deformBaseMatrix);
+        deformed_.pushMatrix(this.deformBaseMatrix);
 
         super.onUpdate(delta, drawList);
     }
@@ -120,7 +120,7 @@ protected:
             super.onPostUpdate(drawList);
             return;
         }
-
+        shape_.update(base_.points, deformed_.points);
 
         // Calculate the deltas from the world matrix.
         foreach (i, mesh; toDeform) {
@@ -215,6 +215,20 @@ public:
     }
 
     /**
+        Deforms a single vertex in the IDeformable
+
+        Params:
+            offset =    The offset into the point list to deform.
+            deform =    The deformation delta.
+            absolute =  Whether the deformation is absolute,
+                        replacing the original deformation.
+    */
+    override
+    void deform(size_t offset, vec2 deform, bool absolute = false) {
+        deformed_.deform(offset, deform);
+    }
+
+    /**
         Resets the deformation for the IDeformable.
     */
     override
@@ -226,36 +240,46 @@ public:
 
 mixin Register!(MeshDeformer, in_node_registry);
 
+// TODO: Use a BVH to optimize lookups into the triangle list.
+
+/**
+    A mesh deformer triangle with metadata.
+*/
+struct mdtri2f {
+
+    // Base triangle.
+    tri2f base;
+    alias base this;
+
+    // indices of the tris used for looking up deltas.
+    uint[3] indices;
+}
+
 /**
     A managed type handling the shape of a mesh deformer's vertices.
 */
 struct MeshDeformerShape {
 private:
 @nogc:
+    mdtri2f[] tris;
     vec2[] deltas;
     vec2[] tmp;
 
     vec2 getDeformDelta(vec2 p) {
-        for(size_t i = 0; i < indices.length; i += 3) {
+        foreach(tri; tris) {
+            uint i0 = tri.indices[0];
+            uint i1 = tri.indices[1];
+            uint i2 = tri.indices[2];
 
-            uint i0 = indices[i + 0];
-            uint i1 = indices[i + 1];
-            uint i2 = indices[i + 2];
+            // // Do some cheaper checks first.
+            // float minX = min(min(tri.p0.x, tri.p1.x), tri.p2.x);
+            // float maxX = max(max(tri.p0.x, tri.p1.x), tri.p2.x);
+            // float minY = min(min(tri.p0.y, tri.p1.y), tri.p2.y);
+            // float maxY = max(max(tri.p0.y, tri.p1.y), tri.p2.y);
+            // if (!(minX < p.x && maxX > p.x) &&
+            //     !(minY < p.y && maxY > p.y))
+            //     continue;
 
-            vec2 p0 = vertices[i0];
-            vec2 p1 = vertices[i1];
-            vec2 p2 = vertices[i2];
-
-            // Do some cheaper checks first.
-            float minX = min(min(p0.x, p1.x), p2.x);
-            float maxX = max(max(p0.x, p1.x), p2.x);
-            float minY = min(min(p0.y, p1.y), p2.y);
-            float maxY = max(max(p0.y, p1.y), p2.y);
-            if (!(minX < p.x && maxX > p.x) &&
-                !(minY < p.y && maxY > p.y))
-                continue;
-
-            Triangle tri = Triangle(p0, p1, p2);
             if (tri.contains(p)) {
                 vec3 bc = tri.barycentric(p);
                 vec2 d0 = deltas[i0]*bc.x;
@@ -270,16 +294,6 @@ private:
 public:
 
     /**
-        Indices of the shape.
-    */
-    uint[] indices;
-    
-    /**
-        Vertices of the shape.
-    */
-    vec2[] vertices;
-
-    /**
         Whether the shape is ready for use.
     */
     @property bool isReady() => deltas.length > 0;
@@ -291,8 +305,6 @@ public:
 
     /// Destructor
     ~this() {
-        nu_freea(indices);
-        nu_freea(vertices);
         nu_freea(deltas);
         nu_freea(tmp);
     }
@@ -301,17 +313,20 @@ public:
         Sets the mesh of the deformer shape.
     */
     void setMesh(Mesh mesh) {
-        if (indices.length != mesh.indices.length) {
-            indices = indices.nu_resize(mesh.indices.length);
-        }
+        size_t numTris = mesh.indices.length/3;
+        if (tris.length != numTris)
+            tris = tris.nu_resize(numTris);
 
-        if (vertices.length != mesh.vertices.length) {
-            vertices = vertices.nu_resize(mesh.vertices.length);
-            deltas = deltas.nu_resize(mesh.vertices.length);
-        }
+        if (deltas.length != numTris)
+            deltas = deltas.nu_resize(numTris);
 
-        simd_meshcopy(indices, mesh.indices);
-        simd_meshcopy(vertices, mesh.points);
+        foreach(t; 0..numTris) {
+            tris[t].indices = [
+                mesh.indices[(t*3)+0],
+                mesh.indices[(t*3)+1],
+                mesh.indices[(t*3)+2]
+            ];
+        }
     }
 
     /**
@@ -319,12 +334,16 @@ public:
         vertices.
     */
     void update(vec2[] base, vec2[] deformed) {
-        assert(vertices.length == base.length);
-
-        simd_meshcopy(vertices, base);
         simd_meshcopy(deltas, base);
         simd_sub(deltas, deformed);
         simd_aabb(aabb, base);
+
+        // Fill out tris
+        foreach(i; 0..tris.length) {
+            tris[i].p0 = base[tris[i].indices[0]];
+            tris[i].p1 = base[tris[i].indices[1]];
+            tris[i].p2 = base[tris[i].indices[2]];
+        }
     }
 
     /**

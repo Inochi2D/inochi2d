@@ -598,6 +598,7 @@ public:
         if (!enabled)
             return;
 
+        props_.resetAll();
         this.onPreUpdate(drawList);
         foreach (child; children_) {
             child.preUpdate(drawList);
@@ -712,7 +713,7 @@ public:
             value = The value to set the property to.
     */
     void setProperty(quark key, float value) @nogc nothrow {
-        return props_.set!float(key, value);
+        props_.set!float(key, value);
     }
 
     /**

@@ -19,6 +19,7 @@ import numem;
 public import inochi2d.core.math.transform;
 public import inochi2d.core.math.deform;
 public import inochi2d.core.math.trig;
+public import inochi2d.core.math.range;
 public import numath.dampen;
 public import numath;
 
@@ -266,27 +267,27 @@ bool areLineSegmentsIntersecting(vec2 p1, vec2 p2, vec2 p3, vec2 p4) {
 }
 
 /**
-    Different modes of interpolation between values.
+    Target interpolation mode.
 */
 enum InterpolateMode : uint {
 
     /**
-        Round to nearest
+        Nearest-neighbour interpolation
     */
     nearest = 0,
 
     /**
+        Stepped interpolation
+    */
+    stepped = 1,
+    
+    /**
         Linear interpolation
     */
-    linear = 1,
+    linear = 2,
 
     /**
-        Round to nearest
-    */
-    stepped = 2,
-
-    /**
-        Interpolation using quadratic interpolation
+        Quadratic interpolation
     */
     quadratic = 3,
 

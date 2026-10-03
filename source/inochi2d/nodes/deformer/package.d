@@ -163,15 +163,7 @@ public:
             absolute =  Whether the deformation is absolute,
                         replacing the original deformation.
     */
-    override void deform(vec2[] deformed, bool absolute) {
-        import nulib.math : min;
-
-        size_t m = min(deformPoints.length, deformed.length);
-        if (absolute)
-            deformPoints[0 .. m] = deformed[0 .. m];
-        else
-            deformPoints[0 .. m] += deformed[0 .. m];
-    }
+    abstract void deform(vec2[] deformed, bool absolute);
 
     /**
         Deforms a single vertex in the IDeformable
@@ -182,15 +174,7 @@ public:
             absolute =  Whether the deformation is absolute,
                         replacing the original deformation.
     */
-    override void deform(size_t offset, vec2 deform, bool absolute = false) {
-        if (offset >= deformPoints.length)
-            return;
-
-        if (absolute)
-            deformPoints[offset] = deform;
-        else
-            deformPoints[offset] += deform;
-    }
+    abstract void deform(size_t offset, vec2 deform, bool absolute = false);
 
     /**
         Resets the deformation for the IDeformable.
