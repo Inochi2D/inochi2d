@@ -25,7 +25,7 @@ interface IMacroSource {
 	/**
 		Names of the output ports to the macro.
 	*/
-	@property quark[] outputs();
+	@property quark[] outputs() pure;
 
 	/**
 		Gets the value of the given output port.
@@ -61,20 +61,4 @@ interface IMacroSink {
 			value =	The value to set the input port to.
 	*/
 	bool setValue(quark name, float value);
-}
-
-/**
-	Gets whether the given object type is an endpoint sink.
-	Endpoint sinks cannot themselves produce values, and in
-	concept are things such as Parameters.
-
-	Params:
-		object = The object to test.
-
-	Returns:
-		$(D true) if the object is a endpoint sink,
-		$(D false) otherwise.
-*/
-bool isEndpointSink(T)(T object) @nogc nothrow {
-	return !(cast(IMacroSource)object) && cast(IMacroSink)object;
 }
