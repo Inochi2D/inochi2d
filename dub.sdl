@@ -36,7 +36,7 @@ subPackage "modules/godot"
 
 // Internally needed libraries.
 dependency ":inp" version="*"
-dependency "numath" version=">=0.5.0"
+dependency "numath" version=">=0.5.1"
 dependency "intel-intrinsics" version=">=1.14.7"
 dependency "gamut" version=">=3.4.1"
 
