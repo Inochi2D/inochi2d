@@ -37,13 +37,13 @@ subPackage "modules/godot"
 // Internally needed libraries.
 dependency ":inp" version="*"
 dependency "numath" version=">=0.5.1"
-dependency "intel-intrinsics" version=">=1.14.7"
+dependency "intel-intrinsics" version=">=1.14.11"
 dependency "gamut" version=">=3.4.1"
 
 // Numem
-dependency "nulib" version=">=0.4.7"
+dependency "nulib" version=">=0.4.8"
 dependency "nulib:io" version="*"
-dependency "numem" version=">=1.6.5"
+dependency "numem" version=">=1.6.14"
 
 // NuRT
 dependency "nurt" version=">=0.2.3"
