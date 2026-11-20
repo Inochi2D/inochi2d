@@ -12,6 +12,7 @@
 */
 module inochi2d.nodes.visual.composite;
 import inochi2d.nodes.visual;
+import inochi2d.resource;
 import inochi2d.common;
 import inochi2d.nodes;
 import inochi2d.core;
@@ -101,9 +102,11 @@ protected:
         propList.define!float(PROP_SCREEN_R, 0);
         propList.define!float(PROP_SCREEN_G, 0);
         propList.define!float(PROP_SCREEN_B, 0);
+        propList.pad(4);
         propList.define!float(PROP_TINT_R, 1);
         propList.define!float(PROP_TINT_G, 1);
         propList.define!float(PROP_TINT_B, 1);
+        propList.pad(4);
         propList.define!float(PROP_OPACITY, 1);
 
         // Define combined overlays.
@@ -137,7 +140,7 @@ protected:
         // Avoid over allocating a single screenspace
         // rect.
         if (!ssDrawList_)
-            ssDrawList_ = drawList.allocate(__screenSpaceMesh.vertices, __screenSpaceMesh.indices);
+            ssDrawList_ = drawList.allocate(__screenSpaceMesh.vertices, __screenSpaceMesh.uvs, __screenSpaceMesh.indices);
     }
 
     /**
@@ -153,9 +156,9 @@ protected:
             return;
 
         CompositeVars compositeVars = CompositeVars(
-                tint: tint * props.get!vec3(PROP_TINT_RGB),
-                screenTint: screenTint * props.get!vec3(PROP_SCREEN_RGB),
-                opacity: opacity * props.get!float(PROP_OPACITY)
+            tint: tint * props.get!vec3(PROP_TINT_RGB),
+            screenTint: screenTint * props.get!vec3(PROP_SCREEN_RGB),
+            opacity: opacity * props.get!float(PROP_OPACITY)
         );
 
         visuals_.sortNodes();
@@ -299,8 +302,7 @@ extern (C) void __in_setup_composite() {
             vec2(1, -1),
             vec2(1, 1)
         ];
-        auto meshData = MeshData(vertices, uvs, indices);
-        __screenSpaceMesh = Mesh.fromMeshData(meshData);
+        __screenSpaceMesh = nogc_new!Mesh(vertices, uvs, indices);
     }
 }
 

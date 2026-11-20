@@ -17,6 +17,8 @@ public import inochi2d.common;
 public import inochi2d.puppet;
 public import inochi2d.nodes;
 public import inochi2d.animation;
+public import inochi2d.resource;
+public import inochi2d.config;
 public import inochi2d.param;
 public import inochi2d.ver;
 

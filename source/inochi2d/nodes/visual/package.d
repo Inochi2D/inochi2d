@@ -11,6 +11,7 @@
         Luna Nielsen
 */
 module inochi2d.nodes.visual;
+import inochi2d.resource;
 import inochi2d.nodes;
 import inochi2d.common;
 import inochi2d.core;
@@ -201,80 +202,6 @@ public:
 mixin Register!(Visual, in_node_registry);
 // dfmt off
 
-
-
-
-//
-//          QUARKS
-//
-
-mixin RegisterQuarks!();
-
-/**
-    z-sort value.
-*/
-@propkey("zsort")
-__gshared immutable(quark) PROP_ZSORT;
-
-/**
-    Opacity.
-*/
-@propkey("opacity")
-__gshared immutable(quark) PROP_OPACITY;
-
-/**
-    Tint RGB
-*/
-@propkey("tint.rgb")
-__gshared immutable(quark) PROP_TINT_RGB;
-
-/**
-    Tint red
-*/
-@propkey("tint.r")
-__gshared immutable(quark) PROP_TINT_R;
-
-/**
-    Tint green
-*/
-@propkey("tint.g")
-__gshared immutable(quark) PROP_TINT_G;
-
-/**
-    Tint blue
-*/
-@propkey("tint.b")
-__gshared immutable(quark) PROP_TINT_B;
-
-/**
-    Screen-tint RGB
-*/
-@propkey("screenTint.rgb")
-__gshared immutable(quark) PROP_SCREEN_RGB;
-
-/**
-    Screen-tint red
-*/
-@propkey("screenTint.r")
-__gshared immutable(quark) PROP_SCREEN_R;
-
-/**
-    Screen-tint green
-*/
-@propkey("screenTint.g")
-__gshared immutable(quark) PROP_SCREEN_G;
-
-/**
-    Screen-tint blue
-*/
-@propkey("screenTint.b")
-__gshared immutable(quark) PROP_SCREEN_B;
-
-/**
-    Emission strength
-*/
-@propkey("emissionStrength")
-__gshared immutable(quark) PROP_EMISSION_STRENGTH;
 
 //
 //          HELPER FUNCTIONS

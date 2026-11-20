@@ -17,6 +17,65 @@ import numath;
 import inteli;
 
 /**
+    Offsets all of the coordinates in the given mesh with the given offset.
+    For larger meshes, the offset is done with SIMD.
+
+    Params:
+        mesh =      The mesh to offset.
+        offset =    The offset to perform
+*/
+void simd_add(ref vec2[] mesh, vec2 offset) @nogc nothrow {
+    static if (!SSESizedVectorsAreEmulated) {
+
+        // Offset loaded from variable.
+        __m128 m_offset = _mm_set_ps(offset.y, offset.x, offset.y, offset.x);
+
+        // SIMD version
+        size_t i = 0;
+        for (; i < nu_aligndown(mesh.length, 2); i += 2) {
+            _mm_storeu_ps(
+                cast(float*)mesh[i].ptr,
+                _mm_add_ps(
+                    _mm_loadu_ps(cast(float*)mesh[i].ptr),
+                    m_offset
+                )
+            );
+        }
+
+        // Tail iteration to finalize the offset
+        if (i < mesh.length) {
+            _mm_storel_pi(
+                cast(__m64*)mesh[i].ptr,
+                _mm_add_ps(
+                    _mm_loadl_pi(
+                        IN_SIMD_IDENTITY,
+                        cast(const(__m64)*)&mesh[i]
+                    ),
+                    m_offset
+                )
+            );
+        }
+    } else {
+
+        // Non-SIMD version
+        foreach (i; 0 .. mesh.length) {
+            mesh[i] += offset;
+        }
+    }
+}
+
+@("simd_add")
+unittest {
+    vec2[] array1 = new vec2[10_001];
+    array1[] = vec2(0);
+
+    simd_add(array1, vec2(1, 1));
+    foreach (i, value; array1) {
+        assert(value == vec2(1.0, 1.0));
+    }
+}
+
+/**
     Multiplies all of the vertices in a mesh with a given matrix.
     For larger meshes this operation is done with SIMD.
 
@@ -75,7 +134,7 @@ void simd_mul(ref vec2[] mesh, mat4 matrix) @nogc nothrow {
     }
 }
 
-@("simd_mul")
+@("simd_mul (mat4)")
 unittest {
     mat4 testMatrix = mat4.translation(1.0, 0.0, 0.0);
     vec2[] testArray = new vec2[10_001];
@@ -88,73 +147,15 @@ unittest {
 }
 
 /**
-    Offsets all of the coordinates in the given mesh with the given offset.
-    For larger meshes, the offset is done with SIMD.
+    Multiplies all vertices in a given mesh with the given values.
 
     Params:
-        mesh =      The mesh to offset.
-        offset =    The offset to perform
+        mesh =      The mesh to scale based on weight.
+        values =    The values to multiply by.
 */
-void simd_offset(ref vec2[] mesh, vec2 offset) @nogc nothrow {
-    static if (!SSESizedVectorsAreEmulated) {
-
-        // Offset loaded from variable.
-        __m128 m_offset = _mm_set_ps(offset.y, offset.x, offset.y, offset.x);
-
-        // SIMD version
-        size_t i = 0;
-        for (; i < nu_aligndown(mesh.length, 2); i += 2) {
-            _mm_storeu_ps(
-                    cast(float*)mesh[i].ptr,
-                    _mm_add_ps(
-                    _mm_loadu_ps(cast(float*)mesh[i].ptr),
-                    m_offset
-            )
-            );
-        }
-
-        // Tail iteration to finalize the offset
-        if (i < mesh.length) {
-            _mm_storel_pi(
-                    cast(__m64*)mesh[i].ptr,
-                    _mm_add_ps(
-                    _mm_loadl_pi(
-                    IN_SIMD_IDENTITY,
-                    cast(const(__m64)*)&mesh[i]
-                    ),
-                    m_offset
-            )
-            );
-        }
-    } else {
-
-        // Non-SIMD version
-        foreach (i; 0 .. mesh.length) {
-            mesh[i] += offset;
-        }
-    }
-}
-
-@("simd_offset")
-unittest {
-    vec2[] array1 = new vec2[10_001];
-    array1[] = vec2(0);
-
-    simd_offset(array1, vec2(1, 1));
-    foreach (i, value; array1) {
-        assert(value == vec2(1.0, 1.0));
-    }
-}
-
-/**
-    Multiplies all vertices in a given mesh with the given weights.
-
-    Params:
-        mesh = The mesh to scale based on weight.
-        weights = The weights to scale by.
-*/
-void simd_mul_weight(ref vec2[] mesh, ref float[] weights) @nogc nothrow {
-    size_t w_length = nu_min(mesh.length, weights.length);
+void simd_mul(ref vec2[] mesh, ref vec2[] values) @nogc nothrow {
+    float[] rvalues = cast(float[])values;
+    size_t w_length = nu_min(mesh.length, values.length*2);
 
     // NOTE:    SSE version of the algorithm.
     //          This algorithm loads 128 bits of mesh data at a time, then deforms it.
@@ -169,7 +170,7 @@ void simd_mul_weight(ref vec2[] mesh, ref float[] weights) @nogc nothrow {
         for (; i < nu_aligndown(w_length, 2); i += 2) {
 
             // Load weights and vector
-            __m128 w0011 = _mm_i32gather_ps!(4)(cast(const(float)*)&weights[i], WEIGHT_OFFSETS);
+            __m128 w0011 = _mm_i32gather_ps!(4)(cast(const(float)*)&rvalues[i], WEIGHT_OFFSETS);
             __m128 xyzw = _mm_load_ps(cast(const(float)*)&mesh[i]);
 
             // Perform matrix multiplication and
@@ -181,39 +182,40 @@ void simd_mul_weight(ref vec2[] mesh, ref float[] weights) @nogc nothrow {
 
         // Tail iteration to finalize the multiplication
         if (i < w_length) {
-            mesh[i] = mesh[i] * weights[i];
+            mesh[i] = mesh[i] * rvalues[i];
         }
     } else {
 
         // Non-SIMD version
         foreach (i; 0 .. w_length) {
-            mesh[i] = mesh[i] * weights[i];
+            mesh[i] = mesh[i] * rvalues[i];
         }
     }
 }
 
-@("simd_mul_weight")
+@("simd_mul (vec2[])")
 unittest {
     vec2[] array1 = new vec2[10_001];
     array1[] = vec2(0.5);
 
-    float[] weights = new float[10_001];
-    weights[] = 0.5;
+    vec2[] weights = new vec2[10_001];
+    weights[] = vec2(0.5, 0.5);
 
-    simd_mul_weight(array1, weights);
+    simd_mul(array1, weights);
     foreach (i, value; array1) {
         assert(value == vec2(0.25, 0.25));
     }
 }
 
 /**
-    Multiplies all vertices in a given mesh with the given weights.
+    Multiplies all vertices in a given mesh with the given value.
 
     Params:
-        buffer = The buffer to scale based on weight.
-        weight = The weight to scale by.
+        buffer =    The buffer to multiply based on weight.
+        value =     The value to multiply by.
 */
-void simd_scale(float[] buffer, float weight) @nogc nothrow {
+void simd_mul(ref vec2[] buffer, vec2 value) @nogc nothrow {
+    float[] vbuffer = cast(float[])buffer;
 
     // NOTE:    SSE version of the algorithm.
     //          This algorithm loads 128 bits of mesh data at a time, then deforms it.
@@ -221,7 +223,123 @@ void simd_scale(float[] buffer, float weight) @nogc nothrow {
     //          
     // TODO:    Add aligned version?
     static if (!SSESizedVectorsAreEmulated) {
-        __m128 wwww = _mm_set_ps(weight, weight, weight, weight);
+        __m128 wwww = _mm_set_ps(value.y, value.x, value.y, value.x);
+
+        // SIMD version
+        size_t i = 0;
+        for (; i < nu_aligndown(vbuffer.length, 4); i += 4) {
+
+            // Load weights and vector
+            __m128 xyzw = _mm_loadu_ps(cast(const(float)*)&vbuffer[i]);
+
+            // Perform matrix multiplication and
+            // Store 2 multiplied elements at once to mesh.
+            __m128 weighted = _mm_mul_ps(xyzw, wwww);
+            _mm_storeu_ps(cast(float*)&buffer[i], weighted);
+        }
+        
+        // Tail iteration to finalize the multiplication
+        i /= 2;
+        while (i < buffer.length) {
+            buffer[i] = buffer[i] * value;
+            i++;
+        }
+    } else {
+
+        // Non-SIMD version
+        foreach (i; 0 .. buffer.length) {
+            buffer[i] = buffer[i] * value;
+        }
+    }
+}
+
+@("simd_mul (vec2)")
+unittest {
+    vec2[] array1 = new vec2[10_001];
+    array1[] = vec2(0.5);
+
+    simd_mul(cast(float[])array1, 0.5);
+    foreach (i, value; array1) {
+        assert(value == vec2(0.25, 0.25));
+    }
+}
+
+/**
+    Multiplies all vertices in a given mesh with the given values.
+
+    Params:
+        mesh =      The mesh to scale based on weight.
+        values =    The values to multiply by.
+*/
+void simd_mul(ref vec2[] mesh, ref float[] values) @nogc nothrow {
+    size_t w_length = nu_min(mesh.length, values.length);
+
+    // NOTE:    SSE version of the algorithm.
+    //          This algorithm loads 128 bits of mesh data at a time, then deforms it.
+    //          Value is stored unaligned to memory.
+    //          
+    // TODO:    Add aligned version?
+    __gshared const __m128i WEIGHT_OFFSETS = __m128i([0, 0, 1, 1]);
+    static if (!SSESizedVectorsAreEmulated) {
+
+        // SIMD version
+        size_t i = 0;
+        for (; i < nu_aligndown(w_length, 2); i += 2) {
+
+            // Load weights and vector
+            __m128 w0011 = _mm_i32gather_ps!(4)(cast(const(float)*)&values[i], WEIGHT_OFFSETS);
+            __m128 xyzw = _mm_load_ps(cast(const(float)*)&mesh[i]);
+
+            // Perform matrix multiplication and
+            // Store 2 multiplied elements at once to mesh.
+            __m128 weighted = _mm_mul_ps(xyzw, w0011);
+            _mm_storeu_ps(cast(float*)mesh[i].ptr, weighted);
+
+        }
+
+        // Tail iteration to finalize the multiplication
+        if (i < w_length) {
+            mesh[i] = mesh[i] * values[i];
+        }
+    } else {
+
+        // Non-SIMD version
+        foreach (i; 0 .. w_length) {
+            mesh[i] = mesh[i] * values[i];
+        }
+    }
+}
+
+@("simd_mul (float[])")
+unittest {
+    vec2[] array1 = new vec2[10_001];
+    array1[] = vec2(0.5);
+
+    float[] weights = new float[10_001];
+    weights[] = 0.5;
+
+    simd_mul(array1, weights);
+    foreach (i, value; array1) {
+        assert(value == vec2(0.25, 0.25));
+    }
+}
+
+/**
+    Multiplies all vertices in a given mesh with the given value.
+
+    Params:
+        buffer = The buffer to multiply based on weight.
+        value = The value to multiply by.
+*/
+void simd_mul(float[] buffer, float value) @nogc nothrow {
+
+    // NOTE:    SSE version of the algorithm.
+    //          This algorithm loads 128 bits of mesh data at a time, then deforms it.
+    //          Value is stored unaligned to memory.
+    //          
+    // TODO:    Add aligned version?
+    static if (!SSESizedVectorsAreEmulated) {
+        __m128 wwww = _mm_set_ps(value, value, value, value);
 
         // SIMD version
         size_t i = 0;
@@ -238,24 +356,24 @@ void simd_scale(float[] buffer, float weight) @nogc nothrow {
 
         // Tail iteration to finalize the multiplication
         while (i < buffer.length) {
-            buffer[i] = buffer[i] * weight;
+            buffer[i] = buffer[i] * value;
             i++;
         }
     } else {
 
         // Non-SIMD version
         foreach (i; 0 .. buffer.length) {
-            buffer[i] = buffer[i] * weight;
+            buffer[i] = buffer[i] * value;
         }
     }
 }
 
-@("simd_scale")
+@("simd_mul (float)")
 unittest {
     vec2[] array1 = new vec2[10_001];
     array1[] = vec2(0.5);
 
-    simd_scale(cast(float[])array1, 0.5);
+    simd_mul(cast(float[])array1, 0.5);
     foreach (i, value; array1) {
         assert(value == vec2(0.25, 0.25));
     }
@@ -339,7 +457,7 @@ unittest {
     }
 }
 
-void simd_div1(ref float[] dst, float divisor) @nogc nothrow {
+void simd_div(ref float[] dst, float divisor) @nogc nothrow {
     if (divisor == 0 || !divisor.isFinite)
         return;
 
@@ -374,13 +492,13 @@ void simd_div1(ref float[] dst, float divisor) @nogc nothrow {
     }
 }
 
-@("simd_div1")
+@("simd_div")
 unittest {
     float[] dst = new float[10_001];
     dst[] = 10.0f;
 
     // Add 1.0 weighted by 1.0
-    simd_div1(dst, 10.0);
+    simd_div(dst, 10.0);
     foreach (i, value; dst) {
         assert(value == 1.0f);
     }

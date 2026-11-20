@@ -15,6 +15,7 @@ module inochi2d.nodes.deformer.meshdeformer;
 import inochi2d.nodes.deformer;
 import inochi2d.nodes;
 import inochi2d.common;
+import inochi2d.resource;
 import inochi2d.core;
 import nulib.string;
 import numath.tri;
@@ -47,10 +48,10 @@ protected:
     void onSerialize(ref DataNode object) @nogc {
         super.onSerialize(object);
 
-        // NOTE:    MeshData is set up to free its contents on
-        //          scope exit.
-        MeshData data = MeshData(mesh);
-        object["mesh"] = data.serialize();
+        // // NOTE:    MeshData is set up to free its contents on
+        // //          scope exit.
+        // MeshData data = MeshData(mesh);
+        // object["mesh"] = data.serialize();
     }
 
     /**
@@ -66,8 +67,7 @@ protected:
 
         this.deformed_ = nogc_new!DeformedMesh();
         this.base_ = nogc_new!DeformedMesh();
-        auto meshData = object.tryGet!MeshData(state, "mesh");
-        this.mesh = Mesh.fromMeshData(meshData);
+        this.mesh = Mesh.createFromLegacy(object["mesh"], state);
 
         if (state.doUpgrade08 && !object.tryGet(state, "dynamic_deformation", false)) {
             state.warning(nstring(this.name[], " uses static deformation, this was removed in 0.9..."));
@@ -120,7 +120,7 @@ protected:
             super.onPostUpdate(drawList);
             return;
         }
-        shape_.update(base_.points, deformed_.points);
+        shape_.update(base_.vertices, deformed_.vertices);
 
         // Calculate the deltas from the world matrix.
         foreach (i, mesh; toDeform) {
@@ -168,23 +168,23 @@ public:
     /**
         The control points of the deformer.
     */
-    override @property vec2[] controlPoints() @nogc => deformed_.points;
+    override @property vec2[] controlPoints() @nogc => deformed_.vertices;
     override @property void controlPoints(vec2[] value) @nogc {
         import nulib.math : min;
 
-        size_t m = min(value.length, deformed_.points.length);
-        deformed_.points[0 .. m] = value[0 .. m];
+        size_t m = min(value.length, deformed_.vertices.length);
+        deformed_.vertices[0 .. m] = value[0 .. m];
     }
 
     /**
         The base position of the deformable's points, in world space.
     */
-    override @property const(vec2)[] basePoints() @nogc => base_.points;
+    override @property const(vec2)[] basePoints() @nogc => base_.vertices;
 
     /**
         The points which may be deformed by a deformer, in world space.
     */
-    override @property vec2[] deformPoints() @nogc => deformed_.points;
+    override @property vec2[] deformPoints() @nogc => deformed_.vertices;
 
     // Destructor
     ~this() {

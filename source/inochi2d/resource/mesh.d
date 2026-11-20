@@ -14,6 +14,7 @@ module inochi2d.resource.mesh;
 import inochi2d.resource;
 import inochi2d.common;
 import inochi2d.core.serde;
+import inochi2d.core.math.simd;
 import numath;
 import numem;
 
@@ -67,8 +68,8 @@ public:
     /**
         The material applied to the mesh.
     */
-    @property Material material() nothrow => material_;
-    @property void material(Material value) nothrow {
+    @property Material material() => material_;
+    @property void material(Material value) {
         auto oldValue = material_;
         this.material_ = value.retained;
 
@@ -112,6 +113,15 @@ public:
     */
     this() { }
 
+    /**
+        Constructs a mesh with the given data.
+    */
+    this(vec2[] vertices, vec2[] uvs, uint[] indices) {
+        this.vertices_ = vertices.nu_dup();
+        this.uvs_ = uvs.nu_dup();
+        this.indices_ = indices.nu_dup();
+    }
+
 
 
 
@@ -146,9 +156,7 @@ public:
     */
     typeof(this) offset(vec2 offset) {
         if (offset.isFinite) {
-            foreach (i; 0 .. this.vertices_.length) {
-                this.vertices_[i] += offset;
-            }
+            simd_add(vertices_, offset);
             this.recalculateAABB();
         }
         return this;
@@ -165,9 +173,7 @@ public:
     */
     typeof(this) scale(vec2 scale) {
         if (scale.isFinite) {
-            foreach (i; 0 .. this.vertices_.length) {
-                this.vertices_[i] *= scale;
-            }
+            simd_mul(vertices_, scale);
             this.recalculateAABB();
         }
         return this;
@@ -182,10 +188,8 @@ public:
         Returns:
             This mesh instance.
     */
-    typeof(this) applyMatrix(mat3 matrix) {
-        foreach (i; 0 .. this.vertices_.length) {
-            this.vertices_[i] *= matrix;
-        }
+    typeof(this) applyMatrix(mat4 matrix) {
+        simd_mul(vertices_, matrix);
         this.recalculateAABB();
         return this;
     }
@@ -228,12 +232,12 @@ public:
     */
     tri2f triangleAt(size_t offset) {
         if (offset >= indices_.length / 3)
-            return tr2if.init;
+            return tri2f.init;
 
         return tri2f(
-            vto_[idx_[(offset * 3) + 0]],
-            vto_[idx_[(offset * 3) + 1]],
-            vto_[idx_[(offset * 3) + 2]]
+            vertices_[indices_[(offset * 3) + 0]],
+            vertices_[indices_[(offset * 3) + 1]],
+            vertices_[indices_[(offset * 3) + 2]]
         );
     }
 
@@ -257,7 +261,7 @@ public:
     */
     static Mesh createFromLegacy(ref DataNode object, ref ModelState state) {
         if (object.isNull)
-            return;
+            return null;
 
         Mesh mesh = nogc_new!Mesh();
 
@@ -276,7 +280,7 @@ public:
 
         // Apply origin transform destructively.
         vec2 origin = object.tryGet!vec2(state, "origin");
-        mesh.offsetBy(-origin);
+        mesh.offset(-origin);
 
         mesh.recalculateAABB();
         return mesh;

@@ -16,6 +16,7 @@ import numem;
 public import nulib.quark;
 public import inochi2d.resource.material;
 public import inochi2d.resource.texture;
+public import inochi2d.resource.mesh;
 
 /**
     An ID managed by the backend rendering API.

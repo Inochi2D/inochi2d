@@ -12,6 +12,7 @@
         Hoshino Lina
 */
 module inochi2d.core.math;
+import inochi2d.resource;
 import inochi2d.core;
 import nulib.math;
 import numem;
@@ -138,7 +139,7 @@ vec3 relativeVectorToInverse(mat4 lhs, mat4 rhs) @nogc pure {
     return vec3(cm.matrix[0][3], cm.matrix[1][3], cm.matrix[2][3]);
 }
 
-int[] findSurroundingTriangle(vec2 pt, ref MeshData bindingMesh) {
+int[] findSurroundingTriangle(vec2 pt, ref Mesh bindingMesh) {
     bool isPointInTriangle(vec2 pt, int[] triangle) {
         float sign(ref vec2 p1, ref vec2 p2, ref vec2 p3) {
             return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
@@ -173,7 +174,7 @@ int[] findSurroundingTriangle(vec2 pt, ref MeshData bindingMesh) {
 }
 
 // Calculate offset of point in coordinates of triangle.
-vec2 calcOffsetInTriangleCoords(vec2 pt, ref MeshData bindingMesh, ref int[] triangle) {
+vec2 calcOffsetInTriangleCoords(vec2 pt, ref Mesh bindingMesh, ref int[] triangle) {
     if ((pt - bindingMesh.vertices[triangle[0]]).lengthSquared >
             (pt - bindingMesh.vertices[triangle[1]]).lengthSquared) {
         nu_swap(triangle[0], triangle[1]);

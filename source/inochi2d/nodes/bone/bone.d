@@ -69,7 +69,7 @@ protected:
             // Finally we apply weights based on the weight paint.
             boneOffsets[0 .. w_length] = w_verts[0 .. w_length];
             simd_mul(boneOffsets, offset.matrix);
-            simd_mul_weight(boneOffsets, target.weights);
+            simd_mul(boneOffsets, target.weights);
 
             // We then add the delta from the bone to the real deformation.
             target.target.deform(boneOffsets);

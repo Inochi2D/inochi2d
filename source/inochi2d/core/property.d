@@ -155,12 +155,12 @@ public:
     /**
         All of the stored properties, untyped.
     */
-    @property void[] properties() => vbuffer_[0 .. length_];
+    @property void[] properties() pure => vbuffer_[0 .. length_];
 
     /**
         All of the stored property defaults, untyped.
     */
-    @property void[] defaults() => dbuffer_[0 .. length_];
+    @property void[] defaults() pure => dbuffer_[0 .. length_];
 
     /**
         The keys the store knows about.
@@ -205,6 +205,16 @@ public:
         // Set default value and copy it to the set value.
         nu_memcpy(&dbuffer_[offset], cast(void*)&default_, T.sizeof);
         return offset;
+    }
+
+    /**
+        Adds the given amount of padding to the property store.
+
+        Params:
+            bytes = The amount of bytes to pad.
+    */
+    void pad(size_t bytes) {
+        this.grow(bytes);
     }
 
     /**

@@ -14,6 +14,4 @@ module inochi2d.core.render;
 import nulib;
 import numem;
 
-public import inochi2d.core.render.resource;
 public import inochi2d.core.render.drawlist;
-public import inochi2d.core.render.texture;

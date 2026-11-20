@@ -12,8 +12,9 @@
 */
 module inochi2d.core.render.drawlist;
 import inochi2d.core.render.state;
-import inochi2d.core.render.texture;
 import inochi2d.core.mesh;
+import inochi2d.resource;
+import inochi2d.config;
 import numath;
 import nulib;
 import numem;
@@ -36,7 +37,8 @@ private:
     uint _cmdp;
 
     // Vertex Data
-    vector!VtxData _vtxs;
+    vector!vec2 _uvs;
+    vector!vec2 _vtxs;
     uint _vtxp;
 
     // Index Data
@@ -53,10 +55,11 @@ private:
 public:
 
     // Destructor
-     ~this() {
+    ~this() {
         _cmds.clear();
         _vtxs.clear();
         _idxs.clear();
+        _uvs.clear();
         _allocs.clear();
         _targetsStack.clear();
     }
@@ -74,7 +77,12 @@ public:
     /**
         Vertex data
     */
-    @property VtxData[] vertices() => _vtxs[0 .. _vtxp];
+    @property vec2[] vertices() => _vtxs[0 .. _vtxp];
+
+    /**
+        UV data
+    */
+    @property vec2[] uvs() => _uvs[0 .. _vtxp];
 
     /**
         Index data
@@ -92,13 +100,14 @@ public:
 
         Params:
             vtx = Vertex data to push.
+            uvs = UV data to push.
             idx = Index data to push.
     
         Returns:
             A reference to the drawlist allocation on success,
             $(D null) otherwise.
     */
-    DrawListAlloc* allocate(VtxData[] vtx, uint[] idx) {
+    DrawListAlloc* allocate(vec2[] vtx, vec2[] uvs, uint[] idx) {
 
         // Invalid vertex buffer check.
         if (vtx.length < 3)
@@ -109,8 +118,10 @@ public:
             return null;
 
         // Resize if stuff doesn't fit.
-        if (_vtxp + vtx.length >= _vtxs.length)
+        if (_vtxp + vtx.length >= _vtxs.length) {
             _vtxs.resize(_vtxp + vtx.length + 1);
+            _uvs.resize(_vtxp + uvs.length + 1);
+        }
         if (_idxp + idx.length >= _idxs.length)
             _idxs.resize(_idxp + idx.length + 1);
 
@@ -120,6 +131,7 @@ public:
             idx[0 .. $] += _idxp;
 
         _vtxs[_vtxp .. _vtxp + vtx.length] = vtx[0 .. $];
+        _uvs[_vtxp .. _vtxp + uvs.length] = uvs[0 .. $];
         _idxs[_idxp .. _idxp + idx.length] = idx[0 .. $];
         _vtxp += vtx.length;
         _idxp += idx.length;
@@ -197,12 +209,20 @@ public:
     }
 
     /**
-        Sets the blending mode for the current draw call.
+        Sets the variables for the current drawing call.
     */
     void setVariables(T)(uint nid, T value)
     if (T.sizeof <= _ccmd.variables.sizeof) {
         _ccmd.typeId = nid;
         nu_memcpy(_ccmd.variables.ptr, cast(void*)&value, T.sizeof);
+    }
+
+    /**
+        Sets the variables for the current drawing call.
+    */
+    void setVariables(uint nid, void[] data) {
+        _ccmd.typeId = nid;
+        nu_memcpy(_ccmd.variables.ptr, data.ptr, nu_min(64, data.length));
     }
 
     /**
@@ -255,11 +275,6 @@ public:
         _targetsStack.clear();
     }
 }
-
-/**
-    Maximum number of texture attachments.
-*/
-enum IN_MAX_ATTACHMENTS = 8;
 
 /**
     An allocation within the drawlist

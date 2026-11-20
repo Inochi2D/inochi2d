@@ -12,6 +12,8 @@
 */
 module inochi2d.nodes.visual.part;
 import inochi2d.nodes.visual;
+import inochi2d.resource;
+import inochi2d.config;
 import inochi2d.common;
 import inochi2d.effect;
 import inochi2d.nodes;
@@ -20,6 +22,7 @@ import numath;
 import nulib.conv;
 import nulib;
 import numem;
+
 
 public import inochi2d.core.render.state;
 public import inochi2d.core.mesh;
@@ -33,9 +36,9 @@ enum TextureUsage : size_t {
 }
 
 struct PartVars {
+align(16):
     vec3 tint;
     vec3 screenTint;
-    private void[4] __dummy;
     float opacity;
     float emissionStrength;
 }
@@ -74,9 +77,10 @@ protected:
     override
     void onSerialize(ref DataNode object) {
         super.onSerialize(object);
+        import inp.format;
 
-        MeshData data = MeshData(mesh_);
-        object["mesh"] = data.serialize();
+        // MeshData data = MeshData(mesh_);
+        // object["mesh"] = data.serialize();
         object["textures"] = DataNode.createArray();
         foreach (ref texture; textures) {
             if (texture) {
@@ -117,10 +121,11 @@ protected:
     void onDeserialize(ref DataNode object, ref ModelState state) {
         super.onDeserialize(object, state);
 
-        auto meshData = object.tryGet!MeshData(state, "mesh");
         this.deformed_ = nogc_new!DeformedMesh();
         this.base_ = nogc_new!DeformedMesh();
-        this.mesh = Mesh.fromMeshData(meshData);
+        if (state.doUpgrade08) {
+            this.mesh = Mesh.createFromLegacy(object["mesh"], state);
+        }
 
         // Textures
         if ("textures" in object && object["textures"].isArray) {
@@ -210,7 +215,7 @@ protected:
     void onPostUpdate(DrawList drawList) {
         super.onPostUpdate(drawList);
 
-        this.drawListSlot = drawList.allocate(deformed_.vertices, deformed_.indices);
+        this.drawListSlot = drawList.allocate(deformed_.vertices, deformed_.uvs, deformed_.indices);
 
         // Apply mesh effects.
         foreach (effect; effects_)
@@ -230,14 +235,14 @@ protected:
             return;
 
         PartVars vars = PartVars(
-                tint: tint * props.get!vec3(PROP_TINT_RGB),
-                screenTint: screenTint * props.get!vec3(PROP_SCREEN_RGB),
-                opacity: opacity * props.get!float(PROP_OPACITY),
-                emissionStrength: emissionStrength * props.get!float(PROP_EMISSION_STRENGTH)
+            tint: tint * props.get!vec3(PROP_TINT_RGB),
+            screenTint: screenTint * props.get!vec3(PROP_SCREEN_RGB),
+            opacity: opacity * props.get!float(PROP_OPACITY),
+            emissionStrength: emissionStrength * props.get!float(PROP_EMISSION_STRENGTH)
         );
 
         drawList.setMesh(drawListSlot);
-        drawList.setVariables!PartVars(nid, vars);
+        drawList.setVariables(nid, vars);
         drawList.setBlending(blendingMode);
         drawList.setSources(textures);
         drawList.next();
@@ -274,9 +279,11 @@ protected:
         propList.define!float(PROP_SCREEN_R, 0);
         propList.define!float(PROP_SCREEN_G, 0);
         propList.define!float(PROP_SCREEN_B, 0);
+        propList.pad(4);
         propList.define!float(PROP_TINT_R, 1);
         propList.define!float(PROP_TINT_G, 1);
         propList.define!float(PROP_TINT_B, 1);
+        propList.pad(4);
         propList.define!float(PROP_OPACITY, 1);
         propList.define!float(PROP_EMISSION_STRENGTH, 1);
 
@@ -326,12 +333,12 @@ public:
     /**
         The base position of the deformable's points.
     */
-    @property const(vec2)[] basePoints() => base_.points;
+    @property const(vec2)[] basePoints() => base_.vertices;
 
     /**
         The points which may be deformed by the deformer.
     */
-    override @property vec2[] deformPoints() => deformed_.points;
+    override @property vec2[] deformPoints() => deformed_.vertices;
 
     /**
         List of textures this part can use
@@ -386,33 +393,33 @@ public:
     /**
         Constructs a new part
     */
-    this(MeshData data, Node parent = null) {
-        this(data, inNewGUID(), parent);
+    this(Mesh mesh, Node parent = null) {
+        this(mesh, inNewGUID(), parent);
     }
 
     /**
         Constructs a new part
     */
-    this(MeshData data, GUID guid, Node parent = null) {
+    this(Mesh mesh, GUID guid, Node parent = null) {
         super(guid, parent);
 
         this.deformed_ = nogc_new!DeformedMesh();
         this.base_ = nogc_new!DeformedMesh();
-        this.mesh = Mesh.fromMeshData(data);
+        this.mesh_ = mesh;
     }
 
     /**
         Constructs a new part
     */
-    this(MeshData data, Texture[] textures, Node parent = null) {
-        this(data, textures, inNewGUID(), parent);
+    this(Mesh mesh, Texture[] textures, Node parent = null) {
+        this(mesh, textures, inNewGUID(), parent);
     }
 
     /**
         Constructs a new part
     */
-    this(MeshData data, Texture[] textures, GUID guid, Node parent = null) {
-        this(data, guid, parent);
+    this(Mesh mesh, Texture[] textures, GUID guid, Node parent = null) {
+        this(mesh, guid, parent);
         foreach (i; 0 .. TextureUsage.COUNT) {
             if (i >= textures.length)
                 break;
