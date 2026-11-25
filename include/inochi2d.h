@@ -1564,6 +1564,109 @@ void *IN_CALL in_drawlist_get_index_data(in_drawlist_t *obj, uint32_t *bytes);
 */
 in_drawalloc_t *IN_CALL in_drawlist_get_allocations(in_drawlist_t *obj, uint32_t *count);
 
+
+
+
+//---------------------------------------------------------------------------//
+//                           Animation Player API
+//---------------------------------------------------------------------------//
+
+/**
+    Animation player instance.
+*/
+typedef struct in_animation_player_t in_animation_player_t;
+
+/**
+    Animation playback token.
+*/
+typedef struct in_animation_token_t in_animation_token_t;
+
+/**
+    Constructs a new Animation Player instance.
+
+    Params:
+        puppet = The puppet to create the animation instance of.
+
+    Returns:
+        A new animation player instance configured for the given puppet.
+*/
+in_animation_player_t *IN_CALL in_animation_player_create(in_puppet_t* puppet);
+
+/**
+    Frees an animation player.
+
+    Params:
+        player = The animation player to free.
+*/
+void IN_CALL in_animation_player_free(in_animation_player_t *player);
+
+/**
+    Stops all playing animations.
+
+    Params:
+        player = The animation player instance.
+*/
+void IN_CALL in_animation_player_stop_all(in_animation_player_t *player);
+
+/**
+    Updates the animation player.
+
+    Params:
+        player =    The animation player instance.
+        delta =     The difference in time between this frame and
+                    the previous.
+*/
+void IN_CALL in_animation_player_update(in_animation_player_t *player, float delta);
+
+/**
+    Gets an animation from the puppet and sets it up for playback.
+
+    Params:
+        player =    The animation player
+        anim =      The name of the animation.
+
+    Returns:
+        A token representing the playback instance of the animation,
+        $(D null) if not found.
+*/
+in_animation_token_t *IN_CALL in_animation_player_get(in_animation_player_t *player, const char *anim);
+
+/**
+    Stops the given animation.
+
+    Params:
+        anim =      The token representing the animation.
+        immediate = Whether to stop the animation immediately.
+*/
+void IN_CALL in_animation_stop(in_animation_token_t *anim, bool immediate);
+
+/**
+    Seeks to a given frame in an animation.
+
+    Params:
+        anim =      The token representing the animation.
+        frame =     The frame to seek to.
+*/
+void IN_CALL in_animation_seek(in_animation_token_t *anim, int frame);
+
+/**
+    Pauses the given animation.
+
+    Params:
+        anim =      The token representing the animation.
+*/
+void IN_CALL in_animation_pause(in_animation_token_t *anim);
+
+/**
+    Plays the given animation.
+
+    Params:
+        anim =          The token representing the animation.
+        loop =          Whether to loop the animation
+        playLeadOut =   Whether to play the animation's lead-out.
+*/
+void IN_CALL in_animation_play(in_animation_token_t *anim, bool loop, bool playLeadOut);
+
 #ifdef __cplusplus
 }
 #endif

@@ -11,10 +11,11 @@
         Luna Nielsen
 */
 module inochi2d.cffi;
+import inochi2d.animation;
 import inochi2d.common;
 import inochi2d.effect;
-import inochi2d.nodes;
 import inochi2d.param;
+import inochi2d.nodes;
 import inochi2d.core;
 import nulib.string;
 import nulib.quark;
@@ -31,9 +32,9 @@ else version = hasFileIO;
 
 
 
-//
-//      BASE DATA TYPES
-//
+//---------------------------------------------------------------------------//
+//                              Base Data Types
+//---------------------------------------------------------------------------//
 
 /**
     2D Vector
@@ -91,9 +92,9 @@ struct io_sink_t {
 
 
 
-//
-//          TYPEDEFS
-//
+//---------------------------------------------------------------------------//
+//                                  Typedefs
+//---------------------------------------------------------------------------//
 
 /**
     A quark.
@@ -194,9 +195,9 @@ struct in_drawlist_t;
 
 
 
-//
-//          CORE API
-//
+//---------------------------------------------------------------------------//
+//                                  Core API
+//---------------------------------------------------------------------------//
 
 /**
     Retains a reference to a Inochi2D Object.
@@ -240,9 +241,9 @@ quark_t quarkof(const(char)* key) {
 
 
 
-//
-//              PUPPET
-//
+//---------------------------------------------------------------------------//
+//                                   Puppet
+//---------------------------------------------------------------------------//
 
 /**
     Loads a puppet into memory.
@@ -499,9 +500,9 @@ in_node_t* in_puppet_get_root_node(in_puppet_t* self) {
 
 
 
-//
-//              PARAMETERS
-//
+//---------------------------------------------------------------------------//
+//                                Parameters
+//---------------------------------------------------------------------------//
 
 /**
     Gets the name of the parameter.
@@ -555,7 +556,7 @@ uint in_parameter_get_dimensions(in_parameter_t* obj) {
         use $(D in_parameter_get_dimensions) to get the dimensionality.
 */
 const(float)* in_parameter_get_lower_bounds(in_parameter_t* obj) {
-    return (cast(Parameter)obj).lowerBound.ptr;
+    return (cast(Parameter)obj).lowerBounds.ptr;
 }
 
 /**
@@ -569,7 +570,7 @@ const(float)* in_parameter_get_lower_bounds(in_parameter_t* obj) {
         use $(D in_parameter_get_dimensions) to get the dimensionality.
 */
 const(float)* in_parameter_get_upper_bounds(in_parameter_t* obj) {
-    return (cast(Parameter)obj).upperBound.ptr;
+    return (cast(Parameter)obj).upperBounds.ptr;
 }
 
 /**
@@ -583,7 +584,7 @@ const(float)* in_parameter_get_upper_bounds(in_parameter_t* obj) {
         use $(D in_parameter_get_dimensions) to get the dimensionality.
 */
 float* in_parameter_get_value(in_parameter_t* obj) {
-    return (cast(Parameter)obj).currentValue.ptr;
+    return (cast(Parameter)obj).value.ptr;
 }
 
 /**
@@ -595,15 +596,15 @@ float* in_parameter_get_value(in_parameter_t* obj) {
 */
 void in_parameter_set_value(in_parameter_t* obj, float* values) {
     size_t dims = (cast(Parameter)obj).dimensions;
-    (cast(Parameter)obj).currentValue[0 .. dims] = values[0 .. dims];
+    (cast(Parameter)obj).set(values[0 .. dims]);
 }
 
 
 
 
-//
-//              TEXTURE CACHE
-//
+//---------------------------------------------------------------------------//
+//                               Texture Cache
+//---------------------------------------------------------------------------//
 
 /**
     Gets the size (amount of textures) of the texture cache.
@@ -661,9 +662,9 @@ void in_texture_cache_prune(in_texture_cache_t* obj) {
 
 
 
-//
-//              NODE
-//
+//---------------------------------------------------------------------------//
+//                                  Node
+//---------------------------------------------------------------------------//
 
 /**
     Creates a new basic node, optionally parented to the given node.
@@ -985,9 +986,9 @@ const(quark_t)* in_node_get_properties(in_node_t* self, ref uint count) {
 
 
 
-//
-//              VISUALS
-//
+//---------------------------------------------------------------------------//
+//                                   Visuals
+//---------------------------------------------------------------------------//
 
 /**
     Casts the given node to a visual.
@@ -1083,9 +1084,9 @@ int in_visual_get_zsort_render(in_visual_t* self) {
 
 
 
-//
-//              PARTS
-//
+//---------------------------------------------------------------------------//
+//                                    Parts
+//---------------------------------------------------------------------------//
 
 /**
     Casts the given node to a part.
@@ -1246,9 +1247,9 @@ in_mesh_effect_t** in_node_part_get_mesh_effects(in_part_t* self, ref uint count
 
 
 
-//
-//              ANIMATED PARTS
-//
+//---------------------------------------------------------------------------//
+//                               Animated Parts
+//---------------------------------------------------------------------------//
 
 /**
     Casts the given node to a animated part.
@@ -1270,9 +1271,9 @@ in_animated_part_t* in_as_animated_part(in_node_t* self) {
 
 
 
-//
-//              COMPOSITES
-//
+//---------------------------------------------------------------------------//
+//                                 Composites
+//---------------------------------------------------------------------------//
 
 /**
     Casts the given node to a composite.
@@ -1347,9 +1348,9 @@ void in_composite_set_opacity(in_composite_t* self, float value) {
 
 
 
-//
-//              MASKS
-//
+//---------------------------------------------------------------------------//
+//                                    Masks
+//---------------------------------------------------------------------------//
 
 /**
     Casts the given node to a mask.
@@ -1370,9 +1371,10 @@ in_mask_t* in_as_mask(in_node_t* self) {
 
 
 
-//
-//              SOLOS
-//
+
+//---------------------------------------------------------------------------//
+//                                    Solos
+//---------------------------------------------------------------------------//
 
 /**
     Casts the given node to a solo.
@@ -1796,4 +1798,126 @@ void* in_drawlist_get_index_data(in_drawlist_t* obj, ref uint bytes) {
 in_drawalloc_t* in_drawlist_get_allocations(in_drawlist_t* obj, ref uint count) {
     count = cast(uint)((cast(DrawList)obj).allocations.length);
     return cast(in_drawalloc_t*)(cast(DrawList)obj).allocations.ptr;
+}
+
+
+
+
+//---------------------------------------------------------------------------//
+//                           Animation Player API
+//---------------------------------------------------------------------------//
+
+/**
+    Animation player instance.
+*/
+struct in_animation_player_t;
+
+/**
+    Animation playback token.
+*/
+struct in_animation_token_t;
+
+/**
+    Constructs a new Animation Player instance.
+
+    Params:
+        puppet = The puppet to create the animation instance of.
+
+    Returns:
+        A new animation player instance configured for the given puppet.
+*/
+in_animation_player_t* in_animation_player_create(in_puppet_t* puppet) {
+    return cast(in_animation_player_t*)nogc_new!AnimationPlayer(cast(Puppet)puppet);
+}
+
+/**
+    Frees an animation player.
+
+    Params:
+        player = The animation player to free.
+*/
+void in_animation_player_free(in_animation_player_t* player) {
+    nogc_delete(cast(AnimationPlayer)player);
+}
+
+/**
+    Stops all playing animations.
+
+    Params:
+        player = The animation player instance.
+*/
+void in_animation_player_stop_all(in_animation_player_t* player) {
+    (cast(AnimationPlayer)player).stopAll();
+}
+
+/**
+    Updates the animation player.
+
+    Params:
+        player =    The animation player instance.
+        delta =     The difference in time between this frame and
+                    the previous.
+*/
+void in_animation_player_update(in_animation_player_t* player, float delta) {
+    (cast(AnimationPlayer)player).update(delta);
+}
+
+/**
+    Gets an animation from the puppet and sets it up for playback.
+
+    Params:
+        player =    The animation player
+        anim =      The name of the animation.
+
+    Returns:
+        A token representing the playback instance of the animation,
+        $(D null) if not found.
+*/
+in_animation_token_t* in_animation_player_get(in_animation_player_t* player, const(char)* anim) {
+    nstring tmp = anim;
+    return cast(in_animation_token_t*)((cast(AnimationPlayer)player).play(tmp[]));
+}
+
+/**
+    Stops the given animation.
+
+    Params:
+        anim =      The token representing the animation.
+        immediate = Whether to stop the animation immediately.
+*/
+void in_animation_stop(in_animation_token_t* anim, bool immediate) {
+    (cast(AnimationPlaybackRef)anim).stop(immediate);
+}
+
+/**
+    Seeks to a given frame in an animation.
+
+    Params:
+        anim =      The token representing the animation.
+        frame =     The frame to seek to.
+*/
+void in_animation_seek(in_animation_token_t* anim, int frame) {
+    (cast(AnimationPlaybackRef)anim).seek(frame);
+}
+
+/**
+    Pauses the given animation.
+
+    Params:
+        anim =      The token representing the animation.
+*/
+void in_animation_pause(in_animation_token_t* anim) {
+    (cast(AnimationPlaybackRef)anim).pause();
+}
+
+/**
+    Plays the given animation.
+
+    Params:
+        anim =          The token representing the animation.
+        loop =          Whether to loop the animation
+        playLeadOut =   Whether to play the animation's lead-out.
+*/
+void in_animation_play(in_animation_token_t* anim, bool loop, bool playLeadOut) {
+    (cast(AnimationPlaybackRef)anim).play(loop, playLeadOut);
 }
